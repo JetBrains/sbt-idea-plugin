@@ -15,8 +15,10 @@ addSbtPlugin("com.dancingrobot84" % "sbt-idea-plugin" % "0.0.1")
 
 * Insert into `build.sbt`:
 
-```
+```Scala
 ideaPluginSettings
+
+ideaVersion := "14.0.3" // Put here version of IDEA your plugin depends on
 ```
 
 * Download IDEA binaries and sources by running `updateIdea` command in SBT REPL
