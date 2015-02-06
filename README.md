@@ -10,7 +10,8 @@ SBT plugin for developers writing plugins for Intellij IDEA in Scala and Java. W
 resolvers += Resolver.url("dancingrobot84-bintray",
   url("http://dl.bintray.com/dancingrobot84/sbt-plugins/"))(Resolver.ivyStylePatterns)
 
-addSbtPlugin("com.dancingrobot84" % "sbt-idea-plugin" % "0.0.1")
+addSbtPlugin("com.dancingrobot84" % "sbt-idea-plugin" % 
+  "0.0-73ee17a3aeed5052eb103a11849125e65ce59d91")
 ```
 
 * Insert into `build.sbt`:
