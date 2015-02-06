@@ -1,10 +1,10 @@
 import bintray.Keys._
+import com.typesafe.sbt.SbtGit._
 
 
 lazy val commonSettings = Seq(
   name         := "sbt-idea-plugin",
   organization := "com.dancingrobot84",
-  version      := "0.0.1",
   sbtPlugin    := true,
   scalacOptions ++= Seq("-deprecation", "-feature")
 )
@@ -18,3 +18,7 @@ lazy val publishSettings = bintrayPublishSettings ++ Seq(
 )
 
 commonSettings ++ publishSettings
+
+versionWithGit
+
+git.baseVersion := "0.0"
