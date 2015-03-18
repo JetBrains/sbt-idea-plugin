@@ -5,7 +5,7 @@ import sbt.Keys._
 
 object Keys {
   lazy val ideaBuild = SettingKey[String]("idea-build",
-    "Version of Intellij IDEA build to use in project")
+    "Number of Intellij IDEA build to use in project")
   lazy val ideaBaseDirectory = SettingKey[File]("idea-base-directory",
     "Directory where downloaded IDEA is unpacked")
   lazy val ideaPlugins = SettingKey[Seq[String]]("idea-plugins",
