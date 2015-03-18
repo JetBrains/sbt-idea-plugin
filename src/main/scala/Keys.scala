@@ -4,8 +4,8 @@ import sbt._
 import sbt.Keys._
 
 object Keys {
-  lazy val ideaVersion = SettingKey[String]("idea-version",
-    "Version of Intellij IDEA to build against")
+  lazy val ideaBuild = SettingKey[String]("idea-build",
+    "Version of Intellij IDEA build to use in project")
   lazy val ideaBaseDirectory = SettingKey[File]("idea-base-directory",
     "Directory where downloaded IDEA is unpacked")
   lazy val ideaPlugins = SettingKey[Seq[String]]("idea-plugins",
@@ -25,17 +25,16 @@ object Keys {
     ideaBaseDirectory := baseDirectory.value / "idea",
     ideaPlugins       := Seq.empty,
 
-    ideaMainJars   := (ideaBaseDirectory.value / ideaVersion.value / "lib" * "*.jar").classpath,
+    ideaMainJars   := (ideaBaseDirectory.value / ideaBuild.value / "lib" * "*.jar").classpath,
     ideaPluginJars := {
       val dirs = ideaPlugins.value.foldLeft(PathFinder.empty){ (paths, plugin) =>
-        paths +++ (ideaBaseDirectory.value / ideaVersion.value / "plugins" / plugin / "lib")
+        paths +++ (ideaBaseDirectory.value / ideaBuild.value / "plugins" / plugin / "lib")
       }
       (dirs * (globFilter("*.jar") -- "*asm*.jar")).classpath
     },
     ideaFullJars := ideaMainJars.value ++ ideaPluginJars.value,
     unmanagedJars in Compile ++= ideaFullJars.value,
 
-    updateIdea <<= (ideaBaseDirectory, ideaVersion, streams).map(Tasks.updateIdea)
+    updateIdea <<= (ideaBaseDirectory, ideaBuild, streams).map(Tasks.updateIdea)
   )
-
 }
