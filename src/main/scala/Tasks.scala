@@ -27,19 +27,15 @@ object Tasks {
   }
 
   private def createIdeaDownloads(baseDir: File, build: String, log: Logger): Seq[Download] = {
-    import TeamcityDownloader._
-
-    val buildId = getBuildId(build)
-    val buildMajorNum = build.substring(0, build.indexOf('.'))
-    val downloadBaseUrl = s"$TeamcityEndpoint/builds/id:$buildId/artifacts/content"
-
+    val ideaUrl = s"https://www.jetbrains.com/intellij-repository/releases/com/jetbrains/intellij/idea/ideaIC/$build/ideaIC-$build.zip"
+    val ideaSourcesUrl = s"https://www.jetbrains.com/intellij-repository/releases/com/jetbrains/intellij/idea/ideaIC/$build/ideaIC-$build-sources.zip"
     Seq(
       DownloadAndUnpack(
-        url(s"$downloadBaseUrl/ideaIC-$buildMajorNum.SNAPSHOT.win.zip"),
+        url(ideaUrl),
         baseDir.getParentFile / s"ideaIC-$build.zip",
         baseDir),
       DownloadOnly(
-        url(s"$downloadBaseUrl/sources.zip"),
+        url(ideaSourcesUrl),
         baseDir / "sources.zip")
     )
   }
@@ -79,22 +75,5 @@ private object Downloader {
   private def unpack(log: Logger, from: File, to: File): Unit = {
     log.info(s"Unpacking $from to $to")
     IO.unzip(from, to)
-  }
-}
-
-private object TeamcityDownloader {
-  val TeamcityEndpoint = "https://teamcity.jetbrains.com/guestAuth/app/rest"
-
-  def getBuildId(build: String): String = {
-    val metadataUrl = url(s"$TeamcityEndpoint/builds?locator=buildType:(id:bt410),branch:(default:any,name:idea/$build)")
-
-    val buildId = for {
-      metadata <- Try(XML.loadString(IO.readLinesURL(metadataUrl).mkString))
-      buildVal <- Try(metadata \ "build" \\ "@id").map(_.head)
-    } yield buildVal.text
-
-    buildId.recoverWith { case exc =>
-      Failure(new Error(s"Could not retrieve IDEA/$build build ID from $metadataUrl", exc))
-    }.get
   }
 }
