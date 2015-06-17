@@ -4,37 +4,72 @@ import sbt._
 import sbt.Keys._
 
 object Keys {
-  lazy val ideaBuild = SettingKey[String]("idea-build",
+  lazy val ideaBuild = SettingKey[String](
+    "idea-build",
     "Number of Intellij IDEA build to use in project")
-  lazy val ideaBaseDirectory = SettingKey[File]("idea-base-directory",
-    "Directory where downloaded IDEA is unpacked")
-  lazy val ideaPlugins = SettingKey[Seq[String]]("idea-plugins",
-    "List of Intellij IDEA plugins this project depends on")
 
-  lazy val ideaMainJars = TaskKey[Classpath]("idea-main-jars",
+  lazy val ideaDownloadDirectory = SettingKey[File](
+    "idea-download-directory",
+    "Directory where IDEA binaries and sources are downloaded")
+
+  lazy val ideaInternalPlugins = SettingKey[Seq[String]](
+    "idea-internal-plugins",
+    "List of names of bundled Intellij IDEA plugins this project depends on")
+
+  lazy val ideaExternalPlugins = SettingKey[Seq[(String,URL)]](
+    "idea-external-plugins",
+    "List of (name, URL) pairs of third-party plugins this project depends on")
+
+  lazy val ideaBaseDirectory = TaskKey[File](
+    "idea-base-directory",
+    "Directory where downloaded IDEA binaries and sources are unpacked")
+
+  lazy val ideaMainJars = TaskKey[Classpath](
+    "idea-main-jars",
     "Classpath containing main IDEA jars")
-  lazy val ideaPluginJars = TaskKey[Classpath]("idea-plugin-jars",
-    "Classpath containing jars of IDEA plugins")
-  lazy val ideaFullJars = TaskKey[Classpath]("idea-full-jars",
-    "Concatenation of idea-main-jars and idea-community-jars")
 
-  lazy val updateIdea = TaskKey[Unit]("update-idea",
-    "Download Intellij IDEA binaries and sources for specified version")
+  lazy val ideaInternalPluginsJars = TaskKey[Classpath](
+    "idea-internal-plugins-jars",
+    "Classpath containing jars of internal IDEA plugins used in this project")
+
+  lazy val ideaExternalPluginsJars = TaskKey[Classpath](
+    "idea-external-plugins-jars",
+    "Classpath containing jars of external IDEA plugins used in this project")
+
+  lazy val ideaFullJars = TaskKey[Classpath](
+    "idea-full-jars",
+    "Complete classpath of IDEA's and internal and external plugins' jars")
+
+  lazy val updateIdea = TaskKey[Unit](
+    "update-idea",
+    "Download Intellij IDEA binaries, sources and external plugins for specified build")
+
 
   lazy val ideaPluginSettings: Seq[Setting[_]] = Seq(
-    ideaBaseDirectory := baseDirectory.value / "idea",
-    ideaPlugins       := Seq.empty,
+    ideaDownloadDirectory := baseDirectory.value / "idea",
 
-    ideaMainJars   := (ideaBaseDirectory.value / ideaBuild.value / "lib" * "*.jar").classpath,
-    ideaPluginJars := {
-      val dirs = ideaPlugins.value.foldLeft(PathFinder.empty){ (paths, plugin) =>
-        paths +++ (ideaBaseDirectory.value / ideaBuild.value / "plugins" / plugin / "lib")
-      }
-      (dirs * (globFilter("*.jar") -- "*asm*.jar")).classpath
+    ideaInternalPlugins := Seq.empty,
+
+    ideaExternalPlugins := Seq.empty,
+
+    ideaBaseDirectory <<= (ideaDownloadDirectory, ideaBuild).map {
+      (downloadDir, build) => downloadDir / build
     },
-    ideaFullJars := ideaMainJars.value ++ ideaPluginJars.value,
+
+    ideaMainJars := (ideaBaseDirectory.value / "lib" * "*.jar").classpath,
+
+    ideaInternalPluginsJars <<= (ideaBaseDirectory, ideaInternalPlugins).map {
+      (baseDir, pluginsUsed) => Tasks.createPluginsClasspath(baseDir / "plugins", pluginsUsed)
+    },
+
+    ideaExternalPluginsJars <<= (ideaBaseDirectory, ideaExternalPlugins).map {
+      (baseDir, pluginsUsed) => Tasks.createPluginsClasspath(baseDir / "externalPlugins", pluginsUsed.map(_._1))
+    },
+
+    ideaFullJars := ideaMainJars.value ++ ideaInternalPluginsJars.value ++ ideaExternalPluginsJars.value,
+
     unmanagedJars in Compile ++= ideaFullJars.value,
 
-    updateIdea <<= (ideaBaseDirectory, ideaBuild, streams).map(Tasks.updateIdea)
+    updateIdea <<= (ideaBaseDirectory, ideaBuild, ideaExternalPlugins, streams).map(Tasks.updateIdea)
   )
 }

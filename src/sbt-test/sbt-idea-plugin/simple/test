@@ -1,10 +1,9 @@
 # check if everything is downloaded
 > updateIdea
 $ exists idea
-$ exists idea/archives
-$ exists idea/archives/ideaIC-139.1117.1.zip
+$ exists idea/ideaIC-139.1117.1.zip
 $ exists idea/139.1117.1
 $ exists idea/139.1117.1/lib
 $ exists idea/139.1117.1/plugins
 $ exists idea/139.1117.1/sources.zip
-
+$ exists idea/139.1117.1/externalPlugins/scala-plugin
