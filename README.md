@@ -10,7 +10,7 @@ SBT plugin that makes development of Intellij IDEA plugins in Scala easier.
 resolvers += Resolver.url("dancingrobot84-bintray",
   url("http://dl.bintray.com/dancingrobot84/sbt-plugins/"))(Resolver.ivyStylePatterns)
 
-addSbtPlugin("com.dancingrobot84" % "sbt-idea-plugin" % "0.1.0")
+addSbtPlugin("com.dancingrobot84" % "sbt-idea-plugin" % "0.2.0")
 ```
 
 * Insert into `build.sbt`:
@@ -25,11 +25,11 @@ ideaBuild := "139.1117.1" // Required. See notes below about IDEA builds
 
 * Start coding
 
-## Settings
+## Available settings
 
 #### ideaBuild
 
-No default value
+**No default value**
 
 IDEA's build number. Binaries and sources of this build will be downloaded from
 https://teamcity.jetbrains.com and used in compilation and testing. You can
@@ -37,26 +37,35 @@ find build number of your IDEA in `Help -> About` dialog. However, it might be
 incomplete, so I strongly recommend you to verify it against
 [this list](https://teamcity.jetbrains.com/viewType.html?buildTypeId=bt410&tab=buildTypeHistoryList&branch_IntelliJIdeaCe=__all_branches__).
 
-#### ideaBaseDirectory
+#### ideaDownloadDirectory
 
 Default: `baseDirectory / "idea"`
 
-Directory where IDEA binaries and sources will be unpacked.
+Directory where IDEA binaries and sources will be downloaded.
 
-#### ideaPlugins
+#### ideaInternalPlugins
 
-Default: `Seq.empty`
+Default: `Seq.empty[String]`
 
-List of IDEA plugins to depend upon. Their jars will be used in compilation.
+List of bundled IDEA plugins to depend upon. Their jars will be used in compilation.
 Available plugins can be found in `ideaBaseDirectory / "plugins"` directory.
+
+#### ideaExternalPlugins
+
+Default: `Seq.empty[(String, URL)]`
+
+List of (pluginName, pluginUrl) pairs of external IDEA plugins to depend upon. Their jars will be downloaded
+and unpacked in `ideaBaseDirectory / "externalPlugins"` directory, each in its own subdirectory. They will be used
+in compilation
 
 ## Tasks
 
 #### updateIdea
 
 Download IDEA's binaries and sources, put them into
-`ideaBaseDirectory / ideaBuild` directory and automatically add IDEA's and
-plugin's jars into `unmanagedJars`.
+`ideaBaseDirectory` directory. Download external plugins and put
+them in `ideaBaseDirectory / "externalPlugins"` directory. Automatically add IDEA's and
+plugin's jars into `unmanagedJars in Compile`.
 
 ## Notes and best practices
 
