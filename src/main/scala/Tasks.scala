@@ -32,4 +32,11 @@ object Tasks {
 
     downloads.foreach(d => downloadArtifact(d, streams))
   }
+
+  def createPluginsClasspath(pluginsBase: File, pluginsUsed: Seq[String]): Classpath = {
+    val pluginsDirs = pluginsUsed.foldLeft(PathFinder.empty){ (paths, plugin) =>
+      paths +++ (pluginsBase / plugin / "lib")
+    }
+    (pluginsDirs * (globFilter("*.jar") -- "*asm*.jar")).classpath
+  }
 }
