@@ -10,7 +10,7 @@ SBT plugin that makes development of Intellij IDEA plugins in Scala easier.
 resolvers += Resolver.url("dancingrobot84-bintray",
   url("http://dl.bintray.com/dancingrobot84/sbt-plugins/"))(Resolver.ivyStylePatterns)
 
-addSbtPlugin("com.dancingrobot84" % "sbt-idea-plugin" % "0.2.0")
+addSbtPlugin("com.dancingrobot84" % "sbt-idea-plugin" % "0.2.1")
 ```
 
 * Insert into `build.sbt`:
@@ -35,7 +35,7 @@ IDEA's build number. Binaries and sources of this build will be downloaded from
 https://teamcity.jetbrains.com and used in compilation and testing. You can
 find build number of your IDEA in `Help -> About` dialog. However, it might be
 incomplete, so I strongly recommend you to verify it against
-[this list](https://teamcity.jetbrains.com/viewType.html?buildTypeId=bt410&tab=buildTypeHistoryList&branch_IntelliJIdeaCe=__all_branches__).
+[this list](https://www.jetbrains.com/intellij-repository/releases).
 
 #### ideaDownloadDirectory
 
