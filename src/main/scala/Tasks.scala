@@ -27,8 +27,9 @@ object Tasks {
   }
 
   private def createIdeaDownloads(baseDir: File, build: String, log: Logger): Seq[Download] = {
-    val ideaUrl = s"https://www.jetbrains.com/intellij-repository/releases/com/jetbrains/intellij/idea/ideaIC/$build/ideaIC-$build.zip"
-    val ideaSourcesUrl = s"https://www.jetbrains.com/intellij-repository/releases/com/jetbrains/intellij/idea/ideaIC/$build/ideaIC-$build-sources.zip"
+    val repositoryUrl = getRepositoryForBuild(build)
+    val ideaUrl = s"$repositoryUrl/ideaIC/$build/ideaIC-$build.zip"
+    val ideaSourcesUrl = s"$repositoryUrl/ideaIC/$build/ideaIC-$build-sources.zip"
     Seq(
       DownloadAndUnpack(
         url(ideaUrl),
@@ -38,6 +39,11 @@ object Tasks {
         url(ideaSourcesUrl),
         baseDir / "sources.zip")
     )
+  }
+
+  private def getRepositoryForBuild(build: String): String = {
+    val repository = if (build.endsWith("SNAPSHOT")) "snapshots" else "releases"
+    s"https://www.jetbrains.com/intellij-repository/$repository/com/jetbrains/intellij/idea"
   }
 
   private def createExternalPluginsDownloads(baseDir: File, plugins: Seq[(String, URL)], log: Logger): Seq[Download] =
