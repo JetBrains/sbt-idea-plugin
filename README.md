@@ -32,10 +32,11 @@ ideaBuild := "139.1117.1" // Required. See notes below about IDEA builds
 **No default value**
 
 IDEA's build number. Binaries and sources of this build will be downloaded from
-https://teamcity.jetbrains.com and used in compilation and testing. You can
-find build number of your IDEA in `Help -> About` dialog. However, it might be
-incomplete, so I strongly recommend you to verify it against
-[this list](https://www.jetbrains.com/intellij-repository/releases).
+https://jetbrains.com and used in compilation and testing. You can find build
+number of your IDEA in `Help -> About` dialog. However, it might be incomplete,
+so I strongly recommend you to verify it against [available
+releases](https://www.jetbrains.com/intellij-repository/releases) and
+[available snapshots](https://www.jetbrains.com/intellij-repository/snapshots).
 
 #### ideaDownloadDirectory
 
