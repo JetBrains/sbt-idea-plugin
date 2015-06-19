@@ -81,4 +81,4 @@ plugin's jars into `unmanagedJars in Compile`.
   ```
 
   into your `build.sbt`
-- If you depend upon one or more external plugins, add `-Didea.plugins.path=$PROJECT_DIR$/idea/14.1.3/externalPlugins` to your run configuration's VM options in order for debug IDEA instance to use already downloaded plugins
+- If you depend upon one or more external plugins, add `-Didea.plugins.path=$PROJECT_DIR$/<ideaBaseDirectory>/externalPlugins` to your run configuration's VM options in order for debug IDEA instance to use already downloaded plugins
