@@ -77,7 +77,7 @@ plugin's jars into `unmanagedJars in Compile`.
   into this fat jar of yours. To achieve this insert
 
   ```Scala
-  assemblyExcludedJars in aassembly <<= ideaFullJars
+  assemblyExcludedJars in assembly <<= ideaFullJars
   ```
 
   into your `build.sbt`
