@@ -8,8 +8,9 @@ import scala.xml._
 
 object Tasks {
   import Downloader._
+  import Keys._
 
-  def updateIdea(baseDir: File, build: String, externalPlugins: Seq[(String, URL)], streams: TaskStreams): Unit = {
+  def updateIdea(baseDir: File, build: String, externalPlugins: Seq[IdeaPlugin], streams: TaskStreams): Unit = {
     val externalPluginsDir = baseDir / "externalPlugins"
     IO.createDirectory(baseDir)
     IO.createDirectory(externalPluginsDir)
@@ -46,13 +47,19 @@ object Tasks {
     s"https://www.jetbrains.com/intellij-repository/$repository/com/jetbrains/intellij/idea"
   }
 
-  private def createExternalPluginsDownloads(baseDir: File, plugins: Seq[(String, URL)], log: Logger): Seq[Download] =
-    plugins.map { case (pluginName, pluginUrl) =>
-      DownloadAndUnpack(
-        pluginUrl,
-        baseDir / s"$pluginName.zip",
-        baseDir / pluginName
-      )
+  private def createExternalPluginsDownloads(baseDir: File, plugins: Seq[IdeaPlugin], log: Logger): Seq[Download] =
+    plugins.map {
+      case IdeaPlugin.Zip(pluginName, pluginUrl) =>
+        DownloadAndUnpack(
+          pluginUrl,
+          baseDir / s"$pluginName.zip",
+          baseDir / pluginName
+        )
+      case IdeaPlugin.Jar(pluginName, pluginUrl) =>
+        DownloadOnly(
+          pluginUrl,
+          baseDir / s"$pluginName.jar"
+        )
     }
 }
 

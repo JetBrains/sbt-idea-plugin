@@ -16,9 +16,9 @@ object Keys {
     "idea-internal-plugins",
     "List of names of bundled Intellij IDEA plugins this project depends on")
 
-  lazy val ideaExternalPlugins = SettingKey[Seq[(String,URL)]](
+  lazy val ideaExternalPlugins = SettingKey[Seq[IdeaPlugin]](
     "idea-external-plugins",
-    "List of (name, URL) pairs of third-party plugins this project depends on")
+    "List of third-party plugins this project depends on")
 
   lazy val ideaBaseDirectory = TaskKey[File](
     "idea-base-directory",
@@ -45,6 +45,17 @@ object Keys {
     "Download Intellij IDEA binaries, sources and external plugins for specified build")
 
 
+  sealed trait IdeaPlugin {
+    val name: String
+    val url: URL
+  }
+
+  object IdeaPlugin {
+    final case class Zip(name: String, url: URL) extends IdeaPlugin
+    final case class Jar(name: String, url: URL) extends IdeaPlugin
+  }
+
+
   lazy val ideaPluginSettings: Seq[Setting[_]] = Seq(
     ideaDownloadDirectory := baseDirectory.value / "idea",
 
@@ -63,7 +74,7 @@ object Keys {
     },
 
     ideaExternalPluginsJars <<= (ideaBaseDirectory, ideaExternalPlugins).map {
-      (baseDir, pluginsUsed) => Tasks.createPluginsClasspath(baseDir / "externalPlugins", pluginsUsed.map(_._1))
+      (baseDir, pluginsUsed) => Tasks.createPluginsClasspath(baseDir / "externalPlugins", pluginsUsed.map(_.name))
     },
 
     ideaFullJars := ideaMainJars.value ++ ideaInternalPluginsJars.value ++ ideaExternalPluginsJars.value,
