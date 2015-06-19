@@ -53,11 +53,13 @@ Available plugins can be found in `ideaBaseDirectory / "plugins"` directory.
 
 #### ideaExternalPlugins
 
-Default: `Seq.empty[(String, URL)]`
+Default: `Seq.empty[IdeaPlugin]`
 
-List of (pluginName, pluginUrl) pairs of external IDEA plugins to depend upon. Their jars will be downloaded
+List of external IDEA plugins to depend upon. Their zips or jars will be downloaded
 and unpacked in `ideaBaseDirectory / "externalPlugins"` directory, each in its own subdirectory. They will be used
-in compilation
+in compilation. 
+
+NOTE: plugins consisting of *.class files packed in zip archive ([IntelliJ IDEA Plugin Structure](https://confluence.jetbrains.com/display/IDEADEV/IntelliJ+IDEA+Plugin+Structure), the 2nd way of organizing plugin's content) ARE NOT supported.
 
 ## Tasks
 
