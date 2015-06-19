@@ -18,13 +18,14 @@ object Tasks {
       createIdeaDownloads(baseDir, build, streams.log) ++
       createExternalPluginsDownloads(externalPluginsDir, externalPlugins, streams.log)
     downloads.foreach(d => download(d, streams.log))
+    movePluginsIntoRightPlace(externalPluginsDir, externalPlugins)
   }
 
   def createPluginsClasspath(pluginsBase: File, pluginsUsed: Seq[String]): Classpath = {
     val pluginsDirs = pluginsUsed.foldLeft(PathFinder.empty) { (paths, plugin) =>
-      paths +++ (pluginsBase / plugin / "lib")
+      paths +++ (pluginsBase / plugin) +++ (pluginsBase / plugin / "lib")
     }
-    (pluginsDirs * (globFilter("*.jar") -- "*asm*.jar")).classpath
+    (pluginsDirs * (globFilter("*.jar") -- "asm*.jar")).classpath
   }
 
   private def createIdeaDownloads(baseDir: File, build: String, log: Logger): Seq[Download] = {
@@ -60,6 +61,19 @@ object Tasks {
           pluginUrl,
           baseDir / s"$pluginName.jar"
         )
+    }
+
+  private def movePluginsIntoRightPlace(externalPluginsDir: File, plugins: Seq[IdeaPlugin]): Unit =
+    plugins.foreach { plugin =>
+      val pluginDir = externalPluginsDir / plugin.name
+      if (pluginDir.isDirectory) {
+        pluginDir.listFiles match {
+          case Array(dir) if dir.isDirectory =>
+            IO.copyDirectory(dir, pluginDir)
+            IO.delete(dir)
+          case _ => // ignore
+        }
+      }
     }
 }
 

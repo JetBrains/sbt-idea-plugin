@@ -7,3 +7,5 @@ $ exists idea/142.2491.4/lib
 $ exists idea/142.2491.4/plugins
 $ exists idea/142.2491.4/sources.zip
 $ exists idea/142.2491.4/externalPlugins/scala-plugin
+$ exists idea/142.2491.4/externalPlugins/scala-plugin/lib
+$ absent idea/142.2491.4/externalPlugins/scala-plugin/Scala

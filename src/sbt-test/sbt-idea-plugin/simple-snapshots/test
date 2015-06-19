@@ -7,3 +7,5 @@ $ exists idea/142-EAP-SNAPSHOT/lib
 $ exists idea/142-EAP-SNAPSHOT/plugins
 $ exists idea/142-EAP-SNAPSHOT/sources.zip
 $ exists idea/142-EAP-SNAPSHOT/externalPlugins/scala-plugin
+$ exists idea/142-EAP-SNAPSHOT/externalPlugins/scala-plugin/lib
+$ absent idea/142-EAP-SNAPSHOT/externalPlugins/scala-plugin/Scala
