@@ -11,12 +11,19 @@ object Tasks {
   import Keys._
 
   def updateIdea(baseDir: File, build: String, externalPlugins: Seq[IdeaPlugin], streams: TaskStreams): Unit = {
+    var downloads = Seq.empty[Download]
+
+    if (baseDir.isDirectory) {
+      streams.log.info(s"Skip downloading and unpacking IDEA because $baseDir exists")
+    } else {
+      IO.createDirectory(baseDir)
+      downloads = downloads ++ createIdeaDownloads(baseDir, build, streams.log)
+    }
+
     val externalPluginsDir = baseDir / "externalPlugins"
-    IO.createDirectory(baseDir)
     IO.createDirectory(externalPluginsDir)
-    val downloads =
-      createIdeaDownloads(baseDir, build, streams.log) ++
-      createExternalPluginsDownloads(externalPluginsDir, externalPlugins, streams.log)
+    downloads = downloads ++ createExternalPluginsDownloads(externalPluginsDir, externalPlugins, streams.log)
+
     downloads.foreach(d => download(d, streams.log))
     movePluginsIntoRightPlace(externalPluginsDir, externalPlugins)
   }
@@ -49,18 +56,26 @@ object Tasks {
   }
 
   private def createExternalPluginsDownloads(baseDir: File, plugins: Seq[IdeaPlugin], log: Logger): Seq[Download] =
-    plugins.map {
-      case IdeaPlugin.Zip(pluginName, pluginUrl) =>
-        DownloadAndUnpack(
-          pluginUrl,
-          baseDir / s"$pluginName.zip",
-          baseDir / pluginName
-        )
-      case IdeaPlugin.Jar(pluginName, pluginUrl) =>
-        DownloadOnly(
-          pluginUrl,
-          baseDir / s"$pluginName.jar"
-        )
+    plugins.flatMap { plugin =>
+      val pluginDir = baseDir / plugin.name
+      if (pluginDir.isDirectory) {
+        log.info(s"Skip downloading ${plugin.name} external plugin because $pluginDir exists")
+        None
+      } else {
+        Some(plugin match {
+          case IdeaPlugin.Zip(pluginName, pluginUrl) =>
+            DownloadAndUnpack(
+              pluginUrl,
+              baseDir / s"$pluginName.zip",
+              baseDir / pluginName
+            )
+          case IdeaPlugin.Jar(pluginName, pluginUrl) =>
+            DownloadOnly(
+              pluginUrl,
+              baseDir / s"$pluginName.jar"
+            )
+        })
+      }
     }
 
   private def movePluginsIntoRightPlace(externalPluginsDir: File, plugins: Seq[IdeaPlugin]): Unit =
@@ -68,7 +83,7 @@ object Tasks {
       val pluginDir = externalPluginsDir / plugin.name
       if (pluginDir.isDirectory) {
         pluginDir.listFiles match {
-          case Array(dir) if dir.isDirectory =>
+          case Array(dir) if dir.isDirectory && dir.getName != "lib" =>
             IO.copyDirectory(dir, pluginDir)
             IO.delete(dir)
           case _ => // ignore
@@ -92,7 +107,7 @@ private object Downloader {
 
   private def download(log: Logger, from: URL, to: File): Unit = {
     if (to.isFile) {
-      log.info(s"$to exists, download aborted")
+      log.info(s"Skip downloading $from because $to exists")
     } else {
       log.info(s"Downloading $from to $to")
       IO.download(from, to)
