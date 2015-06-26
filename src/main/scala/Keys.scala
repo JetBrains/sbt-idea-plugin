@@ -55,17 +55,20 @@ object Keys {
     final case class Jar(name: String, url: URL) extends IdeaPlugin
   }
 
+  lazy val buildSettings: Seq[Setting[_]] = Seq(
+    ideaBuild := "LATEST-EAP-SNAPSHOT",
 
-  lazy val ideaPluginSettings: Seq[Setting[_]] = Seq(
     ideaDownloadDirectory := baseDirectory.value / "idea",
-
-    ideaInternalPlugins := Seq.empty,
-
-    ideaExternalPlugins := Seq.empty,
 
     ideaBaseDirectory <<= (ideaDownloadDirectory, ideaBuild).map {
       (downloadDir, build) => downloadDir / build
-    },
+    }
+  )
+
+  lazy val projectSettings: Seq[Setting[_]] = Seq(
+    ideaInternalPlugins := Seq.empty,
+
+    ideaExternalPlugins := Seq.empty,
 
     ideaMainJars := (ideaBaseDirectory.value / "lib" * "*.jar").classpath,
 
