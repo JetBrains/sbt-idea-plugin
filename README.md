@@ -10,26 +10,24 @@ SBT plugin that makes development of Intellij IDEA plugins in Scala easier.
 resolvers += Resolver.url("dancingrobot84-bintray",
   url("http://dl.bintray.com/dancingrobot84/sbt-plugins/"))(Resolver.ivyStylePatterns)
 
-addSbtPlugin("com.dancingrobot84" % "sbt-idea-plugin" % "0.2.3")
+addSbtPlugin("com.dancingrobot84" % "sbt-idea-plugin" % "0.3.0")
 ```
 
 * Insert into `build.sbt`:
 
 ```Scala
-ideaPluginSettings
-
-ideaBuild := "139.1117.1" // Required. See notes below about IDEA builds
+enablePlugins(SbtIdeaPlugin)
 ```
 
-* Run SBT and execute `updateIdea` task
+* Run SBT and execute `updateIdea` task. It will download IDEA and external plugins used in project
 
 * Start coding
 
 ## Available settings
 
-#### ideaBuild
+#### `ideaBuild in ThisBuild :: SettingKey[String]`
 
-**No default value**
+Default: `LATEST-EAP-SNAPSHOT`
 
 IDEA's build number. Binaries and sources of this build will be downloaded from
 https://jetbrains.com and used in compilation and testing. You can find build
@@ -38,22 +36,22 @@ so I strongly recommend you to verify it against [available
 releases](https://www.jetbrains.com/intellij-repository/releases) and
 [available snapshots](https://www.jetbrains.com/intellij-repository/snapshots).
 
-#### ideaDownloadDirectory
+#### `ideaDownloadDirectory in ThisBuild :: SettingKey[File]`
 
 Default: `baseDirectory / "idea"`
 
 Directory where IDEA binaries and sources will be downloaded.
 
-#### ideaInternalPlugins
+#### `ideaInternalPlugins :: SettingKey[String]`
 
-Default: `Seq.empty[String]`
+Default: `Seq.empty`
 
 List of bundled IDEA plugins to depend upon. Their jars will be used in compilation.
 Available plugins can be found in `ideaBaseDirectory / "plugins"` directory.
 
-#### ideaExternalPlugins
+#### `ideaExternalPlugins :: SettingKey[IdeaPlugin]`
 
-Default: `Seq.empty[IdeaPlugin]`
+Default: `Seq.empty`
 
 List of external IDEA plugins to depend upon. Their zips or jars will be downloaded
 and unpacked in `ideaBaseDirectory / "externalPlugins"` directory, each in its own subdirectory. They will be used
@@ -63,7 +61,7 @@ NOTE: plugins consisting of *.class files packed in zip archive ([IntelliJ IDEA 
 
 ## Tasks
 
-#### updateIdea
+#### `updateIdea :: TaskKey[Unit]`
 
 Download IDEA's binaries and sources, put them into
 `ideaBaseDirectory` directory. Download external plugins and put
