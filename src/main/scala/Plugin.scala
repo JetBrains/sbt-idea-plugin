@@ -1,9 +1,9 @@
-package ideaplugin
+package com.dancingrobot84.sbtidea
 
 import sbt._
 
-object Plugin extends AutoPlugin {
+object SbtIdeaPlugin extends AutoPlugin {
   override def requires = plugins.JvmPlugin
-  val autoImport = ideaplugin.Keys
+  val autoImport = com.dancingrobot84.sbtidea.Keys
 }
 

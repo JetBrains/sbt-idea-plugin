@@ -1,4 +1,4 @@
-package ideaplugin
+package com.dancingrobot84.sbtidea
 
 import sbt._
 import sbt.Keys._
