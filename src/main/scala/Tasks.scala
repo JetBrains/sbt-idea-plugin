@@ -4,27 +4,25 @@ import sbt._
 import sbt.Keys._
 import scala.util._
 import scala.xml._
+import java.io.IOException
 
 
 object Tasks {
-  import Downloader._
   import Keys._
 
   def updateIdea(baseDir: File, build: String, externalPlugins: Seq[IdeaPlugin], streams: TaskStreams): Unit = {
-    var downloads = Seq.empty[Download]
+    implicit val log = streams.log
 
     if (baseDir.isDirectory) {
-      streams.log.info(s"Skip downloading and unpacking IDEA because $baseDir exists")
+      log.info(s"Skip downloading and unpacking IDEA because $baseDir exists")
     } else {
       IO.createDirectory(baseDir)
-      downloads = downloads ++ createIdeaDownloads(baseDir, build, streams.log)
+      downloadIdeaAndSources(baseDir, build)
     }
 
     val externalPluginsDir = baseDir / "externalPlugins"
     IO.createDirectory(externalPluginsDir)
-    downloads = downloads ++ createExternalPluginsDownloads(externalPluginsDir, externalPlugins, streams.log)
-
-    downloads.foreach(d => download(d, streams.log))
+    downloadExternalPlugins(externalPluginsDir, externalPlugins)
     movePluginsIntoRightPlace(externalPluginsDir, externalPlugins)
   }
 
@@ -35,19 +33,19 @@ object Tasks {
     (pluginsDirs * (globFilter("*.jar") -- "asm*.jar")).classpath
   }
 
-  private def createIdeaDownloads(baseDir: File, build: String, log: Logger): Seq[Download] = {
+  private def downloadIdeaAndSources(baseDir: File, build: String)(implicit log: Logger): Unit = {
     val repositoryUrl = getRepositoryForBuild(build)
-    val ideaUrl = s"$repositoryUrl/ideaIC/$build/ideaIC-$build.zip"
-    val ideaSourcesUrl = s"$repositoryUrl/ideaIC/$build/ideaIC-$build-sources.zip"
-    Seq(
-      DownloadAndUnpack(
-        url(ideaUrl),
-        baseDir.getParentFile / s"ideaIC-$build.zip",
-        baseDir),
-      DownloadOnly(
-        url(ideaSourcesUrl),
-        baseDir / "sources.zip")
-    )
+
+    val ideaUrl = url(s"$repositoryUrl/ideaIC/$build/ideaIC-$build.zip")
+    val ideaZipFile = baseDir.getParentFile / s"ideaIC-$build.zip"
+    downloadOrFail(ideaUrl, ideaZipFile)
+    unpack(ideaZipFile, baseDir)
+
+    val ideaSourcesJarUrl = url(s"$repositoryUrl/ideaIC/$build/ideaIC-$build-sources.jar")
+    val ideaSourcesZipUrl = url(s"$repositoryUrl/ideaIC/$build/ideaIC-$build-sources.zip")
+    val ideaSourcesZipFile = baseDir / "sources.zip"
+    downloadOrLog(ideaSourcesJarUrl, ideaSourcesZipFile)
+    downloadOrLog(ideaSourcesZipUrl, ideaSourcesZipFile)
   }
 
   private def getRepositoryForBuild(build: String): String = {
@@ -55,27 +53,20 @@ object Tasks {
     s"https://www.jetbrains.com/intellij-repository/$repository/com/jetbrains/intellij/idea"
   }
 
-  private def createExternalPluginsDownloads(baseDir: File, plugins: Seq[IdeaPlugin], log: Logger): Seq[Download] =
-    plugins.flatMap { plugin =>
+  private def downloadExternalPlugins(baseDir: File, plugins: Seq[IdeaPlugin])(implicit log: Logger): Unit =
+    plugins.foreach { plugin =>
       val pluginDir = baseDir / plugin.name
-      if (pluginDir.isDirectory) {
+      if (pluginDir.isDirectory)
         log.info(s"Skip downloading ${plugin.name} external plugin because $pluginDir exists")
-        None
-      } else {
-        Some(plugin match {
+      else
+        plugin match {
           case IdeaPlugin.Zip(pluginName, pluginUrl) =>
-            DownloadAndUnpack(
-              pluginUrl,
-              baseDir / s"$pluginName.zip",
-              baseDir / pluginName
-            )
+            val pluginZipFile = baseDir / s"$pluginName.zip"
+            downloadOrFail(pluginUrl, pluginZipFile)
+            unpack(pluginZipFile, baseDir / pluginName)
           case IdeaPlugin.Jar(pluginName, pluginUrl) =>
-            DownloadOnly(
-              pluginUrl,
-              baseDir / s"$pluginName.jar"
-            )
-        })
-      }
+            downloadOrFail(pluginUrl, baseDir / s"$pluginName.jar")
+        }
     }
 
   private def movePluginsIntoRightPlace(externalPluginsDir: File, plugins: Seq[IdeaPlugin]): Unit =
@@ -90,31 +81,24 @@ object Tasks {
         }
       }
     }
-}
 
-private object Downloader {
-  sealed trait Download
-  final case class DownloadOnly(from: URL, to: File) extends Download
-  final case class DownloadAndUnpack(from: URL, to: File, unpackTo: File) extends Download
-
-  def download(d: Download, log: Logger): Unit = d match {
-    case DownloadOnly(from, to) =>
-      download(log, from, to)
-    case DownloadAndUnpack(from, to, unpackTo) =>
-      download(log, from, to)
-      unpack(log, to, unpackTo)
-  }
-
-  private def download(log: Logger, from: URL, to: File): Unit = {
+  private def downloadOrFail(from: URL, to: File)(implicit log: Logger): Unit =
     if (to.isFile) {
       log.info(s"Skip downloading $from because $to exists")
     } else {
       log.info(s"Downloading $from to $to")
       IO.download(from, to)
     }
-  }
 
-  private def unpack(log: Logger, from: File, to: File): Unit = {
+  private def downloadOrLog(from: URL, to: File)(implicit log: Logger): Unit =
+    try {
+      downloadOrFail(from, to)
+    } catch {
+      case exc: IOException =>
+        log.warn(s"Abort downloading $from because of exception: ${exc.getMessage}")
+    }
+
+  private def unpack(from: File, to: File)(implicit log: Logger): Unit = {
     log.info(s"Unpacking $from to $to")
     IO.unzip(from, to)
   }
