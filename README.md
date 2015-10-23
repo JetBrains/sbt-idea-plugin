@@ -1,6 +1,6 @@
 # sbt-idea-plugin
 
-SBT plugin that makes development of Intellij IDEA plugins in Scala easier.
+SBT plugin that makes development of IntelliJ IDEA plugins in Scala easier.
 
 ## Installation
 
@@ -10,7 +10,7 @@ SBT plugin that makes development of Intellij IDEA plugins in Scala easier.
 resolvers += Resolver.url("dancingrobot84-bintray",
   url("http://dl.bintray.com/dancingrobot84/sbt-plugins/"))(Resolver.ivyStylePatterns)
 
-addSbtPlugin("com.dancingrobot84" % "sbt-idea-plugin" % "0.3.0")
+addSbtPlugin("com.dancingrobot84" % "sbt-idea-plugin" % "0.3.1")
 ```
 
 * Insert into `build.sbt`:
