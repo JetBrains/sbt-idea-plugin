@@ -20,6 +20,10 @@ object Keys {
     "idea-external-plugins",
     "List of third-party plugins this project depends on")
 
+  lazy val ideaEdition = SettingKey[IdeaEdition](
+    "idea-edition",
+    "Edition of Intellij IDEA to use in project")
+
   lazy val ideaBaseDirectory = TaskKey[File](
     "idea-base-directory",
     "Directory where downloaded IDEA binaries and sources are unpacked")
@@ -55,10 +59,26 @@ object Keys {
     final case class Jar(name: String, url: URL) extends IdeaPlugin
   }
 
+  sealed trait IdeaEdition {
+    val name: String
+  }
+
+  object IdeaEdition {
+    object Community extends IdeaEdition {
+      override val name = "ideaIC"
+    }
+
+    object Ultimate extends IdeaEdition {
+      override val name = "ideaIU"
+    }
+  }
+
   lazy val buildSettings: Seq[Setting[_]] = Seq(
     ideaBuild := "LATEST-EAP-SNAPSHOT",
 
     ideaDownloadDirectory := baseDirectory.value / "idea",
+
+    ideaEdition := IdeaEdition.Community,
 
     ideaBaseDirectory <<= (ideaDownloadDirectory, ideaBuild).map {
       (downloadDir, build) => downloadDir / build
@@ -84,6 +104,6 @@ object Keys {
 
     unmanagedJars in Compile ++= ideaFullJars.value,
 
-    updateIdea <<= (ideaBaseDirectory, ideaBuild, ideaExternalPlugins, streams).map(Tasks.updateIdea)
+    updateIdea <<= (ideaBaseDirectory, ideaEdition, ideaBuild, ideaExternalPlugins, streams).map(Tasks.updateIdea)
   )
 }
