@@ -1,5 +1,7 @@
 # sbt-idea-plugin
 
+[ ![Download](https://api.bintray.com/packages/dancingrobot84/sbt-plugins/sbt-idea-plugin/images/download.svg) ](https://bintray.com/dancingrobot84/sbt-plugins/sbt-idea-plugin/_latestVersion)
+
 SBT plugin that makes development of IntelliJ IDEA plugins in Scala easier.
 
 ## Installation
