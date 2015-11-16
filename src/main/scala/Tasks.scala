@@ -72,15 +72,18 @@ object Tasks {
   private def movePluginsIntoRightPlace(externalPluginsDir: File, plugins: Seq[IdeaPlugin]): Unit =
     plugins.foreach { plugin =>
       val pluginDir = externalPluginsDir / plugin.name
-      if (pluginDir.isDirectory) {
-        pluginDir.listFiles match {
-          case Array(dir) if dir.isDirectory && dir.getName != "lib" =>
-            IO.copyDirectory(dir, pluginDir)
-            IO.delete(dir)
-          case _ => // ignore
+      val childDirs = listDirectories(pluginDir)
+      if (childDirs.forall(_.getName != "lib")) {
+        val dirThatContainsLib = childDirs.find(d => listDirectories(d).exists(_.getName == "lib"))
+        dirThatContainsLib.foreach { dir =>
+          IO.copyDirectory(dir, pluginDir)
+          IO.delete(dir)
         }
       }
     }
+
+  private def listDirectories(dir: File): Seq[File] =
+    Option(dir.listFiles).toSeq.flatten.filter(_.isDirectory)
 
   private def downloadOrFail(from: URL, to: File)(implicit log: Logger): Unit =
     if (to.isFile) {
