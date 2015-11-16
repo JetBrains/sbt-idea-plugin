@@ -10,14 +10,14 @@ import java.io.IOException
 object Tasks {
   import Keys._
 
-  def updateIdea(baseDir: File, build: String, externalPlugins: Seq[IdeaPlugin], streams: TaskStreams): Unit = {
+  def updateIdea(baseDir: File, edition: IdeaEdition, build: String, externalPlugins: Seq[IdeaPlugin], streams: TaskStreams): Unit = {
     implicit val log = streams.log
 
     if (baseDir.isDirectory) {
       log.info(s"Skip downloading and unpacking IDEA because $baseDir exists")
     } else {
       IO.createDirectory(baseDir)
-      downloadIdeaAndSources(baseDir, build)
+      downloadIdeaAndSources(baseDir, edition, build)
     }
 
     val externalPluginsDir = baseDir / "externalPlugins"
@@ -33,11 +33,11 @@ object Tasks {
     (pluginsDirs * (globFilter("*.jar") -- "asm*.jar")).classpath
   }
 
-  private def downloadIdeaAndSources(baseDir: File, build: String)(implicit log: Logger): Unit = {
+  private def downloadIdeaAndSources(baseDir: File, edition: IdeaEdition, build: String)(implicit log: Logger): Unit = {
     val repositoryUrl = getRepositoryForBuild(build)
 
-    val ideaUrl = url(s"$repositoryUrl/ideaIC/$build/ideaIC-$build.zip")
-    val ideaZipFile = baseDir.getParentFile / s"ideaIC-$build.zip"
+    val ideaUrl = url(s"$repositoryUrl/${edition.name}/$build/${edition.name}-$build.zip")
+    val ideaZipFile = baseDir.getParentFile / s"${edition.name}-$build.zip"
     downloadOrFail(ideaUrl, ideaZipFile)
     unpack(ideaZipFile, baseDir)
 
