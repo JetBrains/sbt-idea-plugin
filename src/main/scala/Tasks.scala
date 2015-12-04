@@ -16,12 +16,10 @@ object Tasks {
     if (baseDir.isDirectory) {
       log.info(s"Skip downloading and unpacking IDEA because $baseDir exists")
     } else {
-      IO.createDirectory(baseDir)
       downloadIdeaAndSources(baseDir, edition, build)
     }
 
     val externalPluginsDir = baseDir / "externalPlugins"
-    IO.createDirectory(externalPluginsDir)
     downloadExternalPlugins(externalPluginsDir, externalPlugins)
     movePluginsIntoRightPlace(externalPluginsDir, externalPlugins)
   }
