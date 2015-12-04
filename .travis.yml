@@ -1,0 +1,7 @@
+language: scala
+
+sudo: false
+
+script:
+    - sbt 'scripted'
+
