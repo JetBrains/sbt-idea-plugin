@@ -10,13 +10,23 @@ import java.io.IOException
 object Tasks {
   import Keys._
 
-  def updateIdea(baseDir: File, edition: IdeaEdition, build: String, externalPlugins: Seq[IdeaPlugin], streams: TaskStreams): Unit = {
+  def updateIdea(baseDir: File, edition: IdeaEdition, build: String,
+                 downloadSources: Boolean,
+                 externalPlugins: Seq[IdeaPlugin],
+                 streams: TaskStreams): Unit = {
     implicit val log = streams.log
 
-    if (baseDir.isDirectory) {
+    if (baseDir.isDirectory)
       log.info(s"Skip downloading and unpacking IDEA because $baseDir exists")
-    } else {
-      downloadIdeaAndSources(baseDir, edition, build)
+    else
+      downloadIdeaBinaries(baseDir, edition, build)
+
+    if (downloadSources) {
+      val sourcesFile = baseDir / "sources.zip"
+      if (sourcesFile.isFile)
+        log.info(s"Skip downloading IDEA sources because $sourcesFile exists")
+      else
+        downloadIdeaSources(sourcesFile, build)
     }
 
     val externalPluginsDir = baseDir / "externalPlugins"
@@ -31,19 +41,20 @@ object Tasks {
     (pluginsDirs * (globFilter("*.jar") -- "asm*.jar")).classpath
   }
 
-  private def downloadIdeaAndSources(baseDir: File, edition: IdeaEdition, build: String)(implicit log: Logger): Unit = {
+  private def downloadIdeaBinaries(baseDir: File, edition: IdeaEdition, build: String)(implicit log: Logger): Unit = {
     val repositoryUrl = getRepositoryForBuild(build)
-
     val ideaUrl = url(s"$repositoryUrl/${edition.name}/$build/${edition.name}-$build.zip")
     val ideaZipFile = baseDir.getParentFile / s"${edition.name}-$build.zip"
     downloadOrFail(ideaUrl, ideaZipFile)
     unpack(ideaZipFile, baseDir)
+  }
 
+  private def downloadIdeaSources(sourcesFile: File, build: String)(implicit log: Logger): Unit = {
+    val repositoryUrl = getRepositoryForBuild(build)
     val ideaSourcesJarUrl = url(s"$repositoryUrl/ideaIC/$build/ideaIC-$build-sources.jar")
     val ideaSourcesZipUrl = url(s"$repositoryUrl/ideaIC/$build/ideaIC-$build-sources.zip")
-    val ideaSourcesZipFile = baseDir / "sources.zip"
-    downloadOrLog(ideaSourcesJarUrl, ideaSourcesZipFile)
-    downloadOrLog(ideaSourcesZipUrl, ideaSourcesZipFile)
+    downloadOrLog(ideaSourcesJarUrl, sourcesFile)
+    downloadOrLog(ideaSourcesZipUrl, sourcesFile)
   }
 
   private def getRepositoryForBuild(build: String): String = {

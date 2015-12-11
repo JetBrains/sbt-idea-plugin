@@ -24,6 +24,11 @@ object Keys {
     "idea-edition",
     "Edition of Intellij IDEA to use in project")
 
+  lazy val ideaDownloadSources = SettingKey[Boolean](
+    "idea-download-sources",
+    "Flag indicating whether IDEA sources should be downloaded too")
+
+
   lazy val ideaBaseDirectory = TaskKey[File](
     "idea-base-directory",
     "Directory where downloaded IDEA binaries and sources are unpacked")
@@ -80,6 +85,8 @@ object Keys {
 
     ideaEdition := IdeaEdition.Community,
 
+    ideaDownloadSources := true,
+
     ideaBaseDirectory <<= (ideaDownloadDirectory, ideaBuild).map {
       (downloadDir, build) => downloadDir / build
     }
@@ -104,6 +111,6 @@ object Keys {
 
     unmanagedJars in Compile ++= ideaFullJars.value,
 
-    updateIdea <<= (ideaBaseDirectory, ideaEdition, ideaBuild, ideaExternalPlugins, streams).map(Tasks.updateIdea)
+    updateIdea <<= (ideaBaseDirectory, ideaEdition, ideaBuild, ideaDownloadSources, ideaExternalPlugins, streams).map(Tasks.updateIdea)
   )
 }

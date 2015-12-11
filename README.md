@@ -50,6 +50,13 @@ Default: `baseDirectory / "idea"`
 
 Directory where IDEA binaries and sources will be downloaded.
 
+#### `ideaDownloadSources in ThisBuild :: SettingKey[Boolean]`
+
+Default: `true`
+
+Flag indicating whether IDEA sources should be downloaded alongside IDEA
+binaries or not.
+
 #### `ideaInternalPlugins :: SettingKey[String]`
 
 Default: `Seq.empty`
