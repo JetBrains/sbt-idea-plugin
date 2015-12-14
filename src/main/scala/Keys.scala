@@ -28,6 +28,10 @@ object Keys {
     "idea-download-sources",
     "Flag indicating whether IDEA sources should be downloaded too")
 
+  lazy val updateIdea = TaskKey[Unit](
+    "update-idea",
+    "Download Intellij IDEA binaries, sources and external plugins for specified build")
+
 
   lazy val ideaBaseDirectory = TaskKey[File](
     "idea-base-directory",
@@ -48,10 +52,6 @@ object Keys {
   lazy val ideaFullJars = TaskKey[Classpath](
     "idea-full-jars",
     "Complete classpath of IDEA's and internal and external plugins' jars")
-
-  lazy val updateIdea = TaskKey[Unit](
-    "update-idea",
-    "Download Intellij IDEA binaries, sources and external plugins for specified build")
 
 
   sealed trait IdeaPlugin {
@@ -80,13 +80,9 @@ object Keys {
 
   lazy val buildSettings: Seq[Setting[_]] = Seq(
     ideaBuild := "LATEST-EAP-SNAPSHOT",
-
     ideaDownloadDirectory := baseDirectory.value / "idea",
-
     ideaEdition := IdeaEdition.Community,
-
     ideaDownloadSources := true,
-
     ideaBaseDirectory <<= (ideaDownloadDirectory, ideaBuild).map {
       (downloadDir, build) => downloadDir / build
     }
@@ -94,23 +90,16 @@ object Keys {
 
   lazy val projectSettings: Seq[Setting[_]] = Seq(
     ideaInternalPlugins := Seq.empty,
-
     ideaExternalPlugins := Seq.empty,
-
     ideaMainJars := (ideaBaseDirectory.value / "lib" * "*.jar").classpath,
-
     ideaInternalPluginsJars <<= (ideaBaseDirectory, ideaInternalPlugins).map {
-      (baseDir, pluginsUsed) => Tasks.createPluginsClasspath(baseDir / "plugins", pluginsUsed)
+      (baseDir, pluginsUsed) => tasks.CreatePluginsClasspath(baseDir / "plugins", pluginsUsed)
     },
-
     ideaExternalPluginsJars <<= (ideaBaseDirectory, ideaExternalPlugins).map {
-      (baseDir, pluginsUsed) => Tasks.createPluginsClasspath(baseDir / "externalPlugins", pluginsUsed.map(_.name))
+      (baseDir, pluginsUsed) => tasks.CreatePluginsClasspath(baseDir / "externalPlugins", pluginsUsed.map(_.name))
     },
-
     ideaFullJars := ideaMainJars.value ++ ideaInternalPluginsJars.value ++ ideaExternalPluginsJars.value,
-
     unmanagedJars in Compile ++= ideaFullJars.value,
-
-    updateIdea <<= (ideaBaseDirectory, ideaEdition, ideaBuild, ideaDownloadSources, ideaExternalPlugins, streams).map(Tasks.updateIdea)
+    updateIdea <<= (ideaBaseDirectory, ideaEdition, ideaBuild, ideaDownloadSources, ideaExternalPlugins, streams).map(tasks.UpdateIdea.apply)
   )
 }

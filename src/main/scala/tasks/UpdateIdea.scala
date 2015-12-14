@@ -1,4 +1,5 @@
 package com.dancingrobot84.sbtidea
+package tasks
 
 import sbt._
 import sbt.Keys._
@@ -6,14 +7,15 @@ import scala.util._
 import scala.xml._
 import java.io.IOException
 
+import com.dancingrobot84.sbtidea.Keys._
 
-object Tasks {
-  import Keys._
 
-  def updateIdea(baseDir: File, edition: IdeaEdition, build: String,
-                 downloadSources: Boolean,
-                 externalPlugins: Seq[IdeaPlugin],
-                 streams: TaskStreams): Unit = {
+object UpdateIdea {
+
+  def apply(baseDir: File, edition: IdeaEdition, build: String,
+            downloadSources: Boolean,
+            externalPlugins: Seq[IdeaPlugin],
+            streams: TaskStreams): Unit = {
     implicit val log = streams.log
 
     if (baseDir.isDirectory)
@@ -32,13 +34,6 @@ object Tasks {
     val externalPluginsDir = baseDir / "externalPlugins"
     downloadExternalPlugins(externalPluginsDir, externalPlugins)
     movePluginsIntoRightPlace(externalPluginsDir, externalPlugins)
-  }
-
-  def createPluginsClasspath(pluginsBase: File, pluginsUsed: Seq[String]): Classpath = {
-    val pluginsDirs = pluginsUsed.foldLeft(PathFinder.empty) { (paths, plugin) =>
-      paths +++ (pluginsBase / plugin) +++ (pluginsBase / plugin / "lib")
-    }
-    (pluginsDirs * (globFilter("*.jar") -- "asm*.jar")).classpath
   }
 
   private def downloadIdeaBinaries(baseDir: File, edition: IdeaEdition, build: String)(implicit log: Logger): Unit = {
