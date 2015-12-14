@@ -28,9 +28,21 @@ object Keys {
     "idea-download-sources",
     "Flag indicating whether IDEA sources should be downloaded too")
 
+  lazy val ideaPublishSettings = SettingKey[PublishSettings](
+    "idea-publish-settings",
+    "Settings necessary for publishing IDEA plugin to plugins.jetbrains.com")
+
+  lazy val ideaPluginFile = TaskKey[File](
+    "idea-plugin-file",
+    "IDEA plugin's file to publish to plugins.jetbrains.com")
+
   lazy val updateIdea = TaskKey[Unit](
     "update-idea",
     "Download Intellij IDEA binaries, sources and external plugins for specified build")
+
+  lazy val publishPlugin = TaskKey[String](
+    "publish-plugin",
+    "Publish IDEA plugin on plugins.jetbrains.com")
 
 
   lazy val ideaBaseDirectory = TaskKey[File](
@@ -78,6 +90,9 @@ object Keys {
     }
   }
 
+  final case class PublishSettings(pluginId: String, username: String, password: String, channel: Option[String])
+
+
   lazy val buildSettings: Seq[Setting[_]] = Seq(
     ideaBuild := "LATEST-EAP-SNAPSHOT",
     ideaDownloadDirectory := baseDirectory.value / "idea",
@@ -100,6 +115,10 @@ object Keys {
     },
     ideaFullJars := ideaMainJars.value ++ ideaInternalPluginsJars.value ++ ideaExternalPluginsJars.value,
     unmanagedJars in Compile ++= ideaFullJars.value,
-    updateIdea <<= (ideaBaseDirectory, ideaEdition, ideaBuild, ideaDownloadSources, ideaExternalPlugins, streams).map(tasks.UpdateIdea.apply)
+    updateIdea <<= (ideaBaseDirectory, ideaEdition, ideaBuild, ideaDownloadSources, ideaExternalPlugins, streams).map(tasks.UpdateIdea.apply),
+
+    ideaPluginFile <<= packageBin.in(Compile),
+    ideaPublishSettings := PublishSettings("", "", "", None),
+    publishPlugin <<= (ideaPublishSettings, ideaPluginFile, streams).map(tasks.PublishPlugin.apply)
   )
 }

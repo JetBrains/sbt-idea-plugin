@@ -6,7 +6,9 @@ lazy val commonSettings = Seq(
   name         := "sbt-idea-plugin",
   organization := "com.dancingrobot84",
   sbtPlugin    := true,
-  scalacOptions ++= Seq("-deprecation", "-feature")
+  scalacOptions ++= Seq("-deprecation", "-feature"),
+  libraryDependencies +=
+    "org.scalaj" %% "scalaj-http" % "2.2.0"
 )
 
 
