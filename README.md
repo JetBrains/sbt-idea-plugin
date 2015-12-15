@@ -72,6 +72,18 @@ List of external IDEA plugins to depend upon. Their zips or jars will be downloa
 and unpacked in `ideaBaseDirectory / "externalPlugins"` directory, each in its own subdirectory. They will be used
 in compilation.
 
+#### `ideaPublishSettings :: SettingKey[PublishSettings]`
+
+Default: `PublishSettings(pluginId = "", username = "", password = "", channel = None)`
+
+Settings necessary for uploading your IDEA plugin to https://plugins.jetbrains.com
+
+#### `ideaPluginFile :: TaskKey[File]`
+
+Default: aliased to `package in Compile`
+
+Your IDEA plugin file to publish on https://plugins.jetbrains.com
+
 ## Tasks
 
 #### `updateIdea :: TaskKey[Unit]`
@@ -80,6 +92,11 @@ Download IDEA's binaries and sources, put them into
 `ideaBaseDirectory` directory. Download external plugins and put
 them in `ideaBaseDirectory / "externalPlugins"` directory. Automatically add IDEA's and
 plugin's jars into `unmanagedJars in Compile`.
+
+#### `publishPlugin :: TaskKey[String]`
+
+Upload and publish your IDEA plugin on https://plugins.jetbrains.com. Returns
+URL of published plugin.
 
 ## Notes and best practices
 
