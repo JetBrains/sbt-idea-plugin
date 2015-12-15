@@ -34,5 +34,16 @@ object PublishPlugin {
     )
 
   private def createMultipartData(pluginFile: File, pluginInputStream: InputStream): MultiPart =
-    MultiPart("file", pluginFile.getName, "application/zip", pluginInputStream, pluginFile.length(), _ => ())
+    MultiPart("file", pluginFile.getName, "application/zip", pluginInputStream, pluginFile.length(), uploadCallback(pluginFile.length))
+
+  private def uploadCallback(fullLength: Long)(uploadedLength: Long): Unit =
+    if (isProgressSupported) {
+      val uploadedPercent = ((uploadedLength.toDouble / fullLength) * 100).toInt
+      print(s"\rProgress: $uploadedPercent%")
+      if (uploadedLength >= fullLength)
+        println()
+    }
+
+  private def isProgressSupported: Boolean =
+    jline.TerminalFactory.get.isAnsiSupported
 }
