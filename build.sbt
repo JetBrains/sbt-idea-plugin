@@ -11,9 +11,7 @@ crossSbtVersions := Seq("0.13.16", "1.0.0")
 
 publishMavenStyle := false
 bintrayRepository := "sbt-plugins"
-bintrayOrganization := Some("sbt/jetbrains")
+bintrayOrganization := Some("jetbrains")
 
-//ScriptedPlugin.scriptedSettings
 scriptedLaunchOpts ++= Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
-
 scriptedBufferLog := false

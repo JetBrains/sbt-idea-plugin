@@ -12,7 +12,7 @@ From version 1.0.0, this plugin is published for sbt 0.13 and 1.0
 * Insert into `project/plugins.sbt`:
 
 ```Scala
-addSbtPlugin("org.jetbrains" % "sbt-idea-plugin" % "1.0.0")
+addSbtPlugin("org.jetbrains" % "sbt-idea-plugin" % "1.0.1")
 ```
 
 * Insert into `build.sbt`:
