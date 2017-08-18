@@ -1,13 +1,10 @@
-package com.dancingrobot84.sbtidea
-package tasks
+package org.jetbrains.sbtidea.tasks
 
-import sbt._
-import sbt.Keys._
-import scala.util._
-import scala.xml._
 import java.io.IOException
 
-import com.dancingrobot84.sbtidea.Keys._
+import org.jetbrains.sbtidea.Keys._
+import sbt.Keys._
+import sbt._
 
 
 object UpdateIdea {
@@ -16,7 +13,7 @@ object UpdateIdea {
             downloadSources: Boolean,
             externalPlugins: Seq[IdeaPlugin],
             streams: TaskStreams): Unit = {
-    implicit val log = streams.log
+    implicit val log: Logger = streams.log
 
     if (baseDir.isDirectory)
       log.info(s"Skip downloading and unpacking IDEA because $baseDir exists")
@@ -94,7 +91,7 @@ object UpdateIdea {
       log.info(s"Skip downloading $from because $to exists")
     } else {
       log.info(s"Downloading $from to $to")
-      IO.download(from, to)
+      download(from, to)
     }
 
   private def downloadOrLog(from: URL, to: File)(implicit log: Logger): Unit =
@@ -107,6 +104,14 @@ object UpdateIdea {
 
   private def unpack(from: File, to: File)(implicit log: Logger): Unit = {
     log.info(s"Unpacking $from to $to")
-    IO.unzip(from, to)
+    sbt.IO.unzip(from, to)
   }
+
+  private def download(from: sbt.URL, to: File): Unit = {
+    import sbt.jetbrains.apiAdapter._
+    Using.urlInputStream(from) { inputStream =>
+       IO.transfer(inputStream, to)
+     }
+  }
+
 }

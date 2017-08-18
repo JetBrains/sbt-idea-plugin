@@ -1,18 +1,18 @@
 # sbt-idea-plugin
 
-[ ![Download](https://api.bintray.com/packages/dancingrobot84/sbt-plugins/sbt-idea-plugin/images/download.svg) ](https://bintray.com/dancingrobot84/sbt-plugins/sbt-idea-plugin/_latestVersion) [![Build Status](https://travis-ci.org/dancingrobot84/sbt-idea-plugin.svg)](https://travis-ci.org/dancingrobot84/sbt-idea-plugin)
+[ ![Version](https://api.bintray.com/packages/sbt/sbt-plugin-releases/sbt-idea-plugin/images/download.svg) ](https://bintray.com/dancingrobot84/sbt-plugins/sbt-idea-plugin/_latestVersion) 
+[![Build Status](https://travis-ci.org/jetbrains/sbt-idea-plugin.svg)](https://travis-ci.org/jetbrains/sbt-idea-plugin)
 
 SBT plugin that makes development of IntelliJ IDEA plugins in Scala easier.
 
 ## Installation
 
+From version 1.0.0, this plugin is published for sbt 0.13 and 1.0
+
 * Insert into `project/plugins.sbt`:
 
 ```Scala
-resolvers += Resolver.url("dancingrobot84-bintray",
-  url("http://dl.bintray.com/dancingrobot84/sbt-plugins/"))(Resolver.ivyStylePatterns)
-
-addSbtPlugin("com.dancingrobot84" % "sbt-idea-plugin" % "0.4.0")
+addSbtPlugin("org.jetbrains" % "sbt-idea-plugin" % "1.0.0")
 ```
 
 * Insert into `build.sbt`:
@@ -31,11 +31,10 @@ enablePlugins(SbtIdeaPlugin)
 
 Default: `LATEST-EAP-SNAPSHOT`
 
-IDEA's build number. Binaries and sources of this build will be downloaded from
-https://jetbrains.com and used in compilation and testing. You can find build
-number of your IDEA in `Help -> About` dialog. However, it might be incomplete,
-so I strongly recommend you to verify it against [available
-releases](https://www.jetbrains.com/intellij-repository/releases) and
+IDEA's build number. Binaries and sources of this build will be downloaded from https://jetbrains.com and used in 
+compilation and testing. You can find build number of your IDEA in `Help -> About` dialog. However, it might be 
+incomplete, so I strongly recommend you to verify it against 
+[available releases](https://www.jetbrains.com/intellij-repository/releases) and
 [available snapshots](https://www.jetbrains.com/intellij-repository/snapshots).
 
 #### `ideaEdition in ThisBuild :: SettingKey[IdeaEdition]`
@@ -100,15 +99,15 @@ URL of published plugin.
 
 ## Notes and best practices
 
-- If you use `sbt-assembly` plugin to produce a fat jar to
-  distribute your plugin you should avoid putting IDEA's jars
+- If you use `sbt-assembly` plugin to produce a fat jar to distribute your plugin you should avoid putting IDEA's jars 
   into this fat jar of yours. To achieve this insert
 
   ```Scala
-  assemblyExcludedJars in assembly <<= ideaFullJars
+  assemblyExcludedJars in assembly := ideaFullJars.value
   ```
 
   into your `build.sbt`
+  
 - If you depend upon one or more external plugins, add
 
   ```
@@ -116,4 +115,5 @@ URL of published plugin.
   ```
 
   to your run configuration's VM options in order for debug IDEA instance to use
-  already downloaded plugins
+  already downloaded plugins.
+  

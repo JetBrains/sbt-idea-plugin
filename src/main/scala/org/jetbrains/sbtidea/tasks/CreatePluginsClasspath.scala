@@ -1,5 +1,4 @@
-package com.dancingrobot84.sbtidea
-package tasks
+package org.jetbrains.sbtidea.tasks
 
 import sbt._
 import Keys._

@@ -1,7 +1,7 @@
-package com.dancingrobot84.sbtidea
+package org.jetbrains.sbtidea
 
-import sbt._
 import sbt.Keys._
+import sbt._
 
 object Keys {
   lazy val ideaBuild = SettingKey[String](
@@ -98,27 +98,33 @@ object Keys {
     ideaDownloadDirectory := baseDirectory.value / "idea",
     ideaEdition := IdeaEdition.Community,
     ideaDownloadSources := true,
-    ideaBaseDirectory <<= (ideaDownloadDirectory, ideaBuild).map {
-      (downloadDir, build) => downloadDir / build
-    }
+    ideaBaseDirectory := ideaDownloadDirectory.value / ideaBuild.value
   )
 
   lazy val projectSettings: Seq[Setting[_]] = Seq(
     ideaInternalPlugins := Seq.empty,
     ideaExternalPlugins := Seq.empty,
     ideaMainJars := (ideaBaseDirectory.value / "lib" * "*.jar").classpath,
-    ideaInternalPluginsJars <<= (ideaBaseDirectory, ideaInternalPlugins).map {
-      (baseDir, pluginsUsed) => tasks.CreatePluginsClasspath(baseDir / "plugins", pluginsUsed)
-    },
-    ideaExternalPluginsJars <<= (ideaBaseDirectory, ideaExternalPlugins).map {
-      (baseDir, pluginsUsed) => tasks.CreatePluginsClasspath(baseDir / "externalPlugins", pluginsUsed.map(_.name))
-    },
+    ideaInternalPluginsJars :=
+      tasks.CreatePluginsClasspath(ideaBaseDirectory.value / "plugins", ideaInternalPlugins.value),
+
+    ideaExternalPluginsJars :=
+      tasks.CreatePluginsClasspath(ideaBaseDirectory.value / "externalPlugins", ideaExternalPlugins.value.map(_.name)),
+
     ideaFullJars := ideaMainJars.value ++ ideaInternalPluginsJars.value ++ ideaExternalPluginsJars.value,
     unmanagedJars in Compile ++= ideaFullJars.value,
-    updateIdea <<= (ideaBaseDirectory, ideaEdition, ideaBuild, ideaDownloadSources, ideaExternalPlugins, streams).map(tasks.UpdateIdea.apply),
 
-    ideaPluginFile <<= packageBin.in(Compile),
+    updateIdea := tasks.UpdateIdea.apply(
+      ideaBaseDirectory.value,
+      ideaEdition.value,
+      ideaBuild.value,
+      ideaDownloadSources.value,
+      ideaExternalPlugins.value,
+      streams.value
+    ),
+
+    ideaPluginFile := packageBin.in(Compile).value,
     ideaPublishSettings := PublishSettings("", "", "", None),
-    publishPlugin <<= (ideaPublishSettings, ideaPluginFile, streams).map(tasks.PublishPlugin.apply)
+    publishPlugin := tasks.PublishPlugin.apply(ideaPublishSettings.value, ideaPluginFile.value, streams.value)
   )
 }

@@ -1,7 +1,35 @@
 language: scala
 
-sudo: false
+jdk:
+  - oraclejdk8
 
 script:
-    - sbt 'scripted'
+  ## runs both regular tests and sbt-scripted integration tests
+  - sbt -Dfile.encoding=UTF8 test scripted
 
+after_success:
+  - '[[ $TRAVIS_BRANCH == "master" ]] || [[ $TRAVIS_BRANCH =~ ^v[0-9.]+$ ]] && sbt "such publish"'
+
+sudo: false
+
+# https://docs.travis-ci.com/user/languages/java/
+addons:
+  apt:
+    packages:
+      - oracle-java8-installer
+
+before_cache:
+  # Tricks to avoid unnecessary cache updates
+  - find $HOME/.sbt -name "*.lock" | xargs rm
+  - find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm
+
+# These directories are cached to S3 at the end of the build
+cache:
+  directories:
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt/boot/
+
+env:
+  global:
+    - BINTRAY_USER=jastice
+    - secure: secure: "DW5ft+Nt8bVo2mImKQrz22f6MRgAIDqeTAkwG2NmghGi0zb9vyzeJG+QIiT2p3hCA13JiY3Z+oMWw2xcXRV1XIhyx/SPv7BFi0ApOiYMI/RPIvwqvIE6+hqWK5W4UycQJrsjYy6BkTC426oeVkqXMAyrSnLR1ClR7/z1Mbfxs4FnEsymMx1PAb9Ri0GqHClTy7X7OSVQzM/ayiBMcGO82vYjBO00C1Ov6V02K11kGF0ZqPEJuQLiYy+xXTQjm3Srjsleoq4gCeVx46Zvtz9KuWQRLzKDyK73nlLjOypF+4spsxoHnftJr+HSafJtNznYm358RyQgtoOB++SgmK1nkV10eViqPtOr4alZfwzsTIgsjc5zHjjQrJQwEmueDbNg5E6GIc/gXNwpUZ3V2K1n1pY+HFzFj9zEm1HCfhPCVVT7rnq9+hm/j5tmYUAGBCrqR2AN8OoPvVWkJKLNuKbPizJZ0rSSQODdgAKCPoJ0uBS9H6KFRACYU5Asfi7iZ0CI8U0e+gQyHeRVFs8Z4oNAKtEs1MhqBYtAV+UaeCwhmzbAWrf5aqjw535QYjYXKK0B9TrK9eYhb5k9t5dlX4dA8ohXAxoE9Uwc1S/YvXFTrGBwfpKNIuLfV7wZJ+5c1itawQgDIvX3eTILTgI1mYi1mshZjl1RB3ivm9DhLy+/V70="

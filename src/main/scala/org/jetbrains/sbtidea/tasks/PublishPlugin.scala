@@ -1,19 +1,17 @@
-package com.dancingrobot84.sbtidea
-package tasks
+package org.jetbrains.sbtidea.tasks
 
 import sbt._
 import sbt.Keys._
 import scalaj.http._
 import java.io.InputStream
-
-import com.dancingrobot84.sbtidea.Keys._
+import org.jetbrains.sbtidea.Keys._
 
 
 object PublishPlugin {
   def apply(settings: PublishSettings, pluginFile: File, streams: TaskStreams): String = {
     val host = "https://plugins.jetbrains.com"
     streams.log.info(s"Uploading ${pluginFile.getName}(${pluginFile.length} bytes) to $host...")
-    Using.fileInputStream(pluginFile) { pluginStream =>
+    sbt.jetbrains.apiAdapter.Using.fileInputStream(pluginFile) { pluginStream =>
       Http(s"$host/plugin/uploadPlugin")
         .timeout(connTimeoutMs = 5000, readTimeoutMs = 60000)
         .postForm(createForm(settings))

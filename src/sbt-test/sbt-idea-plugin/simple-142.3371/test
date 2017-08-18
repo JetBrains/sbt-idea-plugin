@@ -1,8 +1,0 @@
-# check if everything is downloaded
-> updateIdea
-$ exists idea
-$ exists idea/ideaIC-142.3371.3.zip
-$ exists idea/142.3371.3
-$ exists idea/142.3371.3/lib
-$ exists idea/142.3371.3/plugins
-$ exists idea/142.3371.3/sources.zip
