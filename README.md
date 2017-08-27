@@ -1,6 +1,6 @@
 # sbt-idea-plugin
 
-[ ![Version](https://api.bintray.com/packages/sbt/sbt-plugin-releases/sbt-idea-plugin/images/download.svg) ](https://bintray.com/dancingrobot84/sbt-plugins/sbt-idea-plugin/_latestVersion) 
+[ ![Version](https://api.bintray.com/packages/sbt/sbt-plugin-releases/sbt-idea-plugin/images/download.svg) ](https://bintray.com/jetbrains/sbt-plugins/sbt-idea-plugin/_latestVersion) 
 [![Build Status](https://travis-ci.org/jetbrains/sbt-idea-plugin.svg)](https://travis-ci.org/jetbrains/sbt-idea-plugin)
 
 SBT plugin that makes development of IntelliJ IDEA plugins in Scala easier.
