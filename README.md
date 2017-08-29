@@ -5,6 +5,10 @@
 
 SBT plugin that makes development of IntelliJ IDEA plugins in Scala easier.
 
+## Issues?
+
+Please report issues at the [IntelliJ Scala YouTrack](https://youtrack.jetbrains.com/issues/SCL).
+
 ## Installation
 
 From version 1.0.0, this plugin is published for sbt 0.13 and 1.0
