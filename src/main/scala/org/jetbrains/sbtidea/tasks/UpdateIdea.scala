@@ -16,14 +16,14 @@ object UpdateIdea {
     implicit val log: Logger = streams.log
 
     if (baseDir.isDirectory)
-      log.info(s"Skip downloading and unpacking IDEA because $baseDir exists")
+      log.debug(s"Skip downloading and unpacking IDEA because $baseDir exists")
     else
       downloadIdeaBinaries(baseDir, edition, build)
 
     if (downloadSources) {
       val sourcesFile = baseDir / "sources.zip"
       if (sourcesFile.isFile)
-        log.info(s"Skip downloading IDEA sources because $sourcesFile exists")
+        log.debug(s"Skip downloading IDEA sources because $sourcesFile exists")
       else
         downloadIdeaSources(sourcesFile, build)
     }
@@ -58,7 +58,7 @@ object UpdateIdea {
     plugins.foreach { plugin =>
       val pluginDir = baseDir / plugin.name
       if (pluginDir.isDirectory)
-        log.info(s"Skip downloading ${plugin.name} external plugin because $pluginDir exists")
+        log.debug(s"Skip downloading ${plugin.name} external plugin because $pluginDir exists")
       else
         plugin match {
           case IdeaPlugin.Zip(pluginName, pluginUrl) =>
@@ -88,7 +88,7 @@ object UpdateIdea {
 
   private def downloadOrFail(from: URL, to: File)(implicit log: Logger): Unit =
     if (to.isFile) {
-      log.info(s"Skip downloading $from because $to exists")
+      log.debug(s"Skip downloading $from because $to exists")
     } else {
       log.info(s"Downloading $from to $to")
       download(from, to)
