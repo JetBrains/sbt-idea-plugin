@@ -1,7 +1,7 @@
 lazy val root = project.in(file(".")).enablePlugins(SbtIdeaPlugin)
 
-ideaBuild in ThisBuild := "15.0"
-
 ideaDownloadDirectory in ThisBuild := baseDirectory.value / "idea"
 
-ideaDownloadSources in ThisBuild := false
+ideaBuild in ThisBuild := "173.3727.22"
+
+ideaEdition in ThisBuild := IdeaEdition.Ultimate

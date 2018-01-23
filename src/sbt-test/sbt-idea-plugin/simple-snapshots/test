@@ -1,5 +1,5 @@
 # check if everything is downloaded
-> updateIdea
+> ideaUpdate
 $ exists idea
 $ exists idea/ideaIC-172-EAP-SNAPSHOT.zip
 $ exists idea/172-EAP-SNAPSHOT

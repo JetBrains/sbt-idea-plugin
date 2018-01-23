@@ -1,10 +1,12 @@
 package org.jetbrains.sbtidea.tasks
 
-import sbt._
-import sbt.Keys._
-import scalaj.http._
 import java.io.InputStream
+
 import org.jetbrains.sbtidea.Keys._
+import sbt.Keys._
+import sbt._
+
+import scalaj.http.{Http, MultiPart}
 
 
 object PublishPlugin {
@@ -23,8 +25,7 @@ object PublishPlugin {
     }
   }
 
-  private def createForm(settings: PublishSettings): Seq[(String, String)] =
-    Seq(
+  private def createForm(settings: PublishSettings): Seq[(String, String)] = Seq(
       "pluginId" -> settings.pluginId,
       "userName" -> settings.username,
       "password" -> settings.password,
