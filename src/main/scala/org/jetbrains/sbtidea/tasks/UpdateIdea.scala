@@ -61,10 +61,17 @@ object UpdateIdea {
         }
 
       val externalPluginsDir = baseDir / "externalPlugins"
-      downloadExternalPlugins(externalPluginsDir, externalPlugins)
-      movePluginsIntoRightPlace(externalPluginsDir, externalPlugins)
 
-      Await.ready(Future.sequence(Seq(downloadedBase, downloadedSources)), 20.minutes)
+      val downloadedPlugins = downloadExternalPlugins(externalPluginsDir, externalPlugins)
+      downloadedPlugins.foreach(_ => movePluginsIntoRightPlace(externalPluginsDir, externalPlugins))
+
+      val downloadsComplete = for {
+        base <- downloadedBase
+        sources <- downloadedSources
+        plugins <- downloadedPlugins
+      }  yield base +: sources +: plugins
+
+      Await.ready(downloadsComplete, Duration.Inf)
     }
 
   }
@@ -74,14 +81,7 @@ object UpdateIdea {
     val repositoryUrl = getRepositoryForBuild(build)
     val ideaUrl = url(s"$repositoryUrl/${edition.name}/$build/${edition.name}-$build.zip")
     val ideaZipFile = baseDir.getParentFile / s"${edition.name}-$build.zip"
-    downloadOrFail(ideaUrl, ideaZipFile)
-      .flatMap { file =>
-        if (unpack(file, baseDir).nonEmpty) {
-          file.delete()
-          Future.successful(file)
-        }
-        else Future.failed(new Exception(s"archive $file contained no files"))
-      }
+    downloadAndUnpack(ideaUrl, ideaZipFile, baseDir)
   }
 
   private def downloadIdeaSources(sourcesFile: File, build: String)(implicit log: Logger, httpClient: HttpClient): Future[File] = {
@@ -100,24 +100,31 @@ object UpdateIdea {
     s"https://www.jetbrains.com/intellij-repository/$repository/com/jetbrains/intellij/idea"
   }
 
-  private def downloadExternalPlugins(baseDir: File, plugins: Seq[IdeaPlugin])(implicit log: Logger, httpClient: HttpClient): Unit =
-    plugins.foreach { plugin =>
+  private def downloadExternalPlugins(baseDir: File, plugins: Seq[IdeaPlugin])(implicit log: Logger, httpClient: HttpClient): Future[Seq[File]] = {
+    val collected = plugins.map { plugin =>
       val pluginDir = baseDir / plugin.name
-      if (pluginDir.isDirectory)
+      if (pluginDir.isDirectory) {
         log.debug(s"Skip downloading ${plugin.name} external plugin because $pluginDir exists")
+        Future.successful(pluginDir)
+      }
       else
         plugin match {
           case IdeaPlugin.Zip(pluginName, pluginUrl) =>
             val pluginZipFile = baseDir / s"$pluginName.zip"
-            downloadOrFail(pluginUrl, pluginZipFile)
-            unpack(pluginZipFile, baseDir / pluginName)
+            downloadAndUnpack(pluginUrl, pluginZipFile, baseDir / pluginName)
           case IdeaPlugin.Jar(pluginName, pluginUrl) =>
             downloadOrFail(pluginUrl, baseDir / s"$pluginName.jar")
         }
+
     }
 
-  private def movePluginsIntoRightPlace(externalPluginsDir: File, plugins: Seq[IdeaPlugin]): Unit =
-    plugins.foreach { plugin =>
+    Future.sequence(collected)
+  }
+
+
+  // TODO what's this for???
+  private def movePluginsIntoRightPlace(externalPluginsDir: File, plugins: Seq[IdeaPlugin]): Seq[File] =
+    plugins.map { plugin =>
       val pluginDir = externalPluginsDir / plugin.name
       val childDirs = listDirectories(pluginDir)
       if (childDirs.forall(_.getName != "lib")) {
@@ -127,10 +134,24 @@ object UpdateIdea {
           IO.delete(dir)
         }
       }
+      pluginDir
     }
 
   private def listDirectories(dir: File): Seq[File] =
     Option(dir.listFiles).toSeq.flatten.filter(_.isDirectory)
+
+  private def downloadAndUnpack(from: URL, toFile: File, toDir: File)(implicit log: Logger, http: HttpClient) = {
+    IO.createDirectory(toDir)
+
+    downloadOrFail(from, toFile)
+      .flatMap { file =>
+        if (unpack(file, toDir).nonEmpty) {
+          file.delete()
+          Future.successful(file)
+        }
+        else Future.failed(new Exception(s"archive $file contained no files"))
+      }
+  }
 
   /**
     * Downloads file and creates verification file if successful
@@ -140,22 +161,20 @@ object UpdateIdea {
       log.debug(s"Skip downloading $from because $to exists")
       Future.successful(to)
     } else {
-      IO.createDirectory(to.getParentFile)
       log.info(s"Downloading $from to $to")
       download(from, to)
     }
 
   private def unpack(from: File, to: File)(implicit log: Logger): Set[File] = {
+    IO.createDirectory(to)
     log.info(s"Unpacking $from to $to")
     sbt.IO.unzip(from, to)
   }
 
   private def download(from: sbt.URL, to: File)(implicit http: HttpClient): Future[File] = {
+    IO.createDirectory(to.getParentFile)
     val req = Gigahorse.url(from.toString)
     http.download(req, to)
   }
-
-  private def verifyFile(file: File): File =
-    file.getParentFile / (file.getName + ".verify")
 
 }

@@ -98,7 +98,7 @@ object Keys {
     ideaDownloadDirectory := Path.userHome / ".IdeaData" / "sdk",
     ideaEdition := IdeaEdition.Community,
     ideaDownloadSources := true,
-    ideaBaseDirectory := ideaDownloadDirectory.value / ideaBuild.value
+    ideaBaseDirectory := ideaDownloadDirectory.value / ideaBuild.value // TODO should not be bound to ideaBuild. use unique path based on url instead?
   )
 
   lazy val projectSettings: Seq[Setting[_]] = Seq(
