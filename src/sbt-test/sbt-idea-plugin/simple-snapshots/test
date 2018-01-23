@@ -1,11 +1,12 @@
 # check if everything is downloaded
 > ideaUpdate
 $ exists idea
-$ exists idea/ideaIC-172-EAP-SNAPSHOT.zip
 $ exists idea/172-EAP-SNAPSHOT
+$ exists idea/172-EAP-SNAPSHOT/download.complete
 $ exists idea/172-EAP-SNAPSHOT/lib
 $ exists idea/172-EAP-SNAPSHOT/plugins
 $ exists idea/172-EAP-SNAPSHOT/sources.zip
+$ exists idea/172-EAP-SNAPSHOT/sources.download.complete
 $ exists idea/172-EAP-SNAPSHOT/externalPlugins/scala-plugin
 $ exists idea/172-EAP-SNAPSHOT/externalPlugins/scala-plugin/lib
 $ absent idea/172-EAP-SNAPSHOT/externalPlugins/scala-plugin/Scala
