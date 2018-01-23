@@ -1,9 +1,9 @@
 # check if everything is downloaded
 > ideaUpdate
 $ exists idea
-$ exists idea/15.0.1
-$ exists idea/15.0.1/download.complete
-$ exists idea/15.0.1/lib
-$ exists idea/15.0.1/plugins
-$ exists idea/15.0.1/sources.zip
-$ exists idea/15.0.1/sources.download.complete
+$ exists idea/173.4548.10
+$ exists idea/173.4548.10/download.complete
+$ exists idea/173.4548.10/lib
+$ exists idea/173.4548.10/plugins
+$ exists idea/173.4548.10/sources.zip
+$ exists idea/173.4548.10/sources.download.complete
