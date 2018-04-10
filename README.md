@@ -20,12 +20,6 @@ From version 1.0.0, this plugin is published for sbt 0.13 and 1.0
 addSbtPlugin("org.jetbrains" % "sbt-idea-plugin" % "1.0.1")
 ```
 
-* Insert into `build.sbt`:
-
-```Scala
-enablePlugins(SbtIdeaPlugin)
-```
-
 * Run SBT and execute `updateIdea` task. It will download IDEA and external plugins used in project
 
 * Start coding

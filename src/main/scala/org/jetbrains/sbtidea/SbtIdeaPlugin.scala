@@ -5,6 +5,7 @@ import sbt.{AutoPlugin, Setting, plugins}
 
 object SbtIdeaPlugin extends AutoPlugin {
   override def requires = plugins.JvmPlugin
+  override def trigger = allRequirements
   val autoImport: Keys.type = sbtidea.Keys
   override def buildSettings: Seq[Setting[_]] = Keys.buildSettings
   override def projectSettings: Seq[Setting[_]] = Keys.projectSettings
