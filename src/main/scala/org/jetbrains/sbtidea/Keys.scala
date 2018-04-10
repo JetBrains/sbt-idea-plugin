@@ -68,16 +68,17 @@ object Keys {
 
   sealed trait IdeaPlugin {
     val name: String
-    val url: URL
   }
 
   object IdeaPlugin {
+    final case class Id(name: String, id: String) extends IdeaPlugin
     final case class Zip(name: String, url: URL) extends IdeaPlugin
     final case class Jar(name: String, url: URL) extends IdeaPlugin
   }
 
   sealed trait IdeaEdition {
     val name: String
+    def shortname: String = name.takeRight(2)
   }
 
   object IdeaEdition {

@@ -1,6 +1,7 @@
 package org.jetbrains.sbtidea.tasks
 
 import java.io.IOException
+import java.util.zip.ZipFile
 
 import org.jetbrains.sbtidea.Keys._
 import sbt.Keys._
@@ -29,7 +30,7 @@ object UpdateIdea {
     }
 
     val externalPluginsDir = baseDir / "externalPlugins"
-    downloadExternalPlugins(externalPluginsDir, externalPlugins)
+    downloadExternalPlugins(externalPluginsDir, externalPlugins, edition, build)
     movePluginsIntoRightPlace(externalPluginsDir, externalPlugins)
   }
 
@@ -54,7 +55,7 @@ object UpdateIdea {
     s"https://www.jetbrains.com/intellij-repository/$repository/com/jetbrains/intellij/idea"
   }
 
-  private def downloadExternalPlugins(baseDir: File, plugins: Seq[IdeaPlugin])(implicit log: Logger): Unit =
+  private def downloadExternalPlugins(baseDir: File, plugins: Seq[IdeaPlugin], edition: IdeaEdition, build: String)(implicit log: Logger): Unit =
     plugins.foreach { plugin =>
       val pluginDir = baseDir / plugin.name
       if (pluginDir.isDirectory)
@@ -67,6 +68,12 @@ object UpdateIdea {
             unpack(pluginZipFile, baseDir / pluginName)
           case IdeaPlugin.Jar(pluginName, pluginUrl) =>
             downloadOrFail(pluginUrl, baseDir / s"$pluginName.jar")
+          case IdeaPlugin.Id(pluginName, id) =>
+            val urlStr = s"https://plugins.jetbrains.com/pluginManager?action=download&id=$id&build=${edition.shortname}-$build"
+            val file = baseDir / s"$pluginName.plg"
+            downloadOrFail(new URL(urlStr), file)
+            if (new ZipFile(file).entries().nextElement().getName == s"$pluginName/") // zips have a single folder in root with the same name as the plugin
+              unpack(file, baseDir / pluginName)
         }
     }
 
