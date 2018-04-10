@@ -68,8 +68,9 @@ object UpdateIdea {
             unpack(pluginZipFile, baseDir / pluginName)
           case IdeaPlugin.Jar(pluginName, pluginUrl) =>
             downloadOrFail(pluginUrl, baseDir / s"$pluginName.jar")
-          case IdeaPlugin.Id(pluginName, id) =>
-            val urlStr = s"https://plugins.jetbrains.com/pluginManager?action=download&id=$id&build=${edition.shortname}-$build"
+          case IdeaPlugin.Id(pluginName, id, channel) =>
+            val chanStr = channel.map(c=>s"&channel=$c").getOrElse("")
+            val urlStr = s"https://plugins.jetbrains.com/pluginManager?action=download&id=$id$chanStr&build=${edition.shortname}-$build"
             val file = baseDir / s"$pluginName.plg"
             downloadOrFail(new URL(urlStr), file)
             if (new ZipFile(file).entries().nextElement().getName == s"$pluginName/") // zips have a single folder in root with the same name as the plugin

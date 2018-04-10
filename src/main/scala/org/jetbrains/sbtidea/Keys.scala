@@ -71,7 +71,7 @@ object Keys {
   }
 
   object IdeaPlugin {
-    final case class Id(name: String, id: String) extends IdeaPlugin
+    final case class Id(name: String, id: String, channel: Option[String]) extends IdeaPlugin
     final case class Zip(name: String, url: URL) extends IdeaPlugin
     final case class Jar(name: String, url: URL) extends IdeaPlugin
   }
