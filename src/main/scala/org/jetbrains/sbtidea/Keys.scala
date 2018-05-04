@@ -1,5 +1,6 @@
 package org.jetbrains.sbtidea
 
+import org.jetbrains.sbt.tasks.PluginPackager
 import sbt.Keys._
 import sbt._
 
@@ -65,6 +66,36 @@ object Keys {
     "idea-full-jars",
     "Complete classpath of IDEA's and internal and external plugins' jars")
 
+  lazy val packageMethod = SettingKey[PackagingMethod](
+    "package-method",
+    "What kind of artifact to produce from given project"
+  )
+
+  lazy val libraryMappings = SettingKey[Seq[(ModuleID, Option[File])]](
+    "library-mappings",
+    "Overrides for library mappings in artifact"
+  )
+
+  lazy val packagePlugin = TaskKey[File](
+    "package-plugin",
+    "Create plugin distribution"
+  )
+
+  lazy val dumpDependencyStructure = Def.task {
+    (thisProjectRef.value,
+      libraryDependencies.value,
+      libraryMappings.value,
+      packageMethod.value)
+  }
+
+  sealed trait PackagingMethod
+
+  object PackagingMethod {
+    final case class Skip() extends PackagingMethod
+    final case class MergeIntoParent() extends PackagingMethod
+    final case class MergeIntoOther(projectRef: ProjectRef) extends PackagingMethod
+    final case class Standalone(targetFile: Option[File] = None) extends PackagingMethod
+  }
 
   sealed trait IdeaPlugin {
     val name: String
@@ -126,6 +157,17 @@ object Keys {
 
     ideaPluginFile := packageBin.in(Compile).value,
     ideaPublishSettings := PublishSettings("", "", "", None),
-    publishPlugin := tasks.PublishPlugin.apply(ideaPublishSettings.value, ideaPluginFile.value, streams.value)
+    publishPlugin := tasks.PublishPlugin.apply(ideaPublishSettings.value, ideaPluginFile.value, streams.value),
+    packageMethod := PackagingMethod.MergeIntoParent(),
+    libraryMappings := Seq.empty,
+
+    packagePlugin := Def.taskDyn {
+      val rootProject = thisProjectRef.value
+      val buildDeps = buildDependencies.value
+      val data = dumpDependencyStructure.all(ScopeFilter(inAnyProject)).value
+      Def.task { PluginPackager(rootProject, data, buildDeps) }
+    }.value,
+    unmanagedJars in Compile += file(System.getProperty("java.home")).getParentFile / "lib" / "tools.jar"
   )
+
 }
