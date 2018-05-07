@@ -1,6 +1,7 @@
 package org.jetbrains.sbtidea
 
 import org.jetbrains.sbt.tasks.PluginPackager
+import org.jetbrains.sbt.tasks.PluginPackager.ProjectData
 import sbt.Keys._
 import sbt._
 
@@ -71,9 +72,19 @@ object Keys {
     "What kind of artifact to produce from given project"
   )
 
-  lazy val libraryMappings = SettingKey[Seq[(ModuleID, Option[File])]](
+  lazy val libraryMappings = SettingKey[Seq[(ModuleID, Option[String])]](
     "library-mappings",
     "Overrides for library mappings in artifact"
+  )
+
+  lazy val additionalFileMappings = SettingKey[Seq[(File, File)]](
+    "additional-file-mappings",
+    "Extra files or directories to include into the artifact"
+  )
+
+  lazy val pluginOutputDir = SettingKey[File](
+    "plugin-output-dir",
+    "Folder to write plugin artifact to"
   )
 
   lazy val packagePlugin = TaskKey[File](
@@ -82,9 +93,12 @@ object Keys {
   )
 
   lazy val dumpDependencyStructure = Def.task {
-    (thisProjectRef.value,
-      libraryDependencies.value,
+    ProjectData(
+      thisProjectRef.value,
+      externalDependencyClasspath.in(Compile).value,
+      productDirectories.in(Compile).value,
       libraryMappings.value,
+      additionalFileMappings.value,
       packageMethod.value)
   }
 
@@ -159,13 +173,15 @@ object Keys {
     ideaPublishSettings := PublishSettings("", "", "", None),
     publishPlugin := tasks.PublishPlugin.apply(ideaPublishSettings.value, ideaPluginFile.value, streams.value),
     packageMethod := PackagingMethod.MergeIntoParent(),
-    libraryMappings := Seq.empty,
-
+    libraryMappings := Seq("org.scala-lang" % "scala-library" % scalaVersion.value -> None),
+    additionalFileMappings := Seq.empty,
+    pluginOutputDir := baseDirectory.value / "artifact",
     packagePlugin := Def.taskDyn {
       val rootProject = thisProjectRef.value
       val buildDeps = buildDependencies.value
       val data = dumpDependencyStructure.all(ScopeFilter(inAnyProject)).value
-      Def.task { PluginPackager(rootProject, data, buildDeps) }
+      val outputDir = pluginOutputDir.value
+      Def.task { PluginPackager(rootProject, outputDir, data, buildDeps) }
     }.value,
     unmanagedJars in Compile += file(System.getProperty("java.home")).getParentFile / "lib" / "tools.jar"
   )
