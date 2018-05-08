@@ -1,15 +1,27 @@
 package org.jetbrains.sbt
 package tasks
 
+import java.util
+
 import org.jetbrains.sbtidea.Keys.PackagingMethod
 import org.jetbrains.sbtidea.Keys.PackagingMethod.{MergeIntoOther, MergeIntoParent, Skip, Standalone}
 import sbt.Def.Classpath
 import sbt.Keys.moduleID
 import sbt.jetbrains.apiAdapter._
-import sbt.{ModuleID, ProjectRef, File, _}
+import sbt.{File, ModuleID, ProjectRef, _}
 
 object PluginPackager {
-  case class ModuleKey(id:ModuleID, attributes: Map[String,String])
+  case class ModuleKey(id:ModuleID, attributes: Map[String,String]){
+    override def equals(o: scala.Any): Boolean = o match {
+      case ModuleKey(_id, _attributes) =>
+        id.organization.equals(_id.organization) &&
+          id.name.matches(_id.name) &&
+          id.revision.matches(_id.revision) &&
+          attributes == _attributes
+      case _ => false
+    }
+    override def hashCode(): Int = id.organization.hashCode
+  }
   case class ProjectData(thisProject: ProjectRef,
                          cp: Classpath, productDirs: Seq[File],
                          libMapping: Seq[(ModuleID, Option[String])],
@@ -40,15 +52,16 @@ object PluginPackager {
 
       var artifactMap = Map[File, File]()
       val ProjectData(_, cp, productDirs, libMapping, additionalMappings, method) = projectMap(ref)
-      val mappings = libMapping.map(m => moduleKey(m._1) -> m._2).toMap
+      val mappings = new util.HashMap[ModuleKey, Option[String]]()
+      libMapping.foreach(m => mappings.put(moduleKey(m._1), m._2))
       val resolvedLibs = for {
         jarFile <- cp
         moduleId <- jarFile.get(moduleID.key)
-      } yield { (moduleKey(moduleId), jarFile.data)}
+      } yield { (moduleKey(moduleId), jarFile.data) }
 
       val processedLibs = resolvedLibs.collect {
-        case (mod, file) if !mappings.contains(mod) => file -> outputDir / mkRelativeLibPath(file)
-        case (mod, file) if mappings(mod).isDefined => file -> outputDir / mappings(mod).get
+        case (mod, file) if !mappings.containsKey(mod)                 => file -> outputDir / mkRelativeLibPath(file)
+        case (mod, file) if mappings.getOrDefault(mod, None).isDefined => file -> outputDir / mappings.get(mod).get
       }
 
       method match {
