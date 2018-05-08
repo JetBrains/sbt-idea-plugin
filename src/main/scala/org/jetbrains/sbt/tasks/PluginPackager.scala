@@ -93,6 +93,72 @@ object PluginPackager {
     buildStructure(rootProject)
   }
 
+  def packageArtifact(structure: Map[File, File]): Unit = structure.foreach { entry =>
+    val (from, to) = entry
+    if (from.isDirectory) {
+      if (to.isDirectory) IO.copyDirectory(from, to)
+      else                zipDirectory(from, to)
+    } else {
+      if (to.isDirectory) IO.copy(Seq(from -> to))
+      else                copyZipToZip(from, to)
+    }
+  }
+
+  private def copyZipToZip(input: File, output: File): Unit = {
+    if (!output.exists()) {
+      output.getParentFile.mkdirs()
+      Files.copy(Paths.get(input.toURI), Paths.get(output.toURI))
+    } else {
+      val inStream = new ZipInputStream(new BufferedInputStream(new FileInputStream(input)))
+      val outStream = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(output)))
+      try {
+        val buffer = new Array[Byte](64 * 1024)
+        var entry = inStream.getNextEntry
+        while (entry != null) {
+          try {
+            outStream.putNextEntry(entry)
+            var numRead = inStream.read(buffer)
+            while (numRead > 0) {
+              outStream.write(buffer, 0, numRead)
+              numRead = inStream.read(buffer)
+            }
+            outStream.closeEntry()
+          } catch {
+            case ze: ZipException if ze.getMessage.startsWith("duplicate entry") => //ignore
+            case e: IOException => println(s"$e")
+          }
+          entry = inStream.getNextEntry
+        }
+      } finally {
+        if (inStream != null) inStream.close()
+      }
+    }
+  }
+
+  private def zipDirectory(dir: File, output: File): Unit = {
+    if (!output.exists()) {
+      output.getParentFile.mkdirs()
+      output.createNewFile()
+    }
+    val outputStream = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(output)))
+    val folder = Paths.get(dir.toURI)
+
+    Files.walkFileTree(folder, new SimpleFileVisitor[Path]() {
+      override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
+        outputStream.putNextEntry(new ZipEntry(folder.relativize(file).toString))
+        Files.copy(file, outputStream)
+        outputStream.closeEntry()
+        FileVisitResult.CONTINUE
+      }
+      override def preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult = {
+        outputStream.putNextEntry(new ZipEntry(folder.relativize(dir).toString + "/"))
+        outputStream.closeEntry()
+        FileVisitResult.CONTINUE
+      }
+    })
+  }
+
+
   /**
     * Extract only key-relevant parts of the ModuleId, so that mappings succeed even if they contain extra attributes
     */
