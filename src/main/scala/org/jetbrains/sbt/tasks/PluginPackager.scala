@@ -1,7 +1,11 @@
 package org.jetbrains.sbt
 package tasks
 
+import java.io._
+import java.nio.file._
+import java.nio.file.attribute.BasicFileAttributes
 import java.util
+import java.util.zip.{ZipEntry, ZipException, ZipInputStream, ZipOutputStream}
 
 import org.jetbrains.sbtidea.Keys.PackagingMethod
 import org.jetbrains.sbtidea.Keys.PackagingMethod.{MergeIntoOther, MergeIntoParent, Skip, Standalone}
@@ -28,10 +32,10 @@ object PluginPackager {
                          additionalMappings: Seq[(File, File)],
                          packageMethod: PackagingMethod)
 
-  def apply(rootProject: ProjectRef,
+  def artifactMappings(rootProject: ProjectRef,
             outputDir: File,
             projectsData: Seq[ProjectData],
-            buildDependencies: BuildDependencies): File = {
+            buildDependencies: BuildDependencies): Map[File, File] = {
 
     def mkProjectData(projectData: ProjectData): ProjectData = {
       if (projectData.thisProject == rootProject && !projectData.packageMethod.isInstanceOf[Standalone]) {
@@ -78,15 +82,15 @@ object PluginPackager {
           productDirs.foreach { artifactMap += _ -> file }
       }
 
+      buildDependencies.classpathRefs(ref).map(buildStructure).foreach(artifactMap ++= _)
+
       artifactMap ++= processedLibs
       artifactMap ++= additionalMappings
 
-      buildDependencies.classpathRefs(ref).map(buildStructure).foreach(artifactMap ++= _)
       artifactMap
     }
 
-    println(buildStructure(rootProject).mkString("\n"))
-    outputDir
+    buildStructure(rootProject)
   }
 
   /**

@@ -87,6 +87,11 @@ object Keys {
     "Folder to write plugin artifact to"
   )
 
+  lazy val artifactMappings = TaskKey[Map[File, File]](
+    "artifact-mappings",
+    "Internal structure of plugin artifact"
+  )
+
   lazy val packagePlugin = TaskKey[File](
     "package-plugin",
     "Create plugin distribution"
@@ -176,12 +181,17 @@ object Keys {
     libraryMappings := Seq("org.scala-lang" % "scala-library" % scalaVersion.value -> None),
     additionalFileMappings := Seq.empty,
     pluginOutputDir := baseDirectory.value / "artifact",
-    packagePlugin := Def.taskDyn {
+    artifactMappings := Def.taskDyn {
       val rootProject = thisProjectRef.value
       val buildDeps = buildDependencies.value
       val data = dumpDependencyStructure.all(ScopeFilter(inAnyProject)).value
       val outputDir = pluginOutputDir.value
-      Def.task { PluginPackager(rootProject, outputDir, data, buildDeps) }
+      Def.task { PluginPackager.artifactMappings(rootProject, outputDir, data, buildDeps) }
+    }.value,
+    packagePlugin := Def.taskDyn {
+      val mappings = artifactMappings.value
+      val outputDir = pluginOutputDir.value
+      Def.task{ PluginPackager.packageArtifact(mappings); outputDir }
     }.value,
     unmanagedJars in Compile += file(System.getProperty("java.home")).getParentFile / "lib" / "tools.jar"
   )
