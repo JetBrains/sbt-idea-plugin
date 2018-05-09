@@ -191,7 +191,7 @@ object Keys {
     packagePlugin := Def.taskDyn {
       val mappings = artifactMappings.value
       val outputDir = pluginOutputDir.value
-      Def.task{ PluginPackager.packageArtifact(mappings); outputDir }
+      Def.task{ IO.delete(outputDir); PluginPackager.packageArtifact(mappings); outputDir }
     }.value,
     unmanagedJars in Compile += file(System.getProperty("java.home")).getParentFile / "lib" / "tools.jar"
   )
