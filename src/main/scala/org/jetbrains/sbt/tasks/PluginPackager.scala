@@ -2,6 +2,7 @@ package org.jetbrains.sbt
 package tasks
 
 import java.io._
+import java.net.URI
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
 import java.util
@@ -138,24 +139,20 @@ object PluginPackager {
   private def zipDirectory(dir: File, output: File): Unit = {
     if (!output.exists()) {
       output.getParentFile.mkdirs()
-      output.createNewFile()
     }
-    val outputStream = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(output)))
+    val env = new util.HashMap[String, String]()
+    env.put("create", String.valueOf(Files.notExists(output.toPath)))
+    val jarFs = FileSystems.newFileSystem(URI.create("jar:" + output.toPath.toUri), env)
     val folder = Paths.get(dir.toURI)
 
     Files.walkFileTree(folder, new SimpleFileVisitor[Path]() {
       override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
-        outputStream.putNextEntry(new ZipEntry(folder.relativize(file).toString))
-        Files.copy(file, outputStream)
-        outputStream.closeEntry()
-        FileVisitResult.CONTINUE
-      }
-      override def preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult = {
-        outputStream.putNextEntry(new ZipEntry(folder.relativize(dir).toString + "/"))
-        outputStream.closeEntry()
+        val newFilePath = jarFs.getPath(folder.relativize(file).toString)
+        Files.copy(file, newFilePath, StandardCopyOption.REPLACE_EXISTING)
         FileVisitResult.CONTINUE
       }
     })
+    jarFs.close()
   }
 
 
