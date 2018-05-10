@@ -1,12 +1,11 @@
 package org.jetbrains.sbt
 package tasks
 
-import java.io._
 import java.net.URI
+import java.nio.file.FileSystems.newFileSystem
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
 import java.util
-import java.util.zip.{ZipEntry, ZipException, ZipInputStream, ZipOutputStream}
 
 import org.jetbrains.sbtidea.Keys.PackagingMethod
 import org.jetbrains.sbtidea.Keys.PackagingMethod.{MergeIntoOther, MergeIntoParent, Skip, Standalone}
@@ -98,61 +97,35 @@ object PluginPackager {
     val (from, to) = entry
     if (from.isDirectory) {
       if (to.isDirectory) IO.copyDirectory(from, to)
-      else                zipDirectory(from, to)
+      else                zip(from, to)
     } else {
       if (to.isDirectory) IO.copy(Seq(from -> to))
-      else                copyZipToZip(from, to)
+      else                zip(from, to)
     }
   }
 
-  private def copyZipToZip(input: File, output: File): Unit = {
-    if (!output.exists()) {
-      output.getParentFile.mkdirs()
-      Files.copy(Paths.get(input.toURI), Paths.get(output.toURI))
-    } else {
-      val inStream = new ZipInputStream(new BufferedInputStream(new FileInputStream(input)))
-      val outStream = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(output)))
-      try {
-        val buffer = new Array[Byte](64 * 1024)
-        var entry = inStream.getNextEntry
-        while (entry != null) {
-          try {
-            outStream.putNextEntry(entry)
-            var numRead = inStream.read(buffer)
-            while (numRead > 0) {
-              outStream.write(buffer, 0, numRead)
-              numRead = inStream.read(buffer)
-            }
-            outStream.closeEntry()
-          } catch {
-            case ze: ZipException if ze.getMessage.startsWith("duplicate entry") => //ignore
-            case e: IOException => println(s"$e")
-          }
-          entry = inStream.getNextEntry
-        }
-      } finally {
-        if (inStream != null) inStream.close()
-      }
-    }
-  }
 
-  private def zipDirectory(dir: File, output: File): Unit = {
-    if (!output.exists()) {
-      output.getParentFile.mkdirs()
-    }
+  private def zip(input: File, output: File): Unit = {
+    if (!output.exists()) output.getParentFile.mkdirs()
     val env = new util.HashMap[String, String]()
     env.put("create", String.valueOf(Files.notExists(output.toPath)))
-    val jarFs = FileSystems.newFileSystem(URI.create("jar:" + output.toPath.toUri), env)
-    val folder = Paths.get(dir.toURI)
+    val jarFs     = newFileSystem(URI.create("jar:" + output.toPath.toUri), env)
+    val inputFS   = if (input.getName.endsWith(".jar")) Some(newFileSystem(URI.create( "jar:" + input.toPath.toUri), env)) else None
+    val inputPath = inputFS.map(_.getPath("/")).getOrElse(input.toPath)
 
-    Files.walkFileTree(folder, new SimpleFileVisitor[Path]() {
-      override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
-        val newFilePath = jarFs.getPath(folder.relativize(file).toString)
-        Files.copy(file, newFilePath, StandardCopyOption.REPLACE_EXISTING)
-        FileVisitResult.CONTINUE
-      }
-    })
-    jarFs.close()
+    try {
+      Files.walkFileTree(inputPath, new SimpleFileVisitor[Path]() {
+        override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
+          val newFilePath = jarFs.getPath(inputPath.relativize(file).toString)
+          if (newFilePath.getParent != null) Files.createDirectories(newFilePath.getParent)
+          Files.copy(file, newFilePath, StandardCopyOption.REPLACE_EXISTING)
+          FileVisitResult.CONTINUE
+        }
+      })
+    } finally {
+      inputFS.foreach(_.close())
+      jarFs.close()
+    }
   }
 
 
