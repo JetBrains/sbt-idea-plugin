@@ -44,14 +44,14 @@ object PluginPackager {
     }
 
     val projectMap = projectsData.iterator.map(x => x.thisProject -> mkProjectData(x) ).toMap
-    val revProjectMap = projectsData.iterator.flatMap(x => buildDependencies.classpathRefs(x.thisProject).map(_ -> x.thisProject)).toMap
+    val revProjectMap = projectsData.flatMap(x => buildDependencies.classpathRefs(x.thisProject).map(_ -> x.thisProject))
 
 
     def buildStructure(ref: ProjectRef): Map[File, File] = {
       def findParentToMerge(ref: ProjectRef): ProjectRef = projectMap.getOrElse(ref,
         throw new RuntimeException(s"Project $ref has no parent to merge into")) match {
           case ProjectData(p, _, _, _, _, _: Standalone) => p
-          case _ => findParentToMerge(revProjectMap(ref))
+          case _ => findParentToMerge(revProjectMap.filter(_._1 == ref).toSeq.head._2)
       }
 
       var artifactMap = Map[File, File]()
@@ -140,7 +140,9 @@ object PluginPackager {
         .filter { case (k,_) => k == "scalaVersion" || k == "sbtVersion" }
     )
 
-  private def mkProjectJarPath(ref: ProjectRef) = s"${ref.project}.jar"
+  private def mkProjectJarPath(project: Project): String = mkProjectJarPath(project.project)
+
+  private def mkProjectJarPath(project: ProjectReference): String = s"${project.project}.jar"
 
   private def mkRelativeLibPath(lib: File) = s"lib/${lib.getName}"
 }
