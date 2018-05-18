@@ -112,7 +112,7 @@ object Keys {
   object PackagingMethod {
     final case class Skip() extends PackagingMethod
     final case class MergeIntoParent() extends PackagingMethod
-    final case class MergeIntoOther(projectRef: ProjectRef) extends PackagingMethod
+    final case class MergeIntoOther(projectRef: Project) extends PackagingMethod
     final case class Standalone(targetFile: Option[File] = None) extends PackagingMethod
   }
 
@@ -193,6 +193,8 @@ object Keys {
       val outputDir = pluginOutputDir.value
       Def.task{ IO.delete(outputDir); PluginPackager.packageArtifact(mappings); outputDir }
     }.value,
+    aggregate.in(artifactMappings) := false,
+    aggregate.in(packagePlugin) := false,
     unmanagedJars in Compile += file(System.getProperty("java.home")).getParentFile / "lib" / "tools.jar"
   )
 
