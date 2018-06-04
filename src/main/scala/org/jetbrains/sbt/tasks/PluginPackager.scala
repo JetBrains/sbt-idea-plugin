@@ -203,7 +203,13 @@ object PluginPackager {
 
   private def mkProjectJarPath(project: Project): String = mkProjectJarPath(project.project)
 
-  private def mkProjectJarPath(project: ProjectReference): String = s"${project.project}.jar"
+  private def mkProjectJarPath(project: ProjectReference): String = s"${extractName(project)}.jar"
 
   private def mkRelativeLibPath(lib: File) = s"lib/${lib.getName}"
+
+  private def extractName(project: ProjectReference): String = {
+    val str = project.toString
+    val commaIdx = str.indexOf(',')
+    str.substring(commaIdx+1, str.length-1)
+  }
 }
