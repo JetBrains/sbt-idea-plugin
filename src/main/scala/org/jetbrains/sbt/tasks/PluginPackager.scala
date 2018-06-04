@@ -12,25 +12,9 @@ import org.jetbrains.sbtidea.Keys.PackagingMethod.{MergeIntoOther, MergeIntoPare
 import sbt.Def.Classpath
 import sbt.Keys.moduleID
 import sbt.jetbrains.apiAdapter._
-import sbt.{File, ModuleID, ProjectRef, _}
+import sbt.{File, ModuleID, ProjectRef, UpdateReport, _}
 
 object PluginPackager {
-  case class ModuleKey(id:ModuleID, attributes: Map[String,String]){
-    override def equals(o: scala.Any): Boolean = o match {
-      case ModuleKey(_id, _attributes) =>
-        id.organization.equals(_id.organization) &&
-          id.name.matches(_id.name) &&
-          id.revision.matches(_id.revision) &&
-          attributes == _attributes
-      case _ => false
-    }
-    override def hashCode(): Int = id.organization.hashCode
-  }
-  case class ProjectData(thisProject: ProjectRef,
-                         cp: Classpath, productDirs: Seq[File],
-                         libMapping: Seq[(ModuleID, Option[String])],
-                         additionalMappings: Seq[(File, File)],
-                         packageMethod: PackagingMethod)
 
   def artifactMappings(rootProject: ProjectRef,
             outputDir: File,
@@ -43,29 +27,34 @@ object PluginPackager {
       } else projectData
     }
 
-    val projectMap = projectsData.iterator.map(x => x.thisProject -> mkProjectData(x) ).toMap
+    val projectMap    = projectsData.iterator.map(x => x.thisProject -> mkProjectData(x)).toMap
     val revProjectMap = projectsData.flatMap(x => buildDependencies.classpathRefs(x.thisProject).map(_ -> x.thisProject))
 
 
     def buildStructure(ref: ProjectRef): Map[File, File] = {
+      var artifactMap = Map[File, File]()
+
       def findParentToMerge(ref: ProjectRef): ProjectRef = projectMap.getOrElse(ref,
         throw new RuntimeException(s"Project $ref has no parent to merge into")) match {
-          case ProjectData(p, _, _, _, _, _: Standalone) => p
-          case _ => findParentToMerge(revProjectMap.filter(_._1 == ref).toSeq.head._2)
+        case ProjectData(p, _, _, _, _, _, _, _: Standalone) => p
+        case _ => findParentToMerge(revProjectMap.filter(_._1 == ref).toSeq.head._2)
       }
 
-      var artifactMap = Map[File, File]()
-      val ProjectData(_, cp, productDirs, libMapping, additionalMappings, method) = projectMap(ref)
-      val mappings = new util.HashMap[ModuleKey, Option[String]]()
-      libMapping.foreach(m => mappings.put(moduleKey(m._1), m._2))
-      val resolvedLibs = for {
-        jarFile <- cp
-        moduleId <- jarFile.get(moduleID.key)
-      } yield { (moduleKey(moduleId), jarFile.data) }
+      val ProjectData(_, cp, definedDeps, productDirs, report, libMapping, additionalMappings, method) = projectMap(ref)
 
-      val processedLibs = resolvedLibs.collect {
-        case (mod, file) if !mappings.containsKey(mod)                 => file -> outputDir / mkRelativeLibPath(file)
-        case (mod, file) if mappings.getOrDefault(mod, None).isDefined => file -> outputDir / mappings.get(mod).get
+      implicit val scalaVersion = ProjectScalaVersion(definedDeps.find(_.name == "scala-library"))
+
+      val resolver              = new TransitiveDeps(report, "compile")
+      val mappings              = libMapping.map(x => x._1.key -> x._2).toMap
+      val resolvedLibsNoEvicted = buildModuleIdMap(cp)
+      val resolvedLibs          = updateWithEvictionMappings(resolvedLibsNoEvicted, resolver.evicted)
+      val transitiveDeps        = definedDeps
+        .filter(_.configurations.isEmpty)
+        .map(_.key)
+        .flatMap(resolver.collectTransitiveDeps)
+      val processedLibs = transitiveDeps.map(m => m -> resolvedLibs(m)).collect {
+        case (mod, file) if !mappings.contains(mod) => file -> outputDir / mkRelativeLibPath(file)
+        case (mod, file) if mappings.getOrElse(mod, None).isDefined => file -> outputDir / mappings(mod).get
       }
 
       method match {
@@ -83,7 +72,6 @@ object PluginPackager {
       }
 
       buildDependencies.classpathRefs(ref).map(buildStructure).foreach(artifactMap ++= _)
-
       artifactMap ++= processedLibs
       artifactMap ++= additionalMappings
 
@@ -91,6 +79,17 @@ object PluginPackager {
     }
 
     buildStructure(rootProject)
+  }
+
+  private def buildModuleIdMap(cp: Classpath)(implicit scalaVersion: ProjectScalaVersion): Map[ModuleKey, File] = (for {
+    jarFile <- cp
+    moduleId <- jarFile.get(moduleID.key)
+  } yield { moduleId.key -> jarFile.data }).toMap
+
+  private def updateWithEvictionMappings(cpNoEvicted: Map[ModuleKey, File], evicted: Seq[ModuleKey]): Map[ModuleKey, File] = {
+    val eviictionSubstitutes = evicted
+      .map(ev => ev -> cpNoEvicted.find(entry => entry._1 ~== ev).map(_._2).getOrElse(throw new RuntimeException(s"Can't resolve eviction for $ev")))
+    cpNoEvicted ++ eviictionSubstitutes
   }
 
   def packageArtifact(structure: Map[File, File]): Unit = structure.foreach { entry =>
@@ -128,17 +127,79 @@ object PluginPackager {
     }
   }
 
+  case class ProjectData(thisProject: ProjectRef,
+                         cp: Classpath,
+                         definedDeps: Seq[ModuleID],
+                         productDirs: Seq[File],
+                         report: UpdateReport,
+                         libMapping: Seq[(ModuleID, Option[String])],
+                         additionalMappings: Seq[(File, File)],
+                         packageMethod: PackagingMethod)
+
 
   /**
     * Extract only key-relevant parts of the ModuleId, so that mappings succeed even if they contain extra attributes
     */
-  private def moduleKey(moduleId: ModuleID): ModuleKey =
-    ModuleKey (
-      moduleId.organization % moduleId.name % moduleId.revision,
-      moduleId.extraAttributes
-        .map { case (k,v) => k.stripPrefix("e:") -> v}
-        .filter { case (k,_) => k == "scalaVersion" || k == "sbtVersion" }
-    )
+  implicit class ModuleIdExt(val moduleId: ModuleID) extends AnyVal {
+
+    def key(implicit scalaVersion: ProjectScalaVersion): ModuleKey = {
+      val versionSuffix = moduleId.crossVersion match {
+        case _:CrossVersion.Binary if scalaVersion.isDefined =>
+          "_" + CrossVersion.binaryScalaVersion(scalaVersion.str)
+        case _ => ""
+      }
+      ModuleKey(
+        moduleId.organization % (moduleId.name + versionSuffix) % moduleId.revision,
+        moduleId.extraAttributes
+          .map    { case (k, v) => k.stripPrefix("e:") -> v }
+          .filter { case (k, _) => k == "scalaVersion" || k == "sbtVersion" })
+    }
+
+  }
+
+  case class ModuleKey(id:ModuleID, attributes: Map[String,String]){
+    def ~==(other: ModuleKey): Boolean = id.organization == other.id.organization && id.name == other.id.name
+    override def hashCode(): Int = id.organization.hashCode
+    override def equals(o: scala.Any): Boolean = o match {
+      case ModuleKey(_id, _attributes) =>
+        id.organization.equals(_id.organization) &&
+          id.name.matches(_id.name) &&
+          id.revision.matches(_id.revision) &&
+          attributes == _attributes
+      case _ => false
+    }
+  }
+
+  class TransitiveDeps(report: UpdateReport, configuration: String)(implicit scalaVersion: ProjectScalaVersion) {
+    val structure: Map[ModuleKey, Seq[ModuleKey]] = buildTransitiveStructure()
+    val evicted:   Seq[ModuleKey]                 = report.configurations
+      .find(_.configuration.toString().contains(configuration))
+      .map (_.evicted.map(_.key))
+      .getOrElse(Seq.empty)
+
+    private def buildTransitiveStructure(): Map[ModuleKey, Seq[ModuleKey]] = {
+      report.configurations.find(_.configuration.toString().contains(configuration)) match {
+        case Some(conf) =>
+          val edges = conf.modules.flatMap(m => m.callers.map(caller => caller.caller.key -> m.module.key))
+          edges.foldLeft(Map[ModuleKey, Seq[ModuleKey]]()) {
+            case (map, (caller, mod)) if caller.id.name.startsWith("temp-resolve") => map + (mod -> Seq.empty) // top level dependency
+            case (map, (caller, mod)) => map + (caller -> (map.getOrElse(caller, Seq()) :+ mod))
+          }
+        case None => Map.empty
+      }
+    }
+
+    def collectTransitiveDeps(moduleID: ModuleKey): Set[ModuleKey] = {
+      val deps = structure.getOrElse(moduleID, Seq.empty)
+      (deps ++ deps.flatMap(collectTransitiveDeps) :+ moduleID).toSet
+    }
+  }
+
+
+  case class ProjectScalaVersion(libModule: Option[ModuleID]) {
+    def isDefined = libModule.isDefined
+    def str = libModule.map(_.revision).getOrElse("")
+  }
 
   private def mkProjectJarPath(project: Project): String = mkProjectJarPath(project.project)
 

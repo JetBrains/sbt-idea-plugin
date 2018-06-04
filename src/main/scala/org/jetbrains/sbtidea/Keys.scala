@@ -101,7 +101,9 @@ object Keys {
     ProjectData(
       thisProjectRef.value,
       externalDependencyClasspath.in(Compile).value,
+      libraryDependencies.in(Compile).value,
       productDirectories.in(Compile).value,
+      update.value,
       libraryMappings.value,
       additionalFileMappings.value,
       packageMethod.value)
