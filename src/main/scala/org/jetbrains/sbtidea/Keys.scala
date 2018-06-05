@@ -82,6 +82,11 @@ object Keys {
     "Extra files or directories to include into the artifact"
   )
 
+  lazy val assembleLibraries = SettingKey[Boolean](
+    "assemble-libraries",
+    "Should the project library dependencies be merged inside the project artifact"
+  )
+
   lazy val pluginOutputDir = SettingKey[File](
     "plugin-output-dir",
     "Folder to write plugin artifact to"
@@ -102,6 +107,7 @@ object Keys {
       thisProjectRef.value,
       externalDependencyClasspath.in(Compile).value,
       libraryDependencies.in(Compile).value,
+      assembleLibraries.value,
       productDirectories.in(Compile).value,
       update.value,
       libraryMappings.value,
@@ -182,6 +188,7 @@ object Keys {
     packageMethod := PackagingMethod.MergeIntoParent(),
     libraryMappings := Seq("org.scala-lang" % "scala-library" % scalaVersion.value -> None),
     additionalFileMappings := Seq.empty,
+    assembleLibraries := false,
     pluginOutputDir := baseDirectory.value / "artifact",
     artifactMappings := Def.taskDyn {
       val rootProject = thisProjectRef.value

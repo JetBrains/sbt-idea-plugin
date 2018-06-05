@@ -36,11 +36,11 @@ object PluginPackager {
 
       def findParentToMerge(ref: ProjectRef): ProjectRef = projectMap.getOrElse(ref,
         throw new RuntimeException(s"Project $ref has no parent to merge into")) match {
-        case ProjectData(p, _, _, _, _, _, _, _: Standalone) => p
+        case ProjectData(p, _, _, _, _, _, _, _, _: Standalone) => p
         case _ => findParentToMerge(revProjectMap.filter(_._1 == ref).toSeq.head._2)
       }
 
-      val ProjectData(_, cp, definedDeps, productDirs, report, libMapping, additionalMappings, method) = projectMap(ref)
+      val ProjectData(_, cp, definedDeps, assembleLibraries, productDirs, report, libMapping, additionalMappings, method) = projectMap(ref)
 
       implicit val scalaVersion = ProjectScalaVersion(definedDeps.find(_.name == "scala-library"))
 
@@ -57,24 +57,33 @@ object PluginPackager {
         case (mod, file) if mappings.getOrElse(mod, None).isDefined => file -> outputDir / mappings(mod).get
       }
 
-      method match {
-        case Skip() =>
+      buildDependencies.classpathRefs(ref).map(buildStructure).foreach(artifactMap ++= _)
+
+      val targetJar = method match {
+        case Skip() => None
         case MergeIntoParent() =>
           val parent = findParentToMerge(ref)
           val parentFile = mkProjectJarPath(parent)
-            productDirs.foreach { artifactMap += _ -> outputDir / parentFile }
+          productDirs.foreach { artifactMap += _ -> outputDir / parentFile }
+          Some(outputDir / parentFile)
         case MergeIntoOther(projectRef) =>
           val otherFile = mkProjectJarPath(projectRef)
-          productDirs.foreach { artifactMap += _ -> outputDir/ otherFile }
+          productDirs.map { artifactMap += _ -> outputDir/ otherFile }
+          Some(outputDir/ otherFile)
         case Standalone(targetFile) =>
           val file = targetFile.getOrElse(outputDir / mkProjectJarPath(ref))
           productDirs.foreach { artifactMap += _ -> file }
+          Some(file)
       }
 
-      buildDependencies.classpathRefs(ref).map(buildStructure).foreach(artifactMap ++= _)
-      artifactMap ++= processedLibs
-      artifactMap ++= additionalMappings
+      targetJar match {
+        case Some(file) if assembleLibraries =>
+          artifactMap ++= processedLibs.map { case (in, _) => in -> file }
+        case _ =>
+          artifactMap ++= processedLibs
+      }
 
+      artifactMap ++= additionalMappings
       artifactMap
     }
 
@@ -130,6 +139,7 @@ object PluginPackager {
   case class ProjectData(thisProject: ProjectRef,
                          cp: Classpath,
                          definedDeps: Seq[ModuleID],
+                         assembleLibraries: Boolean,
                          productDirs: Seq[File],
                          report: UpdateReport,
                          libMapping: Seq[(ModuleID, Option[String])],
