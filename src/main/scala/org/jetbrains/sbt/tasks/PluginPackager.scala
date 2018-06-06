@@ -114,6 +114,7 @@ object PluginPackager {
 
 
   private def zip(input: File, output: File): Unit = {
+    if (!input.exists()) return
     if (!output.exists()) output.getParentFile.mkdirs()
     val env = new util.HashMap[String, String]()
     env.put("create", String.valueOf(Files.notExists(output.toPath)))
