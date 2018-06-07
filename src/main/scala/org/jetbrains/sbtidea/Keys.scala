@@ -186,7 +186,8 @@ object Keys {
     ideaPublishSettings := PublishSettings("", "", "", None),
     publishPlugin := tasks.PublishPlugin.apply(ideaPublishSettings.value, ideaPluginFile.value, streams.value),
     packageMethod := PackagingMethod.MergeIntoParent(),
-    libraryMappings := Seq("org.scala-lang" % "scala-.*" % ".*" -> None),
+    libraryMappings := "org.scala-lang"         % "scala-.*" % ".*" -> None ::
+                       "org.scala-lang.modules" % "scala-.*" % ".*" -> None :: Nil,
     additionalFileMappings := Seq.empty,
     assembleLibraries := false,
     pluginOutputDir := baseDirectory.value / "artifact",
