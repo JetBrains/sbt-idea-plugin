@@ -66,12 +66,16 @@ object PluginPackager {
           val parentFile = mkProjectJarPath(parent)
           productDirs.foreach { artifactMap += _ -> outputDir / parentFile }
           Some(outputDir / parentFile)
-        case MergeIntoOther(projectRef) =>
-          val otherFile = mkProjectJarPath(projectRef)
+        case MergeIntoOther(project) =>
+          val otherFile = mkProjectJarPath(project)
           productDirs.map { artifactMap += _ -> outputDir/ otherFile }
           Some(outputDir/ otherFile)
-        case Standalone(targetFile) =>
-          val file = targetFile.getOrElse(outputDir / mkProjectJarPath(ref))
+        case Standalone("") =>
+          val file = outputDir / mkProjectJarPath(ref)
+          productDirs.foreach { artifactMap += _ -> file }
+          Some(file)
+        case Standalone(targetPath) =>
+          val file = outputDir / targetPath
           productDirs.foreach { artifactMap += _ -> file }
           Some(file)
       }

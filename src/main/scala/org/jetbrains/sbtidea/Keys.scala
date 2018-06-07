@@ -120,8 +120,8 @@ object Keys {
   object PackagingMethod {
     final case class Skip() extends PackagingMethod
     final case class MergeIntoParent() extends PackagingMethod
-    final case class MergeIntoOther(projectRef: Project) extends PackagingMethod
-    final case class Standalone(targetFile: Option[File] = None) extends PackagingMethod
+    final case class MergeIntoOther(project: Project) extends PackagingMethod
+    final case class Standalone(targetPath: String = "") extends PackagingMethod
   }
 
   sealed trait IdeaPlugin {
