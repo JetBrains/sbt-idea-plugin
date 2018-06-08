@@ -77,23 +77,23 @@ object Keys {
     "Overrides for library mappings in artifact"
   )
 
-  lazy val additionalFileMappings = SettingKey[Seq[(File, File)]](
-    "additional-file-mappings",
+  lazy val packageFileMappings = SettingKey[Seq[(File, String)]](
+    "package-file-mappings",
     "Extra files or directories to include into the artifact"
   )
 
-  lazy val assembleLibraries = SettingKey[Boolean](
-    "assemble-libraries",
+  lazy val packageAssembleLibraries = SettingKey[Boolean](
+    "package-assemble-libraries",
     "Should the project library dependencies be merged inside the project artifact"
   )
 
-  lazy val pluginOutputDir = SettingKey[File](
-    "plugin-output-dir",
+  lazy val packageOutputDir = SettingKey[File](
+    "package-output-dir",
     "Folder to write plugin artifact to"
   )
 
-  lazy val artifactMappings = TaskKey[Map[File, File]](
-    "artifact-mappings",
+  lazy val packageMappings = TaskKey[Map[File, File]](
+    "package-mappings",
     "Internal structure of plugin artifact"
   )
 
@@ -105,13 +105,14 @@ object Keys {
   lazy val dumpDependencyStructure = Def.task {
     ProjectData(
       thisProjectRef.value,
-      externalDependencyClasspath.in(Compile).value,
+      managedClasspath.in(Compile).value,
       libraryDependencies.in(Compile).value,
-      assembleLibraries.value,
+      packageAdditionalProjects.value,
+      packageAssembleLibraries.value,
       productDirectories.in(Compile).value,
       update.value,
-      libraryMappings.value,
-      additionalFileMappings.value,
+      packageLibraryMappings.value,
+      packageFileMappings.value,
       packageMethod.value)
   }
 
@@ -186,24 +187,25 @@ object Keys {
     ideaPublishSettings := PublishSettings("", "", "", None),
     publishPlugin := tasks.PublishPlugin.apply(ideaPublishSettings.value, ideaPluginFile.value, streams.value),
     packageMethod := PackagingMethod.MergeIntoParent(),
-    libraryMappings := "org.scala-lang"         % "scala-.*" % ".*" -> None ::
-                       "org.scala-lang.modules" % "scala-.*" % ".*" -> None :: Nil,
-    additionalFileMappings := Seq.empty,
-    assembleLibraries := false,
-    pluginOutputDir := baseDirectory.value / "artifact",
-    artifactMappings := Def.taskDyn {
+    packageLibraryMappings := "org.scala-lang"         % "scala-.*" % ".*" -> None ::
+                              "org.scala-lang.modules" % "scala-.*" % ".*" -> None :: Nil,
+    packageFileMappings := Seq.empty,
+    packageAssembleLibraries := false,
+    packageOutputDir := baseDirectory.value / "artifact",
+    packageMappings := Def.taskDyn {
       val rootProject = thisProjectRef.value
       val buildDeps = buildDependencies.value
       val data = dumpDependencyStructure.all(ScopeFilter(inAnyProject)).value
-      val outputDir = pluginOutputDir.value
+      val outputDir = packageOutputDir.value
+//      compile.in(packageBin).all(ScopeFilter(inAnyProject)).value
       Def.task { PluginPackager.artifactMappings(rootProject, outputDir, data, buildDeps) }
     }.value,
     packagePlugin := Def.taskDyn {
-      val mappings = artifactMappings.value
-      val outputDir = pluginOutputDir.value
+      val outputDir = packageOutputDir.value
+      val mappings  = packageMappings.value
       Def.task{ IO.delete(outputDir); PluginPackager.packageArtifact(mappings); outputDir }
     }.value,
-    aggregate.in(artifactMappings) := false,
+    aggregate.in(packageMappings) := false,
     aggregate.in(packagePlugin) := false,
     aggregate.in(updateIdea) := false,
     unmanagedJars in Compile += file(System.getProperty("java.home")).getParentFile / "lib" / "tools.jar"
