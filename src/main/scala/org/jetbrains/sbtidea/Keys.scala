@@ -72,8 +72,13 @@ object Keys {
     "What kind of artifact to produce from given project"
   )
 
-  lazy val libraryMappings = SettingKey[Seq[(ModuleID, Option[String])]](
-    "library-mappings",
+  lazy val packageAdditionalProjects = SettingKey[Seq[Project]](
+    "package-additional-projects",
+    "Projects to package alongside current, without adding classpath dependencies"
+  )
+
+  lazy val packageLibraryMappings = SettingKey[Seq[(ModuleID, Option[String])]](
+    "package-library-mappings",
     "Overrides for library mappings in artifact"
   )
 
@@ -190,6 +195,7 @@ object Keys {
     packageLibraryMappings := "org.scala-lang"         % "scala-.*" % ".*" -> None ::
                               "org.scala-lang.modules" % "scala-.*" % ".*" -> None :: Nil,
     packageFileMappings := Seq.empty,
+    packageAdditionalProjects := Seq.empty,
     packageAssembleLibraries := false,
     packageOutputDir := baseDirectory.value / "artifact",
     packageMappings := Def.taskDyn {

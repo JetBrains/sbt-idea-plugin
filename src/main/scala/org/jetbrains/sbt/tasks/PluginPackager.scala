@@ -34,13 +34,24 @@ object PluginPackager {
     def buildStructure(ref: ProjectRef): Map[File, File] = {
       var artifactMap = Map[File, File]()
 
+      def findProjectRef(project: Project): Option[ProjectRef] = projectMap.find(_._1.project == project.id).map(_._1)
+
       def findParentToMerge(ref: ProjectRef): ProjectRef = projectMap.getOrElse(ref,
         throw new RuntimeException(s"Project $ref has no parent to merge into")) match {
-        case ProjectData(p, _, _, _, _, _, _, _, _: Standalone) => p
+        case ProjectData(p, _, _, _, _, _, _, _, _, _: Standalone) => p
         case _ => findParentToMerge(revProjectMap.filter(_._1 == ref).toSeq.head._2)
       }
 
-      val ProjectData(_, cp, definedDeps, assembleLibraries, productDirs, report, libMapping, additionalMappings, method) = projectMap(ref)
+      val ProjectData(_,
+                      cp,
+                      definedDeps,
+                      additionalProjects,
+                      assembleLibraries,
+                      productDirs,
+                      report,
+                      libMapping,
+                      additionalMappings,
+                      method) = projectMap(ref)
 
       implicit val scalaVersion = ProjectScalaVersion(definedDeps.find(_.name == "scala-library"))
 
@@ -57,7 +68,10 @@ object PluginPackager {
         case (mod, file) if mappings.getOrElse(mod, None).isDefined => file -> outputDir / mappings(mod).get
       }
 
-      buildDependencies.classpathRefs(ref).map(buildStructure).foreach(artifactMap ++= _)
+      val additionalProjectRefs = additionalProjects.flatMap(findProjectRef)
+
+      (buildDependencies.classpathRefs(ref) ++ additionalProjectRefs).map(buildStructure).foreach(artifactMap ++= _)
+
 
       val targetJar = method match {
         case Skip() => None
@@ -101,7 +115,8 @@ object PluginPackager {
 
   private def updateWithEvictionMappings(cpNoEvicted: Map[ModuleKey, File], evicted: Seq[ModuleKey]): Map[ModuleKey, File] = {
     val eviictionSubstitutes = evicted
-      .map(ev => ev -> cpNoEvicted.find(entry => entry._1 ~== ev).map(_._2).getOrElse(throw new RuntimeException(s"Can't resolve eviction for $ev")))
+      .map(ev => ev -> cpNoEvicted.find(entry => entry._1 ~== ev).map(_._2)
+        .getOrElse(throw new RuntimeException(s"Can't resolve eviction for $ev")))
     cpNoEvicted ++ eviictionSubstitutes
   }
 
@@ -144,11 +159,12 @@ object PluginPackager {
   case class ProjectData(thisProject: ProjectRef,
                          cp: Classpath,
                          definedDeps: Seq[ModuleID],
+                         additionalProjects: Seq[Project],
                          assembleLibraries: Boolean,
                          productDirs: Seq[File],
                          report: UpdateReport,
                          libMapping: Seq[(ModuleID, Option[String])],
-                         additionalMappings: Seq[(File, File)],
+                         additionalMappings: Seq[(File, String)],
                          packageMethod: PackagingMethod)
 
 
@@ -210,15 +226,12 @@ object PluginPackager {
     }
   }
 
-
   case class ProjectScalaVersion(libModule: Option[ModuleID]) {
     def isDefined = libModule.isDefined
     def str = libModule.map(_.revision).getOrElse("")
   }
 
-  private def mkProjectJarPath(project: Project): String = mkProjectJarPath(project.project)
-
-  private def mkProjectJarPath(project: ProjectReference): String = s"${extractName(project)}.jar"
+  private def mkProjectJarPath(project: ProjectReference): String = s"lib/${extractName(project)}.jar"
 
   private def mkRelativeLibPath(lib: File) = s"lib/${lib.getName}"
 
