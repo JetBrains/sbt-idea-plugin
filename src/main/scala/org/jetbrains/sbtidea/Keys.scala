@@ -205,6 +205,7 @@ object Keys {
     }.value,
     aggregate.in(artifactMappings) := false,
     aggregate.in(packagePlugin) := false,
+    aggregate.in(updateIdea) := false,
     unmanagedJars in Compile += file(System.getProperty("java.home")).getParentFile / "lib" / "tools.jar"
   )
 
