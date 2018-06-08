@@ -163,7 +163,10 @@ object Keys {
     ideaDownloadDirectory := baseDirectory.value / "idea",
     ideaEdition := IdeaEdition.Community,
     ideaDownloadSources := true,
-    ideaBaseDirectory := ideaDownloadDirectory.value / ideaBuild.value
+    ideaBaseDirectory := ideaDownloadDirectory.value / ideaBuild.value,
+    onLoad in Global := ((s: State) => {
+      "updateIdea" :: s
+    }) compose (onLoad in Global).value
   )
 
   lazy val projectSettings: Seq[Setting[_]] = Seq(
