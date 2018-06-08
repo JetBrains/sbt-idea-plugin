@@ -81,7 +81,9 @@ object PluginPackager {
           productDirs.foreach { artifactMap += _ -> outputDir / parentFile }
           Some(outputDir / parentFile)
         case MergeIntoOther(project) =>
-          val otherFile = mkProjectJarPath(project)
+          val parent = findParentToMerge(findProjectRef(project)
+            .getOrElse(throw new RuntimeException(s"Couldn't resolve project $project")))
+          val otherFile = mkProjectJarPath(parent)
           productDirs.map { artifactMap += _ -> outputDir/ otherFile }
           Some(outputDir/ otherFile)
         case Standalone("") =>
