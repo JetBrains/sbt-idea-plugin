@@ -101,7 +101,8 @@ object PluginPackager {
           artifactMap ++= processedLibs
       }
 
-      artifactMap ++= additionalMappings
+      artifactMap ++= additionalMappings.map { case (from, to) => from -> outputDir / to }
+
       artifactMap
     }
 
@@ -122,6 +123,8 @@ object PluginPackager {
 
   def packageArtifact(structure: Map[File, File]): Unit = structure.foreach { entry =>
     val (from, to) = entry
+    if (!to.exists() && !to.getName.contains("."))
+      to.mkdirs()
     if (from.isDirectory) {
       if (to.isDirectory) IO.copyDirectory(from, to)
       else                zip(from, to)
@@ -144,7 +147,9 @@ object PluginPackager {
     try {
       Files.walkFileTree(inputPath, new SimpleFileVisitor[Path]() {
         override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
-          val newFilePath = jarFs.getPath(inputPath.relativize(file).toString)
+          val newFilePath = Option(jarFs.getPath(inputPath.relativize(file).toString))
+            .filterNot(_.toString.isEmpty)
+            .getOrElse(jarFs.getPath(file.getFileName.toString))
           if (newFilePath.getParent != null) Files.createDirectories(newFilePath.getParent)
           Files.copy(file, newFilePath, StandardCopyOption.REPLACE_EXISTING)
           FileVisitResult.CONTINUE
