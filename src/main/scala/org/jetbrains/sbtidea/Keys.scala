@@ -71,6 +71,18 @@ object Keys {
     "idea-full-jars",
     "Complete classpath of IDEA's and internal and external plugins' jars")
 
+  lazy val ideaTestConfigDir = SettingKey[File](
+    "idea-test-config-dir",
+    "IDEA's config directory for tests")
+
+  lazy val ideaTestSystemDir = SettingKey[File](
+    "idea-test-system-dir",
+    "IDEA's system directory for tests")
+
+  lazy val cleanUpTestEnvironment = TaskKey[Unit](
+    "cleanup-test-environment",
+    "Clean up IDEA test system and config directories")
+
   lazy val packageMethod = SettingKey[PackagingMethod](
     "package-method",
     "What kind of artifact to produce from given project"
@@ -125,6 +137,9 @@ object Keys {
       packageMethod.value)
   }
 
+  lazy val homePrefix: File = sys.props.get("tc.idea.prefix").map(new File(_)).getOrElse(Path.userHome)
+  lazy val ivyHomeDir: File = Option(System.getProperty("sbt.ivy.home")).fold(homePrefix / ".ivy2")(file)
+
   sealed trait PackagingMethod
 
   object PackagingMethod {
@@ -164,11 +179,18 @@ object Keys {
 
   lazy val buildSettings: Seq[Setting[_]] = Seq(
     ideaPluginName      := "MyCoolIdeaPlugin",
-    ideaBuild := "LATEST-EAP-SNAPSHOT",
-    ideaDownloadDirectory := baseDirectory.value / "idea",
-    ideaEdition := IdeaEdition.Community,
+    ideaBuild           := "LATEST-EAP-SNAPSHOT",
+    ideaEdition         := IdeaEdition.Community,
     ideaDownloadSources := true,
-    ideaBaseDirectory := ideaDownloadDirectory.value / ideaBuild.value,
+    ideaBaseDirectory     := ideaDownloadDirectory.value / ideaBuild.value,
+    ideaDownloadDirectory := homePrefix / s".${ideaPluginName.value}Plugin${ideaEdition.value.shortname}" / "sdk",
+    ideaTestConfigDir     := homePrefix / s".${ideaPluginName.value}Plugin${ideaEdition.value.shortname}" / "test-config",
+    ideaTestSystemDir     := homePrefix / s".${ideaPluginName.value}Plugin${ideaEdition.value.shortname}" / "test-system",
+    concurrentRestrictions in Global := Seq(Tags.limit(Tags.Test, 1)), // IDEA tests can't be run in parallel
+    cleanUpTestEnvironment := {
+      IO.delete(ideaTestSystemDir.value)
+      IO.delete(ideaTestConfigDir.value)
+    },
     onLoad in Global := ((s: State) => {
       "updateIdea" :: s
     }) compose (onLoad in Global).value
@@ -196,6 +218,7 @@ object Keys {
       streams.value
     ),
 
+    packageOutputDir := target.value / "plugin" / ideaPluginName.value,
     ideaPluginFile := packageBin.in(Compile).value,
     ideaPublishSettings := PublishSettings("", "", "", None),
     publishPlugin := tasks.PublishPlugin.apply(ideaPublishSettings.value, ideaPluginFile.value, streams.value),
@@ -205,7 +228,6 @@ object Keys {
     packageFileMappings := Seq.empty,
     packageAdditionalProjects := Seq.empty,
     packageAssembleLibraries := false,
-    packageOutputDir := baseDirectory.value / "artifact",
     packageMappings := Def.taskDyn {
       val rootProject = thisProjectRef.value
       val buildDeps = buildDependencies.value
@@ -221,7 +243,24 @@ object Keys {
     aggregate.in(packageMappings) := false,
     aggregate.in(packagePlugin) := false,
     aggregate.in(updateIdea) := false,
-    unmanagedJars in Compile += file(System.getProperty("java.home")).getParentFile / "lib" / "tools.jar"
+    unmanagedJars in Compile += file(System.getProperty("java.home")).getParentFile / "lib" / "tools.jar",
+
+    // Test-related settings
+
+    fork in Test := true,
+    parallelExecution := false,
+    logBuffered := false,
+    javaOptions in Test := Seq(
+      "-Xms128m",
+      "-Xmx4096m",
+      "-server",
+      "-ea",
+      s"-Didea.system.path=${ideaTestSystemDir.value}",
+      s"-Didea.config.path=${ideaTestConfigDir.value}",
+      s"-Dsbt.ivy.home=$ivyHomeDir",
+      s"-Dplugin.path=${packageOutputDir.value}"
+    ),
+    envVars in Test += "NO_FS_ROOTS_ACCESS_CHECK" -> "yes"
   )
 
 }
