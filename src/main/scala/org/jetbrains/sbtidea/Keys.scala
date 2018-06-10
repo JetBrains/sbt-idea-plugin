@@ -124,6 +124,7 @@ object Keys {
   )
 
   lazy val dumpDependencyStructure = Def.task {
+    compile.in(Compile, packageBin).value
     ProjectData(
       thisProjectRef.value,
       managedClasspath.in(Compile).value,
