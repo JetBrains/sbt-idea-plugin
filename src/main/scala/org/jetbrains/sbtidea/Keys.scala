@@ -6,6 +6,11 @@ import sbt.Keys._
 import sbt._
 
 object Keys {
+
+  lazy val ideaPluginName = SettingKey[String](
+    "idea-plugin-name",
+    "Name of the plugin you're developing")
+
   lazy val ideaBuild = SettingKey[String](
     "idea-build",
     "Number of Intellij IDEA build to use in project")
@@ -45,7 +50,6 @@ object Keys {
   lazy val publishPlugin = TaskKey[String](
     "publish-plugin",
     "Publish IDEA plugin on plugins.jetbrains.com")
-
 
   lazy val ideaBaseDirectory = TaskKey[File](
     "idea-base-directory",
@@ -159,6 +163,7 @@ object Keys {
 
 
   lazy val buildSettings: Seq[Setting[_]] = Seq(
+    ideaPluginName      := "MyCoolIdeaPlugin",
     ideaBuild := "LATEST-EAP-SNAPSHOT",
     ideaDownloadDirectory := baseDirectory.value / "idea",
     ideaEdition := IdeaEdition.Community,
@@ -206,7 +211,6 @@ object Keys {
       val buildDeps = buildDependencies.value
       val data = dumpDependencyStructure.all(ScopeFilter(inAnyProject)).value
       val outputDir = packageOutputDir.value
-//      compile.in(packageBin).all(ScopeFilter(inAnyProject)).value
       Def.task { PluginPackager.artifactMappings(rootProject, outputDir, data, buildDeps) }
     }.value,
     packagePlugin := Def.taskDyn {
