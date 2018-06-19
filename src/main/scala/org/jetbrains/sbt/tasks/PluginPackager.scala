@@ -14,12 +14,14 @@ import sbt.Keys.moduleID
 import sbt.jetbrains.apiAdapter._
 import sbt.{File, ModuleID, ProjectRef, UpdateReport, _}
 
+import scala.collection.mutable
+
 object PluginPackager {
 
   def artifactMappings(rootProject: ProjectRef,
             outputDir: File,
             projectsData: Seq[ProjectData],
-            buildDependencies: BuildDependencies): Map[File, File] = {
+            buildDependencies: BuildDependencies): Seq[(File, File)] = {
 
     def mkProjectData(projectData: ProjectData): ProjectData = {
       if (projectData.thisProject == rootProject && !projectData.packageMethod.isInstanceOf[Standalone]) {
@@ -31,8 +33,8 @@ object PluginPackager {
     val revProjectMap = projectsData.flatMap(x => buildDependencies.classpathRefs(x.thisProject).map(_ -> x.thisProject))
 
 
-    def buildStructure(ref: ProjectRef): Map[File, File] = {
-      var artifactMap = Map[File, File]()
+    def buildStructure(ref: ProjectRef): Seq[(File, File)] = {
+      val artifactMap = new mutable.ArrayBuffer[(File, File)]()
 
       def findProjectRef(project: Project): Option[ProjectRef] = projectMap.find(_._1.project == project.id).map(_._1)
 
@@ -53,7 +55,7 @@ object PluginPackager {
                       additionalMappings,
                       method) = projectMap(ref)
 
-      implicit val scalaVersion = ProjectScalaVersion(definedDeps.find(_.name == "scala-library"))
+      implicit val scalaVersion: ProjectScalaVersion = ProjectScalaVersion(definedDeps.find(_.name == "scala-library"))
 
       val resolver              = new TransitiveDeps(report, "compile")
       val mappings              = libMapping.map(x => x._1.key -> x._2).toMap
@@ -123,7 +125,7 @@ object PluginPackager {
     cpNoEvicted ++ eviictionSubstitutes
   }
 
-  def packageArtifact(structure: Map[File, File]): Unit = structure.foreach { entry =>
+  def packageArtifact(structure: Seq[(File, File)]): Unit = structure.foreach { entry =>
     val (from, to) = entry
     if (!to.exists() && !to.getName.contains("."))
       to.mkdirs()

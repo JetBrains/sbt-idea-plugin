@@ -113,7 +113,7 @@ object Keys {
     "Folder to write plugin artifact to"
   )
 
-  lazy val packageMappings = TaskKey[Map[File, File]](
+  lazy val packageMappings = TaskKey[Seq[(File, File)]](
     "package-mappings",
     "Internal structure of plugin artifact"
   )
