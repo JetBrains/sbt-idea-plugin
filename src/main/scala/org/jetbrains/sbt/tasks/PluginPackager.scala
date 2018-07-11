@@ -33,22 +33,31 @@ object PluginPackager {
     val projectMap    = projectsData.iterator.map(x => x.thisProject -> mkProjectData(x)).toMap
     val revProjectMap = projectsData.flatMap(x => buildDependencies.classpathRefs(x.thisProject).map(_ -> x.thisProject))
 
+    def findProjectRef(project: Project): Option[ProjectRef] = projectMap.find(_._1.project == project.id).map(_._1)
+
+    def walk(ref: ProjectRef, queue: Seq[ProjectRef]): Seq[ProjectRef] = {
+      val data = projectMap(ref)
+      if (!queue.contains(ref)) {
+        val newQueue = queue :+ ref
+        val direct = buildDependencies.classpathRefs(ref).foldLeft(newQueue) { case (q, r) => walk(r, q) }
+        val additional = data.additionalProjects.flatMap(findProjectRef).foldLeft(direct) { case (q, r) => walk(r, q) }
+        additional
+      } else { queue }
+    }
 
     def buildStructure(ref: ProjectRef): Seq[(File, File)] = {
-      val artifactMap = new mutable.ArrayBuffer[(File, File)]()
-
-      def findProjectRef(project: Project): Option[ProjectRef] = projectMap.find(_._1.project == project.id).map(_._1)
+      val artifactMap = new mutable.TreeSet[(File, File)]()
 
       def findParentToMerge(ref: ProjectRef): ProjectRef = projectMap.getOrElse(ref,
         throw new RuntimeException(s"Project $ref has no parent to merge into")) match {
         case ProjectData(p, _, _, _, _, _, _, _, _, _: Standalone) => p
-        case _ => findParentToMerge(revProjectMap.filter(_._1 == ref).toSeq.head._2)
+        case _ => findParentToMerge(revProjectMap.filter(_._1 == ref).head._2)
       }
 
       val ProjectData(_,
                       cp,
                       definedDeps,
-                      additionalProjects,
+                      _,
                       assembleLibraries,
                       productDirs,
                       report,
@@ -74,11 +83,6 @@ object PluginPackager {
         case (mod, Some(file)) if !mappings.contains(mod)                 => file -> outputDir / mkRelativeLibPath(file)
         case (mod, Some(file)) if mappings.getOrElse(mod, None).isDefined => file -> outputDir / mappings(mod).get
       }
-
-      val additionalProjectRefs = additionalProjects.flatMap(findProjectRef)
-
-      (buildDependencies.classpathRefs(ref) ++ additionalProjectRefs).map(buildStructure).foreach(artifactMap ++= _)
-
 
       val targetJar = method match {
         case Skip() => None
@@ -112,10 +116,15 @@ object PluginPackager {
 
       artifactMap ++= additionalMappings.map { case (from, to) => from -> outputDir / to }
 
-      artifactMap
+      artifactMap.toSeq
     }
 
-    buildStructure(rootProject)
+    val queue       = walk(rootProject, Seq.empty)
+    val structures  = queue.reverse.map(buildStructure)
+    val result      = new mutable.TreeSet[(File, File)]()
+    structures.foreach(result ++= _)
+
+    result.toSeq
   }
 
   private def buildModuleIdMap(cp: Classpath)(implicit scalaVersion: ProjectScalaVersion): Map[ModuleKey, File] = (for {
