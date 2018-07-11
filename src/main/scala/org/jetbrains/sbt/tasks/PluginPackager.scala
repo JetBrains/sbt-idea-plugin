@@ -143,24 +143,34 @@ object PluginPackager {
     }
   }
 
+  private def getPathInJar(output: File): (File, String) = output.getPath.split("!/") match {
+    case Array(jarFile, path) => file(jarFile) -> path
+    case _                    => output        -> ""
+  }
+
 
   private def zip(input: File, output: File): Unit = {
     if (!input.exists()) return
     if (!output.exists()) output.getParentFile.mkdirs()
+    val (outJar, jarRoot) = getPathInJar(output)
     val env = new util.HashMap[String, String]()
-    env.put("create", String.valueOf(Files.notExists(output.toPath)))
-    val jarFs     = newFileSystem(URI.create("jar:" + output.toPath.toUri), env)
+    env.put("create", String.valueOf(Files.notExists(outJar.toPath)))
+    val jarFs     = newFileSystem(URI.create("jar:" + outJar.toPath.toUri), env)
     val inputFS   = if (input.getName.endsWith(".jar")) Some(newFileSystem(URI.create( "jar:" + input.toPath.toUri), env)) else None
     val inputPath = inputFS.map(_.getPath("/")).getOrElse(input.toPath)
 
     try {
       Files.walkFileTree(inputPath, new SimpleFileVisitor[Path]() {
         override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
-          val newFilePath = Option(jarFs.getPath(inputPath.relativize(file).toString))
-            .filterNot(_.toString.isEmpty)
-            .getOrElse(jarFs.getPath(file.getFileName.toString))
-          if (newFilePath.getParent != null) Files.createDirectories(newFilePath.getParent)
-          Files.copy(file, newFilePath, StandardCopyOption.REPLACE_EXISTING)
+          val newPathInJar = if (Files.isDirectory(inputPath) || jarRoot.endsWith("/")) {
+            Option(jarFs.getPath(inputPath.relativize(file).toString))
+              .filterNot(_.toString.isEmpty)
+              .getOrElse(jarFs.getPath(file.getFileName.toString))
+          } else { jarFs.getPath(jarRoot, file.getFileName.toString) } // copying file to file
+          if (newPathInJar.getParent != null) Files.createDirectories(newPathInJar.getParent)
+          assert(file.toString.nonEmpty)
+          assert(newPathInJar.toString.nonEmpty)
+          Files.copy(file, newPathInJar, StandardCopyOption.REPLACE_EXISTING)
           FileVisitResult.CONTINUE
         }
       })
