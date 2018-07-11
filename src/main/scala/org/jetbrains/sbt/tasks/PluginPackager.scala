@@ -221,8 +221,10 @@ object PluginPackager {
     val structure: Map[ModuleKey, Seq[ModuleKey]] = buildTransitiveStructure()
     val evicted:   Seq[ModuleKey]                 = report.configurations
       .find(_.configuration.toString().contains(configuration))
-      .map (_.evicted.map(_.key))
-      .getOrElse(Seq.empty)
+      .map (_.details.flatMap(_.modules)
+          .filter(m => m.evicted && m.evictedReason.get == "latest-revision")
+        .map(_.module.key)
+      ).getOrElse(Seq.empty)
 
     private def buildTransitiveStructure(): Map[ModuleKey, Seq[ModuleKey]] = {
       report.configurations.find(_.configuration.toString().contains(configuration)) match {
