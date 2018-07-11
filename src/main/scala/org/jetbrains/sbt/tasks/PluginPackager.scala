@@ -10,7 +10,7 @@ import java.util
 import org.jetbrains.sbtidea.Keys.PackagingMethod
 import org.jetbrains.sbtidea.Keys.PackagingMethod.{MergeIntoOther, MergeIntoParent, Skip, Standalone}
 import sbt.Def.Classpath
-import sbt.Keys.moduleID
+import sbt.Keys.{TaskStreams, moduleID}
 import sbt.jetbrains.apiAdapter._
 import sbt.{File, ModuleID, ProjectRef, UpdateReport, _}
 
@@ -19,9 +19,10 @@ import scala.collection.mutable
 object PluginPackager {
 
   def artifactMappings(rootProject: ProjectRef,
-            outputDir: File,
-            projectsData: Seq[ProjectData],
-            buildDependencies: BuildDependencies): Seq[(File, File)] = {
+                       outputDir: File,
+                       projectsData: Seq[ProjectData],
+                       buildDependencies: BuildDependencies,
+                       streams: TaskStreams): Seq[(File, File)] = {
 
     def mkProjectData(projectData: ProjectData): ProjectData = {
       if (projectData.thisProject == rootProject && !projectData.packageMethod.isInstanceOf[Standalone]) {
@@ -65,9 +66,13 @@ object PluginPackager {
         .filter(_.configurations.isEmpty)
         .map(_.key)
         .flatMap(resolver.collectTransitiveDeps)
-      val processedLibs = transitiveDeps.map(m => m -> resolvedLibs(m)).collect {
-        case (mod, file) if !mappings.contains(mod) => file -> outputDir / mkRelativeLibPath(file)
-        case (mod, file) if mappings.getOrElse(mod, None).isDefined => file -> outputDir / mappings(mod).get
+      val processedLibs = transitiveDeps.map(m => m -> resolvedLibs.get(m))
+        .map {
+          case x@(mod, None) => streams.log.warn(s"couldn't resolve dependency jar: $mod"); x
+          case other => other
+        }.collect {
+        case (mod, Some(file)) if !mappings.contains(mod)                 => file -> outputDir / mkRelativeLibPath(file)
+        case (mod, Some(file)) if mappings.getOrElse(mod, None).isDefined => file -> outputDir / mappings(mod).get
       }
 
       val additionalProjectRefs = additionalProjects.flatMap(findProjectRef)
@@ -125,7 +130,7 @@ object PluginPackager {
     cpNoEvicted ++ eviictionSubstitutes
   }
 
-  def packageArtifact(structure: Seq[(File, File)]): Unit = structure.foreach { entry =>
+  def packageArtifact(structure: Seq[(File, File)], streams: TaskStreams): Unit = structure.foreach { entry =>
     val (from, to) = entry
     if (!to.exists() && !to.getName.contains("."))
       to.mkdirs()
@@ -208,6 +213,8 @@ object PluginPackager {
           attributes == _attributes
       case _ => false
     }
+
+    override def toString: String = s"$id[${if (attributes.nonEmpty) attributes.toString else ""}]"
   }
 
   class TransitiveDeps(report: UpdateReport, configuration: String)(implicit scalaVersion: ProjectScalaVersion) {

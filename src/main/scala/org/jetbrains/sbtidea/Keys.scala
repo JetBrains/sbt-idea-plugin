@@ -234,12 +234,14 @@ object Keys {
       val buildDeps = buildDependencies.value
       val data = dumpDependencyStructure.all(ScopeFilter(inAnyProject)).value
       val outputDir = packageOutputDir.value
-      Def.task { PluginPackager.artifactMappings(rootProject, outputDir, data, buildDeps) }
+      val stream = streams.value
+      Def.task { PluginPackager.artifactMappings(rootProject, outputDir, data, buildDeps, stream) }
     }.value,
     packagePlugin := Def.taskDyn {
       val outputDir = packageOutputDir.value
       val mappings  = packageMappings.value
-      Def.task{ IO.delete(outputDir); PluginPackager.packageArtifact(mappings); outputDir }
+      val stream = streams.value
+      Def.task{ IO.delete(outputDir); PluginPackager.packageArtifact(mappings, stream); outputDir }
     }.value,
     aggregate.in(packageMappings) := false,
     aggregate.in(packagePlugin) := false,
