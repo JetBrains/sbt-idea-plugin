@@ -145,10 +145,15 @@ object PluginPackager {
 
   def packageArtifact(structure: Seq[(File, File)], streams: TaskStreams): Unit = {
     implicit val stream: TaskStreams = streams
-    val grouped = structure.groupBy(_._2)
+    val grouped             = structure.groupBy(_._2)
     val (overrides, normal) = grouped.partition(_._1.toString.contains("!/"))
+    val incremental         = normal.filterNot {
+      case (_, mappings) => mappings.forall {case (from, to) => from.isFile && from.lastModified() <= to.lastModified()}
+    }
+    stream.log.info(s"filtered ${normal.size-incremental.size} jars - files not changed")
 
-    normal.foreach {
+    incremental.keys.foreach(IO.delete)
+    incremental.foreach {
       case (to, mapping) if to.name.endsWith("jar") && mapping.size == 1 && mapping.head._1.name.endsWith("jar") =>
         timed(s"copyJar: $to",
           {IO.copy(mapping)})

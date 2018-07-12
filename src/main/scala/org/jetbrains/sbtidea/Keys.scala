@@ -241,7 +241,7 @@ object Keys {
       val outputDir = packageOutputDir.value
       val mappings  = packageMappings.value
       val stream = streams.value
-      Def.task{ IO.delete(outputDir); PluginPackager.packageArtifact(mappings, stream); outputDir }
+      Def.task{ PluginPackager.packageArtifact(mappings, stream); outputDir }
     }.value,
     aggregate.in(packageMappings) := false,
     aggregate.in(packagePlugin) := false,
