@@ -131,7 +131,7 @@ object Keys {
       libraryDependencies.in(Compile).value,
       packageAdditionalProjects.value,
       packageAssembleLibraries.value,
-      productDirectories.in(Compile).value,
+      products.in(Compile).value,
       update.value,
       packageLibraryMappings.value,
       packageFileMappings.value,
