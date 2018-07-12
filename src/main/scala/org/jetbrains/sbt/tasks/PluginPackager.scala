@@ -119,10 +119,14 @@ object PluginPackager {
       artifactMap.toSeq
     }
 
-    val queue       = walk(rootProject, Seq.empty)
-    val structures  = queue.reverse.map(buildStructure)
+    streams.log.info("traversing dependency graph")
+    val queue       = walk(rootProject, Seq.empty).reverse
+    streams.log.info(s"built processing queue: ${queue.map(_.project)}")
+    streams.log.info(s"building mappings")
+    val structures  = queue.map(buildStructure)
     val result      = new mutable.TreeSet[(File, File)]()
     structures.foreach(result ++= _)
+    streams.log.info(s"finished building structure: got ${result.size} mappings")
 
     result.toSeq
   }
