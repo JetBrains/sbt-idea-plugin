@@ -133,23 +133,51 @@ object PluginPackager {
   } yield { moduleId.key -> jarFile.data }).toMap
 
   private def updateWithEvictionMappings(cpNoEvicted: Map[ModuleKey, File], evicted: Seq[ModuleKey]): Map[ModuleKey, File] = {
-    val eviictionSubstitutes = evicted
+    val evictionSubstitutes = evicted
       .map(ev => ev -> cpNoEvicted.find(entry => entry._1 ~== ev).map(_._2)
         .getOrElse(throw new RuntimeException(s"Can't resolve eviction for $ev")))
-    cpNoEvicted ++ eviictionSubstitutes
+    cpNoEvicted ++ evictionSubstitutes
   }
 
-  def packageArtifact(structure: Seq[(File, File)], streams: TaskStreams): Unit = structure.foreach { entry =>
-    val (from, to) = entry
-    if (!to.exists() && !to.getName.contains("."))
-      to.mkdirs()
-    if (from.isDirectory) {
-      if (to.isDirectory) IO.copyDirectory(from, to)
-      else                zip(from, to)
-    } else {
-      if (to.isDirectory) IO.copy(Seq(from -> to))
-      else                zip(from, to)
+  def packageArtifact(structure: Seq[(File, File)], streams: TaskStreams): Unit = {
+    implicit val stream: TaskStreams = streams
+    val grouped = structure.groupBy(_._2)
+    val (overrides, normal) = grouped.partition(_._1.toString.contains("!/"))
+
+    normal.foreach {
+      case (to, mapping) if to.name.endsWith("jar") && mapping.size == 1 && mapping.head._1.name.endsWith("jar") =>
+        timed(s"copyJar: $to",
+          {IO.copy(mapping)})
+      case (to, mapping) if to.name.endsWith("jar")  =>
+        timed(s"packageJar(${mapping.size}): $to",
+          manyToJar(mapping.map(_._1), to))
+      case (to, mapping) =>
+        timed(s"copyDir: $to", {
+          mapping.foreach {
+            case (from, to1) if from.isDirectory => IO.copyDirectory(from, to1)
+            case (from, to1) => IO.copy(Seq(from -> to1))
+          }
+        })
+      case other => streams.log.warn(s"wtf: $other")
     }
+
+    streams.log.info("start processing overrides")
+    overrides.foreach {
+      case (to, mapping) if to.toString.contains("jar!/")  =>
+        timed(s"patchJar: $to", {
+          val (outJar, jarRoot) = getPathInJar(to)
+          manyToJar(mapping.map(_._1), outJar, jarRoot)
+        })
+      case other => streams.log.warn(s"wtf: $other")
+    }
+  }
+
+  private def manyToJar(input: Seq[File], out: File, jarRoot: String = ""): Unit = {
+    val env = new util.HashMap[String, String]()
+    env.put("create", String.valueOf(Files.notExists(out.toPath)))
+    val jarFs     = newFileSystem(URI.create("jar:" + out.toPath.toUri), env)
+    try     { input.foreach(i => zip(i, jarFs, jarRoot)) }
+    finally { jarFs.close() }
   }
 
   private def getPathInJar(output: File): (File, String) = output.getPath.split("!/") match {
@@ -157,36 +185,38 @@ object PluginPackager {
     case _                    => output        -> ""
   }
 
-
-  private def zip(input: File, output: File): Unit = {
+  private def zip(input: File, output: FileSystem, jarRoot: String): Unit = {
     if (!input.exists()) return
-    if (!output.exists()) output.getParentFile.mkdirs()
-    val (outJar, jarRoot) = getPathInJar(output)
     val env = new util.HashMap[String, String]()
-    env.put("create", String.valueOf(Files.notExists(outJar.toPath)))
-    val jarFs     = newFileSystem(URI.create("jar:" + outJar.toPath.toUri), env)
-    val inputFS   = if (input.getName.endsWith(".jar")) Some(newFileSystem(URI.create( "jar:" + input.toPath.toUri), env)) else None
+    val inputFS = if (input.getName.endsWith(".jar")) Some(newFileSystem(URI.create("jar:" + input.toPath.toUri), env)) else None
     val inputPath = inputFS.map(_.getPath("/")).getOrElse(input.toPath)
 
-    try {
-      Files.walkFileTree(inputPath, new SimpleFileVisitor[Path]() {
-        override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
-          val newPathInJar = if (Files.isDirectory(inputPath) || jarRoot.endsWith("/")) {
-            Option(jarFs.getPath(inputPath.relativize(file).toString))
-              .filterNot(_.toString.isEmpty)
-              .getOrElse(jarFs.getPath(file.getFileName.toString))
-          } else { jarFs.getPath(jarRoot, file.getFileName.toString) } // copying file to file
-          if (newPathInJar.getParent != null) Files.createDirectories(newPathInJar.getParent)
-          assert(file.toString.nonEmpty)
-          assert(newPathInJar.toString.nonEmpty)
-          Files.copy(file, newPathInJar, StandardCopyOption.REPLACE_EXISTING)
-          FileVisitResult.CONTINUE
+    Files.walkFileTree(inputPath, new SimpleFileVisitor[Path]() {
+      override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
+        val newPathInJar = if (jarRoot.nonEmpty) {
+          if (jarRoot.endsWith("/")) output.getPath(jarRoot, file.getFileName.toString) // copy file to dir inside a jar
+          else output.getPath(jarRoot) // copy file to file inside a jar
+        } else {
+          Option(output.getPath(inputPath.relativize(file).toString))
+            .filterNot(_.toString.isEmpty)
+            .getOrElse(output.getPath(file.getFileName.toString))
         }
-      })
-    } finally {
-      inputFS.foreach(_.close())
-      jarFs.close()
-    }
+        if (newPathInJar.getParent != null) Files.createDirectories(newPathInJar.getParent)
+        assert(file.toString.nonEmpty)
+        assert(newPathInJar.toString.nonEmpty)
+        Files.copy(file, newPathInJar, StandardCopyOption.REPLACE_EXISTING)
+        FileVisitResult.CONTINUE
+      }
+    })
+
+    inputFS.foreach(_.close())
+  }
+
+  private def timed[T](msg: String, f: => T)(implicit streams: TaskStreams): T = {
+    val start = System.currentTimeMillis()
+    val res = f
+    streams.log.info(s"[${System.currentTimeMillis() - start}ms] $msg")
+    res
   }
 
   case class ProjectData(thisProject: ProjectRef,
