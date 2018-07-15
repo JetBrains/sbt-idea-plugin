@@ -226,7 +226,7 @@ object PluginPackager {
   private def timed[T](msg: String, f: => T)(implicit streams: TaskStreams): T = {
     val start = System.currentTimeMillis()
     val res = f
-    streams.log.info(s"[${System.currentTimeMillis() - start}ms] $msg")
+    streams.log.info(s"(${System.currentTimeMillis() - start}ms) $msg")
     res
   }
 
