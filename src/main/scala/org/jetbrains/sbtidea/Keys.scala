@@ -226,7 +226,7 @@ object Keys {
     ),
 
     packageOutputDir := target.value / "plugin" / ideaPluginName.value,
-    ideaPluginFile   := target.value / s"${name.value}-${version.value}.zip",
+    ideaPluginFile   := target.value / s"${ideaPluginName.value}-${version.value}.zip",
     ideaPublishSettings := PublishSettings("", "", "", None),
     publishPlugin := tasks.PublishPlugin.apply(ideaPublishSettings.value, ideaPluginFile.value, streams.value),
     packageMethod := PackagingMethod.MergeIntoParent(),
@@ -250,7 +250,7 @@ object Keys {
       Def.task{ PluginPackager.packageArtifact(mappings, stream); outputDir }
     }.value,
     packagePluginZip := Def.task {
-      val outputDir = packagePlugin.value
+      val outputDir = packagePlugin.value.getParentFile
       val pluginFile = ideaPluginFile.value
       IO.delete(pluginFile)
       PluginPackager.zipDirectory(outputDir, pluginFile)
