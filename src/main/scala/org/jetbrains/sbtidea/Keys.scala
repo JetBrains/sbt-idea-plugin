@@ -123,6 +123,12 @@ object Keys {
     "Create plugin distribution"
   )
 
+  lazy val packagePluginZip = TaskKey[File](
+    "package-plugin-zip",
+    "Create plugin distribution zip file"
+  )
+
+
   lazy val dumpDependencyStructure = Def.task {
     compile.in(Compile, packageBin).value
     ProjectData(
@@ -220,7 +226,7 @@ object Keys {
     ),
 
     packageOutputDir := target.value / "plugin" / ideaPluginName.value,
-    ideaPluginFile := packageBin.in(Compile).value,
+    ideaPluginFile   := target.value / s"${name.value}-${version.value}.zip",
     ideaPublishSettings := PublishSettings("", "", "", None),
     publishPlugin := tasks.PublishPlugin.apply(ideaPublishSettings.value, ideaPluginFile.value, streams.value),
     packageMethod := PackagingMethod.MergeIntoParent(),
@@ -243,6 +249,14 @@ object Keys {
       val stream = streams.value
       Def.task{ PluginPackager.packageArtifact(mappings, stream); outputDir }
     }.value,
+    packagePluginZip := Def.task {
+      val outputDir = packagePlugin.value
+      val pluginFile = ideaPluginFile.value
+      IO.delete(pluginFile)
+      PluginPackager.zipDirectory(outputDir, pluginFile)
+      pluginFile
+    }.value,
+    aggregate.in(packagePluginZip) := false,
     aggregate.in(packageMappings) := false,
     aggregate.in(packagePlugin) := false,
     aggregate.in(updateIdea) := false,

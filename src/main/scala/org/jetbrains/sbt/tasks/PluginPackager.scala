@@ -143,6 +143,8 @@ object PluginPackager {
     cpNoEvicted ++ evictionSubstitutes
   }
 
+  def zipDirectory(root: File, out: File): Unit = manyToJar(Seq(root), out)
+
   def packageArtifact(structure: Seq[(File, File)], streams: TaskStreams): Unit = {
     implicit val stream: TaskStreams = streams
     val grouped             = structure.groupBy(_._2)
