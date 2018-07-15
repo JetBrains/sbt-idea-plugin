@@ -152,7 +152,9 @@ object PluginPackager {
     val incremental         = normal.filterNot {
       case (_, mappings) => mappings.forall {case (from, to) => from.isFile && from.lastModified() <= to.lastModified()}
     }
-    stream.log.info(s"filtered ${normal.size-incremental.size} jars - files not changed")
+
+    if (normal.size != incremental.size)
+      stream.log.info(s"filtered ${normal.size-incremental.size} jars - files not changed")
 
     incremental.keys.foreach(IO.delete)
     incremental.foreach {
