@@ -162,6 +162,8 @@ object PluginPackager {
         timed(s"copyJar: $to",
           {IO.copy(mapping)})
       case (to, mapping) if to.name.endsWith("jar")  =>
+        if (!to.getParentFile.exists())
+          to.getParentFile.mkdirs()
         timed(s"packageJar(${mapping.size}): $to",
           manyToJar(mapping.map(_._1), to))
       case (to, mapping) =>
