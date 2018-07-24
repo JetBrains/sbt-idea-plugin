@@ -7,6 +7,7 @@ import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
 import java.util
 
+import org.jetbrains.sbtidea.Keys.PackagingMethod._
 import org.jetbrains.sbtidea.Keys.PackagingMethod
 import org.jetbrains.sbtidea.Keys.PackagingMethod.{MergeIntoOther, MergeIntoParent, Skip, Standalone}
 import sbt.Def.Classpath
@@ -86,6 +87,8 @@ object PluginPackager {
 
       val targetJar = method match {
         case Skip() => None
+        case DepsOnly(targetPath) =>
+          Some(outputDir / targetPath)
         case MergeIntoParent() =>
           val parent = findParentToMerge(ref)
           val parentFile = mkProjectJarPath(parent)
