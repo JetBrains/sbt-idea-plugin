@@ -9,7 +9,7 @@ import java.util
 
 import org.jetbrains.sbtidea.Keys.PackagingMethod._
 import org.jetbrains.sbtidea.Keys.PackagingMethod
-import org.jetbrains.sbtidea.Keys.PackagingMethod.{MergeIntoOther, MergeIntoParent, Skip, Standalone}
+import org.jetbrains.sbtidea.tasks.{NoOpClassShader, ShadePattern, ShadingPackager}
 import sbt.Def.Classpath
 import sbt.Keys.{TaskStreams, moduleID}
 import sbt.jetbrains.apiAdapter._
@@ -19,11 +19,16 @@ import scala.collection.mutable
 
 object PluginPackager {
 
+  type Mapping = (File, File, Seq[ShadePattern]) // from, to, shading
+  type Mappings = Seq[Mapping]
+
+  private implicit def MappingOrder[A <: Mapping]: Ordering[A] = Ordering.by(x=> x._1 -> x._2) // order by target jar file
+
   def artifactMappings(rootProject: ProjectRef,
                        outputDir: File,
                        projectsData: Seq[ProjectData],
                        buildDependencies: BuildDependencies,
-                       streams: TaskStreams): Seq[(File, File)] = {
+                       streams: TaskStreams): Mappings = {
 
     def mkProjectData(projectData: ProjectData): ProjectData = {
       if (projectData.thisProject == rootProject && !projectData.packageMethod.isInstanceOf[Standalone]) {
@@ -46,12 +51,12 @@ object PluginPackager {
       } else { queue }
     }
 
-    def buildStructure(ref: ProjectRef): Seq[(File, File)] = {
+    def buildStructure(ref: ProjectRef): Mappings = {
       val artifactMap = new mutable.TreeSet[(File, File)]()
 
       def findParentToMerge(ref: ProjectRef): ProjectRef = projectMap.getOrElse(ref,
         throw new RuntimeException(s"Project $ref has no parent to merge into")) match {
-        case ProjectData(p, _, _, _, _, _, _, _, _, _: Standalone) => p
+        case ProjectData(p, _, _, _, _, _, _, _, _, _: Standalone,_) => p
         case _ => findParentToMerge(revProjectMap.filter(_._1 == ref).head._2)
       }
 
@@ -64,7 +69,8 @@ object PluginPackager {
                       report,
                       libMapping,
                       additionalMappings,
-                      method) = projectMap(ref)
+                      method,
+                      shadePatterns) = projectMap(ref)
 
       implicit val scalaVersion: ProjectScalaVersion = ProjectScalaVersion(definedDeps.find(_.name == "scala-library"))
 
@@ -119,7 +125,7 @@ object PluginPackager {
 
       artifactMap ++= additionalMappings.map { case (from, to) => from -> outputDir / to }
 
-      artifactMap.toSeq
+      artifactMap.map{case (a, b) => (a, b, shadePatterns)}.toSeq
     }
 
     streams.log.info("traversing dependency graph")
@@ -127,7 +133,7 @@ object PluginPackager {
     streams.log.info(s"built processing queue: ${queue.map(_.project)}")
     streams.log.info(s"building mappings")
     val structures  = queue.map(buildStructure)
-    val result      = new mutable.TreeSet[(File, File)]()
+    val result      = new mutable.TreeSet[Mapping]()
     structures.foreach(result ++= _)
     streams.log.info(s"finished building structure: got ${result.size} mappings")
 
@@ -146,14 +152,14 @@ object PluginPackager {
     cpNoEvicted ++ evictionSubstitutes
   }
 
-  def zipDirectory(root: File, out: File): Unit = manyToJar(Seq(root), out)
+  def zipDirectory(root: File, out: File): Unit = manyToJar(Seq(root), out, new NoOpClassShader())
 
-  def packageArtifact(structure: Seq[(File, File)], streams: TaskStreams): Unit = {
+  def packageArtifact(structure: Mappings, streams: TaskStreams): Unit = {
     implicit val stream: TaskStreams = streams
     val grouped             = structure.groupBy(_._2)
     val (overrides, normal) = grouped.partition(_._1.toString.contains("!/"))
     val incremental         = normal.filterNot {
-      case (_, mappings) => mappings.forall {case (from, to) => from.isFile && from.lastModified() <= to.lastModified()}
+      case (_, mappings) => mappings.forall {case (from, to, _) => from.isFile && from.lastModified() <= to.lastModified()}
     }
 
     if (normal.size != incremental.size)
@@ -161,19 +167,23 @@ object PluginPackager {
 
     incremental.keys.foreach(IO.delete)
     incremental.foreach {
-      case (to, mapping) if to.name.endsWith("jar") && mapping.size == 1 && mapping.head._1.name.endsWith("jar") =>
-        timed(s"copyJar: $to",
-          {IO.copy(mapping)})
-      case (to, mapping) if to.name.endsWith("jar")  =>
+      case (to, Seq((from, _, rules))) if to.name.endsWith("jar") && from.name.endsWith("jar") =>
+        timed(s"copyJar: $to", {
+            IO.copy(Seq(from -> to))
+        })
+      case (to, mappings) if to.name.endsWith("jar")  =>
         if (!to.getParentFile.exists())
           to.getParentFile.mkdirs()
-        timed(s"packageJar(${mapping.size}): $to",
-          manyToJar(mapping.map(_._1), to))
+        timed(s"packageJar(${mappings.size}): $to", {
+          val rules = mappings.flatMap(_._3).distinct
+          val packager = if (rules.nonEmpty) new ShadingPackager(rules) else new NoOpClassShader
+          manyToJar(mappings.map(_._1), to, packager)
+        })
       case (to, mapping) =>
         timed(s"copyDir: $to", {
           mapping.foreach {
-            case (from, to1) if from.isDirectory => IO.copyDirectory(from, to1)
-            case (from, to1) => IO.copy(Seq(from -> to1))
+            case (from, to1, _) if from.isDirectory => IO.copyDirectory(from, to1)
+            case (from, to1, _) => IO.copy(Seq(from -> to1))
           }
         })
       case other => streams.log.warn(s"wtf: $other")
@@ -184,17 +194,17 @@ object PluginPackager {
       case (to, mapping) if to.toString.contains("jar!/")  =>
         timed(s"patchJar: $to", {
           val (outJar, jarRoot) = getPathInJar(to)
-          manyToJar(mapping.map(_._1), outJar, jarRoot)
+          manyToJar(mapping.map(_._1), outJar, new NoOpClassShader(), jarRoot)
         })
       case other => streams.log.warn(s"wtf: $other")
     }
   }
 
-  private def manyToJar(input: Seq[File], out: File, jarRoot: String = ""): Unit = {
+  private def manyToJar(input: Seq[File], out: File, shadingPackager: ShadingPackager, jarRoot: String = ""): Unit = {
     val env = new util.HashMap[String, String]()
     env.put("create", String.valueOf(Files.notExists(out.toPath)))
     val jarFs     = newFileSystem(URI.create("jar:" + out.toPath.toUri), env)
-    try     { input.foreach(i => zip(i, jarFs, jarRoot)) }
+    try     { input.foreach(i => zip(i, jarFs, jarRoot, shadingPackager)) }
     finally { jarFs.close() }
   }
 
@@ -203,31 +213,32 @@ object PluginPackager {
     case _                    => output        -> ""
   }
 
-  private def zip(input: File, output: FileSystem, jarRoot: String): Unit = {
+  private def zip(input: File, output: FileSystem, jarRoot: String, shadingPackager: ShadingPackager): Unit = {
     if (!input.exists()) return
     val env = new util.HashMap[String, String]()
     val inputFS = if (input.getName.endsWith(".jar")) Some(newFileSystem(URI.create("jar:" + input.toPath.toUri), env)) else None
     val inputPath = inputFS.map(_.getPath("/")).getOrElse(input.toPath)
 
-    Files.walkFileTree(inputPath, new SimpleFileVisitor[Path]() {
-      override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
-        val newPathInJar = if (jarRoot.nonEmpty) {
-          if (jarRoot.endsWith("/")) output.getPath(jarRoot, file.getFileName.toString) // copy file to dir inside a jar
-          else output.getPath(jarRoot) // copy file to file inside a jar
-        } else {
-          Option(output.getPath(inputPath.relativize(file).toString))
-            .filterNot(_.toString.isEmpty)
-            .getOrElse(output.getPath(file.getFileName.toString))
+    try {
+      Files.walkFileTree(inputPath, new SimpleFileVisitor[Path]() {
+        override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
+          val newPathInJar = jarRoot.nonEmpty match {
+            case true if jarRoot.endsWith("/") => output.getPath(jarRoot, file.getFileName.toString) // copy file to dir inside a jar
+            case true => output.getPath(jarRoot) // copy file to file inside a jar
+            case false =>
+              val path = output.getPath(inputPath.relativize(file).toString)
+              if (path.toString.isEmpty)
+                output.getPath(file.getFileName.toString)
+              else path
+          }
+          if (newPathInJar.getParent != null) Files.createDirectories(newPathInJar.getParent)
+          shadingPackager.applyShading(file, newPathInJar)
+          FileVisitResult.CONTINUE
         }
-        if (newPathInJar.getParent != null) Files.createDirectories(newPathInJar.getParent)
-        assert(file.toString.nonEmpty)
-        assert(newPathInJar.toString.nonEmpty)
-        Files.copy(file, newPathInJar, StandardCopyOption.REPLACE_EXISTING)
-        FileVisitResult.CONTINUE
-      }
-    })
-
-    inputFS.foreach(_.close())
+      })
+    } finally {
+      inputFS.foreach(_.close())
+    }
   }
 
   private def timed[T](msg: String, f: => T)(implicit streams: TaskStreams): T = {
@@ -246,7 +257,8 @@ object PluginPackager {
                          report: UpdateReport,
                          libMapping: Seq[(ModuleID, Option[String])],
                          additionalMappings: Seq[(File, String)],
-                         packageMethod: PackagingMethod)
+                         packageMethod: PackagingMethod,
+                         shadePatterns: Seq[ShadePattern])
 
 
   /**

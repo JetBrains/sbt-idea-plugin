@@ -5,7 +5,7 @@ licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
 
 scalacOptions ++= Seq("-deprecation", "-feature")
 
-libraryDependencies += "org.scalaj" %% "scalaj-http" % "2.3.0"
+libraryDependencies ++= "org.scalaj" %% "scalaj-http" % "2.3.0" :: "org.pantsbuild" % "jarjar" % "1.6.6" :: Nil
 
 crossSbtVersions := Seq("0.13.16", "1.0.0")
 

@@ -1,7 +1,8 @@
 package org.jetbrains.sbtidea
 
 import org.jetbrains.sbt.tasks.PluginPackager
-import org.jetbrains.sbt.tasks.PluginPackager.ProjectData
+import org.jetbrains.sbt.tasks.PluginPackager.{Mappings, ProjectData}
+import org.jetbrains.sbtidea.tasks.ShadePattern
 import sbt.Keys._
 import sbt._
 
@@ -113,7 +114,7 @@ object Keys {
     "Folder to write plugin artifact to"
   )
 
-  lazy val packageMappings = TaskKey[Seq[(File, File)]](
+  lazy val packageMappings = TaskKey[Mappings](
     "package-mappings",
     "Internal structure of plugin artifact"
   )
@@ -126,6 +127,11 @@ object Keys {
   lazy val packagePluginZip = TaskKey[File](
     "package-plugin-zip",
     "Create plugin distribution zip file"
+  )
+
+  lazy val shadePatterns = SettingKey[Seq[ShadePattern]](
+    "shade-patterns",
+    "Class renaming patterns in jars"
   )
 
 
@@ -141,7 +147,8 @@ object Keys {
       update.value,
       packageLibraryMappings.value,
       packageFileMappings.value,
-      packageMethod.value)
+      packageMethod.value,
+      shadePatterns.value)
   }
 
   lazy val homePrefix: File = sys.props.get("tc.idea.prefix").map(new File(_)).getOrElse(Path.userHome)
@@ -262,6 +269,8 @@ object Keys {
     aggregate.in(packagePlugin) := false,
     aggregate.in(updateIdea) := false,
     unmanagedJars in Compile += file(System.getProperty("java.home")).getParentFile / "lib" / "tools.jar",
+
+    shadePatterns := Seq.empty,
 
     // Test-related settings
 
