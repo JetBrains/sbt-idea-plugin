@@ -135,21 +135,11 @@ object Keys {
   )
 
 
-  lazy val dumpDependencyStructure = Def.task {
-    compile.in(Compile, packageBin).value
-    ProjectData(
-      thisProjectRef.value,
-      managedClasspath.in(Compile).value,
-      libraryDependencies.in(Compile).value,
-      packageAdditionalProjects.value,
-      packageAssembleLibraries.value,
-      products.in(Compile).value,
-      update.value,
-      packageLibraryMappings.value,
-      packageFileMappings.value,
-      packageMethod.value,
-      shadePatterns.value)
-  }
+  lazy val dumpDependencyStructure = TaskKey[ProjectData](
+    "dump-dependency-structure"
+  )
+
+//  lazy val
 
   lazy val homePrefix: File = sys.props.get("tc.idea.prefix").map(new File(_)).getOrElse(Path.userHome)
   lazy val ivyHomeDir: File = Option(System.getProperty("sbt.ivy.home")).fold(homePrefix / ".ivy2")(file)
@@ -243,10 +233,25 @@ object Keys {
     packageFileMappings := Seq.empty,
     packageAdditionalProjects := Seq.empty,
     packageAssembleLibraries := false,
+    dumpDependencyStructure := Def.task {
+      ProjectData(
+        thisProjectRef.value,
+        managedClasspath.in(Compile).value,
+        libraryDependencies.in(Compile).value,
+        packageAdditionalProjects.value,
+        packageAssembleLibraries.value,
+        products.in(Compile).value,
+        update.value,
+        packageLibraryMappings.value,
+        packageFileMappings.value,
+        packageMethod.value,
+        shadePatterns.value)
+    }.value,
     packageMappings := Def.taskDyn {
+      streams.value.log.info("started dumping structure")
       val rootProject = thisProjectRef.value
       val buildDeps = buildDependencies.value
-      val data = dumpDependencyStructure.all(ScopeFilter(inAnyProject)).value
+      val data = dumpDependencyStructure.all(ScopeFilter(inAnyProject)).value.filter(_ != null)
       val outputDir = packageOutputDir.value
       val stream = streams.value
       Def.task { PluginPackager.artifactMappings(rootProject, outputDir, data, buildDeps, stream) }
