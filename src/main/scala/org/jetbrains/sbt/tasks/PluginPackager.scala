@@ -128,7 +128,7 @@ object PluginPackager {
           artifactMap ++= processedLibs
       }
 
-      artifactMap ++= additionalMappings.map { case (from, to) => from -> outputDir / to }
+      artifactMap ++= additionalMappings.map { case (from, to) => from -> outputDir / fixPaths(to) }
 
       artifactMap.map{case (a, b) => (a, b, shadePatterns)}.toSeq
     }
@@ -143,6 +143,11 @@ object PluginPackager {
     streams.log.info(s"finished building structure: got ${result.size} mappings")
 
     result.toSeq
+  }
+
+  private def fixPaths(str: String): String = System.getProperty("os.name") match {
+    case os if os.startsWith("Windows") => str.replace('/', '\\')
+    case _ => str.replace('\\', '/')
   }
 
   private def buildModuleIdMap(cp: Classpath)(implicit scalaVersion: ProjectScalaVersion): Map[ModuleKey, File] = (for {
