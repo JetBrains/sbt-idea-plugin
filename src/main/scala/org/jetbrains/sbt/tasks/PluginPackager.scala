@@ -55,9 +55,14 @@ object PluginPackager {
       val artifactMap = new mutable.TreeSet[(File, File)]()
 
       def findParentToMerge(ref: ProjectRef): ProjectRef = projectMap.getOrElse(ref,
-        throw new RuntimeException(s"Project $ref has no parent to merge into")) match {
-        case ProjectData(p, _, _, _, _, _, _, _, _, _: Standalone,_) => p
-        case _ => findParentToMerge(revProjectMap.filter(_._1 == ref).head._2)
+        throw new RuntimeException(s"Project $ref has no associated ProjectData")) match {
+          case ProjectData(p, _, _, _, _, _, _, _, _, _: Standalone, _) => p
+          case ProjectData(_, _, _, _, _, _, _, _, _, _: Skip, _)       => null
+          case _ =>
+            val xx = revProjectMap.filter(_._1 == ref).map(_._2).map(findParentToMerge).filter(_ != null)
+            if (xx.size > 1) throw new RuntimeException(s"Multiple parents found for $ref: $xx")
+            if (xx.isEmpty) throw new RuntimeException(s"No parents found for $ref")
+            xx.head
       }
 
       val ProjectData(_,
