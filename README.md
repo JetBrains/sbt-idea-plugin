@@ -17,14 +17,21 @@ From version 1.0.0, this plugin is published for sbt 0.13 and 1.0
 * Insert into `project/plugins.sbt`:
 
 ```Scala
-addSbtPlugin("org.jetbrains" % "sbt-idea-plugin" % "1.0.1")
+addSbtPlugin("org.jetbrains" % "sbt-idea-plugin" % "2.1.3")
 ```
 
-* Run SBT and execute `updateIdea` task. It will download IDEA and external plugins used in project
+* Run SBT and the plugin will automatically download and attach IDEA dependencies.
 
 * Start coding
 
-## Available settings
+## IDEA and plugin settings
+
+#### `ideaPluginName in ThisBuild :: SettingKey[String]`
+
+Default: `"MyCoolIdeaPlugin"`
+
+Name of your plugin. Better set this beforehand since several other settings such as
+IDEA directries and artifact names depend on it.
 
 #### `ideaBuild in ThisBuild :: SettingKey[String]`
 
@@ -44,7 +51,7 @@ Edition of IntelliJ IDEA to use in project.
 
 #### `ideaDownloadDirectory in ThisBuild :: SettingKey[File]`
 
-Default: `baseDirectory / "idea"`
+Default: `homePrefix / s".${ideaPluginName.value}Plugin${ideaEdition.value.shortname}" / "sdk"`
 
 Directory where IDEA binaries and sources will be downloaded.
 
@@ -70,17 +77,75 @@ List of external IDEA plugins to depend upon. Their zips or jars will be downloa
 and unpacked in `ideaBaseDirectory / "externalPlugins"` directory, each in its own subdirectory. They will be used
 in compilation.
 
+Example: 
+```SBT
+// use some particular artifact
+ideaExternalPlugins += IdeaPlugin.Zip("Scala", "https://plugins.jetbrains.com/...")
+// use latest nightly build from the repo
+ideaExternalPlugins += IdeaPlugin.Id("Scala", "org.intellij.scala", Some("Nightly"))
+```
+
 #### `ideaPublishSettings :: SettingKey[PublishSettings]`
 
 Default: `PublishSettings(pluginId = "", username = "", password = "", channel = None)`
 
 Settings necessary for uploading your IDEA plugin to https://plugins.jetbrains.com
 
-#### `ideaPluginFile :: TaskKey[File]`
+## Packaging settings
 
-Default: aliased to `package in Compile`
+#### `packageMethod :: SettingKey[PackagingMethod]`
 
-Your IDEA plugin file to publish on https://plugins.jetbrains.com
+Default for root project: `PackagingMethod.Standalone(targetPath = s"lib/${name.value}.jar")`
+
+Default for all other subprojects: `PackagingMethod.MergeIntoParent()`
+
+Controls how current project will be treated when packaging the plugin artifact.
+```SBT
+// produce standalone jar with the same name as the project:
+packageMethod := PackagingMethod.Standalone()
+
+// put all classes of this project into parent's jar
+// NB: this option supports transitive dependencies on projects: it will walk up the dependency 
+// tree to find the first Standalone() project, however if your project has multiple such parents
+// this will result in an error - in this case use MergeIntoOther(project: Project) to expicitly
+// specify in which project to merge into
+packageMethod := PackagingMethod.MergeIntoParent()
+
+// merge all dependencies of this project in a standalone jar
+// being used together with assembleLibraries setting allows sbt-assembly like packaging
+// the project may contain classes but they will be ignored during packaging
+packageMethod := PackagingMethod.DepsOnly("lib/myProjectDeps.jar")
+assembleLibraries := true
+
+// skip project alltogether during packaging
+packageMethod := PackagingMethod.Skip()
+```
+
+#### `packageLibraryMappings :: SettingKey[Seq[(ModuleID, Option[String])]]`
+
+Default:
+```SBT
+"org.scala-lang"  % "scala-.*" % ".*" -> None ::
+"org.scala-lang.modules" % "scala-.*" % ".*" -> None :: Nil
+```
+
+Sequence of rules to fine-tune how the library dependencies are packaged. By default all dependencies
+including transitive are placed in the "lib" subfolder of the plugin artifact. Scala runtime
+is also skipped by default.
+
+```SBT
+// package ALL dependencies to default location
+packageLibraryMappings := Seq()
+
+// merge all scalameta jars into a single jar
+packageLibraryMappings += "org.scalameta" %% ".*" % ".*" -> Some("lib/scalameta.jar")
+
+// skip packaging protobuf
+packageLibraryMappings += "com.google.protobuf" % "protobuf-java" % ".*" -> None
+
+// rename scala library(strip version suffix)
+packageLibraryMappings += "org.scala-lang" % "scala-library" % scalaVersion -> Some("lib/scala-library.jar")
+```
 
 ## Tasks
 
