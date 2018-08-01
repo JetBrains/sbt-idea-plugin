@@ -297,8 +297,8 @@ object PluginPackager {
     override def equals(o: scala.Any): Boolean = o match {
       case ModuleKey(_id, _attributes) =>
         id.organization.equals(_id.organization) &&
-          id.name.matches(_id.name) &&
-          id.revision.matches(_id.revision) &&
+          (id.name == _id.name || id.name.matches(_id.name)) &&
+          (id.revision == _id.revision || id.revision.matches(_id.revision)) &&
           attributes == _attributes
       case _ => false
     }
