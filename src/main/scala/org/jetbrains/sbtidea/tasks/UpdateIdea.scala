@@ -15,7 +15,7 @@ object UpdateIdea {
             externalPlugins: Seq[IdeaPlugin],
             streams: TaskStreams): Unit = {
     try {
-      doUpdate(baseDir, IdeaEdition.Community, build, downloadSources = true, Seq.empty, streams)
+      doUpdate(baseDir, IdeaEdition.Community, build, downloadSources = true, externalPlugins, streams)
     } catch {
       case e: sbt.TranslatedException if e.getCause.isInstanceOf[java.io.FileNotFoundException] =>
         val newBuild = build.split('.').init.mkString(".") + "-EAP-CANDIDATE-SNAPSHOT"
