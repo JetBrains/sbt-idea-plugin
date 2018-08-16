@@ -191,7 +191,7 @@ object Keys {
     ideaDownloadDirectory := homePrefix / s".${ideaPluginName.value}Plugin${ideaEdition.value.shortname}" / "sdk",
     ideaTestConfigDir     := homePrefix / s".${ideaPluginName.value}Plugin${ideaEdition.value.shortname}" / "test-config",
     ideaTestSystemDir     := homePrefix / s".${ideaPluginName.value}Plugin${ideaEdition.value.shortname}" / "test-system",
-    concurrentRestrictions in Global := Seq(Tags.limit(Tags.Test, 1)), // IDEA tests can't be run in parallel
+    concurrentRestrictions in Global += Tags.limit(Tags.Test, 1), // IDEA tests can't be run in parallel
     cleanUpTestEnvironment := {
       IO.delete(ideaTestSystemDir.value)
       IO.delete(ideaTestConfigDir.value)
