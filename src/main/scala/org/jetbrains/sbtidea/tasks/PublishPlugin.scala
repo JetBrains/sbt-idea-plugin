@@ -11,7 +11,7 @@ object PublishPlugin {
   def apply(settings: PublishSettings, pluginFile: File, streams: TaskStreams): String = {
     val host = "https://plugins.jetbrains.com"
     streams.log.info(s"Uploading ${pluginFile.getName}(${pluginFile.length} bytes) to $host...")
-    sbt.jetbrains.apiAdapter.Using.fileInputStream(pluginFile) { pluginStream =>
+    sbt.jetbrains.ideaPlugin.apiAdapter.Using.fileInputStream(pluginFile) { pluginStream =>
       Http(s"$host/plugin/uploadPlugin")
         .timeout(connTimeoutMs = 5000, readTimeoutMs = 60000)
         .postForm(createForm(settings))

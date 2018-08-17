@@ -1,4 +1,4 @@
-package sbt.jetbrains
+package sbt.jetbrains.ideaPlugin
 
 object apiAdapter {
   val Using = sbt.io.Using

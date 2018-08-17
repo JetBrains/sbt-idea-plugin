@@ -12,7 +12,7 @@ import org.jetbrains.sbtidea.Keys.PackagingMethod
 import org.jetbrains.sbtidea.tasks.{NoOpClassShader, ShadePattern, ShadingPackager}
 import sbt.Def.Classpath
 import sbt.Keys.{TaskStreams, moduleID}
-import sbt.jetbrains.apiAdapter._
+import sbt.jetbrains.ideaPlugin.apiAdapter._
 import sbt.{File, ModuleID, ProjectRef, UpdateReport, _}
 
 import scala.collection.mutable

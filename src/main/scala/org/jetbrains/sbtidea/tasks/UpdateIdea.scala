@@ -131,7 +131,7 @@ object UpdateIdea {
   }
 
   private def download(from: sbt.URL, to: File): Unit = {
-    import sbt.jetbrains.apiAdapter._
+    import sbt.jetbrains.ideaPlugin.apiAdapter._
     Using.urlInputStream(from) { inputStream =>
        IO.transfer(inputStream, to)
      }
