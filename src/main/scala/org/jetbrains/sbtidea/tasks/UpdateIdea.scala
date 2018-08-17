@@ -15,13 +15,13 @@ object UpdateIdea {
             externalPlugins: Seq[IdeaPlugin],
             streams: TaskStreams): Unit = {
     try {
-      doUpdate(baseDir, IdeaEdition.Community, build, downloadSources = true, externalPlugins, streams)
+      doUpdate(baseDir, edition, build, downloadSources, externalPlugins, streams)
     } catch {
       case e: sbt.TranslatedException if e.getCause.isInstanceOf[java.io.FileNotFoundException] =>
         val newBuild = build.split('.').init.mkString(".") + "-EAP-CANDIDATE-SNAPSHOT"
         streams.log.warn(s"Failed to download IDEA $build, trying $newBuild")
         IO.deleteIfEmpty(Set(baseDir))
-        doUpdate(baseDir, IdeaEdition.Community, newBuild, downloadSources = true, Seq.empty, streams)
+        doUpdate(baseDir, edition, newBuild, downloadSources, externalPlugins, streams)
     }
   }
 
