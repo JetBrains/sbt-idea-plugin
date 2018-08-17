@@ -1,11 +1,11 @@
 # check if everything is downloaded
 > updateIdea
-$ exists idea
-$ exists idea/ideaIC-15.0.zip
-$ exists idea/15.0
-$ exists idea/15.0/lib
-$ exists idea/15.0/plugins
-$ exists idea/15.0/sources.zip
-$ exists idea/15.0/externalPlugins/cucumber-for-java
-$ exists idea/15.0/externalPlugins/cucumber-for-java/lib
-$ absent idea/15.0/externalPlugins/cucumber-for-java/cucumber-java
+$ exists idea/sdk
+$ exists idea/sdk/ideaIC-15.0.zip
+$ exists idea/sdk/15.0
+$ exists idea/sdk/15.0/lib
+$ exists idea/sdk/15.0/plugins
+$ exists idea/sdk/15.0/sources.zip
+$ exists idea/sdk/15.0/externalPlugins/cucumber-for-java
+$ exists idea/sdk/15.0/externalPlugins/cucumber-for-java/lib
+$ absent idea/sdk/15.0/externalPlugins/cucumber-for-java/cucumber-java

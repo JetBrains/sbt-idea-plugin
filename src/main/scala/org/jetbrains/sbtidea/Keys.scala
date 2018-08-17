@@ -14,7 +14,7 @@ object Keys {
 
   lazy val ideaBuild = SettingKey[String](
     "idea-build",
-    "Number of Intellij IDEA build to use in project")
+    "Number of IntelliJ IDEA build to use in project")
 
   lazy val ideaDownloadDirectory = SettingKey[File](
     "idea-download-directory",
@@ -22,7 +22,7 @@ object Keys {
 
   lazy val ideaInternalPlugins = SettingKey[Seq[String]](
     "idea-internal-plugins",
-    "List of names of bundled Intellij IDEA plugins this project depends on")
+    "List of names of bundled IntelliJ IDEA plugins this project depends on")
 
   lazy val ideaExternalPlugins = SettingKey[Seq[IdeaPlugin]](
     "idea-external-plugins",
@@ -51,6 +51,10 @@ object Keys {
   lazy val publishPlugin = TaskKey[String](
     "publish-plugin",
     "Publish IDEA plugin on plugins.jetbrains.com")
+
+  lazy val ideaPluginDirectory = SettingKey[File](
+    "idea-plugin-directory",
+    "Default base directory of IDEA config directories for this plugin")
 
   lazy val ideaBaseDirectory = TaskKey[File](
     "idea-base-directory",
@@ -183,14 +187,15 @@ object Keys {
 
 
   lazy val buildSettings: Seq[Setting[_]] = Seq(
-    ideaPluginName      := "MyCoolIdeaPlugin",
+    ideaPluginName      := "InsertName",
     ideaBuild           := "LATEST-EAP-SNAPSHOT",
     ideaEdition         := IdeaEdition.Community,
     ideaDownloadSources := true,
+    ideaPluginDirectory   := homePrefix / s".${ideaPluginName.value}Plugin${ideaEdition.value.shortname}",
     ideaBaseDirectory     := ideaDownloadDirectory.value / ideaBuild.value,
-    ideaDownloadDirectory := homePrefix / s".${ideaPluginName.value}Plugin${ideaEdition.value.shortname}" / "sdk",
-    ideaTestConfigDir     := homePrefix / s".${ideaPluginName.value}Plugin${ideaEdition.value.shortname}" / "test-config",
-    ideaTestSystemDir     := homePrefix / s".${ideaPluginName.value}Plugin${ideaEdition.value.shortname}" / "test-system",
+    ideaDownloadDirectory := ideaPluginDirectory.value / "sdk",
+    ideaTestConfigDir     := ideaPluginDirectory.value / "test-config",
+    ideaTestSystemDir     := ideaPluginDirectory.value / "test-system",
     concurrentRestrictions in Global += Tags.limit(Tags.Test, 1), // IDEA tests can't be run in parallel
     cleanUpTestEnvironment := {
       IO.delete(ideaTestSystemDir.value)
