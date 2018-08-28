@@ -1,4 +1,4 @@
-package org.jetbrains.sbtidea.tasks
+package org.jetbrains.sbtidea.tasks.packaging
 
 import java.nio.file.{Files, Path, StandardCopyOption, StandardOpenOption}
 
@@ -8,7 +8,7 @@ import sbt.Keys.TaskStreams
 
 case class ShadePattern(from: String, to: String)
 
-class ShadingPackager(patterns: Seq[ShadePattern])(implicit val streams: TaskStreams) {
+class ClassShader(patterns: Seq[ShadePattern])(implicit val streams: TaskStreams) {
 
   private val processor = new JJProcessor(patterns.map {
     case ShadePattern(pat, res) =>
@@ -21,9 +21,9 @@ class ShadingPackager(patterns: Seq[ShadePattern])(implicit val streams: TaskStr
   private val entry = new EntryStruct
 
   if (streams!=null)
-    streams.log.info(s"Initialized shadower with ${patterns.size} patterns")
+    streams.log.info(s"Initialized shader with ${patterns.size} patterns")
 
-  def applyShading(from: Path, to: Path): Unit = {
+  def applyShading(from: Path, to: Path)(cont: => Unit): Unit = {
     entry.data = Files.readAllBytes(from)
     entry.name = from.toString.substring(1).replace('\\', '/') // leading '/' cannot be used in ZFS also fix class names produced under windows
     entry.time = -1
@@ -38,7 +38,6 @@ class ShadingPackager(patterns: Seq[ShadePattern])(implicit val streams: TaskStr
 
 }
 
-class NoOpClassShader() extends ShadingPackager(Seq())(null) {
-  override def applyShading(from: Path, to: Path): Unit =
-    Files.copy(from, to, StandardCopyOption.REPLACE_EXISTING)
+class NoOpClassShader() extends ClassShader(Seq())(null) {
+  override def applyShading(from: Path, to: Path)(cont: => Unit): Unit = cont
 }

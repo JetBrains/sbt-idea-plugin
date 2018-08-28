@@ -1,8 +1,7 @@
 package org.jetbrains.sbtidea
 
-import org.jetbrains.sbt.tasks.PluginPackager
-import org.jetbrains.sbt.tasks.PluginPackager.{Mappings, ProjectData}
-import org.jetbrains.sbtidea.tasks.ShadePattern
+import org.jetbrains.sbtidea.tasks.packaging._
+//import org.jetbrains.sbt.tasks.PluginPackager.{Mappings, ProjectData}
 import sbt.Keys._
 import sbt._
 
@@ -128,6 +127,11 @@ object Keys {
     "Create plugin distribution"
   )
 
+  lazy val packagePluginStatic = TaskKey[File](
+    "package-plugin-static",
+    "Create plugin distribution including only external dependencies and standalone projects marked as static"
+  )
+
   lazy val packagePluginZip = TaskKey[File](
     "package-plugin-zip",
     "Create plugin distribution zip file"
@@ -138,12 +142,9 @@ object Keys {
     "Class renaming patterns in jars"
   )
 
-
   lazy val dumpDependencyStructure = TaskKey[ProjectData](
     "dump-dependency-structure"
   )
-
-//  lazy val
 
   lazy val homePrefix: File = sys.props.get("tc.idea.prefix").map(new File(_)).getOrElse(Path.userHome)
   lazy val ivyHomeDir: File = Option(System.getProperty("sbt.ivy.home")).fold(homePrefix / ".ivy2")(file)
@@ -155,7 +156,7 @@ object Keys {
     final case class MergeIntoParent() extends PackagingMethod
     final case class DepsOnly(targetPath: String) extends PackagingMethod
     final case class MergeIntoOther(project: Project) extends PackagingMethod
-    final case class Standalone(targetPath: String = "") extends PackagingMethod
+    final case class Standalone(targetPath: String = "", static: Boolean = false) extends PackagingMethod
   }
 
   sealed trait IdeaPlugin {
@@ -259,19 +260,26 @@ object Keys {
       val data = dumpDependencyStructure.all(ScopeFilter(inAnyProject)).value.filter(_ != null)
       val outputDir = packageOutputDir.value
       val stream = streams.value
-      Def.task { PluginPackager.artifactMappings(rootProject, outputDir, data, buildDeps, stream) }
+      Def.task { new StructureBuilder(stream).artifactMappings(rootProject, outputDir, data, buildDeps) }
     }.value,
     packagePlugin := Def.taskDyn {
       val outputDir = packageOutputDir.value
       val mappings  = packageMappings.value
-      val stream = streams.value
-      Def.task{ PluginPackager.packageArtifact(mappings, stream); outputDir }
+      val stream    = streams.value
+      val myTarget  = target.value
+      Def.task { new DistBuilder(stream, myTarget).packageArtifact(mappings); outputDir }
+    }.value,
+    packagePluginStatic := Def.taskDyn {
+      val outputDir = packageOutputDir.value
+      val mappings  = packageMappings.value
+      val stream    = streams.value
+      Def.task { outputDir }
     }.value,
     packagePluginZip := Def.task {
       val outputDir = packagePlugin.value.getParentFile
       val pluginFile = ideaPluginFile.value
       IO.delete(pluginFile)
-      PluginPackager.zipDirectory(outputDir, pluginFile)
+//      PluginPackager.zipDirectory(outputDir, pluginFile)
       pluginFile
     }.value,
     aggregate.in(packagePluginZip) := false,
