@@ -32,12 +32,18 @@ class DistBuilder(stream: TaskStreams, private val target: File) extends Artifac
           val packager = createPackager(to.toPath, shader)
           packager.copySingleJar(from.toPath)
         })
-      case (to, mappings) if to.name.endsWith("jar") || to.toString.contains("jar!") =>
+      case (to, mappings) if to.name.endsWith("jar") =>
         if (!to.getParentFile.exists())
           to.getParentFile.mkdirs()
         timed(s"packageJar(${mappings.size}): $to", {
           val rules     = mappings.flatMap(_.metaData.shading).distinct
           val shader    = createShader(rules)
+          val packager  = createPackager(to.toPath, shader)
+          packager.mergeIntoOne(mappings.map(_.from.toPath))
+        })
+      case (to, mappings) if to.toString.contains("jar!") =>
+        timed(s"patch(${mappings.size}): $to", {
+          val shader    = createShader(Seq.empty)
           val packager  = createPackager(to.toPath, shader)
           packager.mergeIntoOne(mappings.map(_.from.toPath))
         })
