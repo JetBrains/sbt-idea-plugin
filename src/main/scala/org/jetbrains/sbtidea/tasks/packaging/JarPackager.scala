@@ -13,7 +13,7 @@ trait JarPackager {
   def mergeIntoOne(source: Seq[Path])
 }
 
-class SimplePackager(private val myOutput: Path,
+class SimplePackager(protected val myOutput: Path,
                      private val shader: ClassShader,
                      private val incrementalCache: IncrementalCache)(implicit private val streams: TaskStreams) extends JarPackager {
 
@@ -122,5 +122,21 @@ class SimplePackager(private val myOutput: Path,
     }
     Files.walkFileTree(root, visitor)
   }
+
+}
+
+class ZipPackager(myOutput: Path)(implicit private val streams: TaskStreams) extends SimplePackager(myOutput, new NoOpClassShader, new DumbIncrementalCache) {
+  override protected def createOutputFS(output: Path): FileSystem = {
+    val env = new util.HashMap[String, String]()
+    env.put("create", String.valueOf(Files.notExists(output)))
+    FileSystems.newFileSystem(URI.create("jar:" + output.toUri), env)
+  }
+
+  override protected def createOutput(srcPath: Path, output: Path, outputFS: FileSystem): Path =
+    outputFS.getPath(srcPath.toString)
+
+  override protected def createInputFS(input: Path): FileSystem = input.getFileSystem
+
+  override protected def createInput(input: Path, inputFS: FileSystem): Path = input
 
 }

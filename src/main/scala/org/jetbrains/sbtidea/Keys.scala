@@ -278,8 +278,9 @@ object Keys {
     packagePluginZip := Def.task {
       val outputDir = packagePlugin.value.getParentFile
       val pluginFile = ideaPluginFile.value
+      implicit val stream: TaskStreams = streams.value
       IO.delete(pluginFile)
-//      PluginPackager.zipDirectory(outputDir, pluginFile)
+      new ZipDistBuilder(pluginFile).produceArtifact(outputDir)
       pluginFile
     }.value,
     aggregate.in(packagePluginZip) := false,
