@@ -1,7 +1,7 @@
 package org.jetbrains.sbtidea
 
 import org.jetbrains.sbtidea.tasks.packaging._
-//import org.jetbrains.sbt.tasks.PluginPackager.{Mappings, ProjectData}
+import org.jetbrains.sbtidea.tasks.packaging.artifact._
 import sbt.Keys._
 import sbt._
 
@@ -273,7 +273,8 @@ object Keys {
       val outputDir = packageOutputDir.value
       val mappings  = packageMappings.value
       val stream    = streams.value
-      Def.task { outputDir }
+      val myTarget  = target.value
+      Def.task { new StaticDistBuilder(stream, myTarget).packageArtifact(mappings); outputDir }
     }.value,
     packagePluginZip := Def.task {
       val outputDir = packagePlugin.value.getParentFile

@@ -1,13 +1,10 @@
-package org.jetbrains.sbtidea.tasks.packaging
+package org.jetbrains.sbtidea.tasks.packaging.artifact
 
 import java.nio.file._
 
+import org.jetbrains.sbtidea.tasks.packaging._
 import sbt.Keys.TaskStreams
 import sbt._
-
-trait ArtifactBuilder[T, U] {
-    def produceArtifact(structure: T): U
-}
 
 class DistBuilder(stream: TaskStreams, private val target: File) extends ArtifactBuilder[Mappings,File] {
 
@@ -58,7 +55,7 @@ class DistBuilder(stream: TaskStreams, private val target: File) extends Artifac
     }
   }
 
-  private def filterUnchangedJars(mappings: Mappings): Mappings = {
+  protected def preFilterMappings(mappings: Mappings): Mappings = {
     mappings.filter(f =>
       !f.from.toString.endsWith("jar") ||
       !f.to.exists() ||
@@ -66,12 +63,14 @@ class DistBuilder(stream: TaskStreams, private val target: File) extends Artifac
     )
   }
 
+  protected def filterGroupedMappings(grouped: Seq[(sbt.File, Seq[Mapping])]): Seq[(sbt.File, Seq[Mapping])] = grouped
+
   protected def transformMappings(structure: Mappings): Seq[(sbt.File, Seq[Mapping])] = {
-    val filtered = filterUnchangedJars(structure)
+    val filtered            = preFilterMappings(structure)
     val (overrides, normal) = filtered.partition(_.to.toString.contains("jar!"))
     val groupedNormal       = normal.groupBy(_.to)
     val groupedOverrides    = overrides.groupBy(_.to)
-    groupedNormal.toSeq ++ groupedOverrides.toSeq
+    filterGroupedMappings(groupedNormal.toSeq) ++ filterGroupedMappings(groupedOverrides.toSeq)
   }
 
   def packageArtifact(structure: Mappings): Unit = {
@@ -85,20 +84,3 @@ class DistBuilder(stream: TaskStreams, private val target: File) extends Artifac
     new File(".")
   }
 }
-
-class ZipDistBuilder(private val dest: File)(implicit stream: TaskStreams) extends ArtifactBuilder[File, File] {
-  override def produceArtifact(source: File): sbt.File = {
-    val packager = new ZipPackager(dest.toPath)
-    timed(s"Packaging ZIP artifact: $dest", {
-      packager.mergeIntoOne(Seq(source.toPath))
-    })
-    dest
-  }
-}
-
-//class StaticDistBuilder(private val streams: TaskStreams) extends DistBuilder(streams) {
-//  override def produceArtifact(structure: Mappings): sbt.File = {
-//    ???
-//  }
-//}
-
