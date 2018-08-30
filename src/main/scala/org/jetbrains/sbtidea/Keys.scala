@@ -198,6 +198,14 @@ object Keys {
     ideaTestConfigDir     := ideaPluginDirectory.value / "test-config",
     ideaTestSystemDir     := ideaPluginDirectory.value / "test-system",
     concurrentRestrictions in Global += Tags.limit(Tags.Test, 1), // IDEA tests can't be run in parallel
+    updateIdea := Def.task { tasks.UpdateIdea.apply(
+      ideaBaseDirectory.value,
+      ideaEdition.value,
+      ideaBuild.value,
+      ideaDownloadSources.value,
+      ideaExternalPlugins.all(ScopeFilter(inAnyProject)).value.flatten,
+      streams.value
+    )}.value,
     cleanUpTestEnvironment := {
       IO.delete(ideaTestSystemDir.value)
       IO.delete(ideaTestConfigDir.value)
@@ -219,15 +227,6 @@ object Keys {
 
     ideaFullJars := ideaMainJars.value ++ ideaInternalPluginsJars.value ++ ideaExternalPluginsJars.value,
     unmanagedJars in Compile ++= ideaFullJars.value,
-
-    updateIdea := tasks.UpdateIdea.apply(
-      ideaBaseDirectory.value,
-      ideaEdition.value,
-      ideaBuild.value,
-      ideaDownloadSources.value,
-      ideaExternalPlugins.value,
-      streams.value
-    ),
 
     packageOutputDir := target.value / "plugin" / ideaPluginName.value,
     ideaPluginFile   := target.value / s"${ideaPluginName.value}-${version.value}.zip",
