@@ -17,12 +17,14 @@ class SimplePackager(protected val myOutput: Path,
                      private val shader: ClassShader,
                      private val incrementalCache: IncrementalCache)(implicit private val streams: TaskStreams) extends JarPackager {
 
-  private val outputExists = Files.exists(myOutput)
+  private val myOutputExists = Files.exists(myOutput)
 
   private var counter = 0
 
+  protected def outputExists(path: Path): Boolean = myOutputExists
+
   override def copySingleJar(from: Path): Unit = {
-    if (!outputExists || fileChanged(from)) {
+    if (!myOutputExists || fileChanged(from)) {
       if (!Files.exists(myOutput.getParent))
         Files.createDirectories(myOutput.getParent)
       Files.copy(from, myOutput, StandardCopyOption.REPLACE_EXISTING)
@@ -107,18 +109,17 @@ class SimplePackager(protected val myOutput: Path,
 
   private def walkEntry(root: Path, outputFS: FileSystem)(processor: (Path, Path) => Unit): Unit = {
     val visitor = new SimpleFileVisitor[Path]() {
-      override def visitFile(p: Path, basicFileAttributes: BasicFileAttributes): FileVisitResult =
-        if (outputExists && !fileChanged(p))
-          FileVisitResult.CONTINUE
-        else {
-          val perhapsRelativePath = Option(root.relativize(p))
-            .filter(_.toString.nonEmpty)
-            .getOrElse(Paths.get(p.getFileName.toString)) // copying single file - nothing to relativize against
-          val newPathInJar = createOutput(perhapsRelativePath, myOutput, outputFS)
+      override def visitFile(p: Path, basicFileAttributes: BasicFileAttributes): FileVisitResult = {
+        val perhapsRelativePath = Option(root.relativize(p))
+          .filter(_.toString.nonEmpty)
+          .getOrElse(Paths.get(p.getFileName.toString)) // copying single file - nothing to relativize against
+        val newPathInJar = createOutput(perhapsRelativePath, myOutput, outputFS)
+        if (!outputExists(newPathInJar) || fileChanged(p)) {
           processor(p, newPathInJar)
           counter += 1
-          FileVisitResult.CONTINUE
         }
+        FileVisitResult.CONTINUE
+      }
     }
     Files.walkFileTree(root, visitor)
   }

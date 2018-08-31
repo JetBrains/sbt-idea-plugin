@@ -8,7 +8,7 @@ import sbt._
 
 class DistBuilder(stream: TaskStreams, private val target: File) extends ArtifactBuilder[Mappings,File] {
 
-  private implicit val streams: TaskStreams = stream
+  protected implicit val streams: TaskStreams = stream
 
   protected val incrementalCache = new PersistentIncrementalCache(target.toPath)
 
@@ -23,35 +23,16 @@ class DistBuilder(stream: TaskStreams, private val target: File) extends Artifac
 
   private def processMappings(incremental: Seq[(sbt.File, Seq[Mapping])]): Unit = {
     incremental.foreach {
-      case (to, Seq(Mapping(from, _, metaData))) if to.name.endsWith("jar") && from.name.endsWith("jar") =>
-        timed(s"copyJar: $to", {
-          val shader = createShader(metaData.shading)
-          val packager = createPackager(to.toPath, shader)
-          packager.copySingleJar(from.toPath)
-        })
+      case (to, Seq(mapping@Mapping(from, _, _))) if to.name.endsWith("jar") && from.name.endsWith("jar") =>
+        copySingleJar(mapping)
       case (to, mappings) if to.name.endsWith("jar") =>
-        if (!to.getParentFile.exists())
-          to.getParentFile.mkdirs()
-        timed(s"packageJar(${mappings.size}): $to", {
-          val rules     = mappings.flatMap(_.metaData.shading).distinct
-          val shader    = createShader(rules)
-          val packager  = createPackager(to.toPath, shader)
-          packager.mergeIntoOne(mappings.map(_.from.toPath))
-        })
+        packageJar(to.toPath, mappings)
       case (to, mappings) if to.toString.contains("jar!") =>
-        timed(s"patch(${mappings.size}): $to", {
-          val shader    = createShader(Seq.empty)
-          val packager  = createPackager(to.toPath, shader)
-          packager.mergeIntoOne(mappings.map(_.from.toPath))
-        })
-      case (to, mapping) =>
-        timed(s"copyDir: $to", {
-          mapping.foreach {
-            case Mapping(from, to1, _) if from.isDirectory => IO.copyDirectory(from, to1)
-            case Mapping(from, to1, _) => IO.copy(Seq(from -> to1))
-          }
-        })
-      case other => stream.log.warn(s"wtf: $other")
+        patch(to.toPath, mappings)
+      case (_, mapping) =>
+        copyDir(mapping)
+      case other =>
+        stream.log.warn(s"wtf: $other")
     }
   }
 
@@ -61,6 +42,40 @@ class DistBuilder(stream: TaskStreams, private val target: File) extends Artifac
       !f.to.exists() ||
       incrementalCache.fileChanged(f.from.toPath)
     )
+  }
+
+  protected def copySingleJar(mapping: Mapping): Unit = {
+    timed(s"copyJar: ${mapping.to}", {
+      val shader = createShader(mapping.metaData.shading)
+      val packager = createPackager(mapping.to.toPath, shader)
+      packager.copySingleJar(mapping.from.toPath)
+    })
+  }
+
+  protected def copyDir(mappings: Mappings): Unit = {
+    mappings.foreach {
+      case Mapping(from, to1, _) if from.isDirectory => timed(s"copyDir: $to1", IO.copyDirectory(from, to1))
+      case Mapping(from, to1, _)                     => timed(s"copyFile: $to1", IO.copy(Seq(from -> to1)))
+    }
+  }
+
+  protected def packageJar(to: Path, mappings: Mappings): Unit = {
+    if (!Files.exists(to.getParent))
+      Files.createDirectories(to.getParent)
+    timed(s"packageJar(${mappings.size}): $to", {
+      val rules     = mappings.flatMap(_.metaData.shading).distinct
+      val shader    = createShader(rules)
+      val packager  = createPackager(to, shader)
+      packager.mergeIntoOne(mappings.map(_.from.toPath))
+    })
+  }
+
+  protected def patch(to: Path, mappings: Mappings): Unit = {
+    timed(s"patch(${mappings.size}): $to", {
+      val shader    = createShader(Seq.empty)
+      val packager  = createPackager(to, shader)
+      packager.mergeIntoOne(mappings.map(_.from.toPath))
+    })
   }
 
   protected def filterGroupedMappings(grouped: Seq[(sbt.File, Seq[Mapping])]): Seq[(sbt.File, Seq[Mapping])] = grouped

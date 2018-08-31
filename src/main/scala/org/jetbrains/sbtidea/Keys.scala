@@ -273,7 +273,7 @@ object Keys {
       val mappings  = packageMappings.value
       val stream    = streams.value
       val myTarget  = target.value
-      Def.task { new StaticDistBuilder(stream, myTarget).packageArtifact(mappings); outputDir }
+      Def.task { new StaticDistBuilder(stream, myTarget, outputDir).packageArtifact(mappings); outputDir }
     }.value,
     packagePluginZip := Def.task {
       val outputDir = packagePlugin.value.getParentFile
