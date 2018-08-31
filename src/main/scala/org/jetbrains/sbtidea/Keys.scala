@@ -127,9 +127,9 @@ object Keys {
     "Create plugin distribution"
   )
 
-  lazy val packagePluginStatic = TaskKey[File](
-    "package-plugin-static",
-    "Create plugin distribution including only external dependencies and standalone projects marked as static"
+  lazy val packagePluginDynamic = TaskKey[File](
+    "package-plugin-dynamic",
+    "Create plugin distribution extracting all classes from projects not marked as static to disk"
   )
 
   lazy val packagePluginZip = TaskKey[File](
@@ -268,12 +268,12 @@ object Keys {
       val myTarget  = target.value
       Def.task { new DistBuilder(stream, myTarget).packageArtifact(mappings); outputDir }
     }.value,
-    packagePluginStatic := Def.taskDyn {
+    packagePluginDynamic := Def.taskDyn {
       val outputDir = packageOutputDir.value
       val mappings  = packageMappings.value
       val stream    = streams.value
       val myTarget  = target.value
-      Def.task { new StaticDistBuilder(stream, myTarget, outputDir).packageArtifact(mappings); outputDir }
+      Def.task { new DynamicDistBuilder(stream, myTarget, outputDir).packageArtifact(mappings); outputDir }
     }.value,
     packagePluginZip := Def.task {
       val outputDir = packagePlugin.value.getParentFile

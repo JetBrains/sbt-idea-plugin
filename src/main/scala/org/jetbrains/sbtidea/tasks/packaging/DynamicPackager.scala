@@ -4,10 +4,10 @@ import java.nio.file.{FileSystem, Files, Path}
 
 import sbt.Keys.TaskStreams
 
-class StaticPackager(myOutput: Path,
-                     shader: ClassShader,
-                     incrementalCache: IncrementalCache)
-                    (implicit private val streams: TaskStreams) extends SimplePackager(myOutput, shader, incrementalCache) {
+class DynamicPackager(myOutput: Path,
+                      shader: ClassShader,
+                      incrementalCache: IncrementalCache)
+                     (implicit private val streams: TaskStreams) extends SimplePackager(myOutput, shader, incrementalCache) {
 
   override protected def outputExists(path: Path): Boolean = Files.exists(path)
 
