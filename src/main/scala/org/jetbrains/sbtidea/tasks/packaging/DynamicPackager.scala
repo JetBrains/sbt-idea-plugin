@@ -12,7 +12,7 @@ class DynamicPackager(myOutput: Path,
   override protected def outputExists(path: Path): Boolean = Files.exists(path)
 
   override protected def createOutputFS(output: Path): FileSystem = {
-    if (!Files.exists(output))
+    if (!output.toFile.exists())
       Files.createDirectories(output)
     output.getFileSystem
   }
