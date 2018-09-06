@@ -2,6 +2,7 @@ package org.jetbrains.sbtidea
 
 import org.jetbrains.sbtidea.tasks.packaging._
 import org.jetbrains.sbtidea.tasks.packaging.artifact._
+import sbt.jetbrains.ideaPlugin.apiAdapter._
 import sbt.Keys._
 import sbt._
 
@@ -146,6 +147,10 @@ object Keys {
     "dump-dependency-structure"
   )
 
+  lazy val createCompilationTimeStamp: TaskKey[Unit] = taskKey("")
+
+  private var compilationTimeStamp = -1L
+
   lazy val homePrefix: File = sys.props.get("tc.idea.prefix").map(new File(_)).getOrElse(Path.userHome)
   lazy val ivyHomeDir: File = Option(System.getProperty("sbt.ivy.home")).fold(homePrefix / ".ivy2")(file)
 
@@ -210,6 +215,7 @@ object Keys {
       IO.delete(ideaTestSystemDir.value)
       IO.delete(ideaTestConfigDir.value)
     },
+    createCompilationTimeStamp := Def.task { compilationTimeStamp = System.currentTimeMillis() }.value,
     onLoad in Global := ((s: State) => {
       "updateIdea" :: s
     }) compose (onLoad in Global).value
@@ -268,13 +274,15 @@ object Keys {
       val myTarget  = target.value
       Def.task { new DistBuilder(stream, myTarget).packageArtifact(mappings); outputDir }
     }.value,
-    packagePluginDynamic := Def.taskDyn {
+    packagePluginDynamic := Def.sequential(createCompilationTimeStamp, Def.task {
       val outputDir = packageOutputDir.value
       val mappings  = packageMappings.value
       val stream    = streams.value
       val myTarget  = target.value
-      Def.task { new DynamicDistBuilder(stream, myTarget, outputDir).packageArtifact(mappings); outputDir }
-    }.value,
+      val hints = extractAffectedFiles(compilationTimeStamp, compile.all(ScopeFilter(inAnyProject, inConfigurations(Compile))).value)
+      new DynamicDistBuilder(stream, myTarget, outputDir, hints).packageArtifact(mappings)
+      outputDir
+    }).value,
     packagePluginZip := Def.task {
       val outputDir = packagePlugin.value.getParentFile
       val pluginFile = ideaPluginFile.value
