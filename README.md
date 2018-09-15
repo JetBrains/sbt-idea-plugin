@@ -229,8 +229,7 @@ lazy val ideaRunner = createRunnerProject(scalaCommunity, "idea-runner")
 
 There are two ways to run/debug your plugin: from SBT and from IDEA
 
-- Running from bare sbt is as simple as invoking `run` task. Debugger can later be attached to the
-  process, the default port is 5005.
+- Running from bare sbt is as simple as invoking `run` task on the synthetic runner project. Debugger can later be attached to the process remotely - the default port is 5005.
 - Running from IDEA requires first invoking `$YOUR_RUNNER_PROJECT/createIDEARunConfiguration` task.
   A new run configuration should appear in your local IDEA which can be launched via "Run" or "Debug"
 
