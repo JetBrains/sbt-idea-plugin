@@ -191,6 +191,17 @@ object Keys {
 
   final case class PublishSettings(pluginId: String, username: String, password: String, channel: Option[String])
 
+  def createRunnerProject(from: ProjectReference, newProjectName: String): Project =
+    project.in(file(s"target/tools/$name"))
+      .dependsOn(from % Provided)
+      .settings(
+        name := newProjectName,
+        dumpDependencyStructure := null, // avoid cyclic dependencies on products task
+        products := packagePlugin.in(from).value :: Nil,
+        packageMethod := org.jetbrains.sbtidea.Keys.PackagingMethod.Skip(),
+        unmanagedJars in Compile := ideaMainJars.value,
+        unmanagedJars in Compile += file(System.getProperty("java.home")).getParentFile / "lib" / "tools.jar"
+      )
 
   lazy val buildSettings: Seq[Setting[_]] = Seq(
     ideaPluginName      := "InsertName",
