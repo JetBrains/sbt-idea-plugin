@@ -218,6 +218,22 @@ Download IDEA's binaries and sources, put them into
 them in `ideaBaseDirectory / "externalPlugins"` directory. Automatically add IDEA's and
 plugin's jars into `unmanagedJars in Compile`.
 
+## Running the plugin
+
+To run IDEA with the plugin being developed, one needs to define a synthetic runner project in the build.
+This can be achieved with the helper function `createRunnerProject` which will set it up based on the root
+project of the plugin and a new name. Example:
+```SBT
+lazy val ideaRunner = createRunnerProject(scalaCommunity, "idea-runner")
+```
+
+There are two ways to run/debug your plugin: from SBT and from IDEA
+
+- Running from bare sbt is as simple as invoking `run` task. Debugger can later be attached to the
+  process, the default port is 5005.
+- Running from IDEA requires first invoking `$YOUR_RUNNER_PROJECT/createIDEARunConfiguration` task.
+  A new run configuration should appear in your local IDEA which can be launched via "Run" or "Debug"
+
 ## Notes and best practices
 
 - If you use `sbt-assembly` plugin to produce a fat jar to distribute your plugin you should avoid putting IDEA's jars 
