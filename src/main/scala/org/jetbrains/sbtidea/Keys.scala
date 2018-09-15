@@ -148,6 +148,7 @@ object Keys {
   )
 
   lazy val createCompilationTimeStamp: TaskKey[Unit] = taskKey("")
+  lazy val createIDEARunConfiguration: TaskKey[File] = taskKey("")
 
   private var compilationTimeStamp = -1L
 
@@ -204,7 +205,35 @@ object Keys {
         unmanagedJars in Compile += file(System.getProperty("java.home")).getParentFile / "lib" / "tools.jar",
         mainClass in (Compile, run) := Some("com.intellij.idea.Main"),
         javaOptions in run := javaOptions.in(from, Test).value :+
-          "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
+          "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005",
+        createIDEARunConfiguration := {
+          val name = s"IDEA-$newProjectName"
+          val data =
+            s"""<component name="ProjectRunConfigurationManager">
+               |  <configuration default="false" name="$name" type="Application" factoryName="Application">
+               |    <option name="MAIN_CLASS_NAME" value="com.intellij.idea.Main" />
+               |    <module name="$newProjectName" />
+               |    <option name="VM_PARAMETERS" value="${javaOptions.in(from, Test).value.mkString(" ")}" />
+               |    <shortenClasspath name="CLASSPATH_FILE" />
+               |    <RunnerSettings RunnerId="Debug">
+               |      <option name="DEBUG_PORT" value="" />
+               |      <option name="TRANSPORT" value="0" />
+               |      <option name="LOCAL" value="true" />
+               |    </RunnerSettings>
+               |    <RunnerSettings RunnerId="Profile " />
+               |    <RunnerSettings RunnerId="Run" />
+               |    <ConfigurationWrapper RunnerId="Debug" />
+               |    <ConfigurationWrapper RunnerId="Run" />
+               |    <method v="2">
+               |      <option name="Make" enabled="true" />
+               |    </method>
+               |  </configuration>
+               |</component>
+             """.stripMargin
+          val outFile = baseDirectory.in(from).value / ".idea" / "runConfigurations" / s"$name.xml"
+          IO.write(outFile, data.getBytes)
+          outFile
+        }
       )
 
   lazy val buildSettings: Seq[Setting[_]] = Seq(
