@@ -1,5 +1,6 @@
 package org.jetbrains.sbtidea
 
+import org.jetbrains.sbtidea.tasks.IdeaConfigBuilder
 import org.jetbrains.sbtidea.tasks.packaging._
 import org.jetbrains.sbtidea.tasks.packaging.artifact._
 import sbt.jetbrains.ideaPlugin.apiAdapter._
@@ -208,28 +209,7 @@ object Keys {
           "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005",
         createIDEARunConfiguration := {
           val name = s"IDEA-$newProjectName"
-          val data =
-            s"""<component name="ProjectRunConfigurationManager">
-               |  <configuration default="false" name="$name" type="Application" factoryName="Application">
-               |    <option name="MAIN_CLASS_NAME" value="com.intellij.idea.Main" />
-               |    <module name="$newProjectName" />
-               |    <option name="VM_PARAMETERS" value="${javaOptions.in(from, Test).value.mkString(" ")}" />
-               |    <shortenClasspath name="CLASSPATH_FILE" />
-               |    <RunnerSettings RunnerId="Debug">
-               |      <option name="DEBUG_PORT" value="" />
-               |      <option name="TRANSPORT" value="0" />
-               |      <option name="LOCAL" value="true" />
-               |    </RunnerSettings>
-               |    <RunnerSettings RunnerId="Profile " />
-               |    <RunnerSettings RunnerId="Run" />
-               |    <ConfigurationWrapper RunnerId="Debug" />
-               |    <ConfigurationWrapper RunnerId="Run" />
-               |    <method v="2">
-               |      <option name="Make" enabled="true" />
-               |    </method>
-               |  </configuration>
-               |</component>
-             """.stripMargin
+          val data = IdeaConfigBuilder.buildRunConfigurationXML(name, javaOptions.in(from, Test).value)
           val outFile = baseDirectory.in(from).value / ".idea" / "runConfigurations" / s"$name.xml"
           IO.write(outFile, data.getBytes)
           outFile
@@ -304,6 +284,7 @@ object Keys {
     }.value,
     packageMappings := Def.taskDyn {
       streams.value.log.info("started dumping structure")
+      incOptions
       val rootProject = thisProjectRef.value
       val buildDeps = buildDependencies.value
       val data = dumpDependencyStructure.all(ScopeFilter(inAnyProject)).value.filter(_ != null)
