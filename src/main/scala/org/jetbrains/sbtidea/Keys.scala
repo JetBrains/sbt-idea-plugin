@@ -284,7 +284,6 @@ object Keys {
     }.value,
     packageMappings := Def.taskDyn {
       streams.value.log.info("started dumping structure")
-      incOptions
       val rootProject = thisProjectRef.value
       val buildDeps = buildDependencies.value
       val data = dumpDependencyStructure.all(ScopeFilter(inAnyProject)).value.filter(_ != null)
