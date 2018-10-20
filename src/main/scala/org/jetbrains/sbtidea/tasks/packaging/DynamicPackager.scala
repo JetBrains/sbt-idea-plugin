@@ -2,12 +2,15 @@ package org.jetbrains.sbtidea.tasks.packaging
 
 import java.nio.file.{FileSystem, Files, Path}
 
+import org.jetbrains.sbtidea.tasks.packaging.ExcludeFilter.ExcludeFilter
 import sbt.Keys.TaskStreams
 
 class DynamicPackager(myOutput: Path,
                       shader: ClassShader,
+                      excludeFilter: ExcludeFilter,
                       incrementalCache: IncrementalCache)
-                     (implicit private val streams: TaskStreams) extends SimplePackager(myOutput, shader, incrementalCache) {
+                     (implicit private val streams: TaskStreams)
+  extends SimplePackager(myOutput, shader, excludeFilter, incrementalCache) {
 
   override protected def outputExists(path: Path): Boolean = Files.exists(path)
 

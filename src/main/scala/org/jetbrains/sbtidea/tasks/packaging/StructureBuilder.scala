@@ -41,8 +41,8 @@ class StructureBuilder(private val streams: TaskStreams) {
 
       def findParentToMerge(ref: ProjectRef): ProjectRef = projectMap.getOrElse(ref,
         throw new RuntimeException(s"Project $ref has no associated ProjectData")) match {
-        case ProjectData(p, _, _, _, _, _, _, _, _, _: Standalone, _) => p
-        case ProjectData(_, _, _, _, _, _, _, _, _, _: Skip, _)       => null
+        case ProjectData(p, _, _, _, _, _, _, _, _, _: Standalone, _, _) => p
+        case ProjectData(_, _, _, _, _, _, _, _, _, _: Skip, _, _)       => null
         case _ =>
           val xx = revProjectMap.filter(_._1 == ref).map(_._2).map(findParentToMerge).filter(_ != null)
           if (xx.size > 1) throw new RuntimeException(s"Multiple parents found for $ref: $xx")
@@ -60,7 +60,8 @@ class StructureBuilder(private val streams: TaskStreams) {
                       libMapping,
                       additionalMappings,
                       method,
-                      shadePatterns) = projectMap(ref)
+                      shadePatterns,
+                      excludeFilter) = projectMap(ref)
 
       implicit val scalaVersion: ProjectScalaVersion = ProjectScalaVersion(definedDeps.find(_.name == "scala-library"))
 
@@ -81,7 +82,7 @@ class StructureBuilder(private val streams: TaskStreams) {
         case (mod, Some(file)) if mappings.getOrElse(mod, None).isDefined => file -> outputDir / mappings(mod).get
       }
 
-      val defaultMetaData = MappingMetaData(shadePatterns, static = true)
+      val defaultMetaData = MappingMetaData(shadePatterns, excludeFilter, static = true)
 
       val targetJar = method match {
         case Skip() => None
@@ -100,11 +101,11 @@ class StructureBuilder(private val streams: TaskStreams) {
           Some(outputDir/ otherFile)
         case Standalone("", isStatic) =>
           val file = outputDir / mkProjectJarPath(ref)
-          productDirs.foreach { artifactMap += Mapping(_, file, MappingMetaData(shadePatterns, isStatic)) }
+          productDirs.foreach { artifactMap += Mapping(_, file, defaultMetaData.copy(static = isStatic)) }
           Some(file)
         case Standalone(targetPath, isStatic) =>
           val file = outputDir / targetPath
-          productDirs.foreach { artifactMap += Mapping(_, file, MappingMetaData(shadePatterns, isStatic))  }
+          productDirs.foreach { artifactMap += Mapping(_, file, defaultMetaData.copy(static = isStatic))  }
           Some(file)
       }
 

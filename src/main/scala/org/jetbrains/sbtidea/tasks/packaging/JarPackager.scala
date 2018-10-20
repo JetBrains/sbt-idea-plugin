@@ -6,6 +6,7 @@ import java.nio.file.attribute.BasicFileAttributes
 import java.util
 import java.util.Collections
 
+import org.jetbrains.sbtidea.tasks.packaging.ExcludeFilter.ExcludeFilter
 import sbt.Keys.TaskStreams
 
 trait JarPackager {
@@ -15,6 +16,7 @@ trait JarPackager {
 
 class SimplePackager(protected val myOutput: Path,
                      private val shader: ClassShader,
+                     private val excludeFilter: ExcludeFilter,
                      private val incrementalCache: IncrementalCache)(implicit private val streams: TaskStreams) extends JarPackager {
 
   private val myOutputExists = Files.exists(myOutput)
@@ -114,7 +116,7 @@ class SimplePackager(protected val myOutput: Path,
           .filter(_.toString.nonEmpty)
           .getOrElse(Paths.get(p.getFileName.toString)) // copying single file - nothing to relativize against
         val newPathInJar = createOutput(perhapsRelativePath, myOutput, outputFS)
-        if (!outputExists(newPathInJar) || fileChanged(p)) {
+        if (!excludeFilter(perhapsRelativePath) && (!outputExists(newPathInJar) || fileChanged(p))) {
           processor(p, newPathInJar)
           counter += 1
         }
@@ -126,7 +128,9 @@ class SimplePackager(protected val myOutput: Path,
 
 }
 
-class ZipPackager(myOutput: Path)(implicit private val streams: TaskStreams) extends SimplePackager(myOutput, new NoOpClassShader, new DumbIncrementalCache) {
+class ZipPackager(myOutput: Path)(implicit private val streams: TaskStreams)
+  extends SimplePackager(myOutput, new NoOpClassShader, ExcludeFilter.AllPass, new DumbIncrementalCache) {
+
   override protected def createOutputFS(output: Path): FileSystem = {
     val env = new util.HashMap[String, String]()
     env.put("create", String.valueOf(Files.notExists(output)))

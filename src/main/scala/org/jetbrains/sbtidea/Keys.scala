@@ -1,6 +1,7 @@
 package org.jetbrains.sbtidea
 
 import org.jetbrains.sbtidea.tasks.IdeaConfigBuilder
+import org.jetbrains.sbtidea.tasks.packaging.ExcludeFilter.ExcludeFilter
 import org.jetbrains.sbtidea.tasks.packaging._
 import org.jetbrains.sbtidea.tasks.packaging.artifact._
 import sbt.jetbrains.ideaPlugin.apiAdapter._
@@ -144,6 +145,11 @@ object Keys {
     "Class renaming patterns in jars"
   )
 
+  lazy val pathExcludeFilter = SettingKey[ExcludeFilter](
+    "path-exclude-filter",
+    "paths to exclude within merged jars"
+  )
+
   lazy val dumpDependencyStructure = TaskKey[ProjectData](
     "dump-dependency-structure"
   )
@@ -280,7 +286,9 @@ object Keys {
         packageLibraryMappings.value,
         packageFileMappings.value,
         packageMethod.value,
-        shadePatterns.value)
+        shadePatterns.value,
+        pathExcludeFilter.value
+      )
     }.value,
     packageMappings := Def.taskDyn {
       streams.value.log.info("started dumping structure")
@@ -322,6 +330,7 @@ object Keys {
     unmanagedJars in Compile += file(System.getProperty("java.home")).getParentFile / "lib" / "tools.jar",
 
     shadePatterns := Seq.empty,
+    pathExcludeFilter := ExcludeFilter.AllPass,
 
     // Test-related settings
 

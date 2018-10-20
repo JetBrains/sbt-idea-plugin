@@ -2,6 +2,7 @@ package org.jetbrains.sbtidea.tasks.packaging.artifact
 
 import java.nio.file._
 
+import org.jetbrains.sbtidea.tasks.packaging.ExcludeFilter.ExcludeFilter
 import org.jetbrains.sbtidea.tasks.packaging._
 import sbt.Keys.TaskStreams
 import sbt._
@@ -12,7 +13,8 @@ class DistBuilder(stream: TaskStreams, private val target: File) extends Artifac
 
   protected val incrementalCache = new PersistentIncrementalCache(target.toPath)
 
-  protected def createPackager(dest: Path, shader: ClassShader) = new SimplePackager(dest, shader, incrementalCache)
+  protected def createPackager(dest: Path, shader: ClassShader, excludeFilter: ExcludeFilter) =
+    new SimplePackager(dest, shader, excludeFilter, incrementalCache)
 
   protected def createShader(patterns: Seq[ShadePattern]): ClassShader = {
     if (patterns.nonEmpty)
@@ -47,7 +49,8 @@ class DistBuilder(stream: TaskStreams, private val target: File) extends Artifac
   protected def copySingleJar(mapping: Mapping): Unit = {
     timed(s"copyJar: ${mapping.to}", {
       val shader = createShader(mapping.metaData.shading)
-      val packager = createPackager(mapping.to.toPath, shader)
+      val filter = mapping.metaData.excludeFilter
+      val packager = createPackager(mapping.to.toPath, shader, filter)
       packager.copySingleJar(mapping.from.toPath)
     })
   }
@@ -65,7 +68,8 @@ class DistBuilder(stream: TaskStreams, private val target: File) extends Artifac
     timed(s"packageJar(${mappings.size}): $to", {
       val rules     = mappings.flatMap(_.metaData.shading).distinct
       val shader    = createShader(rules)
-      val packager  = createPackager(to, shader)
+      val filter    = ExcludeFilter.merge(mappings.map(_.metaData.excludeFilter))
+      val packager  = createPackager(to, shader, filter)
       packager.mergeIntoOne(mappings.map(_.from.toPath))
     })
   }
@@ -73,7 +77,8 @@ class DistBuilder(stream: TaskStreams, private val target: File) extends Artifac
   protected def patch(to: Path, mappings: Mappings): Unit = {
     timed(s"patch(${mappings.size}): $to", {
       val shader    = createShader(Seq.empty)
-      val packager  = createPackager(to, shader)
+      val filter    = (_:Path) => false
+      val packager  = createPackager(to, shader, filter)
       packager.mergeIntoOne(mappings.map(_.from.toPath))
     })
   }

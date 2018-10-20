@@ -38,7 +38,7 @@ class DynamicDistBuilder(stream: TaskStreams, target: File, outputDir: File, pri
   }
 
   private def packageNoHints(newOutputPath: Path, mappings: Mappings): Unit = {
-    val packager = new DynamicPackager(newOutputPath, new NoOpClassShader, incrementalCache)
+    val packager = new DynamicPackager(newOutputPath, new NoOpClassShader, ExcludeFilter.AllPass, incrementalCache)
     timed(s"classes(${mappings.size}): $newOutputPath",
       packager.mergeIntoOne(mappings.map(_.from.toPath))
     )

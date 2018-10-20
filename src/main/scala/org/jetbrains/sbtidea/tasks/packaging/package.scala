@@ -1,8 +1,9 @@
 package org.jetbrains.sbtidea.tasks
 
-import java.nio.file.FileSystems
+import java.nio.file.{FileSystems, Path}
 
 import org.jetbrains.sbtidea.Keys.PackagingMethod
+import org.jetbrains.sbtidea.tasks.packaging.ExcludeFilter.ExcludeFilter
 import sbt.Def.Classpath
 import sbt.Keys.TaskStreams
 import sbt._
@@ -21,11 +22,13 @@ package object packaging {
                          libMapping: Seq[(ModuleID, Option[String])],
                          additionalMappings: Seq[(File, String)],
                          packageMethod: PackagingMethod,
-                         shadePatterns: Seq[ShadePattern])
+                         shadePatterns: Seq[ShadePattern],
+                         excludeFilter: ExcludeFilter
+                        )
 
 
-  case class MappingMetaData(shading: Seq[ShadePattern], static: Boolean)
-  object     MappingMetaData { val EMPTY = MappingMetaData(Seq.empty, static = true) }
+  case class MappingMetaData(shading: Seq[ShadePattern], excludeFilter: ExcludeFilter, static: Boolean)
+  object     MappingMetaData { val EMPTY = MappingMetaData(Seq.empty, ExcludeFilter.AllPass, static = true) }
 
   case class Mapping(from: File, to: File, metaData: MappingMetaData)
 
