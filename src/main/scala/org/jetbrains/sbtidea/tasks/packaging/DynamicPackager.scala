@@ -21,10 +21,18 @@ class DynamicPackager(myOutput: Path,
   }
 
   override protected def createOutput(srcPath: Path, output: Path, outputFS: FileSystem): Path = {
+    val srcTranslated = translatePath(srcPath, myOutput.getFileSystem)
     if (srcPath.toString.contains("META-INF"))
-      myOutput.getParent.resolve(srcPath)
-    else
-      myOutput.resolve(srcPath)
+      myOutput.getParent.resolve(srcTranslated)
+    else myOutput.resolve(srcTranslated)
+  }
+
+  private def translatePath(path: Path, toFS: FileSystem) = {
+    val pathFS = path.getFileSystem
+    val pathSeparator = pathFS.getSeparator
+    val toSeparator = toFS.getSeparator
+    val adapted = path.toString.replace(pathSeparator, toSeparator)
+    toFS.getPath(adapted)
   }
 
 }
