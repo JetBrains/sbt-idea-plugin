@@ -206,7 +206,7 @@ object Keys {
         name := newProjectName,
         scalaVersion := scalaVersion.in(from).value,
         dumpDependencyStructure := null, // avoid cyclic dependencies on products task
-        products := packagePluginDynamic.in(from).value :: Nil,
+        products := packagePlugin.in(from).value :: Nil,
         packageMethod := org.jetbrains.sbtidea.Keys.PackagingMethod.Skip(),
         unmanagedJars in Compile := ideaMainJars.value,
         unmanagedJars in Compile += file(System.getProperty("java.home")).getParentFile / "lib" / "tools.jar",
