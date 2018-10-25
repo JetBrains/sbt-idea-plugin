@@ -30,7 +30,7 @@ class DynamicDistBuilder(stream: TaskStreams, target: File, outputDir: File, pri
         val relativisedStr = hintStr.substring(hintStr.indexOf(key) + offset)
         val newRelativePath = Paths.get(relativisedStr)
         val newAbsolutePath = newOutputPath.resolve(newRelativePath)
-        if (newAbsolutePath.toFile.getParentFile == null)
+        if (newAbsolutePath.toFile.getParentFile == null || !newAbsolutePath.toFile.getParentFile.exists())
           Files.createDirectories(newAbsolutePath.getParent)
         Files.copy(hint.toPath, newAbsolutePath, StandardCopyOption.REPLACE_EXISTING)
       }
