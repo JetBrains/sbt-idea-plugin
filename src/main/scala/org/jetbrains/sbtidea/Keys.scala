@@ -7,6 +7,8 @@ import org.jetbrains.sbtidea.tasks.packaging.artifact._
 import sbt.jetbrains.ideaPlugin.apiAdapter._
 import sbt.Keys._
 import sbt._
+import sbt.jetbrains.ideaPlugin.IndexingClassfileManager
+import sbt.jetbrains.ideaPlugin.apiAdapter.SbtCompilationBackCompat._
 
 object Keys {
 
@@ -331,6 +333,8 @@ object Keys {
 
     shadePatterns := Seq.empty,
     pathExcludeFilter := ExcludeFilter.AllPass,
+
+    incOptions ~={ opt => opt.withClassfileManager(IndexingClassfileManager(opt))},
 
     // Test-related settings
 
