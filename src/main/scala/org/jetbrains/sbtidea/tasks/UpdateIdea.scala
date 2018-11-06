@@ -55,6 +55,7 @@ object UpdateIdea {
     val ideaZipFile = baseDir.getParentFile / s"${edition.name}-$build.zip"
     downloadOrFail(ideaUrl, ideaZipFile)
     unpack(ideaZipFile, baseDir)
+    IO.delete(ideaZipFile)
   }
 
   private def downloadIdeaSources(sourcesFile: File, build: String)(implicit log: Logger): Unit = {
