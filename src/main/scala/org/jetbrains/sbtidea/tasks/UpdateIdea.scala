@@ -10,6 +10,8 @@ import org.jetbrains.sbtidea.Keys._
 import sbt.Keys._
 import sbt._
 
+import scala.util.Try
+
 
 object UpdateIdea {
 
@@ -115,7 +117,13 @@ object UpdateIdea {
 
   private def downloadOrFail(from: URL, to: File)(implicit log: Logger): Unit =
     if (to.isFile) {
-      log.debug(s"Skip downloading $from because $to exists")
+      if (verifyZipFile(to))
+        log.debug(s"Skip downloading $from because $to exists")
+      else {
+        log.warn(s"File $to is corrupt, re-downloading")
+        to.delete()
+        downloadOrFail(from, to)
+      }
     } else {
       log.info(s"Downloading $from to $to")
       download(from, to)
@@ -148,6 +156,8 @@ object UpdateIdea {
       case e: Exception => log.warn(s"Failed to fix access rights for $baseDir: ${e.getMessage}")
     }
   }
+
+  def verifyZipFile(f: File): Boolean = Try(new ZipFile(f)).map(_.close()).isSuccess
 
   private def download(from: sbt.URL, to: File): Unit = {
     import sbt.jetbrains.ideaPlugin.apiAdapter._
