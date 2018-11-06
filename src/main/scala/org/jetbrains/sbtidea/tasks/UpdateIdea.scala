@@ -1,6 +1,9 @@
 package org.jetbrains.sbtidea.tasks
 
 import java.io.IOException
+import java.nio.file.attribute.PosixFilePermissions
+import java.nio.file.{Files, Path}
+import java.util.function.Consumer
 import java.util.zip.ZipFile
 
 import org.jetbrains.sbtidea.Keys._
@@ -129,6 +132,21 @@ object UpdateIdea {
   private def unpack(from: File, to: File)(implicit log: Logger): Unit = {
     log.info(s"Unpacking $from to $to")
     sbt.IO.unzip(from, to)
+    if (!System.getProperty("os.name").startsWith("Windows"))
+      fixAccessRights(to)
+  }
+
+  private def fixAccessRights(baseDir: File)(implicit log: Logger): Unit = {
+    val execPerms = PosixFilePermissions.fromString("rwxrwxr-x")
+    try {
+      Files
+        .walk(baseDir.toPath.resolve("bin"))
+        .forEach(new Consumer[Path] {
+          override def accept(t: Path): Unit = Files.setPosixFilePermissions(t, execPerms)
+        })
+    } catch {
+      case e: Exception => log.warn(s"Failed to fix access rights for $baseDir: ${e.getMessage}")
+    }
   }
 
   private def download(from: sbt.URL, to: File): Unit = {
