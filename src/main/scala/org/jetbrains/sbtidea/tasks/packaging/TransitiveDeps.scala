@@ -7,7 +7,7 @@ class TransitiveDeps(report: UpdateReport, configuration: String)(implicit scala
     val evicted:   Seq[ModuleKey]                 = report.configurations
       .find(_.configuration.toString().contains(configuration))
       .map (_.details.flatMap(_.modules)
-          .filter(m => m.evicted && m.evictedReason.get == "latest-revision")
+          .filter(m => m.evicted && m.evictedReason.contains("latest-revision"))
         .map(_.module.key)
       ).getOrElse(Seq.empty)
 
