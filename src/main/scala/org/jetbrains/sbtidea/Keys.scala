@@ -334,8 +334,6 @@ object Keys {
     shadePatterns := Seq.empty,
     pathExcludeFilter := ExcludeFilter.AllPass,
 
-    incOptions ~={ opt => opt.withClassfileManager(IndexingClassfileManager(opt))},
-
     // Test-related settings
 
     fork in Test := true,
