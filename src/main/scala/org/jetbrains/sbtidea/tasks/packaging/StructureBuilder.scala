@@ -82,7 +82,7 @@ class StructureBuilder(private val streams: TaskStreams) {
         case (mod, Some(file)) if mappings.getOrElse(mod, None).isDefined => file -> outputDir / mappings(mod).get
       }
 
-      val defaultMetaData = MappingMetaData(shadePatterns, excludeFilter, static = true)
+      val defaultMetaData = MappingMetaData(shadePatterns, excludeFilter, static = true, project = Some(ref.project), MAPPING_KIND.TARGET)
 
       val targetJar = method match {
         case Skip() => None
@@ -111,13 +111,13 @@ class StructureBuilder(private val streams: TaskStreams) {
 
       targetJar match {
         case Some(file) if assembleLibraries =>
-          artifactMap ++= processedLibs.map { case (in, _) => Mapping(in, file, defaultMetaData) }
+          artifactMap ++= processedLibs.map { case (in, _) => Mapping(in, file, defaultMetaData.copy(kind = MAPPING_KIND.LIB_ASSEMBLY)) }
         case _ =>
-          artifactMap ++= processedLibs.map { case (in, out) => Mapping(in, out, defaultMetaData) }
+          artifactMap ++= processedLibs.map { case (in, out) => Mapping(in, out, defaultMetaData.copy(kind = MAPPING_KIND.LIB)) }
       }
 
       artifactMap ++= additionalMappings
-        .map { case (from, to) => Mapping(from, outputDir / fixPaths(to), defaultMetaData) }
+        .map { case (from, to) => Mapping(from, outputDir / fixPaths(to), defaultMetaData.copy(kind = MAPPING_KIND.MISC)) }
 
       artifactMap.toSeq
     }

@@ -27,10 +27,15 @@ package object packaging {
                         )
 
 
-  case class MappingMetaData(shading: Seq[ShadePattern], excludeFilter: ExcludeFilter, static: Boolean)
-  object     MappingMetaData { val EMPTY = MappingMetaData(Seq.empty, ExcludeFilter.AllPass, static = true) }
+  private[packaging] object MAPPING_KIND extends Enumeration {
+    type MAPPING_KIND = Value
+    val TARGET, LIB, LIB_ASSEMBLY, MISC, UNDEFINED = Value
+  }
 
-  case class Mapping(from: File, to: File, metaData: MappingMetaData)
+  private[packaging] case class MappingMetaData(shading: Seq[ShadePattern], excludeFilter: ExcludeFilter, static: Boolean, project: Option[String], kind: MAPPING_KIND.MAPPING_KIND)
+  private[packaging] object     MappingMetaData { val EMPTY = MappingMetaData(Seq.empty, ExcludeFilter.AllPass, static = true, project = None, kind = MAPPING_KIND.UNDEFINED) }
+
+  private[packaging] case class Mapping(from: File, to: File, metaData: MappingMetaData)
 
   type Mappings = Seq[Mapping]
 
