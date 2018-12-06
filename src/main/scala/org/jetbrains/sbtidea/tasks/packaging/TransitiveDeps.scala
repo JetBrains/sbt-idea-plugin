@@ -2,12 +2,13 @@ package org.jetbrains.sbtidea.tasks.packaging
 
 import sbt.UpdateReport
 
+//noinspection MapGetOrElseBoolean : scala 2.10 has no Option.contains
 class TransitiveDeps(report: UpdateReport, configuration: String)(implicit scalaVersion: ProjectScalaVersion) {
     val structure: Map[ModuleKey, Seq[ModuleKey]] = buildTransitiveStructure()
     val evicted:   Seq[ModuleKey]                 = report.configurations
       .find(_.configuration.toString().contains(configuration))
       .map (_.details.flatMap(_.modules)
-          .filter(m => m.evicted && m.evictedReason.contains("latest-revision"))
+          .filter(m => m.evicted && m.evictedReason.map(_ == "latest-revision").getOrElse(false))
         .map(_.module.key)
       ).getOrElse(Seq.empty)
 
