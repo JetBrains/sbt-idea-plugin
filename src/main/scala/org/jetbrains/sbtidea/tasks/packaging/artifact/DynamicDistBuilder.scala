@@ -8,7 +8,7 @@ import sbt.Keys.TaskStreams
 
 class DynamicDistBuilder(stream: TaskStreams, target: File, outputDir: File, private val hints: Seq[File]) extends DistBuilder(stream, target) {
 
-  override protected def packageJar(to: Path, mappings: Mappings): Unit = {
+  override def packageJar(to: Path, mappings: Mappings): Unit = {
     val isStatic = mappings.forall(_.metaData.static)
     if (isStatic)
       super.packageJar(to, mappings)
@@ -44,7 +44,7 @@ class DynamicDistBuilder(stream: TaskStreams, target: File, outputDir: File, pri
     )
   }
 
-  override protected def patch(to: Path, mappings: Mappings): Unit = {
+  override def patch(to: Path, mappings: Mappings): Unit = {
     streams.log.info(s"Patching has no effect when building dynamic artifact")
   }
 

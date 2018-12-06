@@ -7,7 +7,7 @@ import org.jetbrains.sbtidea.tasks.packaging._
 import sbt.Keys.TaskStreams
 import sbt._
 
-class DistBuilder(stream: TaskStreams, private val target: File) extends ArtifactBuilder[Mappings,File] {
+class DistBuilder(stream: TaskStreams, private val target: File) extends MappingArtifactBuilder[File] {
 
   protected implicit val streams: TaskStreams = stream
 
@@ -23,30 +23,9 @@ class DistBuilder(stream: TaskStreams, private val target: File) extends Artifac
       new NoOpClassShader
   }
 
-  private def processMappings(incremental: Seq[(sbt.File, Seq[Mapping])]): Unit = {
-    incremental.foreach {
-      case (to, Seq(mapping@Mapping(from, _, _))) if to.name.endsWith("jar") && from.name.endsWith("jar") =>
-        copySingleJar(mapping)
-      case (to, mappings) if to.name.endsWith("jar") =>
-        packageJar(to.toPath, mappings)
-      case (to, mappings) if to.toString.contains("jar!") =>
-        patch(to.toPath, mappings)
-      case (_, mapping) =>
-        copyDir(mapping)
-      case other =>
-        stream.log.warn(s"wtf: $other")
-    }
-  }
+  override def mappingFilter(m: Mapping): Boolean = super.mappingFilter(m) || incrementalCache.fileChanged(m.from.toPath)
 
-  protected def preFilterMappings(mappings: Mappings): Mappings = {
-    mappings.filter(f =>
-      !f.from.toString.endsWith("jar") ||
-      !f.to.exists() ||
-      incrementalCache.fileChanged(f.from.toPath)
-    )
-  }
-
-  protected def copySingleJar(mapping: Mapping): Unit = {
+  override def copySingleJar(mapping: Mapping): Unit = {
     timed(s"copyJar: ${mapping.to}", {
       val shader = createShader(mapping.metaData.shading)
       val filter = mapping.metaData.excludeFilter
@@ -55,14 +34,14 @@ class DistBuilder(stream: TaskStreams, private val target: File) extends Artifac
     })
   }
 
-  protected def copyDir(mappings: Mappings): Unit = {
+  override def copyDir(mappings: Mappings): Unit = {
     mappings.foreach {
       case Mapping(from, to1, _) if from.isDirectory => timed(s"copyDir: $to1", IO.copyDirectory(from, to1))
       case Mapping(from, to1, _)                     => timed(s"copyFile: $to1", IO.copy(Seq(from -> to1)))
     }
   }
 
-  protected def packageJar(to: Path, mappings: Mappings): Unit = {
+  override def packageJar(to: Path, mappings: Mappings): Unit = {
     if (!Files.exists(to.getParent))
       Files.createDirectories(to.getParent)
     timed(s"packageJar(${mappings.size}): $to", {
@@ -74,7 +53,7 @@ class DistBuilder(stream: TaskStreams, private val target: File) extends Artifac
     })
   }
 
-  protected def patch(to: Path, mappings: Mappings): Unit = {
+  override def patch(to: Path, mappings: Mappings): Unit = {
     timed(s"patch(${mappings.size}): $to", {
       val shader    = createShader(Seq.empty)
       val filter    = (_:Path) => false
@@ -83,24 +62,11 @@ class DistBuilder(stream: TaskStreams, private val target: File) extends Artifac
     })
   }
 
-  protected def filterGroupedMappings(grouped: Seq[(sbt.File, Seq[Mapping])]): Seq[(sbt.File, Seq[Mapping])] = grouped
+  override def unknown(mappings: Mappings): Unit = streams.log.warn(s"wtf: $mappings")
 
-  protected def transformMappings(structure: Mappings): Seq[(sbt.File, Seq[Mapping])] = {
-    val filtered            = preFilterMappings(structure)
-    val (overrides, normal) = filtered.partition(_.to.toString.contains("jar!"))
-    val groupedNormal       = normal.groupBy(_.to)
-    val groupedOverrides    = overrides.groupBy(_.to)
-    filterGroupedMappings(groupedNormal.toSeq) ++ filterGroupedMappings(groupedOverrides.toSeq)
-  }
-
-  def packageArtifact(structure: Mappings): Unit = {
-    val mappings = transformMappings(structure)
-    processMappings(mappings)
+  override def createResult = {
     incrementalCache.close()
+    target
   }
 
-  override def produceArtifact(structure: Mappings): sbt.File = {
-    packageArtifact(structure)
-    new File(".")
-  }
 }

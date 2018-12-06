@@ -306,7 +306,7 @@ object Keys {
       val mappings  = packageMappings.value
       val stream    = streams.value
       val myTarget  = target.value
-      Def.task { new DistBuilder(stream, myTarget).packageArtifact(mappings); outputDir }
+      Def.task { new DistBuilder(stream, myTarget).produceArtifact(mappings); outputDir }
     }.value,
     packagePluginDynamic := Def.sequential(createCompilationTimeStamp, Def.task {
       val outputDir = packageOutputDir.value
@@ -314,7 +314,7 @@ object Keys {
       val stream    = streams.value
       val myTarget  = target.value
       val hints = extractAffectedFiles(compilationTimeStamp, compile.all(ScopeFilter(inAnyProject, inConfigurations(Compile))).value)
-      new DynamicDistBuilder(stream, myTarget, outputDir, hints).packageArtifact(mappings)
+      new DynamicDistBuilder(stream, myTarget, outputDir, hints).produceArtifact(mappings)
       outputDir
     }).value,
     packagePluginZip := Def.task {
