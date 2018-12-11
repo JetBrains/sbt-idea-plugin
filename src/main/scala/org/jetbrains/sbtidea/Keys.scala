@@ -7,8 +7,6 @@ import org.jetbrains.sbtidea.tasks.packaging.artifact._
 import sbt.jetbrains.ideaPlugin.apiAdapter._
 import sbt.Keys._
 import sbt._
-import sbt.jetbrains.ideaPlugin.IndexingClassfileManager
-import sbt.jetbrains.ideaPlugin.apiAdapter.SbtCompilationBackCompat._
 
 object Keys {
 
@@ -218,7 +216,7 @@ object Keys {
         createIDEARunConfiguration := {
           val name = s"IDEA-$newProjectName"
           val data = IdeaConfigBuilder.buildRunConfigurationXML(name, javaOptions.in(from, Test).value)
-          val outFile = baseDirectory.in(from).value / ".idea" / "runConfigurations" / s"$name.xml"
+          val outFile = baseDirectory.in(ThisBuild).value / ".idea" / "runConfigurations" / s"$name.xml"
           IO.write(outFile, data.getBytes)
           outFile
         }
