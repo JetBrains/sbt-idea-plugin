@@ -9,13 +9,13 @@ abstract class MappingArtifactBuilder[T] extends ArtifactBuilder [Mappings, T] {
 
   protected def copySingleJar(mapping: Mapping): Unit
 
-  protected def copyDir(mappings: Mappings): Unit
+  protected def copyDirs(mappings: Mappings): Unit
 
   protected def packageJar(to: Path, mappings: Mappings): Unit
 
-  protected def patch(to: Path, mappings: Mappings): Unit
+  protected def patch(to: Path, mappings: Mappings): Unit = ()
 
-  protected def unknown(mappings: Mappings): Unit
+  protected def unknown(mappings: Mappings): Unit = ()
 
   protected def createResult: T
 
@@ -32,7 +32,7 @@ abstract class MappingArtifactBuilder[T] extends ArtifactBuilder [Mappings, T] {
       case (to, mappings) if to.toString.contains("jar!") =>
         patch(to.toPath, mappings)
       case (_, mapping) =>
-        copyDir(mapping)
+        copyDirs(mapping)
       case other =>
         unknown(other._2)
     }

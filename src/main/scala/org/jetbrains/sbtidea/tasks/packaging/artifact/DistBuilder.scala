@@ -34,7 +34,7 @@ class DistBuilder(stream: TaskStreams, private val target: File) extends Mapping
     })
   }
 
-  override def copyDir(mappings: Mappings): Unit = {
+  override def copyDirs(mappings: Mappings): Unit = {
     mappings.foreach {
       case Mapping(from, to1, _) if from.isDirectory => timed(s"copyDir: $to1", IO.copyDirectory(from, to1))
       case Mapping(from, to1, _)                     => timed(s"copyFile: $to1", IO.copy(Seq(from -> to1)))
