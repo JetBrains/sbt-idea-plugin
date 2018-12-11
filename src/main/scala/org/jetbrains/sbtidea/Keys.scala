@@ -156,6 +156,7 @@ object Keys {
 
   lazy val createCompilationTimeStamp: TaskKey[Unit] = taskKey("")
   lazy val createIDEARunConfiguration: TaskKey[File] = taskKey("")
+  lazy val createIDEAArtifactXml     : TaskKey[File] = taskKey("")
 
   private var compilationTimeStamp = -1L
 
@@ -322,6 +323,16 @@ object Keys {
       IO.delete(pluginFile)
       new ZipDistBuilder(pluginFile).produceArtifact(outputDir)
       pluginFile
+    }.value,
+    createIDEAArtifactXml := Def.task {
+      val root = baseDirectory.in(ThisBuild).value
+      val outputDir = packageOutputDir.value
+      val mappings  = packageMappings.value
+      val projectName = thisProject.value.id
+      val result = new IdeaArtifactXmlBuilder(projectName, outputDir).produceArtifact(mappings)
+      val file = root / ".idea" / "artifacts" / s"$projectName.xml"
+      IO.write(file, result)
+      file
     }.value,
     aggregate.in(packagePluginZip) := false,
     aggregate.in(packageMappings) := false,
