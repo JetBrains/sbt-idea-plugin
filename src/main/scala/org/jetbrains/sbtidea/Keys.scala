@@ -4,9 +4,10 @@ import org.jetbrains.sbtidea.tasks.IdeaConfigBuilder
 import org.jetbrains.sbtidea.tasks.packaging.ExcludeFilter.ExcludeFilter
 import org.jetbrains.sbtidea.tasks.packaging._
 import org.jetbrains.sbtidea.tasks.packaging.artifact._
-import sbt.jetbrains.ideaPlugin.apiAdapter._
 import sbt.Keys._
 import sbt._
+import sbt.complete.DefaultParsers
+import sbt.jetbrains.ideaPlugin.apiAdapter._
 
 object Keys {
 
@@ -159,7 +160,8 @@ object Keys {
   lazy val createIDEAArtifactXml     : TaskKey[Unit] = taskKey("")
   lazy val dumpDependencyStructureOffline: TaskKey[ProjectData] = taskKey("")
   lazy val packageMappingsOffline    : TaskKey[Mappings] = taskKey("")
-//  val dumpStructure: TaskKey[Unit] = taskKey("")
+  lazy val dumpStructure             : TaskKey[Unit] = taskKey("")
+  lazy val dumpStructureTo           : InputKey[File] = inputKey("")
 
   private var compilationTimeStamp = -1L
 
@@ -226,6 +228,25 @@ object Keys {
         }
       )
 
+  private val targetFileParser = DefaultParsers.fileParser(file("/"))
+  lazy val globalSettings: Seq[Setting[_]] = Seq(
+    dumpStructureTo in Global:= Def.inputTaskDyn {
+      val path = targetFileParser.parsed
+      createIDEAArtifactXml.all(ScopeFilter(inProjects(LocalRootProject))).value
+      val fromStructure = dumpStructureTo.in(Global).?.value
+      if (fromStructure.isDefined) {
+        Def.inputTask {
+          fromStructure.get.fullInput(path.getAbsolutePath).evaluated
+        }.toTask("")
+      } else
+      Def.task { new File(".") }
+    }.evaluated,
+    dumpStructure := Def.task {
+      createIDEAArtifactXml.all(ScopeFilter(inProjects(LocalRootProject))).value
+      dumpStructure.in(Global).?.value
+    }.value
+  )
+
   lazy val buildSettings: Seq[Setting[_]] = Seq(
     ideaPluginName      := "InsertName",
     ideaBuild           := "LATEST-EAP-SNAPSHOT",
@@ -249,10 +270,6 @@ object Keys {
       IO.delete(ideaTestSystemDir.value)
       IO.delete(ideaTestConfigDir.value)
     },
-//    dumpStructure := {
-//      createIDEAArtifactXml.all(ScopeFilter(inProjects(LocalRootProject))).value
-//      dumpStructure.in(ThisBuild).?.value
-//    },
     createCompilationTimeStamp := Def.task { compilationTimeStamp = System.currentTimeMillis() }.value,
     onLoad in Global := ((s: State) => {
       "updateIdea" :: s
