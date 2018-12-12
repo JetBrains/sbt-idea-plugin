@@ -104,7 +104,7 @@ class IdeaArtifactXmlBuilder(artifactName: String, root: File) extends MappingAr
   override protected def createResult: String =
     s"""<component name="ArtifactManager">
        |  <artifact name="$artifactName">
-       |    <output-path>$rootPath/$artifactName</output-path>
+       |    <output-path>$rootPath</output-path>
        |    <root id="root">
        |    ${rootNode.children.map(render).mkString("\n")}
        |    </root>
