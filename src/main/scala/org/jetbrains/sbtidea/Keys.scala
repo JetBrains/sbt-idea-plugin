@@ -156,7 +156,10 @@ object Keys {
 
   lazy val createCompilationTimeStamp: TaskKey[Unit] = taskKey("")
   lazy val createIDEARunConfiguration: TaskKey[File] = taskKey("")
-  lazy val createIDEAArtifactXml     : TaskKey[File] = taskKey("")
+  lazy val createIDEAArtifactXml     : TaskKey[Unit] = taskKey("")
+  lazy val dumpDependencyStructureOffline: TaskKey[ProjectData] = taskKey("")
+  lazy val packageMappingsOffline    : TaskKey[Mappings] = taskKey("")
+//  val dumpStructure: TaskKey[Unit] = taskKey("")
 
   private var compilationTimeStamp = -1L
 
@@ -246,6 +249,10 @@ object Keys {
       IO.delete(ideaTestSystemDir.value)
       IO.delete(ideaTestConfigDir.value)
     },
+//    dumpStructure := {
+//      createIDEAArtifactXml.all(ScopeFilter(inProjects(LocalRootProject))).value
+//      dumpStructure.in(ThisBuild).?.value
+//    },
     createCompilationTimeStamp := Def.task { compilationTimeStamp = System.currentTimeMillis() }.value,
     onLoad in Global := ((s: State) => {
       "updateIdea" :: s
@@ -291,11 +298,36 @@ object Keys {
         pathExcludeFilter.value
       )
     }.value,
+    dumpDependencyStructureOffline := Def.task {
+      ProjectData(
+        thisProjectRef.value,
+        managedClasspath.in(Compile).value,
+        libraryDependencies.in(Compile).value,
+        packageAdditionalProjects.value,
+        packageAssembleLibraries.value,
+        productDirectories.in(Compile).value,
+        update.value,
+        packageLibraryMappings.value,
+        packageFileMappings.value,
+        packageMethod.value,
+        shadePatterns.value,
+        pathExcludeFilter.value
+      )
+    }.value,
     packageMappings := Def.taskDyn {
       streams.value.log.info("started dumping structure")
       val rootProject = thisProjectRef.value
       val buildDeps = buildDependencies.value
       val data = dumpDependencyStructure.all(ScopeFilter(inAnyProject)).value.filter(_ != null)
+      val outputDir = packageOutputDir.value
+      val stream = streams.value
+      Def.task { new StructureBuilder(stream).artifactMappings(rootProject, outputDir, data, buildDeps) }
+    }.value,
+    packageMappingsOffline := Def.taskDyn {
+      streams.value.log.info("started dumping structure")
+      val rootProject = thisProjectRef.value
+      val buildDeps = buildDependencies.value
+      val data = dumpDependencyStructureOffline.all(ScopeFilter(inAnyProject)).value.filter(_ != null)
       val outputDir = packageOutputDir.value
       val stream = streams.value
       Def.task { new StructureBuilder(stream).artifactMappings(rootProject, outputDir, data, buildDeps) }
@@ -324,15 +356,20 @@ object Keys {
       new ZipDistBuilder(pluginFile).produceArtifact(outputDir)
       pluginFile
     }.value,
-    createIDEAArtifactXml := Def.task {
-      val root = baseDirectory.in(ThisBuild).value
-      val outputDir = packageOutputDir.value
-      val mappings  = packageMappings.value
-      val projectName = thisProject.value.id
-      val result = new IdeaArtifactXmlBuilder(projectName, outputDir).produceArtifact(mappings)
-      val file = root / ".idea" / "artifacts" / s"$projectName.xml"
-      IO.write(file, result)
-      file
+    createIDEAArtifactXml := Def.taskDyn {
+      val buildRoot = baseDirectory.in(ThisBuild).value
+      val projectRoot = baseDirectory.in(ThisProject).value
+
+      if (buildRoot == projectRoot)
+        Def.task {
+          val outputDir = packageOutputDir.value
+          val mappings  = packageMappingsOffline.value
+          val projectName = thisProject.value.id
+          val result = new IdeaArtifactXmlBuilder(projectName, outputDir).produceArtifact(mappings)
+          val file = buildRoot / ".idea" / "artifacts" / s"$projectName.xml"
+          IO.write(file, result)
+        }
+      else Def.task { }
     }.value,
     aggregate.in(packagePluginZip) := false,
     aggregate.in(packageMappings) := false,
