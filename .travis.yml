@@ -8,7 +8,7 @@ script:
   - sbt -Dfile.encoding=UTF8 test scripted
 
 after_success:
-  - '[[ $TRAVIS_BRANCH == "master" ]] || [[ $TRAVIS_BRANCH =~ ^v[0-9.]+$ ]] && sbt "+ publish"'
+  - '[[ $TRAVIS_BRANCH == "master" ]] || [[ $TRAVIS_BRANCH =~ ^v[0-9.]+$ ]] && sbt "^ publish"'
 
 sudo: false
 
