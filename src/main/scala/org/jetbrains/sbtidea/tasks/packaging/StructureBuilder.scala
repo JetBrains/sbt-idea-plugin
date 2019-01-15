@@ -44,7 +44,12 @@ class StructureBuilder(private val streams: TaskStreams) {
         case ProjectData(p, _, _, _, _, _, _, _, _, _: Standalone, _, _) => p
         case ProjectData(_, _, _, _, _, _, _, _, _, _: Skip, _, _)       => null
         case _ =>
-          val xx = revProjectMap.filter(_._1 == ref).map(_._2).map(findParentToMerge).filter(_ != null)
+          val xx = revProjectMap
+            .filter(_._1 == ref)
+            .map(_._2)
+            .map(findParentToMerge)
+            .filter(_ != null)
+            .distinct
           if (xx.size > 1) throw new RuntimeException(s"Multiple parents found for $ref: $xx")
           if (xx.isEmpty) throw new RuntimeException(s"No parents found for $ref")
           xx.head
