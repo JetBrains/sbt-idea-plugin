@@ -1,7 +1,6 @@
 # check if everything is downloaded
 > updateIdea
 $ exists idea
-$ exists idea/sdk/ideaIC-172.3968.1.zip
 $ exists idea/sdk/172.3968.1
 $ exists idea/sdk/172.3968.1/lib
 $ exists idea/sdk/172.3968.1/plugins

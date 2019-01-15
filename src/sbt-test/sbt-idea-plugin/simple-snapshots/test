@@ -1,7 +1,6 @@
 # check if everything is downloaded
 > updateIdea
 $ exists idea/sdk
-$ exists idea/sdk/ideaIC-172-EAP-SNAPSHOT.zip
 $ exists idea/sdk/172-EAP-SNAPSHOT
 $ exists idea/sdk/172-EAP-SNAPSHOT/lib
 $ exists idea/sdk/172-EAP-SNAPSHOT/plugins
