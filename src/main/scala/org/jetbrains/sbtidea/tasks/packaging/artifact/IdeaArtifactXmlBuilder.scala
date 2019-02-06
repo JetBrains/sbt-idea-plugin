@@ -99,6 +99,8 @@ class IdeaArtifactXmlBuilder(artifactName: String, root: File) extends MappingAr
       s"""<element id="module-output" name="$name" />"""
     case ExtractJar(from) =>
       s"""<element id="extracted-dir" path="$from" path-in-jar="/" />"""
+    case _ =>
+      ""
   }
 
   override protected def createResult: String =

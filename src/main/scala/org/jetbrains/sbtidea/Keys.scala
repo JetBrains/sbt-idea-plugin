@@ -258,14 +258,17 @@ object Keys {
     ideaTestConfigDir     := ideaPluginDirectory.value / "test-config",
     ideaTestSystemDir     := ideaPluginDirectory.value / "test-system",
     concurrentRestrictions in Global += Tags.limit(Tags.Test, 1), // IDEA tests can't be run in parallel
-    updateIdea := Def.task { tasks.UpdateIdea.apply(
-      ideaBaseDirectory.value,
-      ideaEdition.value,
-      ideaBuild.value,
-      ideaDownloadSources.value,
-      ideaExternalPlugins.all(ScopeFilter(inAnyProject)).value.flatten,
-      streams.value
-    )}.value,
+    updateIdea := {
+      new tasks.download.CommunityIdeaUpdater(ideaBaseDirectory.value)(streams.value.log)
+        .updateIdeaAndPlugins(
+          tasks.download.BuildInfo(
+            ideaBuild.value,
+            ideaEdition.value
+          ),
+          ideaExternalPlugins.all(ScopeFilter(inAnyProject)).value.flatten,
+          ideaDownloadSources.value
+        )
+    },
     cleanUpTestEnvironment := {
       IO.delete(ideaTestSystemDir.value)
       IO.delete(ideaTestConfigDir.value)
