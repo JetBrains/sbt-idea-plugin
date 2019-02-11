@@ -1,5 +1,6 @@
 package org.jetbrains.sbtidea.tasks
 
+import java.net.{HttpURLConnection, URL, URLConnection}
 import java.nio.file.{FileSystems, Path}
 
 import org.jetbrains.sbtidea.Keys.PackagingMethod
@@ -66,6 +67,21 @@ package object packaging {
     val res = f
     streams.log.info(s"(${System.currentTimeMillis() - start}ms) $msg")
     res
+  }
+
+  def withConnection[V](url: URL)(f: => HttpURLConnection => V): V = {
+    var connection: HttpURLConnection = null
+    try {
+      connection = url.openConnection().asInstanceOf[HttpURLConnection]
+      f(connection)
+    } finally {
+      try {
+        if (connection != null) connection.disconnect()
+      } catch {
+        case e: Exception =>
+          println(s"Failed to close connection $url: ${e.getMessage}")
+      }
+    }
   }
 
   def using[T <: AutoCloseable, V](r: => T)(f: T => V): V = {
