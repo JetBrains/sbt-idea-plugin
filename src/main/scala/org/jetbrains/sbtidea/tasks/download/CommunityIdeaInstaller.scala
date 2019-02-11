@@ -64,12 +64,14 @@ class CommunityIdeaInstaller(ideaInstallDir: File, buildInfo: BuildInfo)(implici
     import sys.process._
 
     log.info(s"Extracting IDEA dist to $tmpDir")
-    if (file.name.endsWith(".zip"))
+
+    if (file.name.endsWith(".zip")) {
       sbt.IO.unzip(file, tmpDir)
-    else if (file.name.endsWith(".tar.gz"))
-      s"tar xfz $file -C $tmpDir --strip 1".!
-    else
-      throw new RuntimeException(s"Unexpected dist archive format(not zip or gzip): $file")
+    } else if (file.name.endsWith(".tar.gz")) {
+      if (s"tar xfz $file -C $tmpDir --strip 1".! != 0) {
+        throw new RuntimeException(s"Failed to install IDEA dist: tar command failed")
+      }
+    } else throw new RuntimeException(s"Unexpected dist archive format(not zip or gzip): $file")
 
     sbt.IO.move(tmpDir, getInstallDir)
     sbt.IO.delete(file)
