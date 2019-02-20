@@ -49,7 +49,7 @@ class IdeaArtifactXmlBuilder(artifactName: String, root: File) extends MappingAr
         CopyDir(other.from.toPath)
       case other =>
         CopyFile(other.from.toPath)
-    }
+    }.reverse   // JPS artifact builder only copies the first one from a list of equally named files
     node.children += PackageJar(nodes, to.getFileName.toString)
   }
 
