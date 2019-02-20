@@ -69,15 +69,15 @@ private class FileDownloader(private val baseDirectory: File)(implicit val log: 
     }
 
     def renderSpeed: String = {
-      if (speed < 1024)                     "%.0f b/s".format(speed)
-      else if (speed < 1024 * 1024)         "%.2f Kb/s".format(speed / 1024.0)
-      else if (speed < 1024 * 1024 * 1024)  "%.2f Mb/s".format(speed / (1024.0 * 1024.0))
-      else                                  "%.2f Gb/s".format(speed / (1024.0 * 1024.0 * 2024.0))
+      if (speed < 1024)                     "%.0f B/s".format(speed)
+      else if (speed < 1024 * 1024)         "%.2f KB/s".format(speed / 1024.0)
+      else if (speed < 1024 * 1024 * 1024)  "%.2f MB/s".format(speed / (1024.0 * 1024.0))
+      else                                  "%.2f GB/s".format(speed / (1024.0 * 1024.0 * 1024.0))
     }
 
     private def space = if (percent == 100) "" else " "
 
-    def renderText: String = s"$renderSpeed; ${(downloaded / (1024 * 1024)).toInt}/${(total / (1024 * 1024)).toInt}Mb"
+    def renderText: String = s"$renderSpeed; ${(downloaded / (1024 * 1024)).toInt}/${(total / (1024 * 1024)).toInt}MB"
 
     def renderAll: String = s"$percent%$space $renderBar @ $renderText"
 
