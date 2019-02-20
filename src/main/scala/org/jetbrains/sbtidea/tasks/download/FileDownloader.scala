@@ -75,9 +75,11 @@ private class FileDownloader(private val baseDirectory: File)(implicit val log: 
       else                                  "%.2f Gb/s".format(speed / (1024.0 * 1024.0 * 2024.0))
     }
 
+    private def space = if (percent == 100) "" else " "
+
     def renderText: String = s"$renderSpeed; ${(downloaded / (1024 * 1024)).toInt}/${(total / (1024 * 1024)).toInt}Mb"
 
-    def renderAll: String = s"$percent% $renderBar @ $renderText"
+    def renderAll: String = s"$percent%$space $renderBar @ $renderText"
 
     def done: Boolean = downloaded == total
   }
