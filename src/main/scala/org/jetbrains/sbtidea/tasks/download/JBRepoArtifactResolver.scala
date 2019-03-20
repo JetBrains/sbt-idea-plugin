@@ -17,8 +17,11 @@ class JBRepoArtifactResolver extends IdeaArtifactResolver with IdeaPluginResolve
   }
 
   //noinspection NoTailRecursionAnnotation
-  protected def getUrl(idea: BuildInfo, isSnapshot: Boolean = false)(artName: String => String): URL = {
-    val (repo, suffix)  = if (idea.buildNumber.endsWith("SNAPSHOT")) "snapshots" -> "-EAP-SNAPSHOT" else "releases" -> ""
+  protected def getUrl(idea: BuildInfo, trySnapshot: Boolean = false)(artName: String => String): URL = {
+    val (repo, suffix)  =
+      if      (trySnapshot)                           "snapshots" -> "-EAP-SNAPSHOT"
+      else if (idea.buildNumber.contains("SNAPSHOT")) "snapshots" -> ""
+      else                                            "releases"  -> ""
     val baseUrl         = s"https://www.jetbrains.com/intellij-repository/$repo/com/jetbrains/intellij/idea"
     val build           = idea.buildNumber + suffix
     var stream: Option[InputStream] = None
@@ -27,9 +30,9 @@ class JBRepoArtifactResolver extends IdeaArtifactResolver with IdeaPluginResolve
       stream      = Some(result.openStream())
       result
     } catch {
-      case _: FileNotFoundException if !isSnapshot && !idea.buildNumber.endsWith("SNAPSHOT") =>
+      case _: FileNotFoundException if !trySnapshot && !idea.buildNumber.endsWith("SNAPSHOT") =>
         println(s"Can't find $idea in releases, trying snapshots")
-        getUrl(idea, isSnapshot = true)(artName)
+        getUrl(idea, trySnapshot = true)(artName)
     } finally {
       stream.foreach(_.close())
     }
