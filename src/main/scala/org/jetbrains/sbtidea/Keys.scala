@@ -230,7 +230,7 @@ object Keys {
           IO.write(outFile, data.getBytes)
           outFile
         }
-      )
+      ).enablePlugins(SbtIdeaPlugin)
 
   private val targetFileParser = DefaultParsers.fileParser(file("/"))
   lazy val globalSettings: Seq[Setting[_]] = Seq(
