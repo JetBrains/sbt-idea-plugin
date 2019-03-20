@@ -20,8 +20,10 @@ From version 1.0.0, this plugin is published for sbt 0.13 and 1.0
 * Insert into `project/plugins.sbt`:
 
 ```Scala
-addSbtPlugin("org.jetbrains" % "sbt-idea-plugin" % "2.1.3")
+addSbtPlugin("org.jetbrains" % "sbt-idea-plugin" % "2.3.2")
 ```
+
+* [Enable](#auto-enable-the-plugin) the plugin for your desired projects
 
 * Run SBT and the plugin will automatically download and attach IDEA dependencies.
 
@@ -232,13 +234,37 @@ There are two ways to run/debug your plugin: from SBT and from IDEA
 - Running from bare sbt is as simple as invoking `run` task on the synthetic runner project. Debugger can later be attached to the process remotely - the default port is 5005.
 - Running from IDEA requires first invoking `$YOUR_RUNNER_PROJECT/createIDEARunConfiguration` task.
   A new run configuration should appear in your local IDEA which can be launched via "Run" or "Debug"
+  
+## Auto enable the plugin
+
+Sbt-idea-plugin currently breaks scalaJS compilation, and thereby has autoloading disabled.
+To enable it either add `enablePlugins(SbtIdeaPlugin)` to project definition. Example:
+```scala
+lazy val hocon = project.in(file(".")).settings(
+  scalaVersion  := "2.12.8",
+  version       := "2019.1.2",
+  ideaInternalPlugins := Seq("properties"),
+  libraryDependencies += "com.novocode" % "junit-interface" % "0.11" % "test",
+).enablePlugins(SbtIdeaPlugin)
+```
+
+If you with to automatically enable the plugin for all projects in your build, place the following class into top level 
+`project` folder of your build.
+```scala
+import org.jetbrains.sbtidea.AbstractSbtIdeaPlugin
+
+object AutoSbtIdeaPlugin extends AbstractSbtIdeaPlugin {
+  override def requires = sbt.plugins.JvmPlugin
+  override def trigger  = allRequirements
+}
+``` 
 
 ## Notes and best practices
 
 - If you use `sbt-assembly` plugin to produce a fat jar to distribute your plugin you should avoid putting IDEA's jars 
   into this fat jar of yours. To achieve this insert
 
-  ```Scala
+  ```sbt
   assemblyExcludedJars in assembly := ideaFullJars.value
   ```
 
