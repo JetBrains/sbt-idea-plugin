@@ -1,11 +1,14 @@
 package org.jetbrains.sbtidea.tasks
 
+import java.io.File
+
 object IdeaConfigBuilder {
-  def buildRunConfigurationXML(name: String, javaOptions: Seq[String]): String = {
+  def buildRunConfigurationXML(configName: String, moduleName: String, javaOptions: Seq[String], dataDir: File): String = {
           s"""<component name="ProjectRunConfigurationManager">
-         |  <configuration default="false" name="$name" type="Application" factoryName="Application">
+         |  <configuration default="false" name="$configName" type="Application" factoryName="Application">
+         |    <log_file alias="IDEA" path="$dataDir/system/log/idea.log" />
          |    <option name="MAIN_CLASS_NAME" value="com.intellij.idea.Main" />
-         |    <module name="$name" />
+         |    <module name="$moduleName" />
          |    <option name="VM_PARAMETERS" value="${javaOptions.mkString(" ")}" />
          |    <shortenClasspath name="CLASSPATH_FILE" />
          |    <RunnerSettings RunnerId="Debug">

@@ -220,9 +220,13 @@ object Keys {
         javaOptions in run := javaOptions.in(from, Test).value :+
           "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005",
         createIDEARunConfiguration := {
-          val name = s"IDEA-$newProjectName"
-          val data = IdeaConfigBuilder.buildRunConfigurationXML(name, javaOptions.in(from, Test).value)
-          val outFile = baseDirectory.in(ThisBuild).value / ".idea" / "runConfigurations" / s"$name.xml"
+          val configName = "IDEA"
+          val data = IdeaConfigBuilder.buildRunConfigurationXML(
+            configName,
+            newProjectName,
+            javaOptions.in(from, Test).value,
+            ideaPluginDirectory.value)
+          val outFile = baseDirectory.in(ThisBuild).value / ".idea" / "runConfigurations" / s"$configName.xml"
           IO.write(outFile, data.getBytes)
           outFile
         }
