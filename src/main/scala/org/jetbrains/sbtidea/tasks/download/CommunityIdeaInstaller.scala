@@ -87,9 +87,9 @@ class CommunityIdeaInstaller(ideaInstallDir: File, buildInfo: BuildInfo)(implici
 
   }
 
-  protected def pluginDir(plugin: IdeaPlugin): File = getInstallDir / "plugins" / plugin.name
+  protected def pluginDir(plugin: IdeaPlugin): File = getInstallDir / "externalPlugins"
 
-  protected def pluginFile(plugin: IdeaPlugin): File = getInstallDir / "plugins" / s"${plugin.name}.jar"
+  protected def pluginFile(plugin: IdeaPlugin): File = getInstallDir / "externalPlugins" / s"${plugin.name}.jar"
 
   protected def tmpDir: File = getInstallDir.getParentFile / s"${buildInfo.edition.name}-${buildInfo.buildNumber}-TMP"
 
