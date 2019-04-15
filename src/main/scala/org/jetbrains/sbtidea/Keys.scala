@@ -236,7 +236,7 @@ object Keys {
   lazy val globalSettings: Seq[Setting[_]] = Seq(
     dumpStructureTo in Global:= Def.inputTaskDyn {
       val path = targetFileParser.parsed
-      createIDEAArtifactXml.all(ScopeFilter(inProjects(LocalRootProject))).value
+      createIDEAArtifactXml.?.all(ScopeFilter(inProjects(LocalRootProject))).value.flatten
       val fromStructure = dumpStructureTo.in(Global).?.value
       if (fromStructure.isDefined) {
         Def.inputTask {
@@ -246,7 +246,7 @@ object Keys {
       Def.task { new File(".") }
     }.evaluated,
     dumpStructure := Def.task {
-      createIDEAArtifactXml.all(ScopeFilter(inProjects(LocalRootProject))).value
+      createIDEAArtifactXml.?.all(ScopeFilter(inProjects(LocalRootProject))).value.flatten
       dumpStructure.in(Global).?.value
     }.value
   )
@@ -269,7 +269,7 @@ object Keys {
             ideaBuild.value,
             ideaEdition.value
           ),
-          ideaExternalPlugins.all(ScopeFilter(inAnyProject)).value.flatten,
+          ideaExternalPlugins.?.all(ScopeFilter(inAnyProject)).value.flatten.flatten,
           ideaDownloadSources.value
         )
     },
@@ -342,7 +342,7 @@ object Keys {
       streams.value.log.info("started dumping structure")
       val rootProject = thisProjectRef.value
       val buildDeps = buildDependencies.value
-      val data = dumpDependencyStructure.all(ScopeFilter(inAnyProject)).value.filter(_ != null)
+      val data = dumpDependencyStructure.?.all(ScopeFilter(inAnyProject)).value.filter(_ != null).flatten
       val outputDir = packageOutputDir.value
       val stream = streams.value
       Def.task { new StructureBuilder(stream).artifactMappings(rootProject, outputDir, data, buildDeps) }
@@ -351,7 +351,7 @@ object Keys {
       streams.value.log.info("started dumping structure")
       val rootProject = thisProjectRef.value
       val buildDeps = buildDependencies.value
-      val data = dumpDependencyStructureOffline.all(ScopeFilter(inAnyProject)).value.filter(_ != null)
+      val data = dumpDependencyStructureOffline.?.all(ScopeFilter(inAnyProject)).value.filter(_ != null).flatten
       val outputDir = packageOutputDir.value
       val stream = streams.value
       Def.task { new StructureBuilder(stream).artifactMappings(rootProject, outputDir, data, buildDeps) }

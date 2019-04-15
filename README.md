@@ -23,7 +23,7 @@ From version 1.0.0, this plugin is published for sbt 0.13 and 1.0
 addSbtPlugin("org.jetbrains" % "sbt-idea-plugin" % "2.3.2")
 ```
 
-* [Enable](#auto-enable-the-plugin) the plugin for your desired projects
+* [Enable](#auto-enable-the-plugin) the plugin for your desired projects (your main plugin project and all its dependencies)
 
 * Run SBT and the plugin will automatically download and attach IDEA dependencies.
 
