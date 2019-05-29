@@ -343,7 +343,7 @@ object Keys {
       streams.value.log.info("started dumping structure")
       val rootProject = thisProjectRef.value
       val buildDeps = buildDependencies.value
-      val data = dumpDependencyStructure.?.all(ScopeFilter(inAnyProject)).value.filter(_ != null).flatten
+      val data = dumpDependencyStructure.?.all(ScopeFilter(inAnyProject)).value.flatten.filterNot(_ == null)
       val outputDir = packageOutputDir.value
       val stream = streams.value
       Def.task { new StructureBuilder(stream).artifactMappings(rootProject, outputDir, data, buildDeps) }
@@ -352,7 +352,7 @@ object Keys {
       streams.value.log.info("started dumping structure")
       val rootProject = thisProjectRef.value
       val buildDeps = buildDependencies.value
-      val data = dumpDependencyStructureOffline.?.all(ScopeFilter(inAnyProject)).value.filter(_ != null).flatten
+      val data = dumpDependencyStructureOffline.?.all(ScopeFilter(inAnyProject)).value.flatten.filterNot(_ == null)
       val outputDir = packageOutputDir.value
       val stream = streams.value
       Def.task { new StructureBuilder(stream).artifactMappings(rootProject, outputDir, data, buildDeps) }
