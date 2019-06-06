@@ -214,8 +214,7 @@ object Keys {
         dumpDependencyStructure := null, // avoid cyclic dependencies on products task
         products := packagePluginDynamic.in(from).value :: Nil,
         packageMethod := org.jetbrains.sbtidea.Keys.PackagingMethod.Skip(),
-        ideaInternalPlugins := ideaInternalPlugins.all(ScopeFilter(inDependencies(from, transitive = true, includeRoot = true))).value.flatten.distinct,
-        ideaExternalPlugins := ideaExternalPlugins.all(ScopeFilter(inDependencies(from, transitive = true, includeRoot = true))).value.flatten.distinct,
+        unmanagedJars in Compile := ideaMainJars.value,
         unmanagedJars in Compile += file(System.getProperty("java.home")).getParentFile / "lib" / "tools.jar",
         mainClass in (Compile, run) := Some("com.intellij.idea.Main"),
         javaOptions in run := javaOptions.in(from, Test).value :+
