@@ -2,7 +2,7 @@ package org.jetbrains.sbtidea.tasks.packaging.artifact
 
 import java.nio.file._
 
-import org.jetbrains.sbtidea.tasks.packaging.ExcludeFilter.ExcludeFilter
+import ExcludeFilter.ExcludeFilter
 import org.jetbrains.sbtidea.tasks.packaging._
 import sbt.Keys.TaskStreams
 import sbt._

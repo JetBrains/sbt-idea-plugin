@@ -1,7 +1,7 @@
 package org.jetbrains.sbtidea
 
 import org.jetbrains.sbtidea.tasks.IdeaConfigBuilder
-import org.jetbrains.sbtidea.tasks.packaging.ExcludeFilter.ExcludeFilter
+import org.jetbrains.sbtidea.tasks.packaging.artifact.ExcludeFilter.ExcludeFilter
 import org.jetbrains.sbtidea.tasks.packaging._
 import org.jetbrains.sbtidea.tasks.packaging.artifact._
 import sbt.Keys._

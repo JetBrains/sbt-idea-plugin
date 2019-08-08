@@ -1,6 +1,6 @@
 package org.jetbrains.sbtidea.tasks
 
-import java.net.URL
+import java.net.{HttpURLConnection, URL}
 
 import org.jetbrains.sbtidea.Keys._
 
@@ -17,4 +17,20 @@ package object download {
                           kind: ArtifactKind.ArtifactKind,
                           nameHint: String = "",
                           optional: Boolean = false)
+
+  def withConnection[V](url: URL)(f: => HttpURLConnection => V): V = {
+    var connection: HttpURLConnection = null
+    try {
+      connection = url.openConnection().asInstanceOf[HttpURLConnection]
+      f(connection)
+    } finally {
+      try {
+        if (connection != null) connection.disconnect()
+      } catch {
+        case e: Exception =>
+          println(s"Failed to close connection $url: ${e.getMessage}")
+      }
+    }
+  }
+
 }

@@ -3,7 +3,7 @@ package sbt.jetbrains.ideaPlugin
 import java.util
 import java.util.concurrent.ConcurrentHashMap
 
-import org.jetbrains.sbtidea.tasks.packaging.ClassesInfo
+import org.jetbrains.sbtidea.tasks.packaging.artifact.ClassesInfo
 import sbt.io.syntax.File
 import sbt.jetbrains.ideaPlugin.apiAdapter.SbtCompilationBackCompat._
 

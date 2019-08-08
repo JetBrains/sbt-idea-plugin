@@ -1,6 +1,5 @@
 package org.jetbrains.sbtidea.tasks.packaging.artifact
 
-import org.jetbrains.sbtidea.tasks.packaging._
 import sbt.Keys.TaskStreams
 import sbt._
 

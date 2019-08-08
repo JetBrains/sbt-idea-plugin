@@ -7,6 +7,7 @@ import java.util.Optional
 
 object apiAdapter {
   type CompileResult = sbt.inc.Analysis
+  type BuildDependencies = sbt.BuildDependencies
   val Using = sbt.Using
   def projectJarName(project: sbt.Project): String = s"${project.id}.jar"
   def extractAffectedFiles(initialTimestamp: Long, result: Seq[CompileResult]): Seq[File] = {

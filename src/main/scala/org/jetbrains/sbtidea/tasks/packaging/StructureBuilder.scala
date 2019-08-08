@@ -1,6 +1,8 @@
 package org.jetbrains.sbtidea.tasks.packaging
 
 import org.jetbrains.sbtidea.Keys.PackagingMethod._
+import org.jetbrains.sbtidea.tasks.packaging.structure.ModuleKey
+import org.jetbrains.sbtidea.tasks.packaging.structure.sbtImpl.{ModuleIdExt, TransitiveDeps}
 import sbt.Def.Classpath
 import sbt.Keys.{TaskStreams, moduleID}
 import sbt._

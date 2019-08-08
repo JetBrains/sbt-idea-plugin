@@ -1,5 +1,7 @@
-package org.jetbrains.sbtidea.tasks.packaging
+package org.jetbrains.sbtidea.tasks.packaging.structure.sbtImpl
 
+import org.jetbrains.sbtidea.tasks.packaging.ProjectScalaVersion
+import org.jetbrains.sbtidea.tasks.packaging.structure.ModuleKey
 import sbt.UpdateReport
 
 //noinspection MapGetOrElseBoolean : scala 2.10 has no Option.contains
@@ -17,7 +19,7 @@ class TransitiveDeps(report: UpdateReport, configuration: String)(implicit scala
         case Some(conf) =>
           val edges = conf.modules.flatMap(m => m.callers.map(caller => caller.caller.key -> m.module.key))
           edges.foldLeft(Map[ModuleKey, Seq[ModuleKey]]()) {
-            case (map, (caller, mod)) if caller.id.name.startsWith("temp-resolve") => map + (mod -> Seq.empty) // top level dependency
+            case (map, (caller, mod)) if caller.name.startsWith("temp-resolve") => map + (mod -> Seq.empty) // top level dependency
             case (map, (caller, mod)) => map + (caller -> (map.getOrElse(caller, Seq()) :+ mod))
           }
         case None => Map.empty

@@ -2,9 +2,9 @@ package sbt.jetbrains.ideaPlugin
 
 import java.util
 import java.util.concurrent.ConcurrentHashMap
-
-import org.jetbrains.sbtidea.tasks.packaging.ClassesInfo
 import java.io.File
+
+import org.jetbrains.sbtidea.tasks.packaging.artifact.ClassesInfo
 import sbt.jetbrains.ideaPlugin.apiAdapter.SbtCompilationBackCompat._
 
 private class IndexingClassfileManager(inherited: ClassFileManager) extends ClassFileManager {

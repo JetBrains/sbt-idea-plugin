@@ -5,7 +5,6 @@ import java.net.URL
 import java.nio.ByteBuffer
 import java.nio.channels.{Channels, ReadableByteChannel}
 
-import org.jetbrains.sbtidea.tasks.packaging.withConnection
 import sbt.{File, IO, Logger}
 
 private class FileDownloader(private val baseDirectory: File)(implicit val log: Logger) {

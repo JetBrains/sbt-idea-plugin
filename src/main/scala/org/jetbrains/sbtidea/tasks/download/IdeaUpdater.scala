@@ -21,7 +21,10 @@ class IdeaUpdater(private val resolver: IdeaArtifactResolver,
 
   private val downloader: FileDownloader = new FileDownloader(ideaInstallDir.getParentFile)
 
+  //noinspection MapGetOrElseBoolean
   def updateIdeaAndPlugins(ideaBuildInfo: BuildInfo, plugins: Seq[IdeaPlugin], withSources: Boolean = true): File = {
+    if (sys.props.get("IdeaUpdater.isDumb").map(_ == "true").getOrElse(false))
+      return new File(".")
     val installRoot = updateIdea(ideaBuildInfo)
     updatePlugins(ideaBuildInfo, plugins)
     installRoot
