@@ -1,4 +1,4 @@
-package org.jetbrains.sbtidea.tasks.packaging
+package org.jetbrains.sbtidea.tasks.packaging.artifact
 
 import java.net.URI
 import java.nio.file._
@@ -6,7 +6,7 @@ import java.nio.file.attribute.BasicFileAttributes
 import java.util
 import java.util.Collections
 
-import org.jetbrains.sbtidea.tasks.packaging.ExcludeFilter.ExcludeFilter
+import org.jetbrains.sbtidea.tasks.packaging.artifact.ExcludeFilter.ExcludeFilter
 import sbt.Keys.TaskStreams
 
 trait JarPackager {

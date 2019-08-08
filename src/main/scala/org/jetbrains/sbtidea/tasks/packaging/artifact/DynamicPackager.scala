@@ -1,8 +1,8 @@
-package org.jetbrains.sbtidea.tasks.packaging
+package org.jetbrains.sbtidea.tasks.packaging.artifact
 
 import java.nio.file.{FileSystem, Files, Path}
 
-import org.jetbrains.sbtidea.tasks.packaging.ExcludeFilter.ExcludeFilter
+import org.jetbrains.sbtidea.tasks.packaging.artifact.ExcludeFilter.ExcludeFilter
 import sbt.Keys.TaskStreams
 
 class DynamicPackager(myOutput: Path,

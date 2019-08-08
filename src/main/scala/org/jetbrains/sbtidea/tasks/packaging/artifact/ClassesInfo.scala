@@ -1,4 +1,4 @@
-package org.jetbrains.sbtidea.tasks.packaging
+package org.jetbrains.sbtidea.tasks.packaging.artifact
 
 import java.io.File
 

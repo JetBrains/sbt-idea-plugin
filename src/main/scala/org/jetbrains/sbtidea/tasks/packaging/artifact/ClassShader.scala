@@ -1,6 +1,6 @@
-package org.jetbrains.sbtidea.tasks.packaging
+package org.jetbrains.sbtidea.tasks.packaging.artifact
 
-import java.nio.file.{Files, Path, StandardCopyOption, StandardOpenOption}
+import java.nio.file.{Files, Path, StandardOpenOption}
 
 import org.pantsbuild.jarjar._
 import org.pantsbuild.jarjar.util.EntryStruct
