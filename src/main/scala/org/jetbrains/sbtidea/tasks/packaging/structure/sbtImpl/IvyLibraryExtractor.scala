@@ -23,10 +23,11 @@ class IvyLibraryExtractor(private val data: ProjectData)
       .filter(_.configurations.isEmpty)
       .map(_.key)
       .flatMap(resolver.collectTransitiveDeps)
-    for {
+    val libraries = for {
       dep <- transitiveDeps
       file <- resolvedLibs.get(dep)
     } yield SbtIvyLibrary(dep, file)
+    libraries.distinct
   }
 
   private def buildModuleIdMap(cp: Classpath)(implicit scalaVersion: ProjectScalaVersion): Map[ModuleKey, File] = (for {
