@@ -25,6 +25,12 @@ class SbtProjectStructureExtractor(private val rootProject: ProjectRef,
                             var packagingOptions: ProjectPackagingOptions) extends ProjectNode {
     def name:  String = extractProjectName(ref)
     def cache: SbtProjectNode = { projectCache += ref -> this; this }
+    override def toString: String = s"PN($name)"
+    override def hashCode(): Int = ref.hashCode()
+    override def equals(obj: Any): Boolean = obj match {
+      case SbtProjectNode(otherRef, _, _, _, _) => ref.equals(otherRef)
+      case _ => false
+    }
   }
 
   case class SbtProjectPackagingOptions(override val packageMethod: PackagingMethod,
