@@ -94,11 +94,11 @@ class SbtProjectStructureExtractor(private val rootProject: ProjectRef,
 
   private def updateNode(node: SbtProjectNode): SbtProjectNode = {
     val childRefs = buildDependencies.classpathRefs(node.ref)
-    assert(childRefs.forall(projectCache.contains), s"Child stubs incomplete: $childRefs -> $projectCache")
+    assert(childRefs.forall(projectCache.contains), s"Child stubs incomplete: ${childRefs.filterNot(projectCache.contains)}")
     node.children = childRefs.map(projectCache)
 
     val parentRefs = revProjectMap.filter(_._1 == node.ref).map(_._2).distinct
-    assert(parentRefs.forall(projectCache.contains), s"Parent stubs incomplete: $childRefs -> $projectCache")
+    assert(parentRefs.forall(projectCache.contains), s"Parent stubs incomplete: ${parentRefs.filterNot(projectCache.contains)}")
     node.parents = parentRefs.map(projectCache)
 
     val libs = extractLibraries(node.ref)

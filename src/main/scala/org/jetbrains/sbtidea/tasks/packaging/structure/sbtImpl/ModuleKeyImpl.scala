@@ -7,6 +7,7 @@ case class ModuleKeyImpl(id: ModuleID, attributes: Map[String, String]) extends 
   def ~==(other: ModuleKey): Boolean = other match {
     case ModuleKeyImpl(otherId, _) =>
       id.organization == otherId.organization && id.name == otherId.name
+    case _ => false
   }
 
   override def org: String = id.organization
