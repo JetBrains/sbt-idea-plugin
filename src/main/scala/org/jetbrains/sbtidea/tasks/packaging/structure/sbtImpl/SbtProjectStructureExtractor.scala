@@ -23,6 +23,7 @@ class SbtProjectStructureExtractor(private val rootProject: ProjectRef,
                             var children: Seq[ProjectNode],
                             var libs: Seq[Library],
                             var packagingOptions: ProjectPackagingOptions) extends ProjectNode {
+    def name:  String = extractProjectName(ref)
     def cache: SbtProjectNode = { projectCache += ref -> this; this }
   }
 
