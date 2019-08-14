@@ -23,6 +23,8 @@ package object structure {
     def shadePatterns: Seq[ShadePattern]
     def excludeFilter: ExcludeFilter
     def additionalProjects: Seq[ProjectNode]
+    def classRoots: Seq[File]
+    def assembleLibraries: Boolean
   }
 
   trait ProjectNode {

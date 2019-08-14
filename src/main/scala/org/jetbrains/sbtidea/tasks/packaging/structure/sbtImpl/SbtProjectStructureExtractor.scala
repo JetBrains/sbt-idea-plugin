@@ -31,6 +31,8 @@ class SbtProjectStructureExtractor(private val rootProject: ProjectRef,
                                         override val fileMappings: Seq[(File, String)],
                                         override val shadePatterns: Seq[ShadePattern],
                                         override val excludeFilter: ExcludeFilter,
+                                        override val classRoots: Seq[File],
+                                        override val assembleLibraries: Boolean,
                                         override val additionalProjects: Seq[ProjectNode]) extends ProjectPackagingOptions
 
   private val projectMap: Map[ProjectRef, ProjectData] =
@@ -72,6 +74,8 @@ class SbtProjectStructureExtractor(private val rootProject: ProjectRef,
       data.additionalMappings,
       data.shadePatterns,
       data.excludeFilter,
+      data.productDirs,
+      data.assembleLibraries,
       data.additionalProjects.map(x => projectCache(findProjectRef(x).get))
     )
   }
