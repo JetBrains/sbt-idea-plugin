@@ -103,6 +103,13 @@ class SbtProjectStructureExtractor(private val rootProject: ProjectRef,
     nodeStubs
   }
 
+  private def buildUnprocessedStubs(): Unit = {
+    val unprocessedRefs = projectsData.map(_.thisProject).filterNot(projectCache.contains)
+    unprocessedRefs
+      .map(buildNodeStub)
+      .foreach(updateNode)
+  }
+
   private def updateNode(node: SbtProjectNode): SbtProjectNode = {
     val childRefs = buildDependencies.classpathRefs(node.ref)
     assert(childRefs.forall(projectCache.contains), s"Child stubs incomplete: ${childRefs.filterNot(projectCache.contains)}")
@@ -143,6 +150,7 @@ class SbtProjectStructureExtractor(private val rootProject: ProjectRef,
 
   override def extract: Seq[ProjectNode] = {
     val stubs = createNodeStubs(rootProject)
+    buildUnprocessedStubs()
     val updatedNodes = buildNodeGraph(stubs)
     updatedNodes
   }
