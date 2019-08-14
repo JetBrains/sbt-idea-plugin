@@ -141,14 +141,9 @@ class SbtProjectStructureExtractor(private val rootProject: ProjectRef,
     } else projectData
   }
 
-  private def verifyNodeGraph(nodes: Seq[ProjectNode]): Unit = {
-    //TODO
-  }
-
   override def extract: Seq[ProjectNode] = {
     val stubs = createNodeStubs(rootProject)
     val updatedNodes = buildNodeGraph(stubs)
-    verifyNodeGraph(updatedNodes)
     updatedNodes
   }
 }
