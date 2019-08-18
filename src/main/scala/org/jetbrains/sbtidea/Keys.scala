@@ -1,9 +1,13 @@
 package org.jetbrains.sbtidea
 
 import org.jetbrains.sbtidea.tasks.IdeaConfigBuilder
-import org.jetbrains.sbtidea.tasks.packaging.artifact.ExcludeFilter.ExcludeFilter
 import org.jetbrains.sbtidea.tasks.packaging._
+import org.jetbrains.sbtidea.tasks.packaging.artifact.ExcludeFilter.ExcludeFilter
 import org.jetbrains.sbtidea.tasks.packaging.artifact._
+import org.jetbrains.sbtidea.tasks.packaging.structure.ProjectNode
+import org.jetbrains.sbtidea.tasks.packaging.structure.mappings.LinearMappingsBuilder
+import org.jetbrains.sbtidea.tasks.packaging.structure.render.StructurePrinter
+import org.jetbrains.sbtidea.tasks.packaging.structure.sbtImpl.SbtProjectStructureExtractor
 import sbt.Keys._
 import sbt._
 import sbt.complete.DefaultParsers
@@ -154,6 +158,8 @@ object Keys {
   lazy val dumpDependencyStructure = TaskKey[ProjectData](
     "dump-dependency-structure"
   )
+
+  lazy val feature = taskKey[Seq[ProjectNode]]("task for testing new features")
 
   lazy val createCompilationTimeStamp: TaskKey[Unit] = taskKey("")
   lazy val createIDEARunConfiguration: TaskKey[File] = taskKey("")
@@ -306,6 +312,21 @@ object Keys {
     packageFileMappings := Seq.empty,
     packageAdditionalProjects := Seq.empty,
     packageAssembleLibraries := false,
+    feature := {
+      val rootProject = thisProjectRef.value
+      val buildDeps = buildDependencies.value
+      val outputDir = packageOutputDir.value
+      val projectName = thisProject.value.id
+      val buildRoot = baseDirectory.in(ThisBuild).value
+      val data = dumpDependencyStructureOffline.?.all(ScopeFilter(inAnyProject)).value.flatten.filterNot(_ == null)
+      val structure = new SbtProjectStructureExtractor(rootProject, data, buildDeps).extract
+      val mappings = new LinearMappingsBuilder(outputDir).buildMappings(structure)
+      val result = new IdeaArtifactXmlBuilder(projectName, outputDir).produceArtifact(mappings)
+      val file = buildRoot / ".idea" / "artifacts" / s"$projectName.xml"
+      IO.write(file, result)
+      streams.value.log.info(new StructurePrinter().renderASCII(structure.last))
+      structure
+    },
     dumpDependencyStructure := Def.task {
       ProjectData(
         thisProjectRef.value,
