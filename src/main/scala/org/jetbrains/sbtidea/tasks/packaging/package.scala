@@ -1,12 +1,14 @@
 package org.jetbrains.sbtidea.tasks
 
 import org.jetbrains.sbtidea.Keys.PackagingMethod
-import org.jetbrains.sbtidea.tasks.packaging.artifact.{ExcludeFilter, ShadePattern}
+import org.jetbrains.sbtidea.tasks.packaging.artifact.ExcludeFilter
 import org.jetbrains.sbtidea.tasks.packaging.artifact.ExcludeFilter.ExcludeFilter
 import sbt.Def.Classpath
 import sbt._
 
 package object packaging {
+
+  case class ShadePattern(from: String, to: String)
 
   case class ProjectScalaVersion(libModule: Option[ModuleID]) {
     def isDefined: Boolean = libModule.isDefined

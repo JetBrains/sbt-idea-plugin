@@ -3,7 +3,6 @@ package org.jetbrains.sbtidea.tasks.packaging
 import java.io.File
 
 import org.jetbrains.sbtidea.tasks.packaging.artifact.ExcludeFilter.ExcludeFilter
-import org.jetbrains.sbtidea.tasks.packaging.artifact.ShadePattern
 
 package object structure {
 //  type Project

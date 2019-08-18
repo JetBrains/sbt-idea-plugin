@@ -5,7 +5,6 @@ import java.io.File
 import org.jetbrains.sbtidea.Keys.PackagingMethod._
 import org.jetbrains.sbtidea.tasks.packaging._
 import org.jetbrains.sbtidea.tasks.packaging.artifact.ExcludeFilter.ExcludeFilter
-import org.jetbrains.sbtidea.tasks.packaging.artifact.ShadePattern
 import org.jetbrains.sbtidea.tasks.packaging.structure._
 import sbt.jetbrains.ideaPlugin.apiAdapter._
 import sbt.{Project, ProjectRef}

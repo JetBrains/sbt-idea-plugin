@@ -2,11 +2,10 @@ package org.jetbrains.sbtidea.tasks.packaging.artifact
 
 import java.nio.file.{Files, Path, StandardOpenOption}
 
+import org.jetbrains.sbtidea.tasks.packaging.ShadePattern
 import org.pantsbuild.jarjar._
 import org.pantsbuild.jarjar.util.EntryStruct
 import sbt.Keys.TaskStreams
-
-case class ShadePattern(from: String, to: String)
 
 class ClassShader(patterns: Seq[ShadePattern])(implicit val streams: TaskStreams) {
 
