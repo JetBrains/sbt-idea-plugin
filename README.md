@@ -20,7 +20,7 @@ From version 1.0.0, this plugin is published for sbt 0.13 and 1.0
 * Insert into `project/plugins.sbt`:
 
 ```Scala
-addSbtPlugin("org.jetbrains" % "sbt-idea-plugin" % "2.3.2")
+addSbtPlugin("org.jetbrains" % "sbt-idea-plugin" % "2.4.0")
 ```
 
 * [Enable](#auto-enable-the-plugin) the plugin for your desired projects (your main plugin project and all its dependencies)
@@ -220,6 +220,10 @@ Download IDEA's binaries and sources, put them into
 them in `ideaBaseDirectory / "externalPlugins"` directory. Automatically add IDEA's and
 plugin's jars into `unmanagedJars in Compile`.
 
+#### `printProjectGraph :: TaskKey[Unit]`
+
+Prints ASCII graph of currently selected project to console. Useful for debugging complex builds.
+
 ## Running the plugin
 
 To run IDEA with the plugin being developed, one needs to define a synthetic runner project in the build.
@@ -260,15 +264,6 @@ object AutoSbtIdeaPlugin extends AbstractSbtIdeaPlugin {
 ``` 
 
 ## Notes and best practices
-
-- If you use `sbt-assembly` plugin to produce a fat jar to distribute your plugin you should avoid putting IDEA's jars 
-  into this fat jar of yours. To achieve this insert
-
-  ```sbt
-  assemblyExcludedJars in assembly := ideaFullJars.value
-  ```
-
-  into your `build.sbt`
   
 - If you depend upon one or more external plugins, add
 
