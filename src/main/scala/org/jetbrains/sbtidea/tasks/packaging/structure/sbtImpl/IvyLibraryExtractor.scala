@@ -2,13 +2,14 @@ package org.jetbrains.sbtidea.tasks.packaging.structure.sbtImpl
 
 import java.io.File
 
+import org.jetbrains.sbtidea.PluginLogger
 import org.jetbrains.sbtidea.tasks.packaging.structure.{Library, ModuleKey}
 import org.jetbrains.sbtidea.tasks.packaging.{ProjectData, ProjectScalaVersion}
 import sbt.Def.Classpath
 import sbt.Keys.moduleID
 
 class IvyLibraryExtractor(private val data: ProjectData)
-                        (private implicit val scalaVersion: ProjectScalaVersion) {
+                        (private implicit val scalaVersion: ProjectScalaVersion, log: PluginLogger) {
 
   private val configuration = "compile"
 

@@ -1,12 +1,13 @@
 package org.jetbrains.sbtidea.tasks.packaging.structure.mappings
 
+import org.jetbrains.sbtidea.PluginLogger
 import sbt._
 import org.jetbrains.sbtidea.tasks.packaging.structure.{Library, PackagingMethod, ProjectNode}
 import org.jetbrains.sbtidea.tasks.packaging.{MAPPING_KIND, Mapping, Mappings}
 
 import scala.collection.mutable
 
-class LinearMappingsBuilder(override val outputDir: File) extends AbstractMappingBuilder {
+class LinearMappingsBuilder(override val outputDir: File)(implicit log: PluginLogger) extends AbstractMappingBuilder {
 
   class MappingBuildException(message: String) extends Exception(message)
 
@@ -65,7 +66,7 @@ class LinearMappingsBuilder(override val outputDir: File) extends AbstractMappin
     if (to.hasRealParents) {
       val otherCandidates = from.collectStandaloneParents.toSet - to
       if (otherCandidates.nonEmpty)
-        println(
+        log.warn(
           s"""Warning: $from will be merged into non-terminal $to, other candidates were: $otherCandidates
              |You can specify explicit merge: packageMethod := PackagingMethod.MergeIntoOther(${otherCandidates.head.name})""".stripMargin
         )
@@ -104,6 +105,7 @@ class LinearMappingsBuilder(override val outputDir: File) extends AbstractMappin
   }
 
   override def buildMappings(nodes: Seq[ProjectNode]): Mappings = {
+    log.info(s"building mappings for ${nodes.size} nodes")
     nodes.foreach(processNode)
     mappingsBuffer.toSeq
   }

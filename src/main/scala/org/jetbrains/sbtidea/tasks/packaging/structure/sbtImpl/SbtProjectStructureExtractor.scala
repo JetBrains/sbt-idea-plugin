@@ -3,6 +3,7 @@ package org.jetbrains.sbtidea.tasks.packaging.structure.sbtImpl
 import java.io.File
 
 import org.jetbrains.sbtidea.Keys.PackagingMethod._
+import org.jetbrains.sbtidea.PluginLogger
 import org.jetbrains.sbtidea.tasks.packaging._
 import org.jetbrains.sbtidea.tasks.packaging.artifact.ExcludeFilter.ExcludeFilter
 import org.jetbrains.sbtidea.tasks.packaging.structure._
@@ -13,7 +14,7 @@ import scala.collection.mutable
 
 class SbtProjectStructureExtractor(private val rootProject: ProjectRef,
                                    private val projectsData: Seq[ProjectData],
-                                   private val buildDependencies: BuildDependencies)
+                                   private val buildDependencies: BuildDependencies)(implicit log: PluginLogger)
   extends ProjectStructureExtractor with Ref2Node {
 
 
@@ -104,6 +105,8 @@ class SbtProjectStructureExtractor(private val rootProject: ProjectRef,
 
   private def buildUnprocessedStubs(): Unit = {
     val unprocessedRefs = projectsData.map(_.thisProject).filterNot(projectCache.contains)
+    if (unprocessedRefs.nonEmpty)
+      log.info(s"building stubs for ${unprocessedRefs.size} weak-referenced refs: $unprocessedRefs")
     unprocessedRefs
       .map(buildNodeStub)
       .foreach(updateNode)
@@ -148,8 +151,10 @@ class SbtProjectStructureExtractor(private val rootProject: ProjectRef,
   }
 
   override def extract: Seq[ProjectNode] = {
+    log.info(s"building node stubs from root: $rootProject")
     val stubs = createNodeStubs(rootProject)
     buildUnprocessedStubs()
+    log.info(s"building node graph from nodes: $stubs")
     val updatedNodes = buildNodeGraph(stubs)
     updatedNodes
   }
