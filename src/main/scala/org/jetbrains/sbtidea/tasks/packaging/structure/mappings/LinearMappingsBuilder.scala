@@ -1,9 +1,9 @@
 package org.jetbrains.sbtidea.tasks.packaging.structure.mappings
 
 import org.jetbrains.sbtidea.PluginLogger
-import sbt._
 import org.jetbrains.sbtidea.tasks.packaging.structure.{Library, PackagingMethod, ProjectNode}
 import org.jetbrains.sbtidea.tasks.packaging.{MAPPING_KIND, Mapping, Mappings}
+import sbt._
 
 import scala.collection.mutable
 
@@ -14,11 +14,23 @@ class LinearMappingsBuilder(override val outputDir: File)(implicit log: PluginLo
   private val mappingsBuffer: mutable.Set[Mapping] = new mutable.TreeSet[Mapping]()
 
   private def processNode(node: ProjectNode): Unit = {
-    if (node.packagingOptions.packageMethod == PackagingMethod.Skip())
+    if (shouldSkip(node))
       return
     val targetJar = processTarget(node)
     processLibraries(node, targetJar)
     processFileMappings(node)
+  }
+
+  private def shouldSkip(node: ProjectNode): Boolean = {
+    val res = node.packagingOptions.packageMethod == PackagingMethod.Skip()
+    if (res && (
+      node.packagingOptions.fileMappings.nonEmpty         ||
+        node.packagingOptions.shadePatterns.nonEmpty      ||
+        node.packagingOptions.additionalProjects.nonEmpty ||
+        node.packagingOptions.assembleLibraries)) {
+      log.warn(s"project $node is skipped, but has packaging options defined, did you mean PackagingMethod.DepsOnly()")
+    }
+    res
   }
 
   private def processTarget(node: ProjectNode): File = {
