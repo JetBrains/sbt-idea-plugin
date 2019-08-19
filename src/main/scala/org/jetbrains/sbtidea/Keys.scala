@@ -319,6 +319,7 @@ object Keys {
       val projectName = thisProject.value.id
       val buildRoot = baseDirectory.in(ThisBuild).value
       val data = dumpDependencyStructureOffline.?.all(ScopeFilter(inAnyProject)).value.flatten.filterNot(_ == null)
+      implicit val logger: SbtPluginLogger = new SbtPluginLogger(streams.value)
       val structure = new SbtProjectStructureExtractor(rootProject, data, buildDeps).extract
       val mappings = new LinearMappingsBuilder(outputDir).buildMappings(structure)
       val result = new IdeaArtifactXmlBuilder(projectName, outputDir).produceArtifact(mappings)
@@ -365,17 +366,23 @@ object Keys {
       val buildDeps = buildDependencies.value
       val data = dumpDependencyStructure.?.all(ScopeFilter(inAnyProject)).value.flatten.filterNot(_ == null)
       val outputDir = packageOutputDir.value
-      val stream = streams.value
-      Def.task { new StructureBuilder(stream).artifactMappings(rootProject, outputDir, data, buildDeps) }
+      implicit val logger: SbtPluginLogger = new SbtPluginLogger(streams.value)
+      Def.task {
+        val structure = new SbtProjectStructureExtractor(rootProject, data, buildDeps).extract
+        new LinearMappingsBuilder(outputDir).buildMappings(structure)
+      }
     }.value,
     packageMappingsOffline := Def.taskDyn {
-      streams.value.log.info("started dumping structure")
+      streams.value.log.info("started dumping offline structure")
       val rootProject = thisProjectRef.value
       val buildDeps = buildDependencies.value
       val data = dumpDependencyStructureOffline.?.all(ScopeFilter(inAnyProject)).value.flatten.filterNot(_ == null)
       val outputDir = packageOutputDir.value
-      val stream = streams.value
-      Def.task { new StructureBuilder(stream).artifactMappings(rootProject, outputDir, data, buildDeps) }
+      implicit val logger: SbtPluginLogger = new SbtPluginLogger(streams.value)
+      Def.task {
+        val structure = new SbtProjectStructureExtractor(rootProject, data, buildDeps).extract
+        new LinearMappingsBuilder(outputDir).buildMappings(structure)
+      }
     }.value,
     packagePlugin := Def.taskDyn {
       val outputDir = packageOutputDir.value
