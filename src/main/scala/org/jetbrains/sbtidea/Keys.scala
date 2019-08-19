@@ -159,7 +159,7 @@ object Keys {
     "dump-dependency-structure"
   )
 
-  lazy val feature = taskKey[Seq[ProjectNode]]("task for testing new features")
+  lazy val printProjectGraph = taskKey[Unit]("Show ASCII project dependency graph in console")
 
   lazy val createCompilationTimeStamp: TaskKey[Unit] = taskKey("")
   lazy val createIDEARunConfiguration: TaskKey[File] = taskKey("")
@@ -312,21 +312,13 @@ object Keys {
     packageFileMappings := Seq.empty,
     packageAdditionalProjects := Seq.empty,
     packageAssembleLibraries := false,
-    feature := {
+    printProjectGraph := {
       val rootProject = thisProjectRef.value
       val buildDeps = buildDependencies.value
-      val outputDir = packageOutputDir.value
-      val projectName = thisProject.value.id
-      val buildRoot = baseDirectory.in(ThisBuild).value
       val data = dumpDependencyStructureOffline.?.all(ScopeFilter(inAnyProject)).value.flatten.filterNot(_ == null)
       implicit val logger: SbtPluginLogger = new SbtPluginLogger(streams.value)
       val structure = new SbtProjectStructureExtractor(rootProject, data, buildDeps).extract
-      val mappings = new LinearMappingsBuilder(outputDir).buildMappings(structure)
-      val result = new IdeaArtifactXmlBuilder(projectName, outputDir).produceArtifact(mappings)
-      val file = buildRoot / ".idea" / "artifacts" / s"$projectName.xml"
-      IO.write(file, result)
       streams.value.log.info(new StructurePrinter().renderASCII(structure.last))
-      structure
     },
     dumpDependencyStructure := Def.task {
       ProjectData(
