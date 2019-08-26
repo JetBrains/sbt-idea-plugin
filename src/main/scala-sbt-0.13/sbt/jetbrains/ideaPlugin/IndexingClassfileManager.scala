@@ -4,7 +4,7 @@ import java.util
 import java.util.concurrent.ConcurrentHashMap
 import java.io.File
 
-import org.jetbrains.sbtidea.tasks.packaging.artifact.ClassesInfo
+import org.jetbrains.sbtidea.packaging.artifact.ClassesInfo
 import sbt.jetbrains.ideaPlugin.apiAdapter.SbtCompilationBackCompat._
 
 private class IndexingClassfileManager(inherited: ClassFileManager) extends ClassFileManager {

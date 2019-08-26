@@ -1,13 +1,13 @@
 package org.jetbrains.sbtidea
 
 import org.jetbrains.sbtidea.tasks.IdeaConfigBuilder
-import org.jetbrains.sbtidea.tasks.packaging._
-import org.jetbrains.sbtidea.tasks.packaging.artifact.ExcludeFilter.ExcludeFilter
-import org.jetbrains.sbtidea.tasks.packaging.artifact._
-import org.jetbrains.sbtidea.tasks.packaging.structure.ProjectNode
-import org.jetbrains.sbtidea.tasks.packaging.structure.mappings.LinearMappingsBuilder
-import org.jetbrains.sbtidea.tasks.packaging.structure.render.StructurePrinter
-import org.jetbrains.sbtidea.tasks.packaging.structure.sbtImpl.SbtProjectStructureExtractor
+import org.jetbrains.sbtidea.packaging._
+import org.jetbrains.sbtidea.packaging.artifact.ExcludeFilter.ExcludeFilter
+import org.jetbrains.sbtidea.packaging.artifact._
+import org.jetbrains.sbtidea.structure.ProjectNode
+import org.jetbrains.sbtidea.packaging.mappings.LinearMappingsBuilder
+import org.jetbrains.sbtidea.structure.render.StructurePrinter
+import org.jetbrains.sbtidea.structure.sbtImpl.SbtProjectStructureExtractor
 import sbt.Keys._
 import sbt._
 import sbt.complete.DefaultParsers
@@ -155,7 +155,7 @@ object Keys {
     "paths to exclude within merged jars"
   )
 
-  lazy val dumpDependencyStructure = TaskKey[ProjectData](
+  lazy val dumpDependencyStructure = TaskKey[SbtProjectData](
     "dump-dependency-structure"
   )
 
@@ -164,7 +164,7 @@ object Keys {
   lazy val createCompilationTimeStamp: TaskKey[Unit] = taskKey("")
   lazy val createIDEARunConfiguration: TaskKey[File] = taskKey("")
   lazy val createIDEAArtifactXml     : TaskKey[Unit] = taskKey("")
-  lazy val dumpDependencyStructureOffline: TaskKey[ProjectData] = taskKey("")
+  lazy val dumpDependencyStructureOffline: TaskKey[SbtProjectData] = taskKey("")
   lazy val packageMappingsOffline    : TaskKey[Mappings] = taskKey("")
   lazy val dumpStructure             : TaskKey[Unit] = taskKey("")
   lazy val dumpStructureTo           : InputKey[File] = inputKey("")
@@ -173,6 +173,8 @@ object Keys {
 
   lazy val homePrefix: File = sys.props.get("tc.idea.prefix").map(new File(_)).getOrElse(Path.userHome)
   lazy val ivyHomeDir: File = Option(System.getProperty("sbt.ivy.home")).fold(homePrefix / ".ivy2")(file)
+
+  case class ShadePattern(from: String, to: String)
 
   sealed trait PackagingMethod
 
