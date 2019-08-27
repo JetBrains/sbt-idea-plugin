@@ -1,0 +1,38 @@
+package org.jetbrains.sbtidea.structure
+
+import sbt._
+
+import scala.language.implicitConversions
+
+package object sbtImpl {
+
+  case class ProjectScalaVersion(libModule: Option[ModuleID]) {
+    def isDefined: Boolean = libModule.isDefined
+    def str: String = libModule.map(_.revision).getOrElse("")
+  }
+
+  implicit class ModuleIdExt(val moduleId: ModuleID) extends AnyVal {
+
+    def key(implicit scalaVersion: ProjectScalaVersion): ModuleKey = {
+      val versionSuffix = moduleId.crossVersion match {
+        case _:CrossVersion.Binary if scalaVersion.isDefined =>
+          "_" + CrossVersion.binaryScalaVersion(scalaVersion.str)
+        case _ => ""
+      }
+
+      ModuleKeyImpl(
+        moduleId.organization %  (moduleId.name + versionSuffix) % moduleId.revision,
+        moduleId.extraAttributes
+          .map    { case (k, v) => k.stripPrefix("e:") -> v }
+          .filter { case (k, _) => k == "scalaVersion" || k == "sbtVersion" })
+    }
+  }
+
+  class SbtProjectExtractException(message: String) extends Exception(message)
+
+  private[sbtImpl] def extractProjectName(project: ProjectReference): String = {
+    val str = project.toString
+    val commaIdx = str.indexOf(',')
+    str.substring(commaIdx+1, str.length-1)
+  }
+}

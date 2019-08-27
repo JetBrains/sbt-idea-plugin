@@ -1,4 +1,4 @@
-lazy val commonSettings = Seq(
+lazy val commonSettings: Seq[Def.Setting[_]] = Seq(
   sbtPlugin             := true,
   organization          := "org.jetbrains",
   licenses              += ("MIT", url("https://opensource.org/licenses/MIT")),
@@ -7,19 +7,17 @@ lazy val commonSettings = Seq(
   publishMavenStyle     := false,
   bintrayRepository     := "sbt-plugins",
   bintrayOrganization   := Some("jetbrains"),
-  scriptedLaunchOpts   ++= Seq("-Xmx1024M", "-Dplugin.version=" + version.value),
-  scriptedBufferLog     := false
+  sources in (Compile,doc) := Seq.empty,
+  publishArtifact in (Compile, packageDoc) := false
 )
 
-lazy val core = (project in file("."))
-  .enablePlugins(ScriptedPlugin)
+lazy val core = (project in file("core"))
   .settings(commonSettings)
   .settings(
     name := "sbt-declarative-core"
   )
 
 lazy val visualizer = (project in file(".") / "visualizer")
-  .enablePlugins(ScriptedPlugin)
   .settings(commonSettings)
   .dependsOn(core)
   .settings(
@@ -28,7 +26,6 @@ lazy val visualizer = (project in file(".") / "visualizer")
   )
 
 lazy val packaging = (project in file(".") / "packaging")
-  .enablePlugins(ScriptedPlugin)
   .settings(commonSettings)
   .dependsOn(core)
   .settings(
@@ -37,10 +34,12 @@ lazy val packaging = (project in file(".") / "packaging")
   )
 
 lazy val ideaSupport = (project in file(".") / "ideaSupport")
-  .enablePlugins(ScriptedPlugin)
   .settings(commonSettings)
   .dependsOn(core, packaging, visualizer)
   .settings(
     name := "sbt-idea-plugin",
     libraryDependencies += "org.scalaj" %% "scalaj-http" % "2.3.0"
   )
+
+lazy val root = (project in file("."))
+  .aggregate(core, packaging, ideaSupport, visualizer)
