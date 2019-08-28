@@ -1,22 +1,15 @@
 language: scala
 
-jdk:
-  - oraclejdk8
+jdk: openjdk8
 
 script:
   ## runs both regular tests and sbt-scripted integration tests
-  - sbt -Dfile.encoding=UTF8 test scripted
+  - sbt -Dfile.encoding=UTF8 +test +scripted
 
 after_success:
-  - '[[ $TRAVIS_BRANCH == "master" ]] || [[ $TRAVIS_BRANCH =~ ^v[0-9.]+$ ]] && sbt "^ publish"'
+  - '[[ $TRAVIS_BRANCH == "master" ]] || [[ $TRAVIS_BRANCH =~ ^v[0-9.]+$ ]] && sbt "+ publish"'
 
 sudo: false
-
-# https://docs.travis-ci.com/user/languages/java/
-addons:
-  apt:
-    packages:
-      - oracle-java8-installer
 
 before_cache:
   # Tricks to avoid unnecessary cache updates
