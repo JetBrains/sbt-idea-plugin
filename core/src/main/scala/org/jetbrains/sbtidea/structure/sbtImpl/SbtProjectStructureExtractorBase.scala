@@ -46,14 +46,16 @@ trait SbtProjectStructureExtractorBase extends ProjectStructureExtractor {
       log.info(s"building stubs for ${unprocessedProjectsData.size} weak-referenced refs: $unprocessedProjectsData")
     unprocessedProjectsData
       .map(buildStub)
+      .map { stub => projectCache += stub.ref -> stub; stub }
       .zip(unprocessedProjectsData)
       .map { case (t, data) => updateNode(t, data) }
   }
 
-  private def createNodeStubs(root: ProjectRef): Seq[NodeType] = {
+  private def createNodeStubsFromRoot(root: ProjectRef): Seq[NodeType] = {
     val sortedRefs = topoSortRefs(root).reverse
     val projectData = sortedRefs.map(projectMap)
     val nodeStubs = projectData.map(buildStub)
+    nodeStubs.foreach(stub => projectCache += stub.ref -> stub)
     nodeStubs
   }
 
@@ -81,7 +83,7 @@ trait SbtProjectStructureExtractorBase extends ProjectStructureExtractor {
 
   override def extract: Seq[NodeType] = {
     log.info(s"building node stubs from root: $rootProject")
-    val stubs = createNodeStubs(rootProject)
+    val stubs = createNodeStubsFromRoot(rootProject)
     buildUnprocessedStubs()
     log.info(s"building node graph from nodes: $stubs")
     val updatedNodes = buildNodeGraph(stubs)
