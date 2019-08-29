@@ -4,9 +4,8 @@ import org.jetbrains.sbtidea.SbtPluginLogger
 import org.jetbrains.sbtidea.packaging.artifact._
 import org.jetbrains.sbtidea.packaging.mappings._
 import org.jetbrains.sbtidea.packaging.structure.sbtImpl.{SbtPackageProjectData, SbtPackagingStructureExtractor}
-import org.jetbrains.sbtidea.structure.sbtImpl._
-import sbt._
 import sbt.Keys._
+import sbt._
 import sbt.jetbrains.ideaPlugin.apiAdapter._
 
 trait PackagingKeysInit {
@@ -14,7 +13,10 @@ trait PackagingKeysInit {
 
   private var compilationTimeStamp = -1L
 
-  lazy val globalSettings: Seq[Setting[_]] = Seq()
+  lazy val buildSettings: Seq[Setting[_]] = Seq(
+    packageMethod.in(LocalRootProject) := PackagingMethod.Standalone(),
+    packageLibraryMappings.in(LocalRootProject) := Seq.empty
+  )
 
   lazy val projectSettings: Seq[Setting[_]] = Seq(
     packageMethod := PackagingMethod.MergeIntoParent(),
