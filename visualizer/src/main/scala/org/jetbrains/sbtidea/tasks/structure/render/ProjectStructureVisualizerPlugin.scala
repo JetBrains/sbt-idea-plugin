@@ -9,6 +9,7 @@ import sbt.Keys._
 object ProjectStructureVisualizerPlugin extends AutoPlugin {
   import autoImport._
   override def requires = plugins.JvmPlugin
+  override def trigger = allRequirements
 
   override def projectSettings: Seq[Setting[_]] = Seq(
     printProjectGraph := {
