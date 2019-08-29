@@ -5,15 +5,23 @@ import org.jetbrains.sbtidea.structure.Library
 import org.jetbrains.sbtidea.structure.sbtImpl.SbtProjectNode
 import sbt.ProjectRef
 
-//trait SbtPackagedProjectNode extends SbtProjectNode with PackagedProjectNode {
-////  override type T = SbtPackagedProjectNode
-//}
-
-case class SbtPackagedProjectNodeImpl(override val ref: ProjectRef,
+class SbtPackagedProjectNodeImpl(override val ref: ProjectRef,
                                       var parents: Seq[PackagedProjectNode],
                                       var children: Seq[PackagedProjectNode],
                                       var libs: Seq[Library],
                                       var packagingOptions: ProjectPackagingOptions
 ) extends SbtProjectNode with PackagedProjectNode {
   override type T = PackagedProjectNode
+}
+
+object SbtPackagedProjectNodeImpl {
+  def apply(ref: ProjectRef,
+            parents: Seq[PackagedProjectNode],
+            children: Seq[PackagedProjectNode],
+            libs: Seq[Library],
+            packagingOptions: ProjectPackagingOptions): SbtPackagedProjectNodeImpl =
+    new SbtPackagedProjectNodeImpl(ref, parents, children, libs, packagingOptions)
+
+  def unapply(arg: SbtPackagedProjectNodeImpl): Option[(ProjectRef, Seq[PackagedProjectNode], Seq[PackagedProjectNode], Seq[Library], ProjectPackagingOptions)] =
+    Some((arg.ref, arg.parents, arg.children, arg.libs, arg.packagingOptions))
 }

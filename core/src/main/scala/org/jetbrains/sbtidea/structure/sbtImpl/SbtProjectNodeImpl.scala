@@ -4,8 +4,22 @@ import org.jetbrains.sbtidea.structure.Library
 import sbt._
 
 
-case class SbtProjectNodeImpl(ref: ProjectRef,
-                              var parents: Seq[SbtProjectNodeImpl],
-                              var children: Seq[SbtProjectNodeImpl],
-                              var libs: Seq[Library])
-  extends SbtProjectNode { override type T = SbtProjectNodeImpl }
+class SbtProjectNodeImpl(override val ref: ProjectRef,
+                         var parents: Seq[SbtProjectNodeImpl],
+                         var children: Seq[SbtProjectNodeImpl],
+                         var libs: Seq[Library])
+  extends SbtProjectNode {
+  override type T = SbtProjectNodeImpl
+}
+
+object SbtProjectNodeImpl {
+
+  def apply(ref: ProjectRef,
+            parents: Seq[SbtProjectNodeImpl],
+            children: Seq[SbtProjectNodeImpl],
+            libs: Seq[Library]): SbtProjectNodeImpl =
+    new SbtProjectNodeImpl(ref, parents, children, libs)
+
+  def unapply(arg: SbtProjectNodeImpl): Option[(ProjectRef, Seq[SbtProjectNodeImpl], Seq[SbtProjectNodeImpl], Seq[Library])] =
+    Some(arg.ref, arg.parents, arg.children, arg.libs)
+}
