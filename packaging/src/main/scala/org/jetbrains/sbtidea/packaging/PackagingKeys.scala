@@ -1,8 +1,6 @@
 package org.jetbrains.sbtidea.packaging
 
 import org.jetbrains.sbtidea.packaging.structure.sbtImpl.SbtPackageProjectData
-import org.jetbrains.sbtidea.structure.sbtImpl.CommonSbtProjectData
-import sbt.KeyRanks.Invisible
 import sbt._
 
 object PackagingKeys extends PackagingDefs with PackagingKeysInit {
