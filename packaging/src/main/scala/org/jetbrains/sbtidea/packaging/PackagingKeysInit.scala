@@ -25,6 +25,7 @@ trait PackagingKeysInit {
     packageAssembleLibraries := false,
     shadePatterns := Seq.empty,
     pathExcludeFilter := ExcludeFilter.AllPass,
+    packageOutputDir := target.value / "dist",
 
     createCompilationTimeStamp := Def.task { compilationTimeStamp = System.currentTimeMillis() }.value,
     packageMappings := Def.taskDyn {
@@ -100,12 +101,17 @@ trait PackagingKeysInit {
       outputDir
     }).value,
     packageArtifactZip := Def.task {
-      val outputDir = packageArtifact.value.getParentFile
-      val artifactFile = packageArtifactZipFile.value
       implicit val stream: TaskStreams = streams.value
-      IO.delete(artifactFile)
-      new ZipDistBuilder(artifactFile).produceArtifact(outputDir)
-      artifactFile
+      val outputDir = packageArtifact.value.getParentFile
+      packageArtifactZipFile.?.value match {
+        case None =>
+          stream.log.error("please define packageArtifactZipFile key to use this task")
+          file("")
+        case Some(file) =>
+          IO.delete(file)
+          new ZipDistBuilder(file).produceArtifact(outputDir)
+          file
+      }
     }.value
   )
 }
