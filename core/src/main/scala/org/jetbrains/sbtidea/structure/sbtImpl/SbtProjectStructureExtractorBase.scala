@@ -32,7 +32,7 @@ trait SbtProjectStructureExtractorBase extends ProjectStructureExtractor {
     } else { queue }
   }
 
-  protected def collectAdditionalProjects(data: ProjectDataType, direct: Seq[ProjectRef]): Seq[ProjectRef] = Seq.empty
+  protected def collectAdditionalProjects(data: ProjectDataType, direct: Seq[ProjectRef]): Seq[ProjectRef] = direct
 
   private def buildNodeGraph(sortedStubs: Seq[NodeType]): Seq[NodeType] = {
     sortedStubs.map(x => x -> projectMap(x.ref)).map { case (node, data) =>
