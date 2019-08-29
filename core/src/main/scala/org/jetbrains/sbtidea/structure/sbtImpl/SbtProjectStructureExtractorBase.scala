@@ -43,7 +43,7 @@ trait SbtProjectStructureExtractorBase extends ProjectStructureExtractor {
   private def buildUnprocessedStubs(): Seq[NodeType] = {
     val unprocessedProjectsData = projectsData.filterNot(x => projectCache.contains(x.thisProject))
     if (unprocessedProjectsData.nonEmpty)
-      log.info(s"building stubs for ${unprocessedProjectsData.size} weak-referenced refs: $unprocessedProjectsData")
+      log.info(s"building stubs for ${unprocessedProjectsData.size} weak-referenced refs: ${unprocessedProjectsData.map(_.thisProject)}")
     unprocessedProjectsData
       .map(buildStub)
       .map { stub => projectCache += stub.ref -> stub; stub }
