@@ -32,7 +32,7 @@ trait Init { this: Keys.type =>
   )
 
   lazy val buildSettings: Seq[Setting[_]] = Seq(
-    ideaPluginName      := "InsertName",
+    ideaPluginName      := name.in(LocalRootProject).value,
     ideaBuild           := "LATEST-EAP-SNAPSHOT",
     ideaEdition         := IdeaEdition.Community,
     ideaDownloadSources := true,
