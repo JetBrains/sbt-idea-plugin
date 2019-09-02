@@ -43,7 +43,8 @@ trait Init { this: Keys.type =>
     ideaTestSystemDir     := ideaPluginDirectory.value / "test-system",
     concurrentRestrictions in Global += Tags.limit(Tags.Test, 1), // IDEA tests can't be run in parallel
     updateIdea := {
-      new CommunityIdeaUpdater(ideaBaseDirectory.value)(streams.value.log)
+      val logger = new SbtPluginLogger(streams.value)
+      new CommunityIdeaUpdater(ideaBaseDirectory.value, logger)
         .updateIdeaAndPlugins(
           BuildInfo(
             ideaBuild.value,

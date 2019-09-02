@@ -5,9 +5,10 @@ import java.net.URL
 import java.nio.ByteBuffer
 import java.nio.channels.{Channels, ReadableByteChannel}
 
-import sbt.{File, IO, Logger}
+import org.jetbrains.sbtidea.PluginLogger
+import sbt.{File, IO}
 
-private class FileDownloader(private val baseDirectory: File)(implicit val log: Logger) {
+private class FileDownloader(private val baseDirectory: File, log: PluginLogger) {
 
   private val downloadDirectory = getOrCreateDLDir()
 
