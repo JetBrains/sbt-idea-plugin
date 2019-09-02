@@ -23,10 +23,9 @@ class IdeaUpdater(private val resolver: IdeaArtifactResolver,
 
   //noinspection MapGetOrElseBoolean
   def updateIdeaAndPlugins(ideaBuildInfo: BuildInfo, plugins: Seq[IdeaPlugin], withSources: Boolean = true): File = {
-    if (sys.props.get("IdeaUpdater.isDumb").map(_ == "true").getOrElse(false))
-      return new File(".")
-    val installRoot = updateIdea(ideaBuildInfo)
-    updatePlugins(ideaBuildInfo, plugins)
+    val dumbOptions = sys.props.get("IdeaUpdater.dumbMode").getOrElse("").toLowerCase
+    val installRoot = if (!dumbOptions.contains("idea")) updateIdea(ideaBuildInfo) else new File("")
+    if (!dumbOptions.contains("plugin")) updatePlugins(ideaBuildInfo, plugins)
     installRoot
   }
 
