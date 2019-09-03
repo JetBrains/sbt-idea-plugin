@@ -4,20 +4,20 @@ import java.io.File
 import java.nio.file.attribute.PosixFilePermissions
 import java.nio.file.{Files, Path}
 import java.util.function.Consumer
-import java.util.zip.ZipFile
 
-import org.jetbrains.sbtidea.Keys.IdeaPlugin
+import org.jetbrains.sbtidea.PluginLogger
 import org.jetbrains.sbtidea.download.api.IdeaInstaller
 import sbt._
 
-class CommunityIdeaInstaller(ideaInstallDir: File, buildInfo: BuildInfo)(implicit val log: Logger) extends IdeaInstaller {
+class CommunityIdeaInstaller(ideaInstallDir: File,
+                             override val buildInfo: BuildInfo,
+                             override val log: PluginLogger) extends IdeaInstaller with  IdeaPluginInstaller {
 
   override def getInstallDir: File = ideaInstallDir
 
   override def isIdeaAlreadyInstalled: Boolean = getInstallDir.exists() && getInstallDir.listFiles().nonEmpty
 
-  override def isPluginAlreadyInstalled(plugin: IdeaPlugin): Boolean =
-    pluginDir(plugin).exists() || pluginFile(plugin).exists()
+  protected def tmpDir: File = getInstallDir.getParentFile / s"${buildInfo.edition.name}-${buildInfo.buildNumber}-TMP"
 
   override def installIdeaDist(files: Seq[(ArtifactPart, File)]): File = {
     val dist = files
@@ -39,25 +39,6 @@ class CommunityIdeaInstaller(ideaInstallDir: File, buildInfo: BuildInfo)(implici
     fixAccessRights()
 
     getInstallDir
-  }
-
-  override def installIdeaPlugin(plugin: IdeaPlugin, artifactPart: ArtifactPart, file: File): File = {
-    if (new ZipFile(file).entries().nextElement().getName == s"${plugin.name}/") { // zips have a single folder in root with the same name as the plugin
-      val tmpPluginDir = getInstallDir.getParentFile / s"${buildInfo.edition.name}-${buildInfo.buildNumber}-${plugin.name}-TMP"
-      val installDir = pluginDir(plugin)
-      sbt.IO.delete(tmpPluginDir)
-      log.info(s"Extracting plugin '${plugin.name} to $tmpPluginDir")
-      sbt.IO.unzip(file, tmpPluginDir)
-      sbt.IO.move(tmpPluginDir, installDir)
-      sbt.IO.delete(file)
-      log.info(s"Installed plugin '${plugin.name} to $installDir")
-      installDir
-    } else {
-      val targetFile = pluginFile(plugin)
-      sbt.IO.move(file, targetFile)
-      log.info(s"Installed plugin '${plugin.name} to $targetFile")
-      targetFile
-    }
   }
 
   protected def installDist(file: File): Unit = {
@@ -83,15 +64,7 @@ class CommunityIdeaInstaller(ideaInstallDir: File, buildInfo: BuildInfo)(implici
     log.info(s"IDEA sources installed")
   }
 
-  protected def installExtras(files: Seq[(ArtifactPart, File)]): Unit = {
-
-  }
-
-  protected def pluginDir(plugin: IdeaPlugin): File = getInstallDir / "externalPlugins"
-
-  protected def pluginFile(plugin: IdeaPlugin): File = getInstallDir / "externalPlugins" / s"${plugin.name}.jar"
-
-  protected def tmpDir: File = getInstallDir.getParentFile / s"${buildInfo.edition.name}-${buildInfo.buildNumber}-TMP"
+  protected def installExtras(files: Seq[(ArtifactPart, File)]): Unit = ()
 
   private def fixAccessRights(): Unit = {
     if (!System.getProperty("os.name").startsWith("Windows")) {
