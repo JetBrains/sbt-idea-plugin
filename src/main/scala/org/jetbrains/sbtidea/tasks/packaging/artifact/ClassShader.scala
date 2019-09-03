@@ -9,7 +9,7 @@ import sbt.Keys.TaskStreams
 
 class ClassShader(patterns: Seq[ShadePattern])(implicit val streams: TaskStreams) {
 
-  private val processor = new JJProcessor(patterns.map {
+  private val processor = new NiceJJProcessor(patterns.map {
     case ShadePattern(pat, res) =>
       val jRule = new Rule()
       jRule.setPattern(pat)
