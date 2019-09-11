@@ -24,7 +24,8 @@ lazy val commonSettings: Seq[Def.Setting[_]] = Seq(
   bintrayRepository     := "sbt-plugins",
   bintrayOrganization   := Some("jetbrains"),
   sources in (Compile,doc) := Seq.empty,
-  publishArtifact in (Compile, packageDoc) := false
+  publishArtifact in (Compile, packageDoc) := false,
+  libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.8" % "test"
 )
 
 lazy val core = (project in file("core"))
