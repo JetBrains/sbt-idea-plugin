@@ -2,10 +2,10 @@ package org.jetbrains.sbtidea.download
 
 import java.io.{FileNotFoundException, InputStream}
 
-import org.jetbrains.sbtidea.download.api.IdeaArtifactResolver
+import org.jetbrains.sbtidea.download.api.IdeaResolver
 import sbt.{URL, url}
 
-class JBRepoArtifactResolver extends IdeaArtifactResolver with IdeaPluginResolver {
+trait JBIdeaRepoArtifactResolver extends IdeaResolver {
 
   override def resolveUrlForIdeaBuild(idea: BuildInfo): Seq[ArtifactPart] = {
     val (build, edition)  = (idea.buildNumber, idea.edition.name)

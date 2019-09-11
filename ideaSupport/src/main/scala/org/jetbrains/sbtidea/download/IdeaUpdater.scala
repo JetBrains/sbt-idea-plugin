@@ -5,7 +5,7 @@ import java.nio.file.{Path, Paths}
 
 import org.jetbrains.sbtidea.Keys.IdeaPlugin
 import org.jetbrains.sbtidea.PluginLogger
-import org.jetbrains.sbtidea.download.api.{IdeaArtifactResolver, InstallerFactory}
+import org.jetbrains.sbtidea.download.api.{IdeaArtifactResolver, IdeaResolver, InstallerFactory}
 import sbt._
 
 
@@ -47,11 +47,9 @@ class IdeaUpdater(private val resolver: IdeaArtifactResolver,
     def updatePlugin(plugin: IdeaPlugin): Unit = {
       if (installer.isPluginAlreadyInstalledAndUpdated(plugin))
         return
-      log.info(s"Resolving plugin ${plugin.name}")
       val resolved = resolver.resolvePlugin(buildInfo, plugin)
-      log.info(s"Downloading plugin ${plugin.name}")
       val artifact = downloader.download(resolved)
-      installer.installIdeaPlugin(plugin, resolved, artifact)
+      installer.installIdeaPlugin(plugin, artifact)
     }
     plugins.foreach {
       updatePlugin

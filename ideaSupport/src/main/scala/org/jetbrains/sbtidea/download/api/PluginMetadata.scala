@@ -1,4 +1,12 @@
 package org.jetbrains.sbtidea.download.api
 
-case class PluginMetadata(id: String, version: String, sinceBuild: String, untilBuild: String, channel: String = "")
+/**
+  * Maps to necessary fields in plugin.xml
+  */
+case class PluginMetadata(id: String,
+                          name: String,
+                          version: String,
+                          sinceBuild: String,
+                          untilBuild: String)
+
 

@@ -3,11 +3,10 @@ package org.jetbrains.sbtidea.download.api
 import java.nio.file.Path
 
 import org.jetbrains.sbtidea.Keys.IdeaPlugin
-import org.jetbrains.sbtidea.PluginLogger
+import org.jetbrains.sbtidea.LogAware
 import org.jetbrains.sbtidea.download.{ArtifactPart, BuildInfo}
 
-trait IdeaInstaller {
-  protected def log: PluginLogger
+trait IdeaInstaller extends LogAware {
   protected def buildInfo: BuildInfo
   def getInstallDir: Path
   def isIdeaAlreadyInstalled: Boolean
