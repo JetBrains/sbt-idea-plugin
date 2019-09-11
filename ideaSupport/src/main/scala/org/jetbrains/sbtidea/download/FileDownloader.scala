@@ -4,61 +4,38 @@ import java.io.FileOutputStream
 import java.net.URL
 import java.nio.ByteBuffer
 import java.nio.channels.{Channels, ReadableByteChannel}
+import java.nio.file.{Files, Path, Paths, StandardCopyOption}
 
 import org.jetbrains.sbtidea.PluginLogger
-import sbt.{File, IO}
 
-private class FileDownloader(private val baseDirectory: File, log: PluginLogger) {
+private class FileDownloader(private val baseDirectory: Path, log: PluginLogger) {
+
+  type ProgressCallback = (ProgressInfo, Path) => Unit
+
+  private case class RemoteMetaData(length: Long, fileName: String)
+  class DownloadException(message: String) extends RuntimeException(message)
 
   private val downloadDirectory = getOrCreateDLDir()
 
-  def download(artifactPart: ArtifactPart): File = {
-    val partFile   = new File(downloadDirectory, s"${createName(artifactPart)}.part")
-    val targetFile = new File(downloadDirectory, createName(artifactPart))
-    if (targetFile.exists() && targetFile.length() > 0) {
-      log.info(s"Already downloaded $artifactPart")
-      return targetFile
+  def download(artifactPart: ArtifactPart): Path = try {
+    val partFile = downloadNative(artifactPart.url) { case (progressInfo, to) =>
+        val text = s"${progressInfo.renderAll} -> $to\r"
+        if (!progressInfo.done) print(text) else println(text)
     }
-    targetFile.delete()
-    try {
-      try {
-        downloadNative(artifactPart.url, partFile) { progressInfo =>
-          val text = s"${progressInfo.renderAll} -> $partFile\r"
-          if (!progressInfo.done) print(text) else println(text)
-        }
-      } catch {
-        case e: Exception =>
-          log.warn(s"Smart download of ${artifactPart.url} failed, trying via sbt: $e")
-          downloadViaSbt(artifactPart.url, partFile)
-      }
-      partFile.renameTo(targetFile)
-      targetFile
-    } catch {
-      case e: Exception if artifactPart.optional =>
-        log.warn(s"Can't download optional ${artifactPart.url}: $e")
-        new File("")
-    }
-  }
-
-  private def createName(artifactPart: ArtifactPart): String =
-    if (artifactPart.nameHint.nonEmpty)
-      artifactPart.nameHint
-    else
-      Math.abs(artifactPart.url.hashCode).toString
-
-  private def downloadViaSbt(from: sbt.URL, to: File): Unit = {
-    import sbt.jetbrains.ideaPlugin.apiAdapter._
-    log.info(s"Downloading $from to $to")
-    Using.urlInputStream(from) { inputStream =>
-      IO.transfer(inputStream, to)
-    }
+    val targetFile = partFile.getParent.resolve(partFile.getFileName.toString.replace(".part", ""))
+    Files.move(partFile, targetFile, StandardCopyOption.ATOMIC_MOVE)
+    targetFile
+  } catch {
+    case e: Exception if artifactPart.optional =>
+      log.warn(s"Can't download optional ${artifactPart.url}: $e")
+      Paths.get("")
   }
 
   // TODO: add downloading to temp if available
-  private def getOrCreateDLDir(): File = {
-    val dir = new File(baseDirectory, "downloads")
-    if (!dir.exists())
-      dir.mkdirs()
+  private def getOrCreateDLDir(): Path = {
+    val dir = baseDirectory.resolve("downloads")
+    if (!dir.toFile.exists())
+      Files.createDirectories(dir)
     dir
   }
 
@@ -84,25 +61,31 @@ private class FileDownloader(private val baseDirectory: File, log: PluginLogger)
     def done: Boolean = downloaded == total
   }
 
-  private def downloadNative(url: URL, to: File)(progressCallback: ProgressInfo => Unit): Unit = {
+  private def downloadNative(url: URL)(progressCallback: ProgressCallback): Path = {
     val connection = url.openConnection()
-    val localLength = to.length()
-    if (to.exists() && isResumeSupported(url)) {
+    val remoteMetaData = getRemoteMetaData(url)
+    val to =
+      if (remoteMetaData.fileName.nonEmpty)
+        downloadDirectory.resolve(remoteMetaData.fileName + ".part")
+      else
+        downloadDirectory.resolve(Math.abs(url.hashCode()).toString + ".part")
+    val localLength = if (to.toFile.exists()) Files.size(to) else 0
+    if (to.toFile.exists() && isResumeSupported(url)) {
       connection.setRequestProperty("Range", s"bytes=$localLength-")
       log.info(s"Resuming download of $url to $to")
     } else {
-      sbt.IO.delete(to)
+      Files.deleteIfExists(to)
       log.info(s"Starting download $url to $to")
     }
 
     var inChannel: ReadableByteChannel = null
     var outStream: FileOutputStream    = null
     try {
-      val remoteLength = getContentLength(url)
       inChannel = Channels.newChannel(connection.getInputStream)
-      outStream = new FileOutputStream(to, to.exists())
-      val rbc   = new RBCWrapper(inChannel, remoteLength, localLength, progressCallback)
+      outStream = new FileOutputStream(to.toFile, to.toFile.exists())
+      val rbc   = new RBCWrapper(inChannel, remoteMetaData.length, localLength, progressCallback, to)
       outStream.getChannel.transferFrom(rbc, 0, Long.MaxValue)
+      to
     } finally {
       try { if (inChannel != null) inChannel.close() } catch { case e: Exception => log.error(s"Failed to close input channel: $e") }
       try { if (outStream != null) outStream.close() } catch { case e: Exception => log.error(s"Failed to close output stream: $e") }
@@ -114,18 +97,21 @@ private class FileDownloader(private val baseDirectory: File, log: PluginLogger)
     catch { case e: Exception => log.warn(s"Error checking for a resumed download: ${e.getMessage}"); false }
   }
 
-  private def getContentLength(url: URL): Int = withConnection(url) { connection =>
-    try {
-      connection.setRequestMethod("HEAD")
-      val contentLength = connection.getContentLength
-      if (contentLength != 0) contentLength else -1
-    } catch {
-      case e: Exception => log.warn(s"Failed to get file size for $url: ${e.getMessage}"); -1
-    }
+  private def getRemoteMetaData(url: URL): RemoteMetaData = withConnection(url) { connection =>
+    connection.setRequestMethod("HEAD")
+    if (connection.getResponseCode >= 400)
+      throw new DownloadException(s"Not found (404): $url")
+    val contentLength = connection.getContentLength
+    val fileName = java.net.URLDecoder
+      .decode(
+        connection
+          .getHeaderField("Content-Disposition").replaceFirst("(?i)^.*filename=\"?([^\"]+)\"?.*$", "$1"),
+        "ISO-8859-1")
+    RemoteMetaData(if (contentLength != 0) contentLength else -1, fileName)
   }
 
 
-  class RBCWrapper(rbc: ReadableByteChannel, expectedSize: Long, alreadyDownloaded: Long, progressCallback: ProgressInfo => Unit) extends ReadableByteChannel {
+  class RBCWrapper(rbc: ReadableByteChannel, expectedSize: Long, alreadyDownloaded: Long, progressCallback: ProgressCallback, target: Path) extends ReadableByteChannel {
     private var readSoFar       = alreadyDownloaded
     private var lastTimeStamp   = System.currentTimeMillis()
     private var readLastSecond  = 0L
@@ -143,7 +129,7 @@ private class FileDownloader(private val baseDirectory: File, log: PluginLogger)
           else
             -1.0
           val speed = readLastSecond.toDouble / ((newTimeStamp - lastTimeStamp + 1) / 1000.0)
-          progressCallback(ProgressInfo(percent.toInt, speed, readSoFar, expectedSize))
+          progressCallback(ProgressInfo(percent.toInt, speed, readSoFar, expectedSize), target)
           lastTimeStamp  = newTimeStamp
           readLastSecond = 0
         }
