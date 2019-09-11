@@ -1,30 +1,28 @@
 package org.jetbrains.sbtidea.download
 
-import java.io.File
 import java.nio.file.attribute.PosixFilePermissions
-import java.nio.file.{Files, Path}
+import java.nio.file.{Files, Path, StandardCopyOption}
 import java.util.function.Consumer
 
 import org.jetbrains.sbtidea.PluginLogger
 import org.jetbrains.sbtidea.download.api.IdeaInstaller
-import sbt._
 
-class CommunityIdeaInstaller(ideaInstallDir: File,
+class CommunityIdeaInstaller(ideaInstallDir: Path,
                              override val buildInfo: BuildInfo,
                              override val log: PluginLogger) extends IdeaInstaller with  IdeaPluginInstaller {
 
-  override def getInstallDir: File = ideaInstallDir
+  override def getInstallDir: Path = ideaInstallDir
 
-  override def isIdeaAlreadyInstalled: Boolean = getInstallDir.exists() && getInstallDir.listFiles().nonEmpty
+  override def isIdeaAlreadyInstalled: Boolean = getInstallDir.toFile.exists() && getInstallDir.toFile.listFiles().nonEmpty
 
-  protected def tmpDir: File = getInstallDir.getParentFile / s"${buildInfo.edition.name}-${buildInfo.buildNumber}-TMP"
+  protected def tmpDir: Path = getInstallDir.getParent.resolve(s"${buildInfo.edition.name}-${buildInfo.buildNumber}-TMP")
 
-  override def installIdeaDist(files: Seq[(ArtifactPart, File)]): File = {
+  override def installIdeaDist(files: Seq[(ArtifactPart, Path)]): Path = {
     val dist = files
       .collectFirst { case (ArtifactPart(_, ArtifactKind.IDEA_DIST, _, _), file) => file }
       .getOrElse(throw new RuntimeException(s"Can't install IDEA: distribution is missing: $files"))
     val src = files
-      .collectFirst { case (ArtifactPart(_, ArtifactKind.IDEA_SRC, _, _), file) if file.exists() => file }
+      .collectFirst { case (ArtifactPart(_, ArtifactKind.IDEA_SRC, _, _), file) if file.toFile.exists() => file }
     val extras = files
       .collect({ case a@(ArtifactPart(_, ArtifactKind.MISC, _, _), _) => a })
 
@@ -41,38 +39,38 @@ class CommunityIdeaInstaller(ideaInstallDir: File,
     getInstallDir
   }
 
-  protected def installDist(file: File): Unit = {
+  protected def installDist(artifact: Path): Unit = {
     import sys.process._
 
     log.info(s"Extracting IDEA dist to $tmpDir")
 
-    if (file.name.endsWith(".zip")) {
-      sbt.IO.unzip(file, tmpDir)
-    } else if (file.name.endsWith(".tar.gz")) {
-      if (s"tar xfz $file -C $tmpDir --strip 1".! != 0) {
+    if (artifact.getFileName.endsWith(".zip")) {
+      sbt.IO.unzip(artifact.toFile, tmpDir.toFile)
+    } else if (artifact.getFileName.toString.endsWith(".tar.gz")) {
+      if (s"tar xfz $artifact -C $tmpDir --strip 1".! != 0) {
         throw new RuntimeException(s"Failed to install IDEA dist: tar command failed")
       }
-    } else throw new RuntimeException(s"Unexpected dist archive format(not zip or gzip): $file")
+    } else throw new RuntimeException(s"Unexpected dist archive format(not zip or gzip): $artifact")
 
-    sbt.IO.move(tmpDir, getInstallDir)
-    sbt.IO.delete(file)
+    Files.move(tmpDir, getInstallDir, StandardCopyOption.ATOMIC_MOVE)
+    NioUtils.delete(artifact)
     log.info(s"Installed IDEA($buildInfo) to $getInstallDir")
   }
 
-  protected def installSources(file: File): Unit = {
-    sbt.IO.move(file, getInstallDir / "sources.zip")
+  protected def installSources(artifact: Path): Unit = {
+    Files.move(artifact, getInstallDir.resolve("sources.zip"))
     log.info(s"IDEA sources installed")
   }
 
-  protected def installExtras(files: Seq[(ArtifactPart, File)]): Unit = ()
+  protected def installExtras(files: Seq[(ArtifactPart, Path)]): Unit = ()
 
   private def fixAccessRights(): Unit = {
     if (!System.getProperty("os.name").startsWith("Windows")) {
       val execPerms = PosixFilePermissions.fromString("rwxrwxr-x")
-      val binDir    = getInstallDir / "bin"
+      val binDir    = getInstallDir.resolve("bin")
       try {
         Files
-          .walk(binDir.toPath)
+          .walk(binDir)
           .forEach(new Consumer[Path] {
             override def accept(t: Path): Unit =
               Files.setPosixFilePermissions(t, execPerms)
@@ -84,10 +82,10 @@ class CommunityIdeaInstaller(ideaInstallDir: File,
   }
 
   private def ensureFolderStructure(): Unit = {
-    getInstallDir.getParentFile.mkdirs() // ensure "sdk" directory exists
-    sbt.IO.delete(getInstallDir)
-    sbt.IO.delete(tmpDir)
-    tmpDir.mkdirs()
+    getInstallDir.toFile.getParentFile.mkdirs() // ensure "sdk" directory exists
+    NioUtils.delete(getInstallDir)
+    NioUtils.delete(tmpDir)
+    Files.createDirectories(tmpDir)
   }
 
 }

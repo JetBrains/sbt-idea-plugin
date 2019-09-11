@@ -1,6 +1,7 @@
 package org.jetbrains.sbtidea.download
 
 import java.io.File
+import java.nio.file.{Path, Paths}
 
 import org.jetbrains.sbtidea.Keys.IdeaPlugin
 import org.jetbrains.sbtidea.PluginLogger
@@ -17,19 +18,19 @@ import sbt._
   */
 class IdeaUpdater(private val resolver: IdeaArtifactResolver,
                   private val installerFactory: InstallerFactory,
-                  val ideaInstallDir: File, log: PluginLogger) {
+                  val ideaInstallDir: Path, log: PluginLogger) {
 
-  private val downloader: FileDownloader = new FileDownloader(ideaInstallDir.getParentFile, log)
+  private val downloader: FileDownloader = new FileDownloader(ideaInstallDir.getParent, log)
 
   //noinspection MapGetOrElseBoolean
-  def updateIdeaAndPlugins(ideaBuildInfo: BuildInfo, plugins: Seq[IdeaPlugin], withSources: Boolean = true): File = {
+  def updateIdeaAndPlugins(ideaBuildInfo: BuildInfo, plugins: Seq[IdeaPlugin], withSources: Boolean = true): Path = {
     val dumbOptions = sys.props.get("IdeaUpdater.dumbMode").getOrElse("").toLowerCase
-    val installRoot = if (!dumbOptions.contains("idea")) updateIdea(ideaBuildInfo) else new File("")
+    val installRoot = if (!dumbOptions.contains("idea")) updateIdea(ideaBuildInfo) else Paths.get("")
     if (!dumbOptions.contains("plugin")) updatePlugins(ideaBuildInfo, plugins)
     installRoot
   }
 
-  private def updateIdea(buildInfo: BuildInfo): File = {
+  private def updateIdea(buildInfo: BuildInfo): Path = {
     val installer = installerFactory.createInstaller(ideaInstallDir, buildInfo)
     if (installer.isIdeaAlreadyInstalled)
       return installer.getInstallDir
