@@ -94,19 +94,25 @@ class LocalPluginRegistry(ideaRoot: Path, log: PluginLogger) {
 object LocalPluginRegistry {
 
   def extractInstalledPluginDescriptor(pluginRoot: Path): Either[String, String] = {
-    if (Files.isDirectory(pluginRoot)) {
-      val lib = pluginRoot.resolve("lib")
-      val detector = new PluginXmlDetector
-      val result = Files
-        .list(lib)
-        .filter(detector)
-        .findFirst()
-      if (result.isPresent)
-        return Right(detector.result)
-    } else {
-      val detector = new PluginXmlDetector
-      if (detector.test(pluginRoot))
-        return Right(detector.result)
+    try {
+      if (Files.isDirectory(pluginRoot)) {
+        val lib = pluginRoot.resolve("lib")
+        if (!lib.toFile.exists())
+          return Left(s"Plugin root $pluginRoot has no lib directory")
+        val detector = new PluginXmlDetector
+        val result = Files
+          .list(lib)
+          .filter(detector)
+          .findFirst()
+        if (result.isPresent)
+          return Right(detector.result)
+      } else {
+        val detector = new PluginXmlDetector
+        if (detector.test(pluginRoot))
+          return Right(detector.result)
+      }
+    } catch {
+      case e: Exception => return Left(s"Error during detecting plugin.xml: $e")
     }
     Left(s"Couldn't find plugin.xml in $pluginRoot")
   }

@@ -17,12 +17,19 @@ private class PluginXmlDetector extends Predicate[Path] {
       return false
 
     val uri = URI.create(s"jar:${t.toUri}")
-    using(FileSystems.newFileSystem(uri, MAP)) { fs =>
-      val maybePluginXml = fs.getPath("META-INF", "plugin.xml")
-      if (Files.exists(maybePluginXml)) {
-        result = new String(Files.readAllBytes(maybePluginXml))
-        true
-      } else { false }
+
+    try {
+      using(FileSystems.newFileSystem(uri, MAP)) { fs =>
+        val maybePluginXml = fs.getPath("META-INF", "plugin.xml")
+        if (Files.exists(maybePluginXml)) {
+          result = new String(Files.readAllBytes(maybePluginXml))
+          true
+        } else {
+          false
+        }
+      }
+    } catch {
+      case e: java.util.zip.ZipError => throw new RuntimeException(s"Corrupt zip file: $t", e)
     }
   }
 }
