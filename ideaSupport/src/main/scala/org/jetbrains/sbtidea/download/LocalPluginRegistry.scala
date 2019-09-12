@@ -117,8 +117,8 @@ object LocalPluginRegistry {
     val id      = (pluginXml \\ "id").text
     val version = (pluginXml \\ "version").text
     val name    = (pluginXml \\ "name").text
-    val since   = (pluginXml \\ "idea-version").head.attributes("since-build").text
-    val until   = (pluginXml \\ "idea-version").head.attributes("until-build").text
+    val since   = (pluginXml \\ "idea-version").headOption.map(_.attributes("since-build").text).getOrElse("")
+    val until   = (pluginXml \\ "idea-version").headOption.map(_.attributes("until-build").text).getOrElse("")
     PluginMetadata(id = id, name = name, version = version, sinceBuild = since, untilBuild = until)
   }
 
