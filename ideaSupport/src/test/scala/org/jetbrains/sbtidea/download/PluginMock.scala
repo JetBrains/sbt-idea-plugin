@@ -43,7 +43,7 @@ trait PluginMock {
       Files.createDirectories(libRoot)
       Files.copy(
         mainPluginJar,
-        libRoot.resolve(mainPluginJar.getFileName.toString),
+        libRoot.resolve(mainPluginJar.getFileName.toString)
       )
     }
     targetPath
