@@ -4,8 +4,9 @@ import java.nio.file.{Files, Paths}
 
 import org.jetbrains.sbtidea.Keys.String2Plugin
 import org.jetbrains.sbtidea.{Keys, PluginLogger}
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.{FunSuite, Ignore, Matchers}
 
+@Ignore
 class CommunityIdeaUpdaterTest extends FunSuite with Matchers with IdeaMock {
 
   private val logger = new PluginLogger {
