@@ -39,9 +39,8 @@ class LocalPluginRegistry(ideaRoot: Path, log: PluginLogger) {
   private def readIndexFile(): PluginIndex = {
     if (!indexFile.toFile.exists())
       emptyIndex
-    else
-      using(new ObjectInputStream(new BufferedInputStream(new FileInputStream(indexFile.toFile)))) { stream =>
-        try {
+    else try {
+        using(new ObjectInputStream(new BufferedInputStream(new FileInputStream(indexFile.toFile)))) { stream =>
           stream.readObject() match {
             case m: PluginIndex => m
             case other =>
@@ -49,12 +48,12 @@ class LocalPluginRegistry(ideaRoot: Path, log: PluginLogger) {
               Files.delete(indexFile)
               emptyIndex
           }
-        } catch {
-          case e: Exception =>
-            log.warn(s"Failed to load local plugin index: ${e.getMessage}")
-            Files.delete(indexFile)
-            emptyIndex
         }
+      } catch {
+        case e: Exception =>
+          log.warn(s"Failed to load local plugin index: $e")
+          Files.delete(indexFile)
+          emptyIndex
       }
   }
 
