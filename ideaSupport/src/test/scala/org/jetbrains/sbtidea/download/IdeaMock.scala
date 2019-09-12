@@ -1,9 +1,10 @@
-package org.jetbrains.sbtidea
+package org.jetbrains.sbtidea.download
 
 import java.net.URI
 import java.nio.file.{Files, Path, Paths}
 import java.util.zip.{ZipEntry, ZipInputStream}
 
+import org.jetbrains.sbtidea.Keys
 import org.jetbrains.sbtidea.Keys.String2Plugin
 import org.jetbrains.sbtidea.packaging.artifact
 
@@ -13,7 +14,7 @@ trait IdeaMock {
   protected val IDEA_VERSION    = "192.5728.12"
   protected val IDEA_EDITION    = "IU"
   protected val IDEA_DIST       = s"idea$IDEA_EDITION-$IDEA_VERSION.zip"
-  protected val IDEA_DIST_PATH  = s"/org/jetbrains/sbtidea/$IDEA_DIST"
+  protected val IDEA_DIST_PATH  = s"/org/jetbrains/sbtidea/download/$IDEA_DIST"
 
   implicit class PathExt(path: Path) {
     def /(string: String): Path = path.resolve(string)

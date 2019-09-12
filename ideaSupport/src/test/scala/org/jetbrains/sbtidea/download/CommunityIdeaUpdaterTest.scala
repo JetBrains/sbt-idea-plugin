@@ -3,7 +3,7 @@ package org.jetbrains.sbtidea.download
 import java.nio.file.{Files, Paths}
 
 import org.jetbrains.sbtidea.Keys.String2Plugin
-import org.jetbrains.sbtidea.{IdeaMock, Keys, PluginLogger}
+import org.jetbrains.sbtidea.{Keys, PluginLogger}
 import org.scalatest.{FunSuite, Matchers}
 
 class CommunityIdeaUpdaterTest extends FunSuite with Matchers with IdeaMock {

@@ -3,10 +3,10 @@ package org.jetbrains.sbtidea.download
 import java.io.OutputStreamWriter
 import java.nio.file.Files
 
-import org.jetbrains.sbtidea.{CapturingLogger, ConsoleLogger, IdeaMock, PluginLogger}
-import org.scalatest.{FunSuite, Matchers}
 import org.jetbrains.sbtidea.Keys.String2Plugin
 import org.jetbrains.sbtidea.packaging.artifact
+import org.jetbrains.sbtidea.{CapturingLogger, ConsoleLogger}
+import org.scalatest.{FunSuite, Matchers}
 
 class LocalPluginRegistryTest extends FunSuite with Matchers with IdeaMock with ConsoleLogger {
 
