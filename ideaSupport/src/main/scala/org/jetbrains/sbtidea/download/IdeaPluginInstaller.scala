@@ -1,6 +1,6 @@
 package org.jetbrains.sbtidea.download
 
-import java.nio.file.{Files, Path, StandardCopyOption}
+import java.nio.file.{Files, Path}
 
 import org.jetbrains.sbtidea.Keys.IdeaPlugin
 import org.jetbrains.sbtidea.download.LocalPluginRegistry._
