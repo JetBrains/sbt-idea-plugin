@@ -61,13 +61,8 @@ object Keys extends Defns with Init with Utils {
     "idea-main-jars",
     "Classpath containing main IDEA jars")
 
-  lazy val ideaInternalPluginsJars = TaskKey[Classpath](
-    "idea-internal-plugins-jars",
+  lazy val ideaPluginJars = taskKey[Classpath](
     "Classpath containing jars of internal IDEA plugins used in this project")
-
-  lazy val ideaExternalPluginsJars = TaskKey[Classpath](
-    "idea-external-plugins-jars",
-    "Classpath containing jars of external IDEA plugins used in this project")
 
   lazy val ideaFullJars = TaskKey[Classpath](
     "idea-full-jars",

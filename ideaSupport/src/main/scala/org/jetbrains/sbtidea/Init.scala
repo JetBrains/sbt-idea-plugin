@@ -68,13 +68,13 @@ trait Init { this: Keys.type =>
     ideaInternalPlugins := Seq.empty,
     ideaExternalPlugins := Seq.empty,
     ideaMainJars := (ideaBaseDirectory.value / "lib" * "*.jar").classpath,
-    ideaInternalPluginsJars :=
-      tasks.CreatePluginsClasspath(ideaBaseDirectory.value / "plugins", ideaInternalPlugins.value),
+    ideaPluginJars :=
+      tasks.CreatePluginsClasspath(ideaBaseDirectory.value / "plugins",
+        ideaInternalPlugins.value,
+        ideaExternalPlugins.value,
+        new SbtPluginLogger(streams.value)),
 
-    ideaExternalPluginsJars :=
-      tasks.CreatePluginsClasspath(ideaBaseDirectory.value / "externalPlugins", ideaExternalPlugins.value.map(???)),
-
-    ideaFullJars := ideaMainJars.value ++ ideaInternalPluginsJars.value ++ ideaExternalPluginsJars.value,
+    ideaFullJars := ideaMainJars.value ++ ideaPluginJars.value,
     unmanagedJars in Compile ++= ideaFullJars.value,
 
     packageOutputDir := target.value / "plugin" / ideaPluginName.value,
