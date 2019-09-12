@@ -7,9 +7,9 @@ import java.util.function.Consumer
 import org.jetbrains.sbtidea.PluginLogger
 import org.jetbrains.sbtidea.download.api.IdeaInstaller
 
-class CommunityIdeaInstaller(ideaInstallDir: Path,
+abstract class CommunityIdeaInstaller(ideaInstallDir: Path,
                              override val buildInfo: BuildInfo,
-                             override val log: PluginLogger) extends IdeaInstaller with  IdeaPluginInstaller {
+                             override val log: PluginLogger) extends IdeaInstaller {
 
   override def getInstallDir: Path = ideaInstallDir
 

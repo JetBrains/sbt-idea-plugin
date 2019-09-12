@@ -13,7 +13,7 @@ class CommunityIdeaUpdater(ideaInstallDir: Path, logger: PluginLogger) extends I
   },
   installerFactory  = new InstallerFactory {
     override def createInstaller(ideaInstallDir: Path, buildInfo: BuildInfo): IdeaInstaller =
-      new CommunityIdeaInstaller(ideaInstallDir, buildInfo, logger)
+      new CommunityIdeaInstaller(ideaInstallDir, buildInfo, logger) with IdeaPluginInstaller
   },
   log = logger
 )
