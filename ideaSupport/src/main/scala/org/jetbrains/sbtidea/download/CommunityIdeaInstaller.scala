@@ -1,7 +1,7 @@
 package org.jetbrains.sbtidea.download
 
 import java.nio.file.attribute.PosixFilePermissions
-import java.nio.file.{Files, Path, StandardCopyOption}
+import java.nio.file.{Files, Path}
 import java.util.function.Consumer
 
 import org.jetbrains.sbtidea.PluginLogger
@@ -52,7 +52,7 @@ abstract class CommunityIdeaInstaller(ideaInstallDir: Path,
       }
     } else throw new RuntimeException(s"Unexpected dist archive format(not zip or gzip): $artifact")
 
-    Files.move(tmpDir, getInstallDir, StandardCopyOption.ATOMIC_MOVE)
+    Files.move(tmpDir, getInstallDir)
     NioUtils.delete(artifact)
     log.info(s"Installed IDEA($buildInfo) to $getInstallDir")
   }

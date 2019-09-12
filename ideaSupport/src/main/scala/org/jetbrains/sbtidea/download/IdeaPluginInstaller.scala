@@ -53,13 +53,13 @@ trait IdeaPluginInstaller extends IdeaInstaller {
       val tmpPluginDir = Files.list(extractDir).findFirst().get()
       val installDir = pluginsDir.resolve(tmpPluginDir.getFileName)
       NioUtils.delete(installDir)
-      Files.move(tmpPluginDir, installDir, StandardCopyOption.ATOMIC_MOVE)
+      Files.move(tmpPluginDir, installDir)
       NioUtils.delete(tmpPluginDir.getParent)
       log.info(s"Installed plugin '$plugin to $installDir")
       installDir
     } else {
       val targetJar = pluginsDir.resolve(artifact.getFileName)
-      Files.move(artifact, targetJar, StandardCopyOption.ATOMIC_MOVE)
+      Files.move(artifact, targetJar)
       log.info(s"Installed plugin '$plugin to $targetJar")
       targetJar
     }

@@ -4,7 +4,7 @@ import java.io.FileOutputStream
 import java.net.URL
 import java.nio.ByteBuffer
 import java.nio.channels.{Channels, ReadableByteChannel}
-import java.nio.file.{Files, Path, Paths, StandardCopyOption}
+import java.nio.file.{Files, Path, Paths}
 
 import org.jetbrains.sbtidea.PluginLogger
 
@@ -23,7 +23,7 @@ private class FileDownloader(private val baseDirectory: Path, log: PluginLogger)
         if (!progressInfo.done) print(text) else println(text)
     }
     val targetFile = partFile.getParent.resolve(partFile.getFileName.toString.replace(".part", ""))
-    Files.move(partFile, targetFile, StandardCopyOption.ATOMIC_MOVE)
+    Files.move(partFile, targetFile)
     targetFile
   } catch {
     case e: Exception if artifactPart.optional =>
