@@ -1,12 +1,12 @@
-package org.jetbrains.sbtidea
+package org.jetbrains.sbtidea.download
 
 import java.nio.file.{Files, Paths}
 
 import org.jetbrains.sbtidea.Keys.String2Plugin
-import org.jetbrains.sbtidea.download.{BuildInfo, CommunityIdeaUpdater}
-import org.scalatest.FunSuite
+import org.jetbrains.sbtidea.{IdeaMock, Keys, PluginLogger}
+import org.scalatest.{FunSuite, Matchers}
 
-class CommunityIdeaUpdaterTest extends FunSuite {
+class CommunityIdeaUpdaterTest extends FunSuite with Matchers with IdeaMock {
 
   private val logger = new PluginLogger {
     override def info(msg: => String): Unit = println(msg)
@@ -26,5 +26,12 @@ class CommunityIdeaUpdaterTest extends FunSuite {
     )
 //    sbt.IO.delete(tmpDir.toFile)
   }
+
+  test("install mock IDEA test") {
+    val installDir = installIdeaMock
+    installDir.toFile.exists() shouldBe true
+    installDir.toFile.list() should contain allElementsOf Seq("lib", "bin", "plugins", "build.txt")
+  }
+
 
 }
