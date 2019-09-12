@@ -41,7 +41,7 @@ lazy val visualizer = (project in file(".") / "visualizer")
   .dependsOn(core)
   .settings(
     name := "sbt-declarative-visualizer",
-    libraryDependencies += "org.jetbrains" %% "ascii-graphs" % "0.0.6"
+    libraryDependencies += "com.github.mutcianm" %% "ascii-graphs" % "0.0.6"
   )
 
 lazy val packaging = (project in file(".") / "packaging")
