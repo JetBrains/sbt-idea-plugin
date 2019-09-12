@@ -67,11 +67,6 @@ trait IdeaPluginInstaller extends IdeaInstaller {
     installedPluginRoot
   }
 
-  private def extractPluginChannel(plugin: IdeaPlugin): String = plugin match {
-    case org.jetbrains.sbtidea.Keys.IdeaPlugin.Id(_, _, channel) => channel.getOrElse("")
-    case _ => ""
-  }
-
   private def getMoreUpToDateVersion(metadata: PluginMetadata, channel: String): Option[String] = {
     PluginRepoUtils.getLatestPluginVersion(buildInfo, metadata.id, channel) match {
       case Right(version) if compareVersions(metadata.version, version) < 0 =>
