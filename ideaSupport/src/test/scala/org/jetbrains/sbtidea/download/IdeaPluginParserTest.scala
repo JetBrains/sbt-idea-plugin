@@ -6,7 +6,7 @@ import org.scalatest.{FunSuite, Matchers}
 
 import scala.language.postfixOps
 
-class IdeaPluginParserTest extends FunSuite with Matchers {
+final class IdeaPluginParserTest extends FunSuite with Matchers {
 
   private def id(str: String) = str.toPlugin.asInstanceOf[Id]
 

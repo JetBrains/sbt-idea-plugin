@@ -8,18 +8,10 @@ import org.scalatest.{FunSuite, Matchers}
 import org.jetbrains.sbtidea.Keys.IdeaEdition
 import org.jetbrains.sbtidea.download.api.PluginMetadata
 
-class IdeaPluginInstallerTest extends FunSuite with Matchers with IdeaMock with PluginMock with ConsoleLogger {
+final class IdeaPluginInstallerTest extends FunSuite with Matchers with IdeaMock with PluginMock with ConsoleLogger {
 
   private val ideaRoot            = installIdeaMock
   private val ideaBuild           = BuildInfo(IDEA_VERSION, IdeaEdition.Ultimate)
-
-  private def copyPluginDist(fileName: String): Path = {
-    val tmpDir = Files.createTempDirectory(getClass.getSimpleName)
-    val from = Paths.get(getClass.getResource(fileName).toURI)
-    val to   = tmpDir.resolve(fileName)
-    Files.copy(from, to)
-    to
-  }
 
   private def createInstaller(logger: PluginLogger = log): IdeaPluginInstaller = new IdeaPluginInstaller {
     override protected def buildInfo: BuildInfo = ideaBuild

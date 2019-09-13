@@ -8,7 +8,7 @@ import org.jetbrains.sbtidea.packaging.artifact
 import org.jetbrains.sbtidea.{CapturingLogger, ConsoleLogger}
 import org.scalatest.{FunSuite, Matchers}
 
-class LocalPluginRegistryTest extends FunSuite with Matchers with IdeaMock with ConsoleLogger {
+final class LocalPluginRegistryTest extends FunSuite with Matchers with IdeaMock with ConsoleLogger {
 
   private val ideaRoot = installIdeaMock
 
