@@ -78,9 +78,31 @@ trait Init { this: Keys.type =>
     unmanagedJars in Compile ++= ideaFullJars.value,
 
     packageOutputDir := target.value / "plugin" / ideaPluginName.value,
-    ideaPluginFile   := target.value / s"${ideaPluginName.value}-${version.value}.zip",
-    ideaPublishSettings := PublishSettings("", "", "", None),
-    publishPlugin := tasks.PublishPlugin.apply(ideaPublishSettings.value, ideaPluginFile.value, streams.value),
+    packageArtifactZipFile := target.value / s"${ideaPluginName.value}-${version.value}.zip",
+    publishPlugin := {
+      import complete.DefaultParsers._
+      import tasks.PublishPlugin._
+      val log = new SbtPluginLogger(streams.value)
+      val maybeChannel = spaceDelimited("<channel>").parsed.headOption
+      val tokenFile = file(s"${sys.props.get("user.home").getOrElse(".")}/$TOKEN_FILENAME")
+      val fromEnv = sys.env.get(TOKEN_KEY)
+      val fromProps = sys.props.get(TOKEN_KEY)
+      val token =
+        if(tokenFile.exists() && tokenFile.length() > 0)
+          IO.readLines(tokenFile).headOption.getOrElse("")
+        else {
+          fromEnv.getOrElse(
+            fromProps.getOrElse(throw new IllegalStateException(
+              s"Plugin repo authorisation token not set. Please either put one into $tokenFile or set $TOKEN_KEY env or prop")
+            )
+          )
+        }
+      val pluginId = LocalPluginRegistry.extractPluginMetaData(packageOutputDir.value.toPath) match {
+        case Left(error) => throw new IllegalStateException(s"Can't extract plugin id from artifact: $error")
+        case Right(metadata) => metadata.id
+      }
+        tasks.PublishPlugin.apply(token, pluginId, maybeChannel, packageArtifactZip.value, log)
+    },
 
     createIDEAArtifactXml := Def.taskDyn {
       val buildRoot = baseDirectory.in(ThisBuild).value

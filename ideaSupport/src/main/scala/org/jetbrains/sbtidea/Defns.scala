@@ -55,6 +55,4 @@ trait Defns { this: Keys.type =>
     }
   }
 
-  final case class PublishSettings(pluginId: String, username: String, password: String, channel: Option[String])
-
 }

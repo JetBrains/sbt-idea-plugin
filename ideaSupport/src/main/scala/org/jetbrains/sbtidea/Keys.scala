@@ -33,19 +33,11 @@ object Keys extends Defns with Init with Utils {
     "idea-download-sources",
     "Flag indicating whether IDEA sources should be downloaded too")
 
-  lazy val ideaPublishSettings = SettingKey[PublishSettings](
-    "idea-publish-settings",
-    "Settings necessary for publishing IDEA plugin to plugins.jetbrains.com")
-
-  lazy val ideaPluginFile = TaskKey[File](
-    "idea-plugin-file",
-    "IDEA plugin's file to publish to plugins.jetbrains.com")
-
   lazy val updateIdea = TaskKey[Unit](
     "update-idea",
     "Download Intellij IDEA binaries, sources and external plugins for specified build")
 
-  lazy val publishPlugin = TaskKey[String](
+  lazy val publishPlugin = InputKey[Unit](
     "publish-plugin",
     "Publish IDEA plugin on plugins.jetbrains.com")
 

@@ -1,35 +1,39 @@
 package org.jetbrains.sbtidea.tasks
 
-import sbt._
-import sbt.Keys._
-import scalaj.http._
 import java.io.InputStream
-import org.jetbrains.sbtidea.Keys._
+
+import org.jetbrains.sbtidea.PluginLogger
+import sbt._
+import scalaj.http._
 
 
 object PublishPlugin {
-  def apply(settings: PublishSettings, pluginFile: File, streams: TaskStreams): String = {
+
+  final val TOKEN_FILENAME  = ".ij-plugin-repo-token"
+  final val TOKEN_KEY       = "IJ_PLUGIN_REPO_TOKEN"
+
+  def apply(token: String, pluginId: String, channel: Option[String], pluginFile: File, log: PluginLogger): Unit = {
     val host = "https://plugins.jetbrains.com"
-    streams.log.info(s"Uploading ${pluginFile.getName}(${pluginFile.length} bytes) to $host...")
+    log.info(s"Uploading ${pluginFile.getName}(${pluginFile.length} bytes) to $host...")
     sbt.jetbrains.ideaPlugin.apiAdapter.Using.fileInputStream(pluginFile) { pluginStream =>
-      Http(s"$host/plugin/uploadPlugin")
+      val response = Http(s"$host/plugin/uploadPlugin")
         .timeout(connTimeoutMs = 5000, readTimeoutMs = 60000)
-        .postForm(createForm(settings))
+        .postForm(Seq(
+          "pluginId" -> pluginId,
+          "channel"  -> channel.getOrElse("")
+        ))
+        .header("Authorization", s"Bearer $token")
         .postMulti(createMultipartData(pluginFile, pluginStream))
-        .asString
-        .throwError
-        .location
-        .getOrElse(throw new Error("Uploaded plugin location is not set."))
+          .asString
+
+      if (response.isError) {
+        log.error(s"Failed to upload plugin")
+        log.error(s"(${response.code}) : ${response.body}")
+      } else {
+        log.info(s"Successfully uploaded ${pluginFile.name} to $host")
+      }
     }
   }
-
-  private def createForm(settings: PublishSettings): Seq[(String, String)] =
-    Seq(
-      "pluginId" -> settings.pluginId,
-      "userName" -> settings.username,
-      "password" -> settings.password,
-      "channel"  -> settings.channel.getOrElse("")
-    )
 
   private def createMultipartData(pluginFile: File, pluginInputStream: InputStream): MultiPart =
     MultiPart("file", pluginFile.getName, "application/zip", pluginInputStream, pluginFile.length(), uploadCallback(pluginFile.length))
