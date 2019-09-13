@@ -11,10 +11,11 @@ import org.jetbrains.sbtidea.packaging.artifact
 import scala.collection.JavaConverters.asScalaIteratorConverter
 
 trait IdeaMock extends TmpDirUtils {
-  protected val IDEA_VERSION    = "192.5728.12"
-  protected val IDEA_EDITION    = "IU"
-  protected val IDEA_DIST       = s"idea$IDEA_EDITION-$IDEA_VERSION.zip"
-  protected val IDEA_DIST_PATH  = s"/org/jetbrains/sbtidea/download/$IDEA_DIST"
+  protected val IDEA_VERSION      = "192.5728.12"
+  protected val IDEA_EDITION      = "IU"
+  protected val IDEA_DIST         = s"idea$IDEA_EDITION-$IDEA_VERSION.zip"
+  protected val IDEA_DIST_PATH    = s"/org/jetbrains/sbtidea/download/$IDEA_DIST"
+  protected val IDEA_BUILDINFO: BuildInfo = BuildInfo(IDEA_VERSION, Keys.IdeaEdition.Ultimate)
 
   implicit class PathExt(path: Path) {
     def /(string: String): Path = path.resolve(string)
@@ -43,7 +44,9 @@ trait IdeaMock extends TmpDirUtils {
     installDir
   }
 
-  protected def getIdeaDistMockURI: URI = URI.create(s"jar:${getClass.getResource(IDEA_DIST_PATH).toURI}")
+  protected def getDistCopy: Path = Files.copy(getIdeaDistMockPath, newTmpDir.resolve(IDEA_DIST))
+
+  protected def getIdeaDistMockURI: URI = getClass.getResource(IDEA_DIST_PATH).toURI
 
   protected def getIdeaDistMockPath: Path = Paths.get(getIdeaDistMockURI)
 }
