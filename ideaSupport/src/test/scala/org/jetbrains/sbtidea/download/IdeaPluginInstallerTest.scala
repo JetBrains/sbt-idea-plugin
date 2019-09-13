@@ -8,18 +8,7 @@ import org.scalatest.{FunSuite, Matchers}
 import org.jetbrains.sbtidea.Keys.IdeaEdition
 import org.jetbrains.sbtidea.download.api.PluginMetadata
 
-final class IdeaPluginInstallerTest extends FunSuite with Matchers with IdeaMock with PluginMock with ConsoleLogger {
-
-  private val ideaRoot            = installIdeaMock
-  private val ideaBuild           = BuildInfo(IDEA_VERSION, IdeaEdition.Ultimate)
-
-  private def createInstaller(logger: PluginLogger = log): IdeaPluginInstaller = new IdeaPluginInstaller {
-    override protected def buildInfo: BuildInfo = ideaBuild
-    override protected def log: PluginLogger = logger
-    override def getInstallDir: Path = ideaRoot
-    override def isIdeaAlreadyInstalled: Boolean = true
-    override def installIdeaDist(files: Seq[(ArtifactPart, Path)]): Path = ideaRoot
-  }
+final class IdeaPluginInstallerTest extends IdeaPluginInstallerTestBase {
 
   test("Plugin installer reports non-installed plugins") {
     val fakePlugin = "org.myFake.plugin:0.999:trunk".toPlugin
