@@ -7,6 +7,12 @@ import sbt.{file, _}
 
 trait Utils { this: Keys.type =>
 
+  private val pluginsWithScala = Seq( // TODO: add more
+    "org.intellij.scala",
+    "org.jetbrains.plugins.hocon",
+    "intellij.haskell"
+  )
+
   def createRunnerProject(from: ProjectReference, newProjectName: String): Project =
     Project(newProjectName, file(s"target/tools/$newProjectName"))
       .dependsOn(from % Provided)
@@ -31,6 +37,10 @@ trait Utils { this: Keys.type =>
           val outFile = baseDirectory.in(ThisBuild).value / ".idea" / "runConfigurations" / s"$configName.xml"
           IO.write(outFile, data.getBytes)
           outFile
+        },
+        autoScalaLibrary := {
+          val allPlugins = ideaExternalPlugins.all(ScopeFilter(inDependencies(from))).value.flatten
+          !allPlugins.exists(plugin => pluginsWithScala.exists(id => plugin.toString.matches(s".*$id.*")))
         }
       ).enablePlugins(SbtIdeaPlugin)
 
