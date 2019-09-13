@@ -85,13 +85,16 @@ class LocalPluginRegistry(ideaRoot: Path, log: PluginLogger) {
       case IdeaPlugin.Id(id, _, _) => id
     }
     if (!index.containsKey(key))
-      throw new RuntimeException(s"Plugin $ideaPlugin not found in index")
+      throw new MissingPluginRootException(ideaPlugin.toString)
     Paths.get(index.get(key))
   }
 }
 
 
 object LocalPluginRegistry {
+
+  class MissingPluginRootException(pluginName: String) extends
+    RuntimeException(s"Can't find plugin root for $pluginName: check plugin name")
 
   def extractInstalledPluginDescriptor(pluginRoot: Path): Either[String, String] = {
     try {
