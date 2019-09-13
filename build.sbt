@@ -64,4 +64,5 @@ lazy val ideaSupport = (project in file(".") / "ideaSupport")
   )
 
 lazy val root = (project in file("."))
+  .settings(publish := {}, publishLocal := {})
   .aggregate(core, packaging, ideaSupport, visualizer)
