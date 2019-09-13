@@ -4,13 +4,13 @@ import java.net.URI
 import java.nio.file.{Files, Path, Paths}
 import java.util.zip.{ZipEntry, ZipInputStream}
 
-import org.jetbrains.sbtidea.Keys
+import org.jetbrains.sbtidea.{Keys, TmpDirUtils}
 import org.jetbrains.sbtidea.Keys.String2Plugin
 import org.jetbrains.sbtidea.packaging.artifact
 
 import scala.collection.JavaConverters.asScalaIteratorConverter
 
-trait IdeaMock {
+trait IdeaMock extends TmpDirUtils {
   protected val IDEA_VERSION    = "192.5728.12"
   protected val IDEA_EDITION    = "IU"
   protected val IDEA_DIST       = s"idea$IDEA_EDITION-$IDEA_VERSION.zip"
@@ -26,7 +26,7 @@ trait IdeaMock {
     "com.intellij.properties".toPlugin :: Nil
 
   protected def installIdeaMock: Path = {
-    val tmpDir      = Files.createTempDirectory(getClass.getName)
+    val tmpDir      = newTmpDir
     val installDir  = Files.createDirectory(tmpDir.resolve(IDEA_VERSION))
     val stream      = getClass.getResourceAsStream(IDEA_DIST_PATH)
     artifact.using(new ZipInputStream(stream)) { zip =>

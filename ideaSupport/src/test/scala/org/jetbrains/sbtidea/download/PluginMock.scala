@@ -4,19 +4,20 @@ import java.net.URI
 import java.nio.file._
 
 import org.jetbrains.sbtidea.Keys.IdeaPlugin
+import org.jetbrains.sbtidea.TmpDirUtils
 import org.jetbrains.sbtidea.download.api.PluginMetadata
 import org.jetbrains.sbtidea.packaging.artifact
 
 import scala.collection.JavaConverters._
 
-trait PluginMock {
+trait PluginMock extends TmpDirUtils {
 
   implicit class PluginMetaDataExt(metadata: PluginMetadata) {
     def toPluginId: IdeaPlugin.Id = IdeaPlugin.Id(metadata.id, Some(metadata.version), None)
   }
 
   protected def createPluginJarMock(metaData: PluginMetadata): Path = {
-    val tmpDir = Files.createTempDirectory("pluginMock")
+    val tmpDir = newTmpDir
     val targetPath = tmpDir.resolve(s"${metaData.name}.jar")
     val targetUri = URI.create("jar:" + targetPath.toUri)
     val opts = Map("create" -> "true").asJava
@@ -31,7 +32,7 @@ trait PluginMock {
   }
 
   protected def createPluginZipMock(metaData: PluginMetadata): Path = {
-    val tmpDir = Files.createTempDirectory("pluginMock")
+    val tmpDir = newTmpDir
     val targetPath = tmpDir.resolve(s"${metaData.name}.zip")
     val targetUri = URI.create("jar:" + targetPath.toUri)
     val opts = Map("create" -> "true").asJava
