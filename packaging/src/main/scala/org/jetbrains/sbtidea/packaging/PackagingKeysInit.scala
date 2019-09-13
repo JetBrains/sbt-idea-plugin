@@ -19,9 +19,10 @@ trait PackagingKeysInit {
   )
 
   lazy val projectSettings: Seq[Setting[_]] = Seq(
-    packageMethod := PackagingMethod.MergeIntoParent(),
-    packageLibraryMappings := "org.scala-lang" % "scala-.*" % ".*" -> None ::
-                              "org.scala-lang.modules" % "scala-.*" % ".*" -> None :: Nil,
+    packageMethod := packageMethod.in(ThisProject).?.value.getOrElse(PackagingMethod.MergeIntoParent()),
+    packageLibraryMappings := packageLibraryMappings.in(ThisProject).?.value.getOrElse(
+                              "org.scala-lang" % "scala-.*" % ".*" -> None ::
+                              "org.scala-lang.modules" % "scala-.*" % ".*" -> None :: Nil),
     packageFileMappings := Seq.empty,
     packageAdditionalProjects := Seq.empty,
     packageAssembleLibraries := false,
