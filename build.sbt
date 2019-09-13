@@ -6,7 +6,8 @@ ThisBuild / scalaVersion := scala212
 lazy val commonSettings: Seq[Def.Setting[_]] = Seq(
   organization          := "org.jetbrains",
   licenses              += ("MIT", url("https://opensource.org/licenses/MIT")),
-  scalacOptions        ++= Seq("-deprecation", "-feature"),
+  scalacOptions        ++= Seq("-deprecation", "-feature", "-target:jvm-1.8"),
+  javacOptions         ++= Seq("--release", "8"),
   crossScalaVersions    := Seq(scala212, scala210),
   // emulate sbt cross building by Scala cross building
   // since we can assume Scala 2.12.x to be sbt 1.x
