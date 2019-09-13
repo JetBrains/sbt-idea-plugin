@@ -3,7 +3,7 @@ package org.jetbrains.sbtidea.tasks
 import java.io.File
 
 object IdeaConfigBuilder {
-  def buildRunConfigurationXML(configName: String, moduleName: String, javaOptions: Seq[String], dataDir: File): String = {
+  def buildRunConfigurationXML(artifactName: String, configName: String, moduleName: String, javaOptions: Seq[String], dataDir: File): String = {
           s"""<component name="ProjectRunConfigurationManager">
          |  <configuration default="false" name="$configName" type="Application" factoryName="Application">
          |    <log_file alias="IDEA" path="$dataDir/system/log/idea.log" />
@@ -22,6 +22,9 @@ object IdeaConfigBuilder {
          |    <ConfigurationWrapper RunnerId="Run" />
          |    <method v="2">
          |      <option name="Make" enabled="true" />
+         |      <option name="BuildArtifacts" enabled="true">
+         |        <artifact name="$artifactName" />
+         |      </option>
          |    </method>
          |  </configuration>
          |</component>""".stripMargin

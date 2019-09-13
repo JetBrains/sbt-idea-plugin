@@ -30,6 +30,7 @@ trait Utils { this: Keys.type =>
         createIDEARunConfiguration := {
           val configName = "IDEA"
           val data = IdeaConfigBuilder.buildRunConfigurationXML(
+            name.in(from).value,
             configName,
             newProjectName,
             javaOptions.in(from, Test).value,
