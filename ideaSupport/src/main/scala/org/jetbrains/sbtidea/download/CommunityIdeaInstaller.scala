@@ -44,7 +44,7 @@ abstract class CommunityIdeaInstaller(ideaInstallDir: Path,
 
     log.info(s"Extracting IDEA dist to $tmpDir")
 
-    if (artifact.getFileName.endsWith(".zip")) {
+    if (artifact.getFileName.toString.endsWith(".zip")) {
       sbt.IO.unzip(artifact.toFile, tmpDir.toFile)
     } else if (artifact.getFileName.toString.endsWith(".tar.gz")) {
       if (s"tar xfz $artifact -C $tmpDir --strip 1".! != 0) {
