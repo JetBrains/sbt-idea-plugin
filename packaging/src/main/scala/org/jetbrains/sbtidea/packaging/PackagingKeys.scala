@@ -7,66 +7,43 @@ object PackagingKeys extends PackagingDefs with PackagingKeysInit {
 
   /* Settings */
 
-  lazy val packageMethod = SettingKey[PackagingMethod](
-    "package-method",
-    "What kind of artifact to produce from given project"
-  )
+  lazy val packageMethod = settingKey[PackagingMethod](
+    "What kind of artifact to produce from given project")
 
-  lazy val packageAdditionalProjects = SettingKey[Seq[Project]](
-    "package-additional-projects",
-    "Projects to package alongside current, without adding classpath dependencies"
-  )
+  lazy val packageAdditionalProjects = settingKey[Seq[Project]](
+    "Projects to package alongside current, without adding classpath dependencies")
+  
+  lazy val packageLibraryMappings = settingKey[Seq[(ModuleID, Option[String])]](
+    "Overrides for library mappings in artifact")
+  
+  lazy val packageFileMappings = settingKey[Seq[(File, String)]](
+    "Extra files or directories to include into the artifact")
 
-  lazy val packageLibraryMappings = SettingKey[Seq[(ModuleID, Option[String])]](
-    "package-library-mappings",
-    "Overrides for library mappings in artifact"
-  )
+  lazy val packageAssembleLibraries = settingKey[Boolean](
+    "Should the project library dependencies be merged inside the project artifact")
 
-  lazy val packageFileMappings = SettingKey[Seq[(File, String)]](
-    "package-file-mappings",
-    "Extra files or directories to include into the artifact"
-  )
+  lazy val packageOutputDir = settingKey[File](
+    "Folder to write plugin artifact to")
 
-  lazy val packageAssembleLibraries = SettingKey[Boolean](
-    "package-assemble-libraries",
-    "Should the project library dependencies be merged inside the project artifact"
-  )
+  lazy val packageArtifactZipFile = settingKey[File](
+    "Target file for packaging with packageArtifactZip task")
 
-  lazy val packageOutputDir = SettingKey[File](
-    "package-output-dir",
-    "Folder to write plugin artifact to"
-  )
+  lazy val shadePatterns = settingKey[Seq[ShadePattern]](
+    "Class renaming patterns in jars")
 
-  lazy val packageArtifactZipFile: SettingKey[File] = settingKey[File](
-    "Target file for packaging with packageArtifactZip task"
-  )
-
-  lazy val shadePatterns = SettingKey[Seq[ShadePattern]](
-    "shade-patterns",
-    "Class renaming patterns in jars"
-  )
-
-  lazy val pathExcludeFilter = SettingKey[ExcludeFilter.ExcludeFilter](
-    "path-exclude-filter",
-    "paths to exclude within merged jars"
-  )
+  lazy val pathExcludeFilter = settingKey[ExcludeFilter.ExcludeFilter](
+    "paths to exclude within merged jars")
 
   /* Tasks */
 
-  lazy val packageArtifact = TaskKey[File](
-    "package-artifact",
-    "Create plugin distribution"
-  )
+  lazy val packageArtifact = taskKey[File](
+    "Create plugin distribution")
 
-  lazy val packageArtifactDynamic = TaskKey[File](
-    "package-plugin-dynamic",
-    "Create plugin distribution extracting all classes from projects not marked as static to disk"
-  )
+  lazy val packageArtifactDynamic = taskKey[File](
+    "Create plugin distribution extracting all classes from projects not marked as static to disk")
 
-  lazy val packageArtifactZip = TaskKey[File](
-    "package-plugin-zip",
-    "Create plugin distribution zip file"
-  )
+  lazy val packageArtifactZip = taskKey[File](
+    "Create plugin distribution zip file")
 
 
   lazy val dumpDependencyStructure: TaskKey[SbtPackageProjectData] = taskKey("")//.withRank(Invisible)
