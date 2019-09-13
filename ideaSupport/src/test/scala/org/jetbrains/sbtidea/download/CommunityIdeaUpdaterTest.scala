@@ -7,7 +7,7 @@ import org.jetbrains.sbtidea.{Keys, PluginLogger}
 import org.scalatest.{FunSuite, Ignore, Matchers}
 
 @Ignore
-class CommunityIdeaUpdaterTest extends FunSuite with Matchers with IdeaMock {
+final class CommunityIdeaUpdaterTest extends FunSuite with Matchers with IdeaMock {
 
   private val logger = new PluginLogger {
     override def info(msg: => String): Unit = println(msg)
@@ -16,7 +16,8 @@ class CommunityIdeaUpdaterTest extends FunSuite with Matchers with IdeaMock {
   }
 
   test("IdeaUpdater Integration Test") {
-    sys.props += "IdeaUpdater.dumbMode" -> "idea"
+    val dumbModeKey = "IdeaUpdater.dumbMode"
+    sys.props += dumbModeKey -> "idea"
 //    val tmpDir = Files.createTempDirectory("IdeaUpdaterTest")
     val tmpDir = Paths.get("/", "tmp", "IdeaUpdater")
     Files.createDirectories(tmpDir.resolve("plugins"))
@@ -26,6 +27,7 @@ class CommunityIdeaUpdaterTest extends FunSuite with Matchers with IdeaMock {
       "mobi.hsz.idea.gitignore".toPlugin :: "org.intellij.scala:2019.2.1144:Nightly".toPlugin :: Nil
     )
 //    sbt.IO.delete(tmpDir.toFile)
+    sys.props -= dumbModeKey
   }
 
   test("install mock IDEA test") {

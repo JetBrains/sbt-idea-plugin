@@ -1,12 +1,10 @@
 package org.jetbrains.sbtidea.download
 
-import java.io.File
 import java.nio.file.{Path, Paths}
 
 import org.jetbrains.sbtidea.Keys.IdeaPlugin
 import org.jetbrains.sbtidea.PluginLogger
-import org.jetbrains.sbtidea.download.api.{IdeaArtifactResolver, IdeaResolver, InstallerFactory}
-import sbt._
+import org.jetbrains.sbtidea.download.api.{IdeaArtifactResolver, InstallerFactory}
 
 
 /**
@@ -19,14 +17,15 @@ import sbt._
 class IdeaUpdater(private val resolver: IdeaArtifactResolver,
                   private val installerFactory: InstallerFactory,
                   val ideaInstallDir: Path, log: PluginLogger) {
+import IdeaUpdater._
 
   private val downloader: FileDownloader = new FileDownloader(ideaInstallDir.getParent, log)
 
   //noinspection MapGetOrElseBoolean
   def updateIdeaAndPlugins(ideaBuildInfo: BuildInfo, plugins: Seq[IdeaPlugin], withSources: Boolean = true): Path = {
-    val dumbOptions = sys.props.get("IdeaUpdater.dumbMode").getOrElse("").toLowerCase
-    val installRoot = if (!dumbOptions.contains("idea")) updateIdea(ideaBuildInfo) else Paths.get("")
-    if (!dumbOptions.contains("plugin")) updatePlugins(ideaBuildInfo, plugins)
+    val dumbOptions = sys.props.get(DUMB_KEY).getOrElse("").toLowerCase
+    val installRoot = if (!dumbOptions.contains(DUMB_KEY_IDEA)) updateIdea(ideaBuildInfo) else Paths.get("")
+    if (!dumbOptions.contains(DUMB_KEY_PLUGINS)) updatePlugins(ideaBuildInfo, plugins)
     installRoot
   }
 
@@ -55,4 +54,10 @@ class IdeaUpdater(private val resolver: IdeaArtifactResolver,
       updatePlugin
     }
   }
+}
+
+object IdeaUpdater {
+  final val DUMB_KEY: String          = "IdeaUpdater.dumbMode"
+  final val DUMB_KEY_IDEA: String     = "idea"
+  final val DUMB_KEY_PLUGINS: String  = "plugins"
 }
