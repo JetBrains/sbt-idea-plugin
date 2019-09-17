@@ -13,6 +13,12 @@ SBT plugin that makes development of IntelliJ IDEA plugins in Scala easier by pr
 
 For a comprehensive usage example see [Scala plugin](https://github.com/JetBrains/intellij-scala) build definition.
 
+Note that some features of this plugin may be used independently, i.e. if you only want to [print project structure](#printprojectgraph--taskkeyunit)
+or [package artifacts](#packaging) you can depend on:
+
+`"org.jetbrains" % "sbt-declarative-visualizer" % "3.0.0"` or
+
+`"org.jetbrains" % "sbt-declarative-packaging" % "3.0.0"`
 ## Installation
 
 From version 1.0.0, this plugin is published for sbt 0.13 and 1.0
@@ -20,7 +26,7 @@ From version 1.0.0, this plugin is published for sbt 0.13 and 1.0
 * Insert into `project/plugins.sbt`:
 
 ```Scala
-addSbtPlugin("org.jetbrains" % "sbt-idea-plugin" % "2.4.0")
+addSbtPlugin("org.jetbrains" % "sbt-idea-plugin" % "3.0.0")
 ```
 
 * [Enable](#auto-enable-the-plugin) the plugin for your desired projects (your main plugin project and all its dependencies)
@@ -29,11 +35,11 @@ addSbtPlugin("org.jetbrains" % "sbt-idea-plugin" % "2.4.0")
 
 * Start coding
 
-## IDEA and plugin settings
+## IDEA and plugin
 
 #### `ideaPluginName in ThisBuild :: SettingKey[String]`
 
-Default: `"MyCoolIdeaPlugin"`
+Default: `name.in(LocalRootProject).value`
 
 Name of your plugin. Better set this beforehand since several other settings such as
 IDEA directries and artifact names depend on it.
@@ -78,24 +84,42 @@ Available plugins can be found in `ideaBaseDirectory / "plugins"` directory.
 
 Default: `Seq.empty`
 
-List of external IDEA plugins to depend upon. Their zips or jars will be downloaded
-and unpacked in `ideaBaseDirectory / "externalPlugins"` directory, each in its own subdirectory. They will be used
-in compilation.
+IDEA plugins to depend upon from IJ plugin repository or direct url to plugin artifact.
+Plugins from repo can be specified by the plugin's id, optional version and update channel.
+Plugins will be checked for compatibility with the `ideaBuild` you specified and updated to the latest version unless
+ some specific version is given explicitly. [How to find plugin's id](https://github.com/JetBrains/sbt-idea-plugin/wiki/How-to-find-plugin's-id).
 
 ```SBT
-// use some particular artifact
-ideaExternalPlugins += IdeaPlugin.Zip("Scala", "https://plugins.jetbrains.com/...")
+// use Scala plugin as a dependency
+ideaExternalPlugins += "org.intellij.scala".toPlugin
+// use Scala plugin version 2019.2.1
+ideaExternalPlugins += "org.intellij.scala:2019.2.1".toPlugin
 // use latest nightly build from the repo
-ideaExternalPlugins += IdeaPlugin.Id("Scala", "org.intellij.scala", Some("Nightly"))
+ideaExternalPlugins += "org.intellij.scala::Nightly".toPlugin
+// use specific version from Eap update channel
+ideaExternalPlugins += "org.intellij.scala:2019.3.2:Eap".toPlugin
 ```
 
-#### `ideaPublishSettings :: SettingKey[PublishSettings]`
+#### `publishPlugin <channel> :: TaskKey[String]`
 
-Default: `PublishSettings(pluginId = "", username = "", password = "", channel = None)`
+Upload and publish your IDEA plugin on https://plugins.jetbrains.com.
+In order to publish to the repo you need to 
+[obtain permanent token](http://www.jetbrains.org/intellij/sdk/docs/plugin_repository/api/plugin_upload.html) and
+either place it into `~/.ij-plugin-repo-token` file or pass via `IJ_PLUGIN_REPO_TOKEN` env or java property.
 
-Settings necessary for uploading your IDEA plugin to https://plugins.jetbrains.com
+This task also expects an optional argument - a [custom release channel](http://www.jetbrains.org/intellij/sdk/docs/plugin_repository/custom_channels.html).
+If omitted, plugin will be published to the default plugin repository channel (Stable) 
+ 
 
-## Packaging settings
+#### `updateIdea :: TaskKey[Unit]`
+
+This task is run when sbt project is loaded. 
+Download IDEA's binaries and sources, put them into
+`ideaBaseDirectory` directory. Download external plugins and put
+them in `ideaBaseDirectory / "externalPlugins"` directory. Automatically add IDEA's and
+plugin's jars into `unmanagedJars in Compile`.
+
+## Packaging
 
 #### `packageMethod :: SettingKey[PackagingMethod]`
 
@@ -127,20 +151,17 @@ packageMethod := PackagingMethod.Skip()
 
 #### `packageLibraryMappings :: SettingKey[Seq[(ModuleID, Option[String])]]`
 
-Default:
+Default for root project: `Seq.empty`
+
+Default for all other projects:
 ```SBT
-"org.scala-lang"  % "scala-.*" % ".*" -> None ::
+"org.scala-lang"  % "scala-.*" % ".*"        -> None ::
 "org.scala-lang.modules" % "scala-.*" % ".*" -> None :: Nil
 ```
 
 Sequence of rules to fine-tune how the library dependencies are packaged. By default all dependencies
-including transitive are placed in the "lib" subfolder of the plugin artifact. Scala runtime
-is also skipped by default.
-
+including transitive are placed in the "lib" subfolder of the plugin artifact. 
 ```SBT
-// package ALL dependencies to default location
-packageLibraryMappings := Seq()
-
 // merge all scalameta jars into a single jar
 packageLibraryMappings += "org.scalameta" %% ".*" % ".*" -> Some("lib/scalameta.jar")
 
@@ -191,9 +212,7 @@ libraries from IntelliJ platform such as protobuf.
 shadePatterns += ShadePattern("com.google.protobuf.**", "zinc.protobuf.@1")
 ```
 
-## Tasks
-
-#### `packagePlugin :: TaskKey[File]`
+#### `packageArtifact :: TaskKey[File]`
 
 Builds unpacked plugin distribution. This task traverses dependency graph of the
 build and uses settings described in the section above to create sub-artifact structure 
@@ -202,27 +221,17 @@ which is placed into the "lib" folder of the plugin artifact, all library depend
 including transitive are placed in the "lib" folder as well. 
  
  
-#### `packagePluginZip :: TaskKey[File]`
+#### `packageArtifactZip :: TaskKey[File]`
 
 Produces ZIP file from the artifact produced by `packagePlugin` task.
 This is later used by publishPlugin as an artifact to upload.
 
-#### `publishPlugin :: TaskKey[String]`
-
-Upload and publish your IDEA plugin on https://plugins.jetbrains.com. Returns
-URL of published plugin.
-
-#### `updateIdea :: TaskKey[Unit]`
-
-This task is run when sbt project is loaded. 
-Download IDEA's binaries and sources, put them into
-`ideaBaseDirectory` directory. Download external plugins and put
-them in `ideaBaseDirectory / "externalPlugins"` directory. Automatically add IDEA's and
-plugin's jars into `unmanagedJars in Compile`.
+## Utils
 
 #### `printProjectGraph :: TaskKey[Unit]`
 
 Prints ASCII graph of currently selected project to console. Useful for debugging complex builds.
+![](https://user-images.githubusercontent.com/1345782/65074597-d8172880-d99d-11e9-947e-aa74855e9ff1.png)
 
 ## Running the plugin
 
@@ -262,15 +271,3 @@ object AutoSbtIdeaPlugin extends AbstractSbtIdeaPlugin {
   override def trigger  = allRequirements
 }
 ``` 
-
-## Notes and best practices
-  
-- If you depend upon one or more external plugins, add
-
-  ```
-  -Didea.plugins.path=$PROJECT_DIR$/<ideaBaseDirectory>/externalPlugins
-  ```
-
-  to your run configuration's VM options in order for debug IDEA instance to use
-  already downloaded plugins.
-  
