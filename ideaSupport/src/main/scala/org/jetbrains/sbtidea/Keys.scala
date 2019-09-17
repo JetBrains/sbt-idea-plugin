@@ -3,7 +3,7 @@ package org.jetbrains.sbtidea
 import sbt.Keys._
 import sbt._
 
-object Keys extends Defns with Init with Utils {
+object Keys extends Defns with Init with Utils with Quirks {
 
   lazy val ideaPluginName = settingKey[String](
     "Name of the plugin you're developing")

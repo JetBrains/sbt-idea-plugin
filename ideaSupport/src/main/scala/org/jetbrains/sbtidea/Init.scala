@@ -10,8 +10,7 @@ import sbt.{file, _}
 trait Init { this: Keys.type =>
 
   private val targetFileParser = DefaultParsers.fileParser(file("/"))
-  private lazy val homePrefix: File = sys.props.get("tc.idea.prefix").map(new File(_)).getOrElse(Path.userHome)
-  private lazy val ivyHomeDir: File = Option(System.getProperty("sbt.ivy.home")).fold(homePrefix / ".ivy2")(file)
+  protected lazy val homePrefix: File = sys.props.get("tc.idea.prefix").map(new File(_)).getOrElse(Path.userHome)
 
   lazy val globalSettings: Seq[Setting[_]] = Seq(
     dumpStructureTo in Global:= Def.inputTaskDyn {
@@ -132,16 +131,7 @@ trait Init { this: Keys.type =>
     fork in Test := true,
     parallelExecution := false,
     logBuffered := false,
-    javaOptions in Test := Seq(
-      "-Xms128m",
-      "-Xmx4096m",
-      "-server",
-      "-ea",
-      s"-Didea.system.path=${ideaTestSystemDir.value}",
-      s"-Didea.config.path=${ideaTestConfigDir.value}",
-      s"-Dsbt.ivy.home=$ivyHomeDir",
-      s"-Dplugin.path=${packageOutputDir.value}"
-    ),
+    javaOptions in Test := createTestVMOptions(ideaTestSystemDir.value, ideaTestConfigDir.value, packageOutputDir.value),
     envVars in Test += "NO_FS_ROOTS_ACCESS_CHECK" -> "yes"
   )
 }

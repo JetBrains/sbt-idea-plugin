@@ -23,7 +23,7 @@ object PackagingKeys extends PackagingDefs with PackagingKeysInit {
     "Should the project library dependencies be merged inside the project artifact")
 
   lazy val packageOutputDir = settingKey[File](
-    "Folder to write plugin artifact to")
+    "Folder to write artifact to")
 
   lazy val packageArtifactZipFile = settingKey[File](
     "Target file for packaging with packageArtifactZip task")
@@ -32,18 +32,18 @@ object PackagingKeys extends PackagingDefs with PackagingKeysInit {
     "Class renaming patterns in jars")
 
   lazy val pathExcludeFilter = settingKey[ExcludeFilter.ExcludeFilter](
-    "paths to exclude within merged jars")
+    "Paths to exclude within merged jars")
 
   /* Tasks */
 
   lazy val packageArtifact = taskKey[File](
-    "Create plugin distribution")
+    "Produce the artifact")
 
   lazy val packageArtifactDynamic = taskKey[File](
-    "Create plugin distribution extracting all classes from projects not marked as static to disk")
+    "Create distribution extracting all classes from projects not marked as static to disk")
 
   lazy val packageArtifactZip = taskKey[File](
-    "Create plugin distribution zip file")
+    "Create distribution zip file")
 
 
   lazy val dumpDependencyStructure: TaskKey[SbtPackageProjectData] = taskKey("")//.withRank(Invisible)
