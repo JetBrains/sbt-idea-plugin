@@ -7,5 +7,4 @@ object PackagingPlugin extends AutoPlugin {
   override def trigger = allRequirements
   override def requires = plugins.JvmPlugin
   override def projectSettings: Seq[Setting[_]] = PackagingKeys.projectSettings
-  override def buildSettings: Seq[Def.Setting[_]] = PackagingKeys.buildSettings
 }

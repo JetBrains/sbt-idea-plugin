@@ -13,16 +13,24 @@ trait PackagingKeysInit {
 
   private var compilationTimeStamp = -1L
 
-  lazy val buildSettings: Seq[Setting[_]] = Seq(
-    packageMethod.in(LocalRootProject) := PackagingMethod.Standalone(),
-    packageLibraryMappings.in(LocalRootProject) := Seq.empty
-  )
-
   lazy val projectSettings: Seq[Setting[_]] = Seq(
-    packageMethod := packageMethod.in(ThisProject).?.value.getOrElse(PackagingMethod.MergeIntoParent()),
-    packageLibraryMappings := packageLibraryMappings.in(ThisProject).?.value.getOrElse(
-                              "org.scala-lang" % "scala-.*" % ".*" -> None ::
-                              "org.scala-lang.modules" % "scala-.*" % ".*" -> None :: Nil),
+    packageMethod := { // top level project should be packaged as a jar by default
+      val workingDir = new File(sys.props("user.dir"))
+      val projectRoot = baseDirectory.in(ThisProject).value
+      if (workingDir == projectRoot)
+        PackagingMethod.Standalone()
+      else
+        PackagingMethod.MergeIntoParent()
+    },
+    packageLibraryMappings := { // non top level projects shouldn't have excessive scala-library mappings
+      val workingDir = new File(sys.props("user.dir"))
+      val projectRoot = baseDirectory.in(ThisProject).value
+      if (workingDir == projectRoot)
+        Seq.empty
+      else
+        "org.scala-lang" % "scala-.*" % ".*"          -> None ::
+        "org.scala-lang.modules" % "scala-.*" % ".*"  -> None :: Nil
+    },
     packageFileMappings := Seq.empty,
     packageAdditionalProjects := Seq.empty,
     packageAssembleLibraries := false,
