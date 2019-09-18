@@ -3,7 +3,7 @@ package org.jetbrains.sbtidea.packaging.artifact
 import java.nio.file.{Files, Path, StandardOpenOption}
 
 import org.jetbrains.sbtidea.packaging.PackagingKeys.ShadePattern
-import org.pantsbuild.jarjar.{JJProcessor, _}
+import org.pantsbuild.jarjar.{NiceJJProcessor, _}
 import org.pantsbuild.jarjar.util.EntryStruct
 import sbt.Keys.TaskStreams
 
