@@ -7,6 +7,7 @@ import java.nio.channels.{Channels, ReadableByteChannel}
 import java.nio.file.{Files, Path, Paths}
 
 import org.jetbrains.sbtidea.PluginLogger
+import org.jetbrains.sbtidea._
 
 private class FileDownloader(private val baseDirectory: Path, log: PluginLogger) {
 
@@ -102,12 +103,23 @@ private class FileDownloader(private val baseDirectory: Path, log: PluginLogger)
     if (connection.getResponseCode >= 400)
       throw new DownloadException(s"Not found (404): $url")
     val contentLength = connection.getContentLength
-    val fileName = java.net.URLDecoder
+    val nameFromHeader = java.net.URLDecoder
       .decode(
         connection
-          .getHeaderField("Content-Disposition").replaceFirst("(?i)^.*filename=\"?([^\"]+)\"?.*$", "$1"),
+          .getHeaderField("Content-Disposition")
+          .lift2Option
+          .map(_.replaceFirst("(?i)^.*filename=\"?([^\"]+)\"?.*$", "$1"))
+          .getOrElse(""),
         "ISO-8859-1")
-    RemoteMetaData(if (contentLength != 0) contentLength else -1, fileName)
+    val nameFromURL = url.toString.split("/").lastOption.getOrElse("")
+    val name =
+      if (nameFromHeader.nonEmpty)
+        nameFromHeader
+      else if (nameFromURL.isValidFileName)
+        nameFromURL
+      else
+        Math.abs(url.hashCode()).toString
+    RemoteMetaData(if (contentLength != 0) contentLength else -1, name)
   }
 
 
