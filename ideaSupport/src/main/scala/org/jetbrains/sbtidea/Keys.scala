@@ -56,6 +56,17 @@ object Keys extends Defns with Init with Utils with Quirks {
   lazy val cleanUpTestEnvironment = taskKey[Unit](
     "Clean up IDEA test system and config directories")
 
+  /* Deprecated task aliases */
+
+  lazy val packagePlugin = taskKey[File](
+    "Produce the plugin artifact")
+
+  lazy val packagePluginDynamic = taskKey[File](
+    "Create plugin distribution extracting all classes from projects not marked as static to disk")
+
+  lazy val packagePluginZip = taskKey[File](
+    "Create plugin distribution zip file")
+
   /* Utility tasks */
 
   lazy val createIDEARunConfiguration: TaskKey[File] = taskKey("")
