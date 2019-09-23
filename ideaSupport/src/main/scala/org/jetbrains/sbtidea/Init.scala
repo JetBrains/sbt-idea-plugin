@@ -3,6 +3,7 @@ package org.jetbrains.sbtidea
 import org.jetbrains.sbtidea.download._
 import org.jetbrains.sbtidea.packaging.PackagingKeys._
 import org.jetbrains.sbtidea.packaging.artifact.IdeaArtifactXmlBuilder
+import org.jetbrains.sbtidea.runIdea.{IdeaRunner, IdeaVMOptions}
 import sbt.Keys._
 import sbt.complete.DefaultParsers
 import sbt.{file, _}
@@ -118,6 +119,25 @@ trait Init { this: Keys.type =>
         }
       else Def.task { }
     }.value,
+
+
+    ideaVMOptions := IdeaVMOptions(packageOutputDir.value.toPath, ideaPluginDirectory.value.toPath),
+
+    runIdea := {
+      import complete.DefaultParsers._
+      implicit val log: PluginLogger = new SbtPluginLogger(streams.value)
+      val opts = spaceDelimited("[noPCE] [noDebug] [suspend]").parsed
+      val vmOptions = ideaVMOptions.value.copy(
+        noPCE = opts.contains("noPCE"),
+        debug = !opts.contains("noDebug"),
+        suspend = opts.contains("suspend")
+      )
+      val ideaCP = ideaMainJars.value.map(_.data.toPath)
+      val pluginRoot = packageArtifact.value.toPath
+      val runner = new IdeaRunner(ideaCP, pluginRoot, vmOptions)
+      runner.run()
+    },
+
     aggregate.in(packageArtifactZip) := false,
     aggregate.in(packageMappings) := false,
     aggregate.in(packageArtifact) := false,

@@ -1,5 +1,6 @@
 package org.jetbrains.sbtidea
 
+import org.jetbrains.sbtidea.runIdea.IdeaVMOptions
 import sbt.Keys._
 import sbt._
 
@@ -35,7 +36,7 @@ object Keys extends Defns with Init with Utils with Quirks {
   lazy val ideaPluginDirectory = settingKey[File](
     "Default base directory of IDEA config directories for this plugin")
 
-  lazy val ideaBaseDirectory = taskKey[File](
+  lazy val ideaBaseDirectory = settingKey[File](
     "Directory where downloaded IDEA binaries and sources are unpacked")
 
   lazy val ideaMainJars = taskKey[Classpath](
@@ -55,6 +56,14 @@ object Keys extends Defns with Init with Utils with Quirks {
 
   lazy val cleanUpTestEnvironment = taskKey[Unit](
     "Clean up IDEA test system and config directories")
+
+  lazy val ideaVMOptions = settingKey[IdeaVMOptions](
+    "IDEA platform java VM options used for running"
+  )
+
+  lazy val runIdea = inputKey[Unit](
+    "Runs debug IDEA instance with plugin"
+  )
 
   /* Deprecated task aliases */
 
