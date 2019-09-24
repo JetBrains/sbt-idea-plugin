@@ -17,6 +17,7 @@ trait Init { this: Keys.type =>
     dumpStructureTo in Global:= Def.inputTaskDyn {
       val path = targetFileParser.parsed
       createIDEAArtifactXml.?.all(ScopeFilter(inProjects(LocalRootProject))).value.flatten
+      createIDEARunConfiguration.?.all(ScopeFilter(inProjects(LocalRootProject))).value
       val fromStructure = dumpStructureTo.in(Global).?.value
       if (fromStructure.isDefined) {
         Def.inputTask {
@@ -27,6 +28,7 @@ trait Init { this: Keys.type =>
     }.evaluated,
     dumpStructure := Def.task {
       createIDEAArtifactXml.?.all(ScopeFilter(inProjects(LocalRootProject))).value.flatten
+      createIDEARunConfiguration.?.all(ScopeFilter(inProjects(LocalRootProject))).value
       dumpStructure.in(Global).?.value
     }.value
   )
@@ -120,6 +122,7 @@ trait Init { this: Keys.type =>
       else Def.task { }
     }.value,
 
+    createIDEARunConfiguration := genCreateRunConfigurationTask.value,
 
     ideaVMOptions := IdeaVMOptions(packageOutputDir.value.toPath, ideaPluginDirectory.value.toPath),
 
