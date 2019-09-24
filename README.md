@@ -26,7 +26,7 @@ From version 1.0.0, this plugin is published for sbt 0.13 and 1.0
 * Insert into `project/plugins.sbt`:
 
 ```Scala
-addSbtPlugin("org.jetbrains" % "sbt-idea-plugin" % "3.0.0")
+addSbtPlugin("org.jetbrains" % "sbt-idea-plugin" % "3.1.0")
 ```
 
 * [Enable](#auto-enable-the-plugin) the plugin for your desired projects (your main plugin project and all its dependencies)
@@ -100,7 +100,25 @@ ideaExternalPlugins += "org.intellij.scala::Nightly".toPlugin
 ideaExternalPlugins += "org.intellij.scala:2019.3.2:Eap".toPlugin
 ```
 
-#### `publishPlugin <channel> :: TaskKey[String]`
+#### `ideaVMOptions :: SettingKey[IdeaVMOptions]`
+
+Fine tune java VM options for running the plugin with [`runIdea`](#runidea-nopce-nodebug-suspend--inputkeyunit) task.
+Example:
+
+```SBT
+ideaVMOptions := ideaVMOptions.value.copy(xmx = 2048, xms = 256) 
+```
+
+#### `runIdea [noPCE] [noDebug] [suspend] :: InputKey[Unit]`
+
+Runs IDEA with current plugin. This task is non-blocking, so you can continue using SBT console.
+
+By default IDEA is run with non-suspending debug agent on port `5005`. This can be overridden by either optional
+arguments above, or by modifying default [`ideaVmOptions`](#ideavmoptions--settingkeyideavmoptions). 
+[`ProcessCancelledExceptiona`](https://www.jetbrains.org/intellij/sdk/docs/basics/architectural_overview/general_threading_rules.html#background-processes-and-processcanceledexception)
+can also be disabled for current run by providing `noPCE` option.
+
+#### `publishPlugin [channel] :: InputKey[String]`
 
 Upload and publish your IDEA plugin on https://plugins.jetbrains.com.
 In order to publish to the repo you need to 
@@ -235,18 +253,34 @@ Prints ASCII graph of currently selected project to console. Useful for debuggin
 
 ## Running the plugin
 
-To run IDEA with the plugin being developed, one needs to define a synthetic runner project in the build.
+### From SBT
+
+To run the plugin from SBT simply use [runIdea](#runidea-nopce-nodebug-suspend--inputkeyunit) task.
+Your plugin will be automatically compiled, an artifact built and attached to new IDEA instance.
+
+Debugger can later be attached to the process remotely - the default port is 5005.
+
+### From IDEA
+
+To run your plugin from IDEA, one needs to define a synthetic runner project in the build.
 This can be achieved with the helper function `createRunnerProject` which will set it up based on the root
-project of the plugin and a new name. Example:
+project of the plugin. Example:
 ```SBT
-lazy val ideaRunner = createRunnerProject(scalaCommunity, "idea-runner")
+lazy val ideaRunner = createRunnerProject(scalaCommunity)
 ```
 
-There are two ways to run/debug your plugin: from SBT and from IDEA
-
-- Running from bare sbt is as simple as invoking `run` task on the synthetic runner project. Debugger can later be attached to the process remotely - the default port is 5005.
-- Running from IDEA requires first invoking `$YOUR_RUNNER_PROJECT/createIDEARunConfiguration` task.
-  A new run configuration should appear in your local IDEA which can be launched via "Run" or "Debug"
+- `sbt-idea-plugin` generates IDEA-readable artifact xml and run configuration using `createIDEARunConfiguration` and
+`createIDEAArtifactXml` tasks
+- :exclamation: At the moment, to correctly import the project in IDEA  please use "Import with sbt shell" option.
+ Another `SBT Refresh` action might be necessary after the _initial_ import. This will automatically run the generators
+  above
+- If you don't want to use sbt shell, or automatic generation didn't work, you can manually run
+ `$YOUR_RUNNER_PROJECT/createIDEARunConfiguration` and `$YOUR_PLUGIN_PROJECT/createIDEAArtifactXml` tasks
+- After artifact and run configuration have been created(they're located in `.idea` folder of the project) you can 
+run or debug the new "IDEA" run configuration. This will compile the project, build the artifact and attach it to the
+ new IDEA instance
+- Note that doing an "SBT Refresh" (or manually running the tasks above) is required after making changes to your build
+that affect the final artifact(i.e. changing `libraryDependencies`), in order to update IDEA configs
   
 ## Auto enable the plugin
 
