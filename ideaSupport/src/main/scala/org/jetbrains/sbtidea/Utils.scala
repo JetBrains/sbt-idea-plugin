@@ -4,12 +4,8 @@ import org.jetbrains.sbtidea.packaging.PackagingKeys._
 import org.jetbrains.sbtidea.tasks._
 import sbt.Keys._
 import sbt.{Def, file, _}
-import ApiAdapter._
-import org.jetbrains.sbtidea.runIdea.{IdeaRunner, IdeaVMOptions}
 
 trait Utils { this: Keys.type =>
-
-  private lazy val ivyHomeDir: File = Option(System.getProperty("sbt.ivy.home")).fold(homePrefix / ".ivy2")(file)
 
   def createRunnerProject(from: ProjectReference, newProjectName: String = ""): Project =
     Project(newProjectName, file(s"target/tools/$newProjectName"))
@@ -40,19 +36,5 @@ trait Utils { this: Keys.type =>
     IO.write(outFile, data.getBytes)
     outFile
   }
-
-  private val baseVMOptions = Seq(
-    "-Xms256m",
-    "-Xmx2048m",
-    "-server",
-    "-ea",
-    s"-Dsbt.ivy.home=$ivyHomeDir"
-  )
-
-  def createTestVMOptions(testSystem: File, testConfig: File, pluginRoot: File): Seq[String] = baseVMOptions ++ Seq(
-    s"-Didea.system.path=$testSystem",
-    s"-Didea.config.path=$testConfig",
-    s"-Dplugin.path=$pluginRoot"
-  )
 
 }
