@@ -61,7 +61,6 @@ object IdeaVMOptions {
     """-Dsun.io.useCanonPrefixCache=false
       |-ea
       |-Djava.net.preferIPv4Stack=true
-      |-Djdk.http.auth.tunneling.disabledSchemes=""
       |-XX:+HeapDumpOnOutOfMemoryError
       |-XX:-OmitStackTraceInFastThrow
       |-Dawt.useSystemAAFontSettings=lcd
