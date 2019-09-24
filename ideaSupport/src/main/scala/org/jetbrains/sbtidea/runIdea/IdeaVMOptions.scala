@@ -46,7 +46,6 @@ case class IdeaVMOptions(pluginPath: Path,
       else if (jre.version == 8)
         buffer += s"-agentlib:jdwp=transport=dt_socket,server=y,suspend=$suspendValue,address=$debugPort"
     }
-    buffer += IdeaVMOptions.IDEA_MAIN
     buffer
   }
 
