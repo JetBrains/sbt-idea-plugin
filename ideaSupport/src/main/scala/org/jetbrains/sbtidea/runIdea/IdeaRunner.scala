@@ -89,6 +89,4 @@ class IdeaRunner(ideaClasspath: Seq[Path],
   }
 
   private def buildCPString: String = ideaClasspath.mkString(File.pathSeparator)
-
-  def vmOptionsSeq: Seq[String] = vmOptions.asSeq(getBundledJRE.getOrElse(detectLocalJRE))
 }

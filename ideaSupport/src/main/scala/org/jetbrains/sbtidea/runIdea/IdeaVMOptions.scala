@@ -20,7 +20,7 @@ case class IdeaVMOptions(pluginPath: Path,
                          test: Boolean = false) {
 
 
-  private def build(implicit jre: JRE): Seq[String] = {
+  private def build: Seq[String] = {
     val buffer = new mutable.ArrayBuffer[String]()
     buffer ++= IdeaVMOptions.STATIC_OPTS
     buffer +=  s"-Xms${xms}m"
@@ -39,18 +39,15 @@ case class IdeaVMOptions(pluginPath: Path,
       buffer += "-Didea.ProcessCanceledException=disabled"
     if (!test)
       buffer += "-Didea.is.internal=true"
-    if (debug){
+    if (debug) {
       val suspendValue = if (suspend) "y" else "n"
-      if (jre.version >= 9)
-        buffer += s"-agentlib:jdwp=transport=dt_socket,server=y,suspend=$suspendValue,address=*:$debugPort"
-      else if (jre.version == 8)
-        buffer += s"-agentlib:jdwp=transport=dt_socket,server=y,suspend=$suspendValue,address=$debugPort"
+      buffer += s"-agentlib:jdwp=transport=dt_socket,server=y,suspend=$suspendValue,address=$debugPort"
     }
     buffer
   }
 
-  def asSeq(implicit jre: JRE): Seq[String] = build
-  def asJava(implicit jre: JRE): java.util.List[String] = asSeq.asJava
+  def asSeq: Seq[String] = build
+  def asJava: java.util.List[String] = asSeq.asJava
 }
 
 object IdeaVMOptions {

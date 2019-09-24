@@ -30,12 +30,11 @@ trait Utils { this: Keys.type =>
     implicit  val log: PluginLogger = new SbtPluginLogger(streams.value)
     val configName = "IDEA"
     val vmOptions = ideaVMOptions.value.copy(debug = false)
-    val runner = new IdeaRunner(ideaMainJars.value.map(_.data.toPath), packageOutputDir.value.toPath, vmOptions)
     val data = IdeaConfigBuilder.buildRunConfigurationXML(
       name.value,
       configName,
       name.value,
-      runner.vmOptionsSeq,
+      vmOptions.asSeq,
       ideaPluginDirectory.value)
     val outFile = baseDirectory.in(ThisBuild).value / ".idea" / "runConfigurations" / s"$configName.xml"
     IO.write(outFile, data.getBytes)
