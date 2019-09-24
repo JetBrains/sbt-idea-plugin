@@ -22,16 +22,16 @@ trait Utils { this: Keys.type =>
         packageMethod := org.jetbrains.sbtidea.packaging.PackagingKeys.PackagingMethod.Skip(),
         unmanagedJars in Compile := ideaMainJars.value,
         unmanagedJars in Compile ++= maybeToolsJar,
+        createIDEARunConfiguration := genCreateRunConfigurationTask(from).value,
         autoScalaLibrary := !hasPluginsWithScala(ideaExternalPlugins.all(ScopeFilter(inDependencies(from))).value.flatten)
       )
 
-
-  def genCreateRunConfigurationTask: Def.Initialize[Task[File]] = Def.task {
+  def genCreateRunConfigurationTask(from: ProjectReference): Def.Initialize[Task[File]] = Def.task {
     implicit  val log: PluginLogger = new SbtPluginLogger(streams.value)
     val configName = "IDEA"
     val vmOptions = ideaVMOptions.value.copy(debug = false)
     val data = IdeaConfigBuilder.buildRunConfigurationXML(
-      name.value,
+      name.in(from).value,
       configName,
       name.value,
       vmOptions.asSeq,

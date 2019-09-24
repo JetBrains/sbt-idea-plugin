@@ -122,8 +122,6 @@ trait Init { this: Keys.type =>
       else Def.task { }
     }.value,
 
-    createIDEARunConfiguration := genCreateRunConfigurationTask.value,
-
     ideaVMOptions := IdeaVMOptions(packageOutputDir.value.toPath, ideaPluginDirectory.value.toPath),
 
     runIdea := {
