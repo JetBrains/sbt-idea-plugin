@@ -63,6 +63,6 @@ lazy val ideaSupport = (project in file(".") / "ideaSupport")
     libraryDependencies += "org.scalaj" %% "scalaj-http" % "2.3.0"
   )
 
-lazy val root = (project in file("."))
+lazy val sbtIdeaPlugin = (project in file("."))
   .settings(publish := {}, publishLocal := {})
   .aggregate(core, packaging, ideaSupport, visualizer)
