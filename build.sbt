@@ -33,7 +33,8 @@ lazy val core = (project in file("core"))
   .enablePlugins(SbtPlugin)
   .settings(commonSettings)
   .settings(
-    name := "sbt-declarative-core"
+    name    := "sbt-declarative-core",
+    version := "3.1.0"
   )
 
 lazy val visualizer = (project in file(".") / "visualizer")
@@ -41,7 +42,8 @@ lazy val visualizer = (project in file(".") / "visualizer")
   .settings(commonSettings)
   .dependsOn(core)
   .settings(
-    name := "sbt-declarative-visualizer",
+    name    := "sbt-declarative-visualizer",
+    version := "3.1.0",
     libraryDependencies += "com.github.mutcianm" %% "ascii-graphs" % "0.0.6"
   )
 
@@ -50,7 +52,8 @@ lazy val packaging = (project in file(".") / "packaging")
   .settings(commonSettings)
   .dependsOn(core)
   .settings(
-    name := "sbt-declarative-packaging",
+    name    := "sbt-declarative-packaging",
+    version := "3.1.0",
     libraryDependencies += "org.pantsbuild" % "jarjar" % "1.6.6"
   )
 
@@ -59,7 +62,8 @@ lazy val ideaSupport = (project in file(".") / "ideaSupport")
   .settings(commonSettings)
   .dependsOn(core, packaging, visualizer)
   .settings(
-    name := "sbt-idea-plugin",
+    name    := "sbt-idea-plugin",
+    version := "3.1.1",
     libraryDependencies += "org.scalaj" %% "scalaj-http" % "2.3.0"
   )
 
