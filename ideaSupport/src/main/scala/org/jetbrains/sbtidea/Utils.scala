@@ -20,7 +20,7 @@ trait Utils { this: Keys.type =>
         unmanagedJars in Compile ++= maybeToolsJar,
         createIDEARunConfiguration := genCreateRunConfigurationTask(from).value,
         autoScalaLibrary := !hasPluginsWithScala(ideaExternalPlugins.all(ScopeFilter(inDependencies(from))).value.flatten)
-      )
+      ).enablePlugins(SbtIdeaPlugin)
 
   def genCreateRunConfigurationTask(from: ProjectReference): Def.Initialize[Task[File]] = Def.task {
     implicit  val log: PluginLogger = new SbtPluginLogger(streams.value)
