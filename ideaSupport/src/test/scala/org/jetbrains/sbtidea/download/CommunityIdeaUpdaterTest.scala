@@ -23,7 +23,7 @@ final class CommunityIdeaUpdaterTest extends FunSuite with Matchers with IdeaMoc
     Files.createDirectories(tmpDir.resolve("plugins"))
     val updater = new CommunityIdeaUpdater(tmpDir, logger)
     updater.updateIdeaAndPlugins(
-      BuildInfo.apply("192.6262.9", Keys.IdeaEdition.Community),
+      BuildInfo.apply("192.6262.9", Keys.IntelliJPlatform.IdeaCommunity),
       "mobi.hsz.idea.gitignore".toPlugin :: "org.intellij.scala:2019.2.1144:Nightly".toPlugin :: Nil
     )
 //    sbt.IO.delete(tmpDir.toFile)

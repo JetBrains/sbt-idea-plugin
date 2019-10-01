@@ -1,11 +1,7 @@
 package org.jetbrains.sbtidea.download
 
-import java.nio.file._
-
+import org.jetbrains.sbtidea.CapturingLogger
 import org.jetbrains.sbtidea.Keys.String2Plugin
-import org.jetbrains.sbtidea.{CapturingLogger, ConsoleLogger, PluginLogger}
-import org.scalatest.{FunSuite, Matchers}
-import org.jetbrains.sbtidea.Keys.IdeaEdition
 import org.jetbrains.sbtidea.download.api.PluginMetadata
 
 final class IdeaPluginInstallerTest extends IdeaPluginInstallerTestBase {

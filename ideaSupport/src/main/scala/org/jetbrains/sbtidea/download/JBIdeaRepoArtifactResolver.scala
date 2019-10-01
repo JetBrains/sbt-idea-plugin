@@ -12,29 +12,29 @@ trait JBIdeaRepoArtifactResolver extends IdeaResolver {
     val (build, edition)  = (idea.buildNumber, idea.edition.name)
     val ideaUrl           = getUrl(idea, ".zip")
     // sources are available only for Community Edition
-    val srcJarUrl         = getUrl(idea.copy(edition = Keys.IdeaEdition.Community), "-sources.jar")
+    val srcJarUrl         = getUrl(idea.copy(edition = Keys.IntelliJPlatform.IdeaCommunity), "-sources.jar")
 
     ArtifactPart(ideaUrl, ArtifactKind.IDEA_DIST, s"$edition-$build.zip") ::
       ArtifactPart(srcJarUrl, ArtifactKind.IDEA_SRC, s"$edition-$build-sources.jar", optional = true) :: Nil
   }
 
   //noinspection NoTailRecursionAnnotation
-  protected def getUrl(idea: BuildInfo, artifactSuffix: String, trySnapshot: Boolean = false): URL = {
+  protected def getUrl(platform: BuildInfo, artifactSuffix: String, trySnapshot: Boolean = false): URL = {
     val (repo, suffix)  =
-      if      (trySnapshot)                           "snapshots" -> "-EAP-SNAPSHOT"
-      else if (idea.buildNumber.contains("SNAPSHOT")) "snapshots" -> ""
-      else                                            "releases"  -> ""
-    val baseUrl         = s"https://www.jetbrains.com/intellij-repository/$repo/com/jetbrains/intellij/idea"
-    val build           = idea.buildNumber + suffix
+      if      (trySnapshot)                               "snapshots" -> "-EAP-SNAPSHOT"
+      else if (platform.buildNumber.contains("SNAPSHOT")) "snapshots" -> ""
+      else                                                "releases"  -> ""
+    val baseUrl         = s"https://www.jetbrains.com/intellij-repository/$repo/com/jetbrains/intellij/${platform.edition.platformPrefix}"
+    val build           = platform.buildNumber + suffix
     var stream: Option[InputStream] = None
     try {
-      val result  = url(s"$baseUrl/${idea.edition.name}/$build/${idea.edition.name}-$build$artifactSuffix")
+      val result  = url(s"$baseUrl/${platform.edition.name}/$build/${platform.edition.name}-$build$artifactSuffix")
       stream      = Some(result.openStream())
       result
     } catch {
-      case _: FileNotFoundException if !trySnapshot && !idea.buildNumber.endsWith("SNAPSHOT") =>
-        println(s"Can't find $idea in releases, trying snapshots")
-        getUrl(idea, artifactSuffix, trySnapshot = true)
+      case _: FileNotFoundException if !trySnapshot && !platform.buildNumber.endsWith("SNAPSHOT") =>
+        println(s"Can't find $platform in releases, trying snapshots")
+        getUrl(platform, artifactSuffix, trySnapshot = true)
     } finally {
       stream.foreach(_.close())
     }

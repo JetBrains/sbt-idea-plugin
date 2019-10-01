@@ -11,7 +11,7 @@ package object download {
     val IDEA_DIST, IDEA_SRC, IDEA_PLUGIN, MISC = Value
   }
 
-  case class BuildInfo(buildNumber: String, edition: IdeaEdition)
+  case class BuildInfo(buildNumber: String, edition: IntelliJPlatform)
 
   case class ArtifactPart(url: URL,
                           kind: ArtifactKind.ArtifactKind,

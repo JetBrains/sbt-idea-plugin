@@ -15,7 +15,7 @@ trait IdeaMock extends TmpDirUtils {
   protected val IDEA_EDITION      = "IU"
   protected val IDEA_DIST         = s"idea$IDEA_EDITION-$IDEA_VERSION.zip"
   protected val IDEA_DIST_PATH    = s"/org/jetbrains/sbtidea/download/$IDEA_DIST"
-  protected val IDEA_BUILDINFO: BuildInfo = BuildInfo(IDEA_VERSION, Keys.IdeaEdition.Ultimate)
+  protected val IDEA_BUILDINFO: BuildInfo = BuildInfo(IDEA_VERSION, Keys.IntelliJPlatform.IdeaUltimate)
 
   implicit class PathExt(path: Path) {
     def /(string: String): Path = path.resolve(string)

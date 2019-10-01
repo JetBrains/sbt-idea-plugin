@@ -21,7 +21,7 @@ object Keys extends Defns with Init with Utils with Quirks {
   lazy val ideaExternalPlugins = settingKey[Seq[IdeaPlugin]](
     "List of third-party plugins this project depends on")
 
-  lazy val ideaEdition = settingKey[IdeaEdition](
+  lazy val ideaEdition = settingKey[IntelliJPlatform](
     "Edition of Intellij IDEA to use in project")
 
   lazy val ideaDownloadSources = settingKey[Boolean](

@@ -40,18 +40,39 @@ trait Defns { this: Keys.type =>
     }
   }
 
-  sealed trait IdeaEdition {
+  sealed trait IntelliJPlatform {
     val name: String
     def shortname: String = name.takeRight(2)
+    def platformPrefix: String = name.substring(0, name.length - 2)
   }
 
-  object IdeaEdition {
-    object Community extends IdeaEdition {
+  object IntelliJPlatform {
+    object IdeaCommunity extends IntelliJPlatform {
       override val name = "ideaIC"
     }
 
-    object Ultimate extends IdeaEdition {
+    object IdeaUltimate extends IntelliJPlatform {
       override val name = "ideaIU"
+    }
+
+    object PyCharmCommunity extends IntelliJPlatform {
+      override val name: String = "pycharmPC"
+    }
+
+    object PyCharmProfessional extends IntelliJPlatform {
+      override val name: String = "pycharmPY"
+    }
+
+    object CLion extends IntelliJPlatform {
+      override val name: String = "clion"
+      override def platformPrefix: String = name
+      override def shortname: String = name
+    }
+
+    object MPS extends IntelliJPlatform {
+      override val name: String = "mps"
+      override def platformPrefix: String = name
+      override def shortname: String = name
     }
   }
 
