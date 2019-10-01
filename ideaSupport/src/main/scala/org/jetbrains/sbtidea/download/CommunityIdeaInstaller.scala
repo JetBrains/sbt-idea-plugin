@@ -20,7 +20,7 @@ abstract class CommunityIdeaInstaller(ideaInstallDir: Path,
   override def installIdeaDist(files: Seq[(ArtifactPart, Path)]): Path = {
     val dist = files
       .collectFirst { case (ArtifactPart(_, ArtifactKind.IDEA_DIST, _, _), file) => file }
-      .getOrElse(throw new RuntimeException(s"Can't install IDEA: distribution is missing: $files"))
+      .getOrElse(throw new RuntimeException(s"Can't install ${buildInfo.edition.name}: distribution is missing: $files"))
     val src = files
       .collectFirst { case (ArtifactPart(_, ArtifactKind.IDEA_SRC, _, _), file) if file.toFile.exists() => file }
     val extras = files
@@ -32,7 +32,7 @@ abstract class CommunityIdeaInstaller(ideaInstallDir: Path,
     installExtras(extras)
     if (src.nonEmpty)
       installSources(src.head)
-    else log.warn(s"No IDEA sources have been downloaded")
+    else log.warn(s"No ${buildInfo.edition.name} sources have been downloaded")
 
     fixAccessRights()
 
@@ -42,24 +42,24 @@ abstract class CommunityIdeaInstaller(ideaInstallDir: Path,
   protected def installDist(artifact: Path): Unit = {
     import sys.process._
 
-    log.info(s"Extracting IDEA dist to $tmpDir")
+    log.info(s"Extracting ${buildInfo.edition.name} dist to $tmpDir")
 
     if (artifact.getFileName.toString.endsWith(".zip")) {
       sbt.IO.unzip(artifact.toFile, tmpDir.toFile)
     } else if (artifact.getFileName.toString.endsWith(".tar.gz")) {
       if (s"tar xfz $artifact -C $tmpDir --strip 1".! != 0) {
-        throw new RuntimeException(s"Failed to install IDEA dist: tar command failed")
+        throw new RuntimeException(s"Failed to install ${buildInfo.edition.name} dist: tar command failed")
       }
     } else throw new RuntimeException(s"Unexpected dist archive format(not zip or gzip): $artifact")
 
     Files.move(tmpDir, getInstallDir)
     NioUtils.delete(artifact)
-    log.info(s"Installed IDEA($buildInfo) to $getInstallDir")
+    log.info(s"Installed ${buildInfo.edition.name}($buildInfo) to $getInstallDir")
   }
 
   protected def installSources(artifact: Path): Unit = {
     Files.move(artifact, getInstallDir.resolve("sources.zip"))
-    log.info(s"IDEA sources installed")
+    log.info(s"${buildInfo.edition.name} sources installed")
   }
 
   protected def installExtras(files: Seq[(ArtifactPart, Path)]): Unit = ()

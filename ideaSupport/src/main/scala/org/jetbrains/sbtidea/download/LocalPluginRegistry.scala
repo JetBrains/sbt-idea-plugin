@@ -5,7 +5,7 @@ import java.nio.file.{Files, Path, Paths}
 import java.util
 import java.util.function.Consumer
 
-import org.jetbrains.sbtidea.Keys.IdeaPlugin
+import org.jetbrains.sbtidea.Keys.IntellijPlugin
 import org.jetbrains.sbtidea.PluginLogger
 import org.jetbrains.sbtidea.download.api.PluginMetadata
 import org.jetbrains.sbtidea.packaging.artifact.using
@@ -63,26 +63,26 @@ class LocalPluginRegistry(ideaRoot: Path, log: PluginLogger) {
     }
 
 
-  def markPluginInstalled(ideaPlugin: IdeaPlugin, to: Path): Unit = {
+  def markPluginInstalled(ideaPlugin: IntellijPlugin, to: Path): Unit = {
     val key = ideaPlugin match {
-      case IdeaPlugin.Url(url) => url.toString
-      case IdeaPlugin.Id(id, _, _) => id
+      case IntellijPlugin.Url(url) => url.toString
+      case IntellijPlugin.Id(id, _, _) => id
     }
     index.put(key, to.toString)
     writeIndexFile()
   }
 
-  def isPluginInstalled(ideaPlugin: IdeaPlugin): Boolean = {
+  def isPluginInstalled(ideaPlugin: IntellijPlugin): Boolean = {
     ideaPlugin match {
-      case IdeaPlugin.Url(url) => index.containsKey(url.toString)
-      case IdeaPlugin.Id(id, _, _) => index.containsKey(id)
+      case IntellijPlugin.Url(url) => index.containsKey(url.toString)
+      case IntellijPlugin.Id(id, _, _) => index.containsKey(id)
     }
   }
 
-  def getInstalledPluginRoot(ideaPlugin: IdeaPlugin): Path = {
+  def getInstalledPluginRoot(ideaPlugin: IntellijPlugin): Path = {
     val key = ideaPlugin match {
-      case IdeaPlugin.Url(url) => url
-      case IdeaPlugin.Id(id, _, _) => id
+      case IntellijPlugin.Url(url) => url
+      case IntellijPlugin.Id(id, _, _) => id
     }
     if (!index.containsKey(key))
       throw new MissingPluginRootException(ideaPlugin.toString)

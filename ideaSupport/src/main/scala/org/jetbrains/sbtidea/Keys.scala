@@ -6,64 +6,62 @@ import sbt._
 
 object Keys extends Defns with Init with Utils with Quirks {
 
-  lazy val ideaPluginName = settingKey[String](
+  lazy val intellijPluginName = settingKey[String](
     "Name of the plugin you're developing")
 
-  lazy val ideaBuild = settingKey[String](
-    "Number of IntelliJ IDEA build to use in project")
+  lazy val intellijBuild = settingKey[String](
+    "Number of IntelliJ IntelliJ Platform build to use in project")
 
-  lazy val ideaDownloadDirectory = settingKey[File](
-    "Directory where IDEA binaries and sources are downloaded")
+  lazy val intellijDownloadDirectory = settingKey[File](
+    "Directory where IntelliJ Platform binaries and sources are downloaded")
 
-  lazy val ideaInternalPlugins = settingKey[Seq[String]](
-    "List of names of bundled IntelliJ IDEA plugins this project depends on")
+  lazy val intellijInternalPlugins = settingKey[Seq[String]](
+    "List of names of bundled IntelliJ IntelliJ Platform plugins this project depends on")
 
-  lazy val ideaExternalPlugins = settingKey[Seq[IdeaPlugin]](
+  lazy val intellijExternalPlugins = settingKey[Seq[IntellijPlugin]](
     "List of third-party plugins this project depends on")
 
-  lazy val ideaEdition = settingKey[IntelliJPlatform](
-    "Edition of Intellij IDEA to use in project")
+  lazy val intellijPlatform = settingKey[IntelliJPlatform](
+    "Edition of Intellij Platform to use in project")
 
-  lazy val ideaDownloadSources = settingKey[Boolean](
-    "Flag indicating whether IDEA sources should be downloaded too")
+  lazy val intellijDownloadSources = settingKey[Boolean](
+    "Flag indicating whether IntelliJ Platform sources should be downloaded too")
 
-  lazy val updateIdea = taskKey[Unit](
-    "Download Intellij IDEA binaries, sources and external plugins for specified build")
+  lazy val updateIntellij = taskKey[Unit](
+    "Download Intellij IntelliJ Platform binaries, sources and external plugins for specified build")
 
   lazy val publishPlugin =inputKey[Unit](
-    "Publish IDEA plugin on plugins.jetbrains.com")
+    "Publish IntelliJ Platform plugin on plugins.jetbrains.com")
 
-  lazy val ideaPluginDirectory = settingKey[File](
-    "Default base directory of IDEA config directories for this plugin")
+  lazy val intellijPluginDirectory = settingKey[File](
+    "Default base directory of IntelliJ Platform config directories for this plugin")
 
-  lazy val ideaBaseDirectory = settingKey[File](
-    "Directory where downloaded IDEA binaries and sources are unpacked")
+  lazy val intellijBaseDirectory = settingKey[File](
+    "Directory where downloaded IntelliJ Platform binaries and sources are unpacked")
 
-  lazy val ideaMainJars = taskKey[Classpath](
-    "Classpath containing main IDEA jars")
+  lazy val intellijMainJars = taskKey[Classpath](
+    "Classpath containing main IntelliJ Platform jars")
 
-  lazy val ideaPluginJars = taskKey[Classpath](
-    "Classpath containing jars of internal IDEA plugins used in this project")
+  lazy val intellijPluginJars = taskKey[Classpath](
+    "Classpath containing jars of internal IntelliJ Platform plugins used in this project")
 
-  lazy val ideaFullJars = taskKey[Classpath](
-    "Complete classpath of IDEA's and internal and external plugins' jars")
+  lazy val intellijFullJars = taskKey[Classpath](
+    "Complete classpath of IntelliJ Platform's internal and external plugins' jars")
 
-  lazy val ideaTestConfigDir = settingKey[File](
-    "IDEA's config directory for tests")
+  lazy val intellijTestConfigDir = settingKey[File](
+    "IntelliJ Platform's config directory for tests")
 
-  lazy val ideaTestSystemDir = settingKey[File](
-    "IDEA's system directory for tests")
+  lazy val intellijTestSystemDir = settingKey[File](
+    "IntelliJ Platform's system directory for tests")
 
   lazy val cleanUpTestEnvironment = taskKey[Unit](
-    "Clean up IDEA test system and config directories")
+    "Clean up IntelliJ Platform test system and config directories")
 
-  lazy val ideaVMOptions = settingKey[IdeaVMOptions](
-    "IDEA platform java VM options used for running"
-  )
+  lazy val intellijVMOptions = settingKey[IdeaVMOptions](
+    "IntelliJ Platform java VM options used for running")
 
-  lazy val runIdea = inputKey[Unit](
-    "Runs debug IDEA instance with plugin"
-  )
+  lazy val runIDE = inputKey[Unit](
+    "Runs debug IntelliJ Platform instance with plugin")
 
   /* Deprecated task aliases */
 

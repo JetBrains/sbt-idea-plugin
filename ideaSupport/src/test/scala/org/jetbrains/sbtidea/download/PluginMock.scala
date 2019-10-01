@@ -3,7 +3,7 @@ package org.jetbrains.sbtidea.download
 import java.net.URI
 import java.nio.file._
 
-import org.jetbrains.sbtidea.Keys.IdeaPlugin
+import org.jetbrains.sbtidea.Keys.IntellijPlugin
 import org.jetbrains.sbtidea.TmpDirUtils
 import org.jetbrains.sbtidea.download.api.PluginMetadata
 import org.jetbrains.sbtidea.packaging.artifact
@@ -13,7 +13,7 @@ import scala.collection.JavaConverters._
 trait PluginMock extends TmpDirUtils {
 
   implicit class PluginMetaDataExt(metadata: PluginMetadata) {
-    def toPluginId: IdeaPlugin.Id = IdeaPlugin.Id(metadata.id, Some(metadata.version), None)
+    def toPluginId: IntellijPlugin.Id = IntellijPlugin.Id(metadata.id, Some(metadata.version), None)
   }
 
   protected def createPluginJarMock(metaData: PluginMetadata): Path = {

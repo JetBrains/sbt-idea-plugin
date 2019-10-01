@@ -8,8 +8,8 @@ import org.scalatest.{FunSuite, Matchers}
 class IdeaInstallerTest extends FunSuite with Matchers with IdeaMock with TmpDirUtils with ConsoleLogger {
 
   private def createInstaller: CommunityIdeaInstaller = new CommunityIdeaInstaller(newTmpDir, IDEA_BUILDINFO, log) {
-    override def isPluginAlreadyInstalledAndUpdated(plugin: Keys.IdeaPlugin): Boolean = true
-    override def installIdeaPlugin(plugin: Keys.IdeaPlugin, file: Path): Path = null
+    override def isPluginAlreadyInstalledAndUpdated(plugin: Keys.IntellijPlugin): Boolean = true
+    override def installIdeaPlugin(plugin: Keys.IntellijPlugin, file: Path): Path = null
   }
 
   test("IdeaInstaller installs IDEA dist") {

@@ -12,7 +12,7 @@ trait Quirks { this: Keys.type =>
     "intellij.haskell"
   )
 
-  def hasPluginsWithScala(plugins: Seq[IdeaPlugin]): Boolean =
+  def hasPluginsWithScala(plugins: Seq[IntellijPlugin]): Boolean =
     !plugins.exists(plugin => pluginsWithScala.exists(id => plugin.toString.matches(s".*$id.*")))
 
   //noinspection MapGetOrElseBoolean : scala 2.10 nas no Option.exists

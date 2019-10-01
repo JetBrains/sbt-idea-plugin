@@ -6,7 +6,7 @@ object IdeaConfigBuilder {
   def buildRunConfigurationXML(artifactName: String, configName: String, moduleName: String, javaOptions: Seq[String], dataDir: File): String = {
           s"""<component name="ProjectRunConfigurationManager">
          |  <configuration default="false" name="$configName" type="Application" factoryName="Application">
-         |    <log_file alias="IDEA" path="$dataDir/system/log/idea.log" />
+         |    <log_file alias="IJ LOG" path="$dataDir/system/log/idea.log" />
          |    <option name="MAIN_CLASS_NAME" value="com.intellij.idea.Main" />
          |    <module name="$moduleName" />
          |    <option name="VM_PARAMETERS" value="${javaOptions.mkString(" ")}" />

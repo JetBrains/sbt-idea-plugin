@@ -7,7 +7,7 @@ import org.jetbrains.sbtidea.Keys.IntelliJPlatform
 import org.jetbrains.sbtidea.{ConsoleLogger, PluginLogger}
 import org.scalatest.{FunSuite, Matchers}
 
-trait IdeaPluginInstallerTestBase extends FunSuite with Matchers with IdeaMock with PluginMock with ConsoleLogger {
+trait IntellijPluginInstallerTestBase extends FunSuite with Matchers with IdeaMock with PluginMock with ConsoleLogger {
   protected lazy val ideaRoot: Path   = installIdeaMock
   protected val pluginsRoot: Path     = ideaRoot / "plugins"
   protected val ideaBuild: BuildInfo  = BuildInfo(IDEA_VERSION, IntelliJPlatform.IdeaUltimate)

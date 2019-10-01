@@ -22,7 +22,7 @@ trait IdeaMock extends TmpDirUtils {
     def list: Seq[Path] = Files.list(path).iterator().asScala.toSeq
   }
 
-  protected val bundledPlugins: List[Keys.IdeaPlugin] =
+  protected val bundledPlugins: List[Keys.IntellijPlugin] =
     "org.jetbrains.plugins.yaml".toPlugin ::
     "com.intellij.properties".toPlugin :: Nil
 

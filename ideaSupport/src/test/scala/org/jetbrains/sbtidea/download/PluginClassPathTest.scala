@@ -6,7 +6,7 @@ import org.jetbrains.sbtidea.download.LocalPluginRegistry.MissingPluginRootExcep
 import org.jetbrains.sbtidea.download.api.PluginMetadata
 import org.jetbrains.sbtidea.tasks.CreatePluginsClasspath
 
-class PluginClassPathTest extends IdeaPluginInstallerTestBase {
+class PluginClassPathTest extends IntellijPluginInstallerTestBase {
 
   test("plugin classpath contains all necessary jars") {
     val installer = createInstaller()

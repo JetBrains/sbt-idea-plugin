@@ -10,7 +10,7 @@ import org.jetbrains.sbtidea.download.LocalPluginRegistry._
 
 object CreatePluginsClasspath {
 
-  def apply(pluginsBase: File, pluginsUsed: Seq[String], externalPlugins: Seq[IdeaPlugin], log: PluginLogger): Classpath = {
+  def apply(pluginsBase: File, pluginsUsed: Seq[String], externalPlugins: Seq[IntellijPlugin], log: PluginLogger): Classpath = {
     val localRegistry = new LocalPluginRegistry(pluginsBase.getParentFile.toPath, log)
     val externalPluginsFinder = externalPlugins
       .map(localRegistry.getInstalledPluginRoot)

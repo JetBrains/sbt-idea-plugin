@@ -2,7 +2,7 @@ package org.jetbrains.sbtidea.download
 
 import java.nio.file.{Files, Path}
 
-import org.jetbrains.sbtidea.Keys.IdeaPlugin
+import org.jetbrains.sbtidea.Keys.IntellijPlugin
 import org.jetbrains.sbtidea.download.LocalPluginRegistry._
 import org.jetbrains.sbtidea.download.api.{IdeaInstaller, PluginMetadata}
 
@@ -10,10 +10,10 @@ trait IdeaPluginInstaller extends IdeaInstaller {
 
   private val localPluginRegistry = new LocalPluginRegistry(getInstallDir, log)
 
-  override def isPluginAlreadyInstalledAndUpdated(plugin: IdeaPlugin): Boolean =
+  override def isPluginAlreadyInstalledAndUpdated(plugin: IntellijPlugin): Boolean =
     localPluginRegistry.isPluginInstalled(plugin) && isInstalledPluginUpToDate(plugin)
 
-  protected def isInstalledPluginUpToDate(plugin: IdeaPlugin): Boolean = {
+  protected def isInstalledPluginUpToDate(plugin: IntellijPlugin): Boolean = {
     val pluginRoot = localPluginRegistry.getInstalledPluginRoot(plugin)
     val descriptor = extractInstalledPluginDescriptor(pluginRoot)
     descriptor match {
@@ -28,10 +28,10 @@ trait IdeaPluginInstaller extends IdeaInstaller {
           return false
         }
         plugin match {
-          case IdeaPlugin.Id(_, Some(version), _) if metadata.version != version =>
+          case IntellijPlugin.Id(_, Some(version), _) if metadata.version != version =>
             log.info(s"Locally installed plugin $plugin has different version: ${metadata.version} != $version")
             return false
-          case IdeaPlugin.Id(_, None, channel) =>
+          case IntellijPlugin.Id(_, None, channel) =>
             getMoreUpToDateVersion(metadata, channel.getOrElse("")) match {
               case None =>
               case Some(newVersion) =>
@@ -44,7 +44,7 @@ trait IdeaPluginInstaller extends IdeaInstaller {
     true
   }
 
-  override def installIdeaPlugin(plugin: IdeaPlugin, artifact: Path): Path = {
+  override def installIdeaPlugin(plugin: IntellijPlugin, artifact: Path): Path = {
     val installedPluginRoot = if (!isPluginJar(artifact)) {
       val extractDir = Files.createTempDirectory(getInstallDir, s"${buildInfo.edition.name}-${buildInfo.buildNumber}-plugin")
       log.info(s"Extracting plugin '$plugin to $extractDir")

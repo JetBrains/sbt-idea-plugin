@@ -1,6 +1,6 @@
 package org.jetbrains.sbtidea.download
 
-import org.jetbrains.sbtidea.Keys.IdeaPlugin
+import org.jetbrains.sbtidea.Keys.IntellijPlugin
 import org.jetbrains.sbtidea.download.api.IdeaResolver
 import sbt.URL
 
@@ -11,21 +11,21 @@ object PluginRepoUtils {
 
   private def getPluginXmlDescriptor(idea: BuildInfo, pluginId: String, channel: String): xml.Elem = {
     val chanStr = if (channel.nonEmpty) s"&channel=$channel" else ""
-    val urlStr = s"$baseUrl/plugins/list?pluginId=$pluginId$chanStr&build=${idea.edition.shortname}-${idea.buildNumber}"
+    val urlStr = s"$baseUrl/plugins/list?pluginId=$pluginId$chanStr&build=${idea.edition.edition}-${idea.buildNumber}"
     val infoUrl = new URL(urlStr)
     XML.load(infoUrl)
   }
 
-  def getPluginDownloadURL(idea: BuildInfo, pluginInfo: IdeaPlugin.Id): URL = {
+  def getPluginDownloadURL(idea: BuildInfo, pluginInfo: IntellijPlugin.Id): URL = {
     val urlStr = pluginInfo match {
-      case IdeaPlugin.Id(id, Some(version), Some(channel)) =>
+      case IntellijPlugin.Id(id, Some(version), Some(channel)) =>
         s"$baseUrl/plugin/download?pluginId=$id&version=$version&channel=$channel"
-      case IdeaPlugin.Id(id, Some(version), None) =>
+      case IntellijPlugin.Id(id, Some(version), None) =>
         s"$baseUrl/plugin/download?pluginId=$id&version=$version"
-      case IdeaPlugin.Id(id, None, Some(channel)) =>
-        s"$baseUrl/pluginManager?action=download&id=$id&channel=$channel&build=${idea.edition.shortname}-${idea.buildNumber}"
-      case IdeaPlugin.Id(id, None, None) =>
-        s"$baseUrl/pluginManager?action=download&id=$id&build=${idea.edition.shortname}-${idea.buildNumber}"
+      case IntellijPlugin.Id(id, None, Some(channel)) =>
+        s"$baseUrl/pluginManager?action=download&id=$id&channel=$channel&build=${idea.edition.edition}-${idea.buildNumber}"
+      case IntellijPlugin.Id(id, None, None) =>
+        s"$baseUrl/pluginManager?action=download&id=$id&build=${idea.edition.edition}-${idea.buildNumber}"
     }
     new URL(urlStr)
   }

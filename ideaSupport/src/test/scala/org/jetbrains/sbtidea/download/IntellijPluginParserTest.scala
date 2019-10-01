@@ -1,12 +1,12 @@
 package org.jetbrains.sbtidea.download
 
-import org.jetbrains.sbtidea.Keys.IdeaPlugin._
+import org.jetbrains.sbtidea.Keys.IntellijPlugin._
 import org.jetbrains.sbtidea.Keys._
 import org.scalatest.{FunSuite, Matchers}
 
 import scala.language.postfixOps
 
-final class IdeaPluginParserTest extends FunSuite with Matchers {
+final class IntellijPluginParserTest extends FunSuite with Matchers {
 
   private def id(str: String) = str.toPlugin.asInstanceOf[Id]
 

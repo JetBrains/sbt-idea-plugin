@@ -35,53 +35,53 @@ trait Init { this: Keys.type =>
   )
 
   lazy val buildSettings: Seq[Setting[_]] = Seq(
-    ideaPluginName      := name.in(LocalRootProject).value,
-    ideaBuild           := "LATEST-EAP-SNAPSHOT",
-    ideaEdition         := IntelliJPlatform.IdeaCommunity,
-    ideaDownloadSources := true,
-    ideaPluginDirectory   := homePrefix / s".${ideaPluginName.value}Plugin${ideaEdition.value.shortname}",
-    ideaBaseDirectory     := ideaDownloadDirectory.value / ideaBuild.value,
-    ideaDownloadDirectory := ideaPluginDirectory.value / "sdk",
-    ideaTestConfigDir     := ideaPluginDirectory.value / "test-config",
-    ideaTestSystemDir     := ideaPluginDirectory.value / "test-system",
+    intellijPluginName      := name.in(LocalRootProject).value,
+    intellijBuild           := "LATEST-EAP-SNAPSHOT",
+    intellijPlatform         := IntelliJPlatform.IdeaCommunity,
+    intellijDownloadSources := true,
+    intellijPluginDirectory   := homePrefix / s".${intellijPluginName.value}Plugin${intellijPlatform.value.edition}",
+    intellijBaseDirectory     := intellijDownloadDirectory.value / intellijBuild.value,
+    intellijDownloadDirectory := intellijPluginDirectory.value / "sdk",
+    intellijTestConfigDir     := intellijPluginDirectory.value / "test-config",
+    intellijTestSystemDir     := intellijPluginDirectory.value / "test-system",
     concurrentRestrictions in Global += Tags.limit(Tags.Test, 1), // IDEA tests can't be run in parallel
-    updateIdea := {
+    updateIntellij := {
       val logger = new SbtPluginLogger(streams.value)
-      new CommunityIdeaUpdater(ideaBaseDirectory.value.toPath, logger)
+      new CommunityIdeaUpdater(intellijBaseDirectory.value.toPath, logger)
         .updateIdeaAndPlugins(
           BuildInfo(
-            ideaBuild.value,
-            ideaEdition.value
+            intellijBuild.value,
+            intellijPlatform.value
           ),
-          ideaExternalPlugins.?.all(ScopeFilter(inAnyProject)).value.flatten.flatten,
-          ideaDownloadSources.value
+          intellijExternalPlugins.?.all(ScopeFilter(inAnyProject)).value.flatten.flatten,
+          intellijDownloadSources.value
         )
     },
     cleanUpTestEnvironment := {
-      IO.delete(ideaTestSystemDir.value)
-      IO.delete(ideaTestConfigDir.value)
+      IO.delete(intellijTestSystemDir.value)
+      IO.delete(intellijTestConfigDir.value)
     },
 
     onLoad in Global := ((s: State) => {
-      "updateIdea" :: s
+      "updateIntellij" :: s
     }) compose (onLoad in Global).value
   )
 
   lazy val projectSettings: Seq[Setting[_]] = Seq(
-    ideaInternalPlugins := Seq.empty,
-    ideaExternalPlugins := Seq.empty,
-    ideaMainJars := (ideaBaseDirectory.value / "lib" * "*.jar").classpath,
-    ideaPluginJars :=
-      tasks.CreatePluginsClasspath(ideaBaseDirectory.value / "plugins",
-        ideaInternalPlugins.value,
-        ideaExternalPlugins.value,
+    intellijInternalPlugins := Seq.empty,
+    intellijExternalPlugins := Seq.empty,
+    intellijMainJars := (intellijBaseDirectory.value / "lib" * "*.jar").classpath,
+    intellijPluginJars :=
+      tasks.CreatePluginsClasspath(intellijBaseDirectory.value / "plugins",
+        intellijInternalPlugins.value,
+        intellijExternalPlugins.value,
         new SbtPluginLogger(streams.value)),
 
-    ideaFullJars := ideaMainJars.value ++ ideaPluginJars.value,
-    unmanagedJars in Compile ++= ideaFullJars.value,
+    intellijFullJars := intellijMainJars.value ++ intellijPluginJars.value,
+    unmanagedJars in Compile ++= intellijFullJars.value,
 
-    packageOutputDir := target.value / "plugin" / ideaPluginName.value,
-    packageArtifactZipFile := target.value / s"${ideaPluginName.value}-${version.value}.zip",
+    packageOutputDir := target.value / "plugin" / intellijPluginName.value,
+    packageArtifactZipFile := target.value / s"${intellijPluginName.value}-${version.value}.zip",
     publishPlugin := {
       import complete.DefaultParsers._
       import tasks.PublishPlugin._
@@ -123,18 +123,19 @@ trait Init { this: Keys.type =>
       else Def.task { }
     }.value,
 
-    ideaVMOptions := IdeaVMOptions(packageOutputDir.value.toPath, ideaPluginDirectory.value.toPath),
+    intellijVMOptions :=
+      IdeaVMOptions(intellijPlatform.value, packageOutputDir.value.toPath, intellijPluginDirectory.value.toPath),
 
-    runIdea := {
+    runIDE := {
       import complete.DefaultParsers._
       implicit val log: PluginLogger = new SbtPluginLogger(streams.value)
       val opts = spaceDelimited("[noPCE] [noDebug] [suspend]").parsed
-      val vmOptions = ideaVMOptions.value.copy(
+      val vmOptions = intellijVMOptions.value.copy(
         noPCE = opts.contains("noPCE"),
         debug = !opts.contains("noDebug"),
         suspend = opts.contains("suspend")
       )
-      val ideaCP = ideaMainJars.value.map(_.data.toPath)
+      val ideaCP = intellijMainJars.value.map(_.data.toPath)
       val pluginRoot = packageArtifact.value.toPath
       val runner = new IdeaRunner(ideaCP, pluginRoot, vmOptions)
       runner.run()
@@ -143,7 +144,7 @@ trait Init { this: Keys.type =>
     aggregate.in(packageArtifactZip) := false,
     aggregate.in(packageMappings) := false,
     aggregate.in(packageArtifact) := false,
-    aggregate.in(updateIdea) := false,
+    aggregate.in(updateIntellij) := false,
     unmanagedJars in Compile += file(System.getProperty("java.home")).getParentFile / "lib" / "tools.jar",
 
     // Deprecated task aliases
@@ -165,8 +166,8 @@ trait Init { this: Keys.type =>
     fork in Test      := true,
     logBuffered       := false,
     parallelExecution := false,
-    ideaVMOptions in Test := ideaVMOptions.value.copy(test = true, debug = false),
-    javaOptions   in Test := ideaVMOptions.in(Test).value.asSeq :+ s"-Dsbt.ivy.home=$ivyHomeDir",
-    envVars in Test += "NO_FS_ROOTS_ACCESS_CHECK" -> "yes"
+    intellijVMOptions in Test := intellijVMOptions.value.copy(test = true, debug = false),
+    javaOptions       in Test := intellijVMOptions.in(Test).value.asSeq :+ s"-Dsbt.ivy.home=$ivyHomeDir",
+    envVars           in Test += "NO_FS_ROOTS_ACCESS_CHECK" -> "yes"
   )
 }

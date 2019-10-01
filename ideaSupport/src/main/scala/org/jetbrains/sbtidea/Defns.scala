@@ -5,12 +5,12 @@ import java.util.regex.Pattern
 
 trait Defns { this: Keys.type =>
 
-  sealed trait IdeaPlugin
+  sealed trait IntellijPlugin
 
-  object IdeaPlugin {
-    final case class Url(url: URL) extends IdeaPlugin
+  object IntellijPlugin {
+    final case class Url(url: URL) extends IntellijPlugin
       { override def toString: String = url.toString }
-    final case class Id(id: String, version: Option[String], channel: Option[String]) extends IdeaPlugin
+    final case class Id(id: String, version: Option[String], channel: Option[String]) extends IntellijPlugin
      { override def toString: String = id }
 
     val URL_PATTERN: Pattern = Pattern.compile("^(?:(\\w+):)??(https?://.+)$")
@@ -21,15 +21,15 @@ trait Defns { this: Keys.type =>
   }
 
   implicit class String2Plugin(str: String) {
-    import IdeaPlugin._
-    def toPlugin: IdeaPlugin = {
+    import IntellijPlugin._
+    def toPlugin: IntellijPlugin = {
       val idMatcher  = ID_PATTERN.matcher(str)
       val urlMatcher = URL_PATTERN.matcher(str)
       if (idMatcher.find()) {
         val id = idMatcher.group(1)
         val version = Option(idMatcher.group(2))
         val channel = Option(idMatcher.group(3))
-        IdeaPlugin.Id(id, version, channel)
+        IntellijPlugin.Id(id, version, channel)
       } else if (urlMatcher.find()) {
         val name = Option(urlMatcher.group(1)).getOrElse("")
         val url  = urlMatcher.group(2)

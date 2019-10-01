@@ -4,7 +4,7 @@ import org.jetbrains.sbtidea.CapturingLogger
 import org.jetbrains.sbtidea.Keys.String2Plugin
 import org.jetbrains.sbtidea.download.api.PluginMetadata
 
-final class IdeaPluginInstallerTest extends IdeaPluginInstallerTestBase {
+final class IntellijPluginInstallerTest extends IntellijPluginInstallerTestBase {
 
   test("Plugin installer reports non-installed plugins") {
     val fakePlugin = "org.myFake.plugin:0.999:trunk".toPlugin

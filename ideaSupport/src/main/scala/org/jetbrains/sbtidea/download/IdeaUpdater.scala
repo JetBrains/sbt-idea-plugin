@@ -2,7 +2,7 @@ package org.jetbrains.sbtidea.download
 
 import java.nio.file.{Path, Paths}
 
-import org.jetbrains.sbtidea.Keys.IdeaPlugin
+import org.jetbrains.sbtidea.Keys.IntellijPlugin
 import org.jetbrains.sbtidea.PluginLogger
 import org.jetbrains.sbtidea.download.api.{IdeaArtifactResolver, InstallerFactory}
 
@@ -22,7 +22,7 @@ import IdeaUpdater._
   private val downloader: FileDownloader = new FileDownloader(ideaInstallDir.getParent, log)
 
   //noinspection MapGetOrElseBoolean
-  def updateIdeaAndPlugins(ideaBuildInfo: BuildInfo, plugins: Seq[IdeaPlugin], withSources: Boolean = true): Path = {
+  def updateIdeaAndPlugins(ideaBuildInfo: BuildInfo, plugins: Seq[IntellijPlugin], withSources: Boolean = true): Path = {
     val dumbOptions = sys.props.get(DUMB_KEY).getOrElse("").toLowerCase
     val installRoot = if (!dumbOptions.contains(DUMB_KEY_IDEA)) updateIdea(ideaBuildInfo) else Paths.get("")
     if (!dumbOptions.contains(DUMB_KEY_PLUGINS)) updatePlugins(ideaBuildInfo, plugins)
@@ -33,17 +33,17 @@ import IdeaUpdater._
     val installer = installerFactory.createInstaller(ideaInstallDir, buildInfo)
     if (installer.isIdeaAlreadyInstalled)
       return installer.getInstallDir
-    log.info(s"Resolving IDEA dependency for $buildInfo")
+    log.info(s"Resolving ${buildInfo.edition.name} dependency for $buildInfo")
     val parts           = resolver.resolveUrlForIdeaBuild(buildInfo)
-    log.info(s"Downloading ${parts.size} IDEA artifacts")
+    log.info(s"Downloading ${parts.size} ${buildInfo.edition.name} artifacts")
     val downloadedFiles = parts.map(p => p -> downloader.download(p))
     val installed       = installer.installIdeaDist(downloadedFiles)
     installed
   }
 
-  private def updatePlugins(buildInfo: BuildInfo, plugins: Seq[IdeaPlugin]): Unit = {
+  private def updatePlugins(buildInfo: BuildInfo, plugins: Seq[IntellijPlugin]): Unit = {
     val installer = installerFactory.createInstaller(ideaInstallDir, buildInfo)
-    def updatePlugin(plugin: IdeaPlugin): Unit = {
+    def updatePlugin(plugin: IntellijPlugin): Unit = {
       if (installer.isPluginAlreadyInstalledAndUpdated(plugin))
         return
       val resolved = resolver.resolvePlugin(buildInfo, plugin)

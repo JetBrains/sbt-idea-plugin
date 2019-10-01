@@ -16,22 +16,22 @@ trait Utils { this: Keys.type =>
         dumpDependencyStructure := null, // avoid cyclic dependencies on products task
         products := packageArtifact.in(from).value :: Nil,  // build the artifact when IDEA delegates "Build" action to sbt shell
         packageMethod := org.jetbrains.sbtidea.packaging.PackagingKeys.PackagingMethod.Skip(),
-        unmanagedJars in Compile := ideaMainJars.value,
+        unmanagedJars in Compile := intellijMainJars.value,
         unmanagedJars in Compile ++= maybeToolsJar,
         createIDEARunConfiguration := genCreateRunConfigurationTask(from).value,
-        autoScalaLibrary := !hasPluginsWithScala(ideaExternalPlugins.all(ScopeFilter(inDependencies(from))).value.flatten)
+        autoScalaLibrary := !hasPluginsWithScala(intellijExternalPlugins.all(ScopeFilter(inDependencies(from))).value.flatten)
       ).enablePlugins(SbtIdeaPlugin)
 
   def genCreateRunConfigurationTask(from: ProjectReference): Def.Initialize[Task[File]] = Def.task {
     implicit  val log: PluginLogger = new SbtPluginLogger(streams.value)
-    val configName = "IDEA"
-    val vmOptions = ideaVMOptions.value.copy(debug = false)
+    val configName = name.in(from).value
+    val vmOptions = intellijVMOptions.value.copy(debug = false)
     val data = IdeaConfigBuilder.buildRunConfigurationXML(
       name.in(from).value,
       configName,
       name.value,
       vmOptions.asSeq,
-      ideaPluginDirectory.value)
+      intellijPluginDirectory.value)
     val outFile = baseDirectory.in(ThisBuild).value / ".idea" / "runConfigurations" / s"$configName.xml"
     IO.write(outFile, data.getBytes)
     outFile
