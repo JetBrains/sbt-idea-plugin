@@ -1,6 +1,6 @@
 package org.jetbrains.sbtidea
 
-import org.jetbrains.sbtidea.runIdea.IdeaVMOptions
+import org.jetbrains.sbtidea.runIdea.IntellijVMOptions
 import sbt.Keys._
 import sbt._
 
@@ -57,7 +57,7 @@ object Keys extends Defns with Init with Utils with Quirks {
   lazy val cleanUpTestEnvironment = taskKey[Unit](
     "Clean up IntelliJ Platform test system and config directories")
 
-  lazy val intellijVMOptions = settingKey[IdeaVMOptions](
+  lazy val intellijVMOptions = settingKey[IntellijVMOptions](
     "IntelliJ Platform java VM options used for running")
 
   lazy val runIDE = inputKey[Unit](

@@ -3,7 +3,7 @@ package org.jetbrains.sbtidea
 import org.jetbrains.sbtidea.download._
 import org.jetbrains.sbtidea.packaging.PackagingKeys._
 import org.jetbrains.sbtidea.packaging.artifact.IdeaArtifactXmlBuilder
-import org.jetbrains.sbtidea.runIdea.{IdeaRunner, IdeaVMOptions}
+import org.jetbrains.sbtidea.runIdea.{IdeaRunner, IntellijVMOptions}
 import sbt.Keys._
 import sbt.complete.DefaultParsers
 import sbt.{file, _}
@@ -124,7 +124,7 @@ trait Init { this: Keys.type =>
     }.value,
 
     intellijVMOptions :=
-      IdeaVMOptions(intellijPlatform.value, packageOutputDir.value.toPath, intellijPluginDirectory.value.toPath),
+      IntellijVMOptions(intellijPlatform.value, packageOutputDir.value.toPath, intellijPluginDirectory.value.toPath),
 
     runIDE := {
       import complete.DefaultParsers._

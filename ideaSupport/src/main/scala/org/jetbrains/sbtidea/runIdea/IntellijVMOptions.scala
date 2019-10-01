@@ -7,25 +7,25 @@ import scala.collection.mutable
 
 import org.jetbrains.sbtidea.Keys.IntelliJPlatform
 
-case class IdeaVMOptions(platform: IntelliJPlatform,
-                         pluginPath: Path,
-                         ideaHome: Path,
-                         xmx: Int = 1536,
-                         xms: Int = 128,
-                         reservedCodeCacheSize: Int = 240,
-                         softRefLRUPolicyMSPerMB: Int = 50,
-                         gc: String = "-XX:+UseConcMarkSweepGC",
-                         gcOpt: String = "-XX:CICompilerCount=2",
-                         noPCE: Boolean = false,
-                         debug: Boolean = true,
-                         debugPort: Int = 5005,
-                         suspend: Boolean = false,
-                         test: Boolean = false) {
+case class IntellijVMOptions(platform: IntelliJPlatform,
+                             pluginPath: Path,
+                             ideaHome: Path,
+                             xmx: Int = 1536,
+                             xms: Int = 128,
+                             reservedCodeCacheSize: Int = 240,
+                             softRefLRUPolicyMSPerMB: Int = 50,
+                             gc: String = "-XX:+UseConcMarkSweepGC",
+                             gcOpt: String = "-XX:CICompilerCount=2",
+                             noPCE: Boolean = false,
+                             debug: Boolean = true,
+                             debugPort: Int = 5005,
+                             suspend: Boolean = false,
+                             test: Boolean = false) {
 
 
   private def build: Seq[String] = {
     val buffer = new mutable.ArrayBuffer[String]()
-    buffer ++= IdeaVMOptions.STATIC_OPTS
+    buffer ++= IntellijVMOptions.STATIC_OPTS
     buffer +=  s"-Xms${xms}m"
     buffer +=  s"-Xmx${xmx}m"
     buffer +=  s"-XX:ReservedCodeCacheSize=${reservedCodeCacheSize}m"
@@ -55,7 +55,7 @@ case class IdeaVMOptions(platform: IntelliJPlatform,
   def asJava: java.util.List[String] = asSeq.asJava
 }
 
-object IdeaVMOptions {
+object IntellijVMOptions {
 
   val IDEA_MAIN = "com.intellij.idea.Main"
 
