@@ -3,10 +3,20 @@ package org.jetbrains.sbtidea.download
 import java.io.{FileNotFoundException, InputStream}
 
 import org.jetbrains.sbtidea.Keys
+import org.jetbrains.sbtidea.Keys._
 import org.jetbrains.sbtidea.download.api.IdeaResolver
 import sbt.{URL, url}
 
 trait JBIdeaRepoArtifactResolver extends IdeaResolver {
+
+  private def getCoordinates(platform: IntelliJPlatform): (String, String) = platform match {
+    case IntelliJPlatform.IdeaCommunity       => "com/jetbrains/intellij/idea" -> "ideaIC"
+    case IntelliJPlatform.IdeaUltimate        => "com/jetbrains/intellij/idea" -> "ideaIU"
+    case IntelliJPlatform.PyCharmCommunity    => "com/jetbrains/intellij/pycharm" -> "pycharmPC"
+    case IntelliJPlatform.PyCharmProfessional => "com/jetbrains/intellij/pycharm" -> "pycharmPY"
+    case IntelliJPlatform.CLion               => "com/jetbrains/intellij/clion" -> "clion"
+    case IntelliJPlatform.MPS                 => "com/jetbrains/mps" -> "mps"
+  }
 
   override def resolveUrlForIdeaBuild(idea: BuildInfo): Seq[ArtifactPart] = {
     val (build, edition)  = (idea.buildNumber, idea.edition.name)
@@ -20,15 +30,16 @@ trait JBIdeaRepoArtifactResolver extends IdeaResolver {
 
   //noinspection NoTailRecursionAnnotation
   protected def getUrl(platform: BuildInfo, artifactSuffix: String, trySnapshot: Boolean = false): URL = {
-    val (repo, suffix)  =
+    val (repo, buildNumberSuffix)  =
       if      (trySnapshot)                               "snapshots" -> "-EAP-SNAPSHOT"
       else if (platform.buildNumber.contains("SNAPSHOT")) "snapshots" -> ""
       else                                                "releases"  -> ""
-    val baseUrl         = s"https://www.jetbrains.com/intellij-repository/$repo/com/jetbrains/intellij/${platform.edition.platformPrefix}"
-    val build           = platform.buildNumber + suffix
+    val (groupId, artifactId) = getCoordinates(platform.edition)
+    val baseUrl         = s"https://www.jetbrains.com/intellij-repository/$repo/$groupId"
+    val build           = platform.buildNumber + buildNumberSuffix
     var stream: Option[InputStream] = None
     try {
-      val result  = url(s"$baseUrl/${platform.edition.name}/$build/${platform.edition.name}-$build$artifactSuffix")
+      val result  = url(s"$baseUrl/$artifactId/$build/$artifactId-$build$artifactSuffix")
       stream      = Some(result.openStream())
       result
     } catch {
