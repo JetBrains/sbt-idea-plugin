@@ -41,6 +41,7 @@ abstract class CommunityIdeaInstaller(ideaInstallDir: Path,
 
   protected def installDist(artifact: Path): Unit = {
     import sys.process._
+    import org.jetbrains.sbtidea.Keys.IntelliJPlatform.MPS
 
     log.info(s"Extracting ${buildInfo.edition.name} dist to $tmpDir")
 
@@ -52,7 +53,16 @@ abstract class CommunityIdeaInstaller(ideaInstallDir: Path,
       }
     } else throw new RuntimeException(s"Unexpected dist archive format(not zip or gzip): $artifact")
 
-    Files.move(tmpDir, getInstallDir)
+    buildInfo.edition match {
+      case MPS if Files.list(tmpDir).count() == 1 => // MPS may add additional folder level to the artifact
+        log.info("MPS detected: applying install dir quirks")
+        val actualDir = Files.list(tmpDir).iterator().next()
+        Files.move(actualDir, getInstallDir)
+        Files.deleteIfExists(tmpDir)
+      case _ =>
+        Files.move(tmpDir, getInstallDir)
+    }
+
     NioUtils.delete(artifact)
     log.info(s"Installed ${buildInfo.edition.name}($buildInfo) to $getInstallDir")
   }
