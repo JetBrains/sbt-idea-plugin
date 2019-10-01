@@ -5,7 +5,10 @@ import java.nio.file.Path
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
-case class IdeaVMOptions(pluginPath: Path,
+import org.jetbrains.sbtidea.Keys.IntelliJPlatform
+
+case class IdeaVMOptions(platform: IntelliJPlatform,
+                         pluginPath: Path,
                          ideaHome: Path,
                          xmx: Int = 1536,
                          xms: Int = 128,
@@ -43,6 +46,8 @@ case class IdeaVMOptions(pluginPath: Path,
       val suspendValue = if (suspend) "y" else "n"
       buffer += s"-agentlib:jdwp=transport=dt_socket,server=y,suspend=$suspendValue,address=$debugPort"
     }
+    if (platform.platformPrefix.nonEmpty)
+      buffer += s"-Didea.platform.prefix=${platform.platformPrefix}"
     buffer
   }
 

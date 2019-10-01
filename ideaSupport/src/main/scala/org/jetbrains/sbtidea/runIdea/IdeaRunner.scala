@@ -22,10 +22,11 @@ class IdeaRunner(ideaClasspath: Seq[Path],
   }
 
   private def getBundledJRE: Option[JRE] = {
+    val validJars = Set("idea.jar", "platform-api.jar", "platform-impl.jar", "openapi.jar")
     val ideaJar =
       ideaClasspath
-        .find(_.getFileName.toString == "idea.jar")
-        .getOrElse(throw new RuntimeException("IDEA classpath has no idea.jar"))
+        .find(validJars contains _.getFileName.toString)
+        .getOrElse(throw new RuntimeException(s"Can't find any of the $validJars in classpath"))
     val maybeJre = ideaJar.getParent.getParent.resolve("jbr")
     if (!maybeJre.toFile.exists())
       return None
