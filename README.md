@@ -4,21 +4,22 @@
 [![Build Status](https://travis-ci.org/jetbrains/sbt-idea-plugin.svg)](https://travis-ci.org/jetbrains/sbt-idea-plugin)
 [![JetBrains team project](http://jb.gg/badges/team.svg)](https://confluence.jetbrains.com/display/ALL/JetBrains+on+GitHub)
 
-SBT plugin that makes development of IntelliJ IDEA plugins in Scala easier by providing features such as:
+SBT plugin that makes development of IntelliJ Platform plugins in Scala easier by providing features such as:
 
-- Downloading and attaching IDEA binaries
+- Downloading and attaching IntelliJ Platform binaries
 - Setting up the environment for running tests
 - Flexible way to define plugin artifact structure
 - Publishing the plugin to JetBrains plugin repository
 
-For a comprehensive usage example see [Scala plugin](https://github.com/JetBrains/intellij-scala) build definition.
+For a comprehensive usage example see [Scala plugin](https://github.com/JetBrains/intellij-scala) or 
+[HOCON plugin](https://github.com/JetBrains/intellij-hocon/) build definition.
 
 Note that some features of this plugin may be used independently, i.e. if you only want to [print project structure](#printprojectgraph--taskkeyunit)
 or [package artifacts](#packaging) you can depend on:
 
-`"org.jetbrains" % "sbt-declarative-visualizer" % "3.0.0"` or
+`"org.jetbrains" % "sbt-declarative-visualizer" % "LATEST_VERSION"` or
 
-`"org.jetbrains" % "sbt-declarative-packaging" % "3.0.0"`
+`"org.jetbrains" % "sbt-declarative-packaging" % "LATEST_VERSION"`
 ## Installation
 
 From version 1.0.0, this plugin is published for sbt 0.13 and 1.0
@@ -26,101 +27,108 @@ From version 1.0.0, this plugin is published for sbt 0.13 and 1.0
 * Insert into `project/plugins.sbt`:
 
 ```Scala
-addSbtPlugin("org.jetbrains" % "sbt-idea-plugin" % "3.1.0")
+addSbtPlugin("org.jetbrains" % "sbt-idea-plugin" % "LATEST_VERSION")
 ```
 
 * [Enable](#auto-enable-the-plugin) the plugin for your desired projects (your main plugin project and all its dependencies)
 
-* Run SBT and the plugin will automatically download and attach IDEA dependencies.
+* Run SBT and the plugin will automatically download and attach IntelliJ Platform dependencies.
 
 * Start coding
 
-## IDEA and plugin
+## IntelliJ Platform and plugin
 
-#### `ideaPluginName in ThisBuild :: SettingKey[String]`
+#### `intellijPluginName in ThisBuild :: SettingKey[String]`
 
 Default: `name.in(LocalRootProject).value`
 
 Name of your plugin. Better set this beforehand since several other settings such as
-IDEA directries and artifact names depend on it.
+IntelliJ Platform directories and artifact names depend on it.
 
-#### `ideaBuild in ThisBuild :: SettingKey[String]`
+#### `intellijBuild in ThisBuild :: SettingKey[String]`
 
 Default: `LATEST-EAP-SNAPSHOT`
 
-IDEA's build number. Binaries and sources of this build will be downloaded from https://jetbrains.com and used in 
-compilation and testing. You can find build number of your IDEA in `Help -> About` dialog. However, it might be 
-incomplete, so I strongly recommend you to verify it against 
+Selected IDE's build number. Binaries and sources of this build will be downloaded from the
+[repository](https://www.jetbrains.org/intellij/sdk/docs/reference_guide/intellij_artifacts.html) and used in 
+compilation and testing. You can find build number of your IntelliJ product in `Help -> About` dialog. However, it might be 
+incomplete, so it is strongly recommended to verify it against 
 [available releases](https://www.jetbrains.com/intellij-repository/releases) and
 [available snapshots](https://www.jetbrains.com/intellij-repository/snapshots).
 
-#### `ideaEdition in ThisBuild :: SettingKey[IdeaEdition]`
+#### `intellijPlatform in ThisBuild :: SettingKey[IntelliJPlatform]`
 
-Default: `IdeaEdition.Community`
+Default: `IntelliJPlatform.IdeaCommunity`
 
-Edition of IntelliJ IDEA to use in project.
+Edition of IntelliJ IDE to use in project. Currently available options are:
 
-#### `ideaDownloadDirectory in ThisBuild :: SettingKey[File]`
+- IdeaCommunity
+- IdeaUltimate
+- PyCharmCommunity
+- PyCharmProfessional
+- CLion
+- MPS
 
-Default: `homePrefix / s".${ideaPluginName.value}Plugin${ideaEdition.value.shortname}" / "sdk"`
+#### `intellijDownloadDirectory in ThisBuild :: SettingKey[File]`
 
-Directory where IDEA binaries and sources will be downloaded.
+Default: `homePrefix / s".${intellijPluginName.value}Plugin${intellijPlatform.value.shortname}" / "sdk"`
 
-#### `ideaDownloadSources in ThisBuild :: SettingKey[Boolean]`
+Directory where IntelliJ binaries and sources will be downloaded.
+
+#### `intellijDownloadSources in ThisBuild :: SettingKey[Boolean]`
 
 Default: `true`
 
-Flag indicating whether IDEA sources should be downloaded alongside IDEA
-binaries or not.
+Flag indicating whether IntelliJ sources should be downloaded alongside binaries or not.
 
-#### `ideaInternalPlugins :: SettingKey[String]`
-
-Default: `Seq.empty`
-
-List of bundled IDEA plugins to depend upon. Their jars will be used in compilation.
-Available plugins can be found in `ideaBaseDirectory / "plugins"` directory.
-
-#### `ideaExternalPlugins :: SettingKey[IdeaPlugin]`
+#### `intellijInternalPlugins :: SettingKey[String]`
 
 Default: `Seq.empty`
 
-IDEA plugins to depend upon from IJ plugin repository or direct url to plugin artifact.
+List of bundled IntelliJ plugins to depend upon. Their jars will be used in compilation.
+Available plugins can be found in `intellijBaseDirectory / "plugins"` directory.
+
+#### `intellijExternalPlugins :: SettingKey[IdeaPlugin]`
+
+Default: `Seq.empty`
+
+IntelliJ plugins to depend upon from IJ plugin repository or direct url to plugin artifact.
 Plugins from repo can be specified by the plugin's id, optional version and update channel.
-Plugins will be checked for compatibility with the `ideaBuild` you specified and updated to the latest version unless
+Plugins will be checked for compatibility with the `intellijBuild` you specified and updated to the latest version unless
  some specific version is given explicitly. [How to find plugin's id](https://github.com/JetBrains/sbt-idea-plugin/wiki/How-to-find-plugin's-id).
 
 ```SBT
 // use Scala plugin as a dependency
-ideaExternalPlugins += "org.intellij.scala".toPlugin
+intellijExternalPlugins += "org.intellij.scala".toPlugin
 // use Scala plugin version 2019.2.1
-ideaExternalPlugins += "org.intellij.scala:2019.2.1".toPlugin
+intellijExternalPlugins += "org.intellij.scala:2019.2.1".toPlugin
 // use latest nightly build from the repo
-ideaExternalPlugins += "org.intellij.scala::Nightly".toPlugin
+intellijExternalPlugins += "org.intellij.scala::Nightly".toPlugin
 // use specific version from Eap update channel
-ideaExternalPlugins += "org.intellij.scala:2019.3.2:Eap".toPlugin
+intellijExternalPlugins += "org.intellij.scala:2019.3.2:Eap".toPlugin
 ```
 
-#### `ideaVMOptions :: SettingKey[IdeaVMOptions]`
+#### `intellijVMOptions :: SettingKey[IntellijVMOptions]`
 
-Fine tune java VM options for running the plugin with [`runIdea`](#runidea-nopce-nodebug-suspend--inputkeyunit) task.
+Fine tune java VM options for running the plugin with [`runIDE`](#runide-nopce-nodebug-suspend--inputkeyunit) task.
 Example:
 
 ```SBT
-ideaVMOptions := ideaVMOptions.value.copy(xmx = 2048, xms = 256) 
+intellijVMOptions := intellijVMOptions.value.copy(xmx = 2048, xms = 256) 
 ```
 
-#### `runIdea [noPCE] [noDebug] [suspend] :: InputKey[Unit]`
+#### `runIDE [noPCE] [noDebug] [suspend] :: InputKey[Unit]`
 
-Runs IDEA with current plugin. This task is non-blocking, so you can continue using SBT console.
+Runs IntelliJ IDE with current plugin. This task is non-blocking, so you can continue using SBT console.
 
-By default IDEA is run with non-suspending debug agent on port `5005`. This can be overridden by either optional
-arguments above, or by modifying default [`ideaVmOptions`](#ideavmoptions--settingkeyideavmoptions). 
+By default IDE is run with non-suspending debug agent on port `5005`. This can be overridden by either optional
+arguments above, or by modifying default [`intellijVMOptions`](#intellijvmoptions--settingkeyintellijvmoptions). 
 [`ProcessCancelledExceptiona`](https://www.jetbrains.org/intellij/sdk/docs/basics/architectural_overview/general_threading_rules.html#background-processes-and-processcanceledexception)
 can also be disabled for current run by providing `noPCE` option.
 
 #### `publishPlugin [channel] :: InputKey[String]`
 
-Upload and publish your IDEA plugin on https://plugins.jetbrains.com.
+Upload and publish your IntelliJ plugin on https://plugins.jetbrains.com.
 In order to publish to the repo you need to 
 [obtain permanent token](http://www.jetbrains.org/intellij/sdk/docs/plugin_repository/api/plugin_upload.html) and
 either place it into `~/.ij-plugin-repo-token` file or pass via `IJ_PLUGIN_REPO_TOKEN` env or java property.
@@ -129,13 +137,11 @@ This task also expects an optional argument - a [custom release channel](http://
 If omitted, plugin will be published to the default plugin repository channel (Stable) 
  
 
-#### `updateIdea :: TaskKey[Unit]`
+#### `updateIntellij :: TaskKey[Unit]`
 
-This task is run when sbt project is loaded. 
-Download IDEA's binaries and sources, put them into
-`ideaBaseDirectory` directory. Download external plugins and put
-them in `ideaBaseDirectory / "externalPlugins"` directory. Automatically add IDEA's and
-plugin's jars into `unmanagedJars in Compile`.
+This task is run automatically when sbt project is loaded. 
+Downloads IntelliJ's binaries and sources, puts them into
+`intellijBaseDirectory` directory. Also downloads or updates external plugins.
 
 ## Packaging
 
@@ -255,8 +261,8 @@ Prints ASCII graph of currently selected project to console. Useful for debuggin
 
 ### From SBT
 
-To run the plugin from SBT simply use [runIdea](#runidea-nopce-nodebug-suspend--inputkeyunit) task.
-Your plugin will be automatically compiled, an artifact built and attached to new IDEA instance.
+To run the plugin from SBT simply use [runIDE](#runide-nopce-nodebug-suspend--inputkeyunit) task.
+Your plugin will be automatically compiled, an artifact built and attached to new IntelliJ instance.
 
 Debugger can later be attached to the process remotely - the default port is 5005.
 
@@ -277,7 +283,7 @@ lazy val ideaRunner = createRunnerProject(scalaCommunity)
 - If you don't want to use sbt shell, or automatic generation didn't work, you can manually run
  `$YOUR_RUNNER_PROJECT/createIDEARunConfiguration` and `$YOUR_PLUGIN_PROJECT/createIDEAArtifactXml` tasks
 - After artifact and run configuration have been created(they're located in `.idea` folder of the project) you can 
-run or debug the new "IDEA" run configuration. This will compile the project, build the artifact and attach it to the
+run or debug the new run configuration. This will compile the project, build the artifact and attach it to the
  new IDEA instance
 - Note that doing an "SBT Refresh" (or manually running the tasks above) is required after making changes to your build
 that affect the final artifact(i.e. changing `libraryDependencies`), in order to update IDEA configs
@@ -290,7 +296,7 @@ To enable it either add `enablePlugins(SbtIdeaPlugin)` to project definition. Ex
 lazy val hocon = project.in(file(".")).settings(
   scalaVersion  := "2.12.8",
   version       := "2019.1.2",
-  ideaInternalPlugins := Seq("properties"),
+  intellijInternalPlugins := Seq("properties"),
   libraryDependencies += "com.novocode" % "junit-interface" % "0.11" % "test",
 ).enablePlugins(SbtIdeaPlugin)
 ```
