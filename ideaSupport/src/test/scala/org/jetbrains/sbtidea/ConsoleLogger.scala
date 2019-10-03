@@ -6,4 +6,6 @@ trait ConsoleLogger extends LogAware {
     override def warn(msg: => String): Unit = println(msg)
     override def error(msg: => String): Unit = sys.error(msg)
   }
+
+  implicit val logger: PluginLogger = log
 }
