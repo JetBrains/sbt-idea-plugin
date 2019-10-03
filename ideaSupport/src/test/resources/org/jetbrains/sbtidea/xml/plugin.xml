@@ -1,0 +1,87 @@
+<idea-plugin url="https://www.jetbrains.com/idea">
+
+    <name>VssIntegration</name>
+
+    <id>com.jetbrains.vssintegration</id>
+
+    <description>Integrates Volume Snapshot Service W10</description>
+
+    <change-notes>Initial release of the plugin.</change-notes>
+
+    <version>1.0.0</version>
+
+    <vendor url="https://www.jetbrains.com" email="support@jetbrains.com">A Company Inc.</vendor>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.third.party.plugin</depends>
+
+    <depends optional="true" config-file="mysecondplugin.xml">com.MySecondPlugin</depends>
+
+    <idea-version since-build="183" until-build="183.*"/>
+
+    <resource-bundle>messages.MyPluginBundle</resource-bundle>
+
+    <application-components>
+        <component>
+            <!-- Component's interface class -->
+            <interface-class>com.foo.Component1Interface</interface-class>
+
+            <!-- Component's implementation class -->
+            <implementation-class>com.foo.impl.Component1Impl</implementation-class>
+        </component>
+    </application-components>
+
+    <!-- Plugin's project components -->
+    <project-components>
+        <component>
+            <!-- Interface and implementation classes are the same -->
+            <implementation-class>com.foo.Component2</implementation-class>
+
+            <!-- If the "workspace" option is set "true", the component
+                 saves its state to the .iws file instead of the .ipr file.
+                 Note that the <option> element is used only if the component
+                 implements the JDOMExternalizable interface. Otherwise, the
+                 use of the <option> element takes no effect.  -->
+            <option name="workspace" value="true" />
+
+            <!-- If the "loadForDefaultProject" tag is present, the project component is instantiated also for the default project. -->
+            <loadForDefaultProject/>
+        </component>
+    </project-components>
+
+    <!-- Plugin's module components -->
+    <module-components>
+        <component>
+            <implementation-class>com.foo.Component3</implementation-class>
+        </component>
+    </module-components>
+
+    <!-- Actions -->
+    <actions>
+        <action id="VssIntegration.GarbageCollection" class="com.foo.impl.CollectGarbage" text="Collect _Garbage" description="Run garbage collector">
+            <keyboard-shortcut first-keystroke="control alt G" second-keystroke="C" keymap="$default"/>
+        </action>
+    </actions>
+
+    <!-- Extension points defined by the plugin.
+         Extension points are registered by a plugin so that other
+         plugins can provide this plugin with certain data. The
+         "beanClass" attribute specifies the class the implementations
+         of which can be used for the extension point. -->
+    <extensionPoints>
+        <extensionPoint name="testExtensionPoint" beanClass="com.foo.impl.MyExtensionBean"/>
+    </extensionPoints>
+
+    <!-- Extensions which the plugin adds to extension points
+         defined by the IntelliJ Platform or by other plugins.
+         The "defaultExtensionNs " attribute must be set to the
+         ID of the plugin defining the extension point, or to
+         "com.intellij" if the extension point is defined by the
+         IntelliJ Platform. The name of the tag within the <extensions>
+         tag matches the name of the extension point, and the
+         "implementation" class specifies the name of the class
+         added to the extension point. -->
+    <extensions xmlns="VssIntegration">
+        <testExtensionPoint implementation="com.foo.impl.MyExtensionImpl"/>
+    </extensions>
+</idea-plugin>
