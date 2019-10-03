@@ -17,10 +17,7 @@ trait IdeaMock extends TmpDirUtils {
   protected val IDEA_DIST_PATH    = s"/org/jetbrains/sbtidea/download/$IDEA_DIST"
   protected val IDEA_BUILDINFO: BuildInfo = BuildInfo(IDEA_VERSION, Keys.IntelliJPlatform.IdeaUltimate)
 
-  implicit class PathExt(path: Path) {
-    def /(string: String): Path = path.resolve(string)
-    def list: Seq[Path] = Files.list(path).iterator().asScala.toSeq
-  }
+
 
   protected val bundledPlugins: List[Keys.IntellijPlugin] =
     "org.jetbrains.plugins.yaml".toPlugin ::

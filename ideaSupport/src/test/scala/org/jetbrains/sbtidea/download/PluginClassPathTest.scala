@@ -5,6 +5,7 @@ import java.nio.file.Files
 import org.jetbrains.sbtidea.download.LocalPluginRegistry.MissingPluginRootException
 import org.jetbrains.sbtidea.download.api.PluginMetadata
 import org.jetbrains.sbtidea.tasks.CreatePluginsClasspath
+import org.jetbrains.sbtidea.PathExt
 
 class PluginClassPathTest extends IntellijPluginInstallerTestBase {
 

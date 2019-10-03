@@ -6,6 +6,7 @@ import java.nio.file._
 import org.jetbrains.sbtidea.Keys.IntelliJPlatform
 import org.jetbrains.sbtidea.{ConsoleLogger, PluginLogger}
 import org.scalatest.{FunSuite, Matchers}
+import org.jetbrains.sbtidea.PathExt
 
 trait IntellijPluginInstallerTestBase extends FunSuite with Matchers with IdeaMock with PluginMock with ConsoleLogger {
   protected lazy val ideaRoot: Path   = installIdeaMock

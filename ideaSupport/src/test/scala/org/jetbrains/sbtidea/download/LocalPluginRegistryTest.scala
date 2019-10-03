@@ -7,6 +7,7 @@ import org.jetbrains.sbtidea.Keys.String2Plugin
 import org.jetbrains.sbtidea.packaging.artifact
 import org.jetbrains.sbtidea.{CapturingLogger, ConsoleLogger}
 import org.scalatest.{FunSuite, Matchers}
+import org.jetbrains.sbtidea.PathExt
 
 final class LocalPluginRegistryTest extends FunSuite with Matchers with IdeaMock with ConsoleLogger {
 
