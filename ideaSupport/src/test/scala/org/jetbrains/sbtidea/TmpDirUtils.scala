@@ -1,10 +1,18 @@
 package org.jetbrains.sbtidea
 
+import java.nio.file.attribute.FileAttribute
 import java.nio.file.{Files, Path}
 
 import org.jetbrains.sbtidea.download.NioUtils
 
 trait TmpDirUtils {
+
+  def createTempFile(prefix: String, suffix: String, fileAttributes: FileAttribute[_]*): Path = {
+    val res = Files.createTempFile(prefix, suffix, fileAttributes:_*)
+    TmpDirUtils.allocatedTmpDirs += res
+    res
+  }
+
   def newTmpDir: Path = {
     val dir = Files.createTempDirectory(getClass.getName)
     TmpDirUtils.allocatedTmpDirs += dir
