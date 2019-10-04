@@ -57,6 +57,9 @@ object Keys extends Defns with Init with Utils with Quirks {
   lazy val cleanUpTestEnvironment = taskKey[Unit](
     "Clean up IntelliJ Platform test system and config directories")
 
+  lazy val patchPluginXml = settingKey[pluginXmlOptions](
+    "Settings for patching plugin.xml")
+
   lazy val intellijVMOptions = settingKey[IntellijVMOptions](
     "IntelliJ Platform java VM options used for running")
 

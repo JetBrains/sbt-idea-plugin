@@ -4,6 +4,7 @@ import org.jetbrains.sbtidea.download._
 import org.jetbrains.sbtidea.packaging.PackagingKeys._
 import org.jetbrains.sbtidea.packaging.artifact.IdeaArtifactXmlBuilder
 import org.jetbrains.sbtidea.runIdea.{IdeaRunner, IntellijVMOptions}
+import org.jetbrains.sbtidea.xml.{PluginXmlDetector, PluginXmlPatcher}
 import sbt.Keys._
 import sbt.complete.DefaultParsers
 import sbt.{file, _}
@@ -82,6 +83,27 @@ trait Init { this: Keys.type =>
 
     packageOutputDir := target.value / "plugin" / intellijPluginName.value,
     packageArtifactZipFile := target.value / s"${intellijPluginName.value}-${version.value}.zip",
+    patchPluginXml := pluginXmlOptions.DISABLED,
+    packageArtifact := {
+      implicit val logger: SbtPluginLogger = new SbtPluginLogger(streams.value)
+      val options = patchPluginXml.value
+      val productDirs = productDirectories.in(Compile).value
+      if (options != pluginXmlOptions.DISABLED) {
+        val detectedXmls = productDirs.flatMap(f => PluginXmlDetector.getPluginXml(f.toPath))
+        detectedXmls.foreach { xml => new PluginXmlPatcher(xml).patch(options) }
+      }
+      packageArtifact.value
+    },
+    packageArtifactDynamic := {
+      implicit val logger: SbtPluginLogger = new SbtPluginLogger(streams.value)
+      val options = patchPluginXml.value
+      val productDirs = productDirectories.in(Compile).value
+      if (options != pluginXmlOptions.DISABLED) {
+        val detectedXmls = productDirs.flatMap(f => PluginXmlDetector.getPluginXml(f.toPath))
+        detectedXmls.foreach { xml => new PluginXmlPatcher(xml).patch(options) }
+      }
+      packageArtifactDynamic.value
+    },
     publishPlugin := {
       import complete.DefaultParsers._
       import tasks.PublishPlugin._
