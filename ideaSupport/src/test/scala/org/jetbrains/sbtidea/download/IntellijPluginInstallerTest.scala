@@ -58,9 +58,7 @@ final class IntellijPluginInstallerTest extends IntellijPluginInstallerTestBase 
     val installedPluginRoot = installer.installIdeaPlugin(pluginId, mockPluginDist)
 
     installer.isPluginAlreadyInstalledAndUpdated(pluginId) shouldBe false
-    capturingLogger.messages should contain (
-      "Newer version of plugin org.intellij.scala is available: 2019.2.1 -> 2019.2.23"
-    )
+    capturingLogger.messages.exists(_.startsWith("Newer version of plugin org.intellij.scala is available:")) shouldBe true
     NioUtils.delete(installedPluginRoot)
     NioUtils.delete(ideaRoot / "plugins.idx")
   }
