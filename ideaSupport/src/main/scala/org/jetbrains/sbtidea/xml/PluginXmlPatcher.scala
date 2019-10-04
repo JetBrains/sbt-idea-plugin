@@ -3,6 +3,7 @@ package org.jetbrains.sbtidea.xml
 import java.nio.file.{Files, Path}
 
 import org.jetbrains.sbtidea.PluginLogger
+import org.jetbrains.sbtidea.Keys.pluginXmlOptions
 
 class PluginXmlPatcher(input: Path, createCopy: Boolean = false)(implicit log: PluginLogger) {
 
@@ -48,6 +49,11 @@ class PluginXmlPatcher(input: Path, createCopy: Boolean = false)(implicit log: P
   }
 
   private def tag(str: String, name: String, value: String): String =
+    if (str.matches(s"(?s)^.*<$name>.+</$name>.*$$"))
     str.replaceAll(s"<$name>.+</$name>", s"<$name>$value</$name>")
+  else {
+    log.warn(s"$input doesn't have $name tag defined, not patching")
+    str
+  }
 
 }
