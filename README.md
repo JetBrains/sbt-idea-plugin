@@ -307,7 +307,6 @@ If you with to automatically enable the plugin for all projects in your build, p
 import org.jetbrains.sbtidea.AbstractSbtIdeaPlugin
 
 object AutoSbtIdeaPlugin extends AbstractSbtIdeaPlugin {
-  override def requires = sbt.plugins.JvmPlugin
   override def trigger  = allRequirements
 }
 ``` 

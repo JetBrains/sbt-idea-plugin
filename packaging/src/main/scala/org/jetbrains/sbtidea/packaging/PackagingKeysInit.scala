@@ -36,7 +36,7 @@ trait PackagingKeysInit {
     packageAssembleLibraries := false,
     shadePatterns := Seq.empty,
     pathExcludeFilter := ExcludeFilter.AllPass,
-    packageOutputDir := packageOutputDir.in(ThisProject).?.value.getOrElse(target.value / "dist"),
+    packageOutputDir := target.value / "dist",
 
     createCompilationTimeStamp := Def.task { compilationTimeStamp = System.currentTimeMillis() }.value,
     packageMappings := Def.taskDyn {
