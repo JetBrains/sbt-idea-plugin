@@ -108,6 +108,24 @@ intellijExternalPlugins += "org.intellij.scala::Nightly".toPlugin
 intellijExternalPlugins += "org.intellij.scala:2019.3.2:Eap".toPlugin
 ```
 
+#### `patchPluginXml :: SettingKey[pluginXmlOptions]`
+
+Default: `pluginXmlOptions.DISABLED`
+
+Define some [`plugin.xml`](https://www.jetbrains.org/intellij/sdk/docs/basics/plugin_structure/plugin_configuration_file.html)
+fields to be patched when building the artifact. Only the file in `target` folder
+is patched, original sources are left intact. Available options are:
+
+```SBT
+patchPluginXml := pluginXmlOptions { xml =>
+  xml.version           = version.value
+  xml.pluginDescription = "My cool IDEA plugin"
+  xml.changeNotes       = sys.env("CHANGE_LOG_FROM_CI")
+  xml.sinceBuild        = (intellijBuild in ThisBuild).value
+  xml.untilBuild        = "193.*"
+}
+```
+
 #### `intellijVMOptions :: SettingKey[IntellijVMOptions]`
 
 Fine tune java VM options for running the plugin with [`runIDE`](#runide-nopce-nodebug-suspend--inputkeyunit) task.
