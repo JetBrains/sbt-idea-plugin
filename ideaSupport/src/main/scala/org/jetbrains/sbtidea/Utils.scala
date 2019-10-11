@@ -25,7 +25,7 @@ trait Utils { this: Keys.type =>
   def genCreateRunConfigurationTask(from: ProjectReference): Def.Initialize[Task[File]] = Def.task {
     implicit  val log: PluginLogger = new SbtPluginLogger(streams.value)
     val configName = name.in(from).value
-    val vmOptions = intellijVMOptions.value.copy(debug = false)
+    val vmOptions = intellijVMOptions.in(from).value.copy(debug = false)
     val data = IdeaConfigBuilder.buildRunConfigurationXML(
       name.in(from).value,
       configName,
