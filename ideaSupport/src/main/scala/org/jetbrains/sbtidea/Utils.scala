@@ -19,7 +19,7 @@ trait Utils { this: Keys.type =>
         unmanagedJars in Compile := intellijMainJars.value,
         unmanagedJars in Compile ++= maybeToolsJar,
         createIDEARunConfiguration := genCreateRunConfigurationTask(from).value,
-        autoScalaLibrary := !hasPluginsWithScala(intellijExternalPlugins.all(ScopeFilter(inDependencies(from))).value.flatten)
+        autoScalaLibrary := !hasPluginsWithScala(intellijExternalPlugins.?.all(ScopeFilter(inDependencies(from))).value.flatten.flatten)
       ).enablePlugins(SbtIdeaPlugin)
 
   def genCreateRunConfigurationTask(from: ProjectReference): Def.Initialize[Task[File]] = Def.task {
