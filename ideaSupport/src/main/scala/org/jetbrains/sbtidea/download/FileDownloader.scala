@@ -24,6 +24,10 @@ private class FileDownloader(private val baseDirectory: Path, log: PluginLogger)
         if (!progressInfo.done) print(text) else println(text)
     }
     val targetFile = partFile.getParent.resolve(partFile.getFileName.toString.replace(".part", ""))
+    if (targetFile.toFile.exists()) {
+      log.warn(s"$targetFile already exists, recovering failed install...")
+      Files.delete(targetFile)
+    }
     Files.move(partFile, targetFile)
     targetFile
   } catch {
@@ -71,6 +75,12 @@ private class FileDownloader(private val baseDirectory: Path, log: PluginLogger)
       else
         downloadDirectory.resolve(Math.abs(url.hashCode()).toString + ".part")
     val localLength = if (to.toFile.exists()) Files.size(to) else 0
+
+    if (remoteMetaData.length == localLength) {
+      log.warn(s"Part file already downloaded: recovering interrupted install...")
+      return to
+    }
+
     if (to.toFile.exists() && isResumeSupported(url)) {
       connection.setRequestProperty("Range", s"bytes=$localLength-")
       log.info(s"Resuming download of $url to $to")
