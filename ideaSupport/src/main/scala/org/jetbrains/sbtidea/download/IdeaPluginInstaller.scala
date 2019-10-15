@@ -7,6 +7,7 @@ import org.jetbrains.sbtidea.download.LocalPluginRegistry._
 import org.jetbrains.sbtidea.download.api.{IdeaInstaller, PluginMetadata}
 
 trait IdeaPluginInstaller extends IdeaInstaller {
+  import IdeaPluginInstaller._
 
   private val localPluginRegistry = new LocalPluginRegistry(getInstallDir, log)
 
@@ -86,26 +87,6 @@ trait IdeaPluginInstaller extends IdeaInstaller {
     lowerValid && upperValid
   }
 
-  // sort of copied from com.intellij.openapi.util.BuildNumber#compareTo
-  private def compareVersions(a: String, b: String): Int = {
-    val SNAPSHOT        = "SNAPSHOT"
-    val SNAPSHOT_VALUE  = Int.MaxValue
-
-    val c1 = a.replaceAll(SNAPSHOT, SNAPSHOT_VALUE.toString).split('.')
-    val c2 = b.replaceAll(SNAPSHOT, SNAPSHOT_VALUE.toString).split('.')
-    val pairs = c1
-      .zipAll(c2, "0", "0")
-      .map(x => x._1.toInt -> x._2.toInt)
-
-    for ((a_i, b_i) <- pairs) {
-      if ((a_i == b_i) && (a_i.toInt == SNAPSHOT_VALUE)) return 0
-      if (a_i == SNAPSHOT_VALUE) return -1
-      if (b_i == SNAPSHOT_VALUE) return 1
-      val res = a_i - b_i
-      if (res != 0) return res
-    }
-    c1.length - c2.length
-  }
 
 
 
@@ -115,4 +96,29 @@ trait IdeaPluginInstaller extends IdeaInstaller {
   }
 
   protected def pluginsDir: Path = getInstallDir.resolve("plugins")
+}
+
+object IdeaPluginInstaller {
+
+  // sort of copied from com.intellij.openapi.util.BuildNumber#compareTo
+  def compareVersions(a: String, b: String): Int = {
+    val SNAPSHOT        = "SNAPSHOT"
+    val SNAPSHOT_VALUE  = Int.MaxValue
+
+    val c1 = a.replaceAll(SNAPSHOT, SNAPSHOT_VALUE.toString).replaceAll("\\*", SNAPSHOT_VALUE.toString).split('.')
+    val c2 = b.replaceAll(SNAPSHOT, SNAPSHOT_VALUE.toString).replaceAll("\\*", SNAPSHOT_VALUE.toString).split('.')
+    val pairs = c1
+      .zipAll(c2, "0", "0")
+      .map(x => x._1.toInt -> x._2.toInt)
+
+    for ((a_i, b_i) <- pairs) {
+      if ((a_i == b_i) && (a_i.toInt == SNAPSHOT_VALUE)) return 0
+      if (a_i == SNAPSHOT_VALUE) return 1
+      if (b_i == SNAPSHOT_VALUE) return -1
+      val res = a_i - b_i
+      if (res != 0) return res
+    }
+    c1.length - c2.length
+  }
+
 }
