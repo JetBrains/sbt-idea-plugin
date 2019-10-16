@@ -70,7 +70,7 @@ trait IdeaPluginInstaller extends IdeaInstaller {
 
   private def getMoreUpToDateVersion(metadata: PluginMetadata, channel: String): Option[String] = {
     PluginRepoUtils.getLatestPluginVersion(buildInfo, metadata.id, channel) match {
-      case Right(version) if compareVersions(metadata.version, version) < 0 =>
+      case Right(version) if VersionComparatorUtil.compare(metadata.version, version) < 0 =>
         Some(version)
       case Left(error) =>
         log.warn(s"Failed to fetch latest plugin ${metadata.id} version: $error")
@@ -82,8 +82,8 @@ trait IdeaPluginInstaller extends IdeaInstaller {
   private def isPluginCompatibleWithIdea(metadata: PluginMetadata): Boolean = {
     val lower = metadata.sinceBuild.replaceAll("^.+-", "") // strip IC- / PC- etc. prefixes
     val upper = metadata.untilBuild.replaceAll("^.+-", "")
-    val lowerValid = compareVersions(lower, buildInfo.buildNumber) <= 0
-    val upperValid = compareVersions(upper, buildInfo.buildNumber) >= 0
+    val lowerValid = compareIdeaVersions(lower, buildInfo.buildNumber) <= 0
+    val upperValid = compareIdeaVersions(upper, buildInfo.buildNumber) >= 0
     lowerValid && upperValid
   }
 
@@ -101,7 +101,7 @@ trait IdeaPluginInstaller extends IdeaInstaller {
 object IdeaPluginInstaller {
 
   // sort of copied from com.intellij.openapi.util.BuildNumber#compareTo
-  def compareVersions(a: String, b: String): Int = {
+  def compareIdeaVersions(a: String, b: String): Int = {
     val SNAPSHOT        = "SNAPSHOT"
     val SNAPSHOT_VALUE  = Int.MaxValue
 

@@ -1,8 +1,9 @@
 package org.jetbrains.sbtidea.download
 
+import org.jetbrains.sbtidea.download.IdeaPluginInstaller.compareIdeaVersions
 import org.scalatest.{FunSuite, Matchers}
 
-class VersionCompareTest extends FunSuite with Matchers {
+class IdeaVersionCompareTest extends FunSuite with Matchers {
 
   test("versions greater") {
     val validCombos = Seq(
@@ -15,7 +16,7 @@ class VersionCompareTest extends FunSuite with Matchers {
 
     for ((a, b) <- validCombos)
       withClue(s"$a > $b: ") {
-        IdeaPluginInstaller.compareVersions(a, b) shouldBe > (0)
+        compareIdeaVersions(a, b) shouldBe > (0)
       }
   }
 
@@ -29,7 +30,7 @@ class VersionCompareTest extends FunSuite with Matchers {
 
     for ((a, b) <- validCombos)
       withClue(s"$a == $b: ") {
-        IdeaPluginInstaller.compareVersions(a, b) shouldBe 0
+        compareIdeaVersions(a, b) shouldBe 0
       }
   }
 
@@ -45,7 +46,7 @@ class VersionCompareTest extends FunSuite with Matchers {
 
     for ((a, b) <- validCombos)
       withClue(s"$a > $b: ") {
-        IdeaPluginInstaller.compareVersions(a, b) shouldBe > (0)
+        compareIdeaVersions(a, b) shouldBe > (0)
       }
   }
 
