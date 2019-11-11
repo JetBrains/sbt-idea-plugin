@@ -63,7 +63,11 @@ trait SbtProjectStructureExtractorBase extends ProjectStructureExtractor {
     val projectData = projectMap(data.thisProject)
 
     implicit val scalaVersion: ProjectScalaVersion =
-      ProjectScalaVersion(projectData.definedDeps.find(_.name == "scala-library"))
+      ProjectScalaVersion(
+        projectData.cp
+          .flatMap(_.metadata.get(sbt.Keys.moduleID.key))
+          .find(_.name == "scala-library")
+      )
 
     val libraryExtractor = new IvyLibraryExtractor(projectData)
     libraryExtractor.extract
