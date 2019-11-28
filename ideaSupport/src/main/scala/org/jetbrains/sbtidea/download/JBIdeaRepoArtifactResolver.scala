@@ -9,6 +9,9 @@ import sbt.{URL, url}
 
 trait JBIdeaRepoArtifactResolver extends IdeaResolver {
 
+  private val IJ_REPO_OVERRIDE  = "sbtidea.ijrepo"
+  private val defaultBaseURL    = "https://www.jetbrains.com/intellij-repository"
+
   private def getCoordinates(platform: IntelliJPlatform): (String, String) = platform match {
     case IntelliJPlatform.IdeaCommunity       => "com/jetbrains/intellij/idea" -> "ideaIC"
     case IntelliJPlatform.IdeaUltimate        => "com/jetbrains/intellij/idea" -> "ideaIU"
@@ -35,11 +38,16 @@ trait JBIdeaRepoArtifactResolver extends IdeaResolver {
       else if (platform.buildNumber.contains("SNAPSHOT")) "snapshots" -> ""
       else                                                "releases"  -> ""
     val (groupId, artifactId) = getCoordinates(platform.edition)
-    val baseUrl         = s"https://www.jetbrains.com/intellij-repository/$repo/$groupId"
+    val urlFormEnv  = System.getProperty(IJ_REPO_OVERRIDE)
+    val baseURL     = if (urlFormEnv != null) {
+      log.warn(s"Using non-default IntelliJ repository URL: $urlFormEnv")
+      urlFormEnv
+    } else defaultBaseURL
+    val repoURL         = s"$baseURL/$repo/$groupId"
     val build           = platform.buildNumber + buildNumberSuffix
     var stream: Option[InputStream] = None
     try {
-      val result  = url(s"$baseUrl/$artifactId/$build/$artifactId-$build$artifactSuffix")
+      val result  = url(s"$repoURL/$artifactId/$build/$artifactId-$build$artifactSuffix")
       stream      = Some(result.openStream())
       result
     } catch {
