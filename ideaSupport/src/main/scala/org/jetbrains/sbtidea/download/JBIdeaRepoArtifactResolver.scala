@@ -4,12 +4,12 @@ import java.io.{FileNotFoundException, InputStream}
 
 import org.jetbrains.sbtidea.Keys
 import org.jetbrains.sbtidea.Keys._
+import org.jetbrains.sbtidea.download.IdeaUpdater.IJ_REPO_OVERRIDE
 import org.jetbrains.sbtidea.download.api.IdeaResolver
 import sbt.{URL, url}
 
 trait JBIdeaRepoArtifactResolver extends IdeaResolver {
 
-  private val IJ_REPO_OVERRIDE  = "sbtidea.ijrepo"
   private val defaultBaseURL    = "https://www.jetbrains.com/intellij-repository"
 
   private def getCoordinates(platform: IntelliJPlatform): (String, String) = platform match {

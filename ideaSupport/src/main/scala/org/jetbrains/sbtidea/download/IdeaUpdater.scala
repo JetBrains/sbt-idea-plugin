@@ -60,4 +60,5 @@ object IdeaUpdater {
   final val DUMB_KEY: String          = "IdeaUpdater.dumbMode"
   final val DUMB_KEY_IDEA: String     = "idea"
   final val DUMB_KEY_PLUGINS: String  = "plugins"
+  final val IJ_REPO_OVERRIDE: String  = "sbtidea.ijrepo"
 }
