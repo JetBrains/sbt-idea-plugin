@@ -26,7 +26,7 @@ class LocalPluginRegistry(ideaRoot: Path, log: PluginLogger) {
     val fromPluginsDir = emptyIndex
     class IndexBuilder extends Consumer[Path] {
       override def accept(path: Path): Unit = extractPluginMetaData(path) match {
-        case Left(error)      => log.warn(s"Failed to build plugin index from $path: $error")
+        case Left(error)      => log.warn(s"Failed to add plugin to index: $error")
         case Right(metadata)  => fromPluginsDir.put(metadata.id, path.toString)
       }
     }
