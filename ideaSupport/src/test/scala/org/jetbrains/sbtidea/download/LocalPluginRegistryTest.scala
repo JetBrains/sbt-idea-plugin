@@ -93,4 +93,17 @@ final class LocalPluginRegistryTest extends FunSuite with Matchers with IdeaMock
     pluginsIndex.toFile.exists() shouldBe false
   }
 
+  test("irrelevant files and folders are ignored when building index") {
+    val capturingLog = new CapturingLogger
+    Files.createDirectory(pluginsFolder / "NON-PLUGIN")
+    Files.createFile( pluginsFolder / ".DS_Store")
+
+    val registry  = new LocalPluginRegistry(ideaRoot, capturingLog)
+
+    registry.isPluginInstalled(bundledPlugins.head) shouldBe true
+
+    capturingLog.messages.exists(_.matches("Failed to add plugin to index: Couldn't find plugin.xml in .+\\.DS_Store")) shouldBe true
+    capturingLog.messages.exists(_.matches("Failed to add plugin to index: Plugin root .+NON-PLUGIN has no lib directory")) shouldBe true
+  }
+
 }
