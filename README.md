@@ -306,6 +306,12 @@ run or debug the new run configuration. This will compile the project, build the
 - Note that doing an "SBT Refresh" (or manually running the tasks above) is required after making changes to your build
 that affect the final artifact(i.e. changing `libraryDependencies`), in order to update IDEA configs
   
+## Custom IntelliJ artifacts repo
+
+Under some circumstances using a proxy may be required to access IntelliJ artifacts repo, or there even is a local
+artifact mirror set up. To use non-default repository for downloading IntelliJ product distributions set 
+`sbtidea.ijrepo` jvm property. Example: `-Dsbtidea.ijrepo=https://proxy.mycompany.com/intellij-repository`
+  
 ## Auto enable the plugin
 
 Sbt-idea-plugin currently breaks scalaJS compilation, and thereby has autoloading disabled.
