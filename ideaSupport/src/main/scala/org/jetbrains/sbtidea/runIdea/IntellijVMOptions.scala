@@ -20,12 +20,13 @@ case class IntellijVMOptions(platform: IntelliJPlatform,
                              debug: Boolean = true,
                              debugPort: Int = 5005,
                              suspend: Boolean = false,
-                             test: Boolean = false) {
+                             test: Boolean = false,
+                             defaultOptions: Seq[String] = IntellijVMOptions.STATIC_OPTS) {
 
 
   private def build: Seq[String] = {
     val buffer = new mutable.ArrayBuffer[String]()
-    buffer ++= IntellijVMOptions.STATIC_OPTS
+    buffer ++= defaultOptions
     buffer +=  s"-Xms${xms}m"
     buffer +=  s"-Xmx${xmx}m"
     buffer +=  s"-XX:ReservedCodeCacheSize=${reservedCodeCacheSize}m"
