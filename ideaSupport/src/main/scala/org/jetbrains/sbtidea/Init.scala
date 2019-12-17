@@ -151,7 +151,7 @@ trait Init { this: Keys.type =>
     runIDE := {
       import complete.DefaultParsers._
       implicit val log: PluginLogger = new SbtPluginLogger(streams.value)
-      val opts = spaceDelimited("[noPCE] [noDebug] [suspend]").parsed
+      val opts = spaceDelimited("[noPCE] [noDebug] [suspend] [blocking]").parsed
       val vmOptions = intellijVMOptions.value.copy(
         noPCE = opts.contains("noPCE"),
         debug = !opts.contains("noDebug"),
@@ -159,7 +159,7 @@ trait Init { this: Keys.type =>
       )
       val ideaCP = intellijMainJars.value.map(_.data.toPath)
       val pluginRoot = packageArtifact.value.toPath
-      val runner = new IdeaRunner(ideaCP, pluginRoot, vmOptions)
+      val runner = new IdeaRunner(ideaCP, pluginRoot, vmOptions, opts.contains("blocking"))
       runner.run()
     },
 
@@ -168,7 +168,6 @@ trait Init { this: Keys.type =>
     aggregate.in(packageArtifact) := false,
     aggregate.in(updateIntellij) := false,
     unmanagedJars in Compile += file(System.getProperty("java.home")).getParentFile / "lib" / "tools.jar",
-
     // Deprecated task aliases
     packagePlugin := {
       streams.value.log.warn("this task is deprecated, please use packageArtifact")

@@ -11,14 +11,17 @@ import scala.collection.JavaConverters._
 
 class IdeaRunner(ideaClasspath: Seq[Path],
                  pluginRoot: Path,
-                 vmOptions: IntellijVMOptions)(implicit log: PluginLogger) {
+                 vmOptions: IntellijVMOptions,
+                 blocking: Boolean)(implicit log: PluginLogger) {
 
   def run(): Unit = {
     val processBuilder = new ProcessBuilder()
-    processBuilder
+    val process = processBuilder
       .command(buildCommand)
-        .inheritIO()
-        .start()
+      .inheritIO()
+      .start()
+    if (blocking)
+      process.waitFor()
   }
 
   private def getBundledJRE: Option[JRE] = {

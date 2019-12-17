@@ -135,9 +135,9 @@ Example:
 intellijVMOptions := intellijVMOptions.value.copy(xmx = 2048, xms = 256) 
 ```
 
-#### `runIDE [noPCE] [noDebug] [suspend] :: InputKey[Unit]`
+#### `runIDE [noPCE] [noDebug] [suspend] [blocking] :: InputKey[Unit]`
 
-Runs IntelliJ IDE with current plugin. This task is non-blocking, so you can continue using SBT console.
+Runs IntelliJ IDE with current plugin. This task is non-blocking by default, so you can continue using SBT console.
 
 By default IDE is run with non-suspending debug agent on port `5005`. This can be overridden by either optional
 arguments above, or by modifying default [`intellijVMOptions`](#intellijvmoptions--settingkeyintellijvmoptions). 
