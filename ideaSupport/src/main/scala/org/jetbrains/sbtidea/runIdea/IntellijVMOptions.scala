@@ -21,7 +21,6 @@ case class IntellijVMOptions(platform: IntelliJPlatform,
                              debugPort: Int = 5005,
                              suspend: Boolean = false,
                              test: Boolean = false,
-                             programArguments: Seq[String] = Seq.empty,
                              defaultOptions: Seq[String] = IntellijVMOptions.STATIC_OPTS) {
 
 
@@ -50,7 +49,6 @@ case class IntellijVMOptions(platform: IntelliJPlatform,
     }
     if (platform.platformPrefix.nonEmpty)
       buffer += s"-Didea.platform.prefix=${platform.platformPrefix}"
-    buffer ++= programArguments
     buffer
   }
 

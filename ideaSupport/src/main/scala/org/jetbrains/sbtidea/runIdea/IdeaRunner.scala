@@ -12,7 +12,8 @@ import scala.collection.JavaConverters._
 class IdeaRunner(ideaClasspath: Seq[Path],
                  pluginRoot: Path,
                  vmOptions: IntellijVMOptions,
-                 blocking: Boolean)(implicit log: PluginLogger) {
+                 blocking: Boolean,
+                 programArguments: Seq[String] = Seq.empty)(implicit log: PluginLogger) {
 
   def run(): Unit = {
     val processBuilder = new ProcessBuilder()
@@ -89,7 +90,7 @@ class IdeaRunner(ideaClasspath: Seq[Path],
     (List(
       javaExe.toAbsolutePath.toString,
       "-cp",
-      classPath) ++ vmOptions.asSeq :+ IntellijVMOptions.IDEA_MAIN).asJava
+      classPath) ++ (vmOptions.asSeq :+ IntellijVMOptions.IDEA_MAIN) ++ programArguments).asJava
   }
 
   private def buildCPString: String = ideaClasspath.mkString(File.pathSeparator)
