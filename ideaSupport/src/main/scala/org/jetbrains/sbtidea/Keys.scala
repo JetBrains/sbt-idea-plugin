@@ -77,6 +77,10 @@ object Keys extends Defns with Init with Utils with Quirks {
   lazy val packagePluginZip = taskKey[File](
     "Create plugin distribution zip file")
 
+  lazy val buildIntellijOptionsIndex = taskKey[Unit](
+    "Build index for searching plugin options"
+  )
+
   /* Utility tasks */
 
   lazy val createIDEARunConfiguration: TaskKey[File] = taskKey("")

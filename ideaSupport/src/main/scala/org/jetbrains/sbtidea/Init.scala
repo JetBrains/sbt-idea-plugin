@@ -2,8 +2,9 @@ package org.jetbrains.sbtidea
 
 import org.jetbrains.sbtidea.download._
 import org.jetbrains.sbtidea.packaging.PackagingKeys._
-import org.jetbrains.sbtidea.packaging.artifact.IdeaArtifactXmlBuilder
+import org.jetbrains.sbtidea.packaging.artifact.{DistBuilder, IdeaArtifactXmlBuilder}
 import org.jetbrains.sbtidea.runIdea.{IdeaRunner, IntellijVMOptions}
+import org.jetbrains.sbtidea.searchableoptions.BuildIndex
 import org.jetbrains.sbtidea.xml.{PluginXmlDetector, PluginXmlPatcher}
 import sbt.Keys._
 import sbt.complete.DefaultParsers
@@ -181,6 +182,7 @@ trait Init { this: Keys.type =>
       streams.value.log.warn("this task is deprecated, please use packageArtifactZip")
       packageArtifactZip.value
     },
+    buildIntellijOptionsIndex := BuildIndex.createTask.value,
 
     // Test-related settings
 

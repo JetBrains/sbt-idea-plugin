@@ -161,6 +161,13 @@ This task is run automatically when sbt project is loaded.
 Downloads IntelliJ's binaries and sources, puts them into
 `intellijBaseDirectory` directory. Also downloads or updates external plugins.
 
+#### `buildIntellijOptionsIndex :: TaskKey[Unit]`
+
+Builds index of options provided by the plugin to make them searchable via 
+[search everywhere](https://www.jetbrains.com/help/idea/searching-everywhere.html#search_settings) action.
+This task should either be manually called instead of `packageArtifact` or before `packageArtifactZip` since it patches 
+jars already built by `packageArtifact`.
+
 ## Packaging
 
 #### `packageMethod :: SettingKey[PackagingMethod]`
@@ -266,7 +273,7 @@ including transitive are placed in the "lib" folder as well.
 #### `packageArtifactZip :: TaskKey[File]`
 
 Produces ZIP file from the artifact produced by `packagePlugin` task.
-This is later used by publishPlugin as an artifact to upload.
+This is later used by `publishPlugin` as an artifact to upload.
 
 ## Utils
 
