@@ -16,6 +16,8 @@ package object sbtidea {
   implicit class PathExt(path: Path) {
     def /(string: String): Path = path.resolve(string)
     def list: Seq[Path] = Files.list(path).iterator().asScala.toSeq
+    def exists: Boolean = Files.exists(path)
+    def isDir: Boolean = Files.isDirectory(path)
   }
 
 }
