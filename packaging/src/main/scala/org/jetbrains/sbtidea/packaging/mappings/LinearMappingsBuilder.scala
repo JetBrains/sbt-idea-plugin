@@ -103,6 +103,11 @@ class LinearMappingsBuilder(override val outputDir: File, log: PluginLogger) ext
       else
         Mapping(lib.jarFile, to, node.mmd.copy(kind = MAPPING_KIND.LIB))
     val mappings = node.packagingOptions.libraryMappings.toMap
+    val invalidMappings = mappings
+      .filterNot { case (key, _) => key.org == "org.scala-lang.modules" || node.libs.exists(_.key == key) }
+    invalidMappings.foreach { m =>
+      log.error(s"No library dependencies match mapping $m in module ${node.name}")
+    }
     node.libs.foreach {
       case lib if !mappings.contains(lib.key) =>
         mappingsBuffer += mapping(lib, outputDir / mkRelativeLibPath(lib))
