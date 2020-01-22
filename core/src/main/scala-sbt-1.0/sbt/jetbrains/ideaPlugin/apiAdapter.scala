@@ -1,5 +1,6 @@
 package sbt.jetbrains.ideaPlugin
 
+import java.nio.file.{Files, Path}
 import java.util.Optional
 
 object apiAdapter {
@@ -34,5 +35,14 @@ object apiAdapter {
       def empty(): PreviousResult =
         xsbti.compile.PreviousResult.create(Optional.empty(), Optional.empty())
     }
+  }
+
+  // / method is missing because it's already implemented in sbt 1.3 PathOps
+  final class PathExt(val path: Path) extends AnyVal {
+    import scala.collection.JavaConverters.asScalaIteratorConverter
+
+    def list: Seq[Path] = Files.list(path).iterator().asScala.toSeq
+    def exists: Boolean = Files.exists(path)
+    def isDir: Boolean = Files.isDirectory(path)
   }
 }

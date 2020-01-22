@@ -8,7 +8,7 @@ import org.jetbrains.sbtidea.packaging.PackagingKeys.packageArtifact
 import org.jetbrains.sbtidea.packaging._
 import org.jetbrains.sbtidea.packaging.artifact.DistBuilder
 import org.jetbrains.sbtidea.runIdea.IdeaRunner
-import org.jetbrains.sbtidea.{PathExt, PluginLogger, SbtPluginLogger}
+import org.jetbrains.sbtidea.{pathToPathExt, PluginLogger, SbtPluginLogger}
 import sbt.Keys.{streams, target}
 import sbt._
 
