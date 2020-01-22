@@ -63,38 +63,8 @@ trait PackagingKeysInit {
         new LinearMappingsBuilder(outputDir, logger).buildMappings(structure)
       }
     }.value,
-    dumpDependencyStructure := Def.task {
-      SbtPackageProjectData(
-        thisProjectRef.value,
-        managedClasspath.in(Compile).value,
-        libraryDependencies.in(Compile).value,
-        packageAdditionalProjects.value,
-        packageAssembleLibraries.value,
-        products.in(Compile).value,
-        update.value,
-        packageLibraryMappings.value,
-        packageFileMappings.value,
-        packageMethod.value,
-        shadePatterns.value,
-        pathExcludeFilter.value
-      )
-    }.value,
-    dumpDependencyStructureOffline := Def.task {
-      SbtPackageProjectData(
-        thisProjectRef.value,
-        managedClasspath.in(Compile).value,
-        libraryDependencies.in(Compile).value,
-        packageAdditionalProjects.value,
-        packageAssembleLibraries.value,
-        productDirectories.in(Compile).value,
-        update.value,
-        packageLibraryMappings.value,
-        packageFileMappings.value,
-        packageMethod.value,
-        shadePatterns.value,
-        pathExcludeFilter.value
-      )
-    }.value,
+    dumpDependencyStructure         := apiAdapter.dumpDependencyStructure.value,
+    dumpDependencyStructureOffline  := apiAdapter.dumpDependencyStructureOffline.value,
     packageArtifact := Def.taskDyn {
       val outputDir = packageOutputDir.value
       val mappings  = packageMappings.value
