@@ -286,7 +286,7 @@ Prints ASCII graph of currently selected project to console. Useful for debuggin
 
 ### From SBT
 
-To run the plugin from SBT simply use [runIDE](#runide-nopce-nodebug-suspend--inputkeyunit) task.
+To run the plugin from SBT simply use [runIDE](#runide-nopce-nodebug-suspend-blocking--inputkeyunit) task.
 Your plugin will be automatically compiled, an artifact built and attached to new IntelliJ instance.
 
 Debugger can later be attached to the process remotely - the default port is 5005.
