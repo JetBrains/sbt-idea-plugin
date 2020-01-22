@@ -1,8 +1,10 @@
 package org.jetbrains
 
-import java.nio.file.{Files, Path}
+import java.nio.file.Path
 
-import scala.collection.JavaConverters.asScalaIteratorConverter
+import sbt.jetbrains.ideaPlugin.apiAdapter
+
+import scala.language.implicitConversions
 
 package object sbtidea {
   implicit class Any2Option[T <: Any](any: T) {
@@ -13,11 +15,7 @@ package object sbtidea {
     def isValidFileName: Boolean =
       str.matches("\\A(?!(?:COM[0-9]|CON|LPT[0-9]|NUL|PRN|AUX|com[0-9]|con|lpt[0-9]|nul|prn|aux)|[\\s\\.])[^\\\\\\/:*\"?<>|]{1,254}\\z")
   }
-  implicit class PathExt(path: Path) {
-    def /(string: String): Path = path.resolve(string)
-    def list: Seq[Path] = Files.list(path).iterator().asScala.toSeq
-    def exists: Boolean = Files.exists(path)
-    def isDir: Boolean = Files.isDirectory(path)
-  }
+
+  implicit def pathToPathExt(path: Path): apiAdapter.PathExt = new apiAdapter.PathExt(path)
 
 }

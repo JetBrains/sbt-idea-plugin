@@ -4,7 +4,7 @@ import java.nio.file.Path
 
 import org.jetbrains.sbtidea.{ConsoleLogger, Keys, TmpDirUtils}
 import org.scalatest.{FunSuite, Matchers}
-import org.jetbrains.sbtidea.PathExt
+import org.jetbrains.sbtidea.pathToPathExt
 
 class IdeaInstallerTest extends FunSuite with Matchers with IdeaMock with TmpDirUtils with ConsoleLogger {
 

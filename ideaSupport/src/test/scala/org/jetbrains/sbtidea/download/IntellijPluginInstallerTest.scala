@@ -3,7 +3,8 @@ package org.jetbrains.sbtidea.download
 import org.jetbrains.sbtidea.CapturingLogger
 import org.jetbrains.sbtidea.Keys.String2Plugin
 import org.jetbrains.sbtidea.download.api.PluginMetadata
-import org.jetbrains.sbtidea.PathExt
+import org.jetbrains.sbtidea.pathToPathExt
+import sbt._
 
 final class IntellijPluginInstallerTest extends IntellijPluginInstallerTestBase {
 
