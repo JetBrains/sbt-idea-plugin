@@ -7,6 +7,8 @@ import org.jetbrains.sbtidea.structure.{Library, ModuleKey}
 import sbt.Def.Classpath
 import sbt.Keys.moduleID
 
+import scala.collection.mutable
+
 class IvyLibraryExtractor(private val data: CommonSbtProjectData)
                         (private implicit val scalaVersion: ProjectScalaVersion, log: PluginLogger) {
 
@@ -19,15 +21,30 @@ class IvyLibraryExtractor(private val data: CommonSbtProjectData)
     val resolver = new TransitiveDeps(data.report, configuration)
     val resolvedLibsNoEvicted = buildModuleIdMap(data.cp)
     val resolvedLibs          = updateWithEvictionMappings(resolvedLibsNoEvicted, resolver.evicted)
-    val transitiveDeps        = data.definedDeps
+    val definedDeps           = data.definedDeps
       .filter(_.configurations.isEmpty)
       .map(_.key)
+    val transitiveDeps        = definedDeps
       .flatMap(resolver.collectTransitiveDeps)
-    val libraries = for {
-      dep <- transitiveDeps
-      file <- resolvedLibs.get(dep)
-    } yield SbtIvyLibrary(dep, file)
-    libraries.distinct
+
+    if (transitiveDeps.size < definedDeps.size) {
+      val diff = definedDeps.toSet.diff(transitiveDeps.toSet)
+      log.warn(s"Failed to collect transitive dependencies for $diff")
+    }
+
+    val resolved    = mutable.ArrayBuffer[Library]()
+    val unResolved  = mutable.ArrayBuffer[ModuleKey]()
+
+    transitiveDeps.foreach { dep =>
+      if (resolvedLibs.contains(dep))
+        resolved   += SbtIvyLibrary(dep, resolvedLibs(dep))
+      else
+        unResolved += dep
+    }
+
+    unResolved.foreach(d => log.warn(s"Failed to extract dependency jar for $d"))
+
+    resolved.distinct
   }
 
   private def buildModuleIdMap(cp: Classpath)(implicit scalaVersion: ProjectScalaVersion): Map[ModuleKey, File] = (for {
