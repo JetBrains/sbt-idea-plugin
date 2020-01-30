@@ -81,7 +81,7 @@ class LocalPluginRegistry(ideaRoot: Path, log: PluginLogger) {
 
   def getInstalledPluginRoot(ideaPlugin: IntellijPlugin): Path = {
     val key = ideaPlugin match {
-      case IntellijPlugin.Url(url) => url
+      case IntellijPlugin.Url(url) => url.toString
       case IntellijPlugin.Id(id, _, _) => id
     }
     if (!index.containsKey(key))
