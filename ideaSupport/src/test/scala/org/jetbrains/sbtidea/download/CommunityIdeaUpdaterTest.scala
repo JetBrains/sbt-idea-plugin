@@ -23,7 +23,7 @@ final class CommunityIdeaUpdaterTest extends FunSuite with Matchers with IdeaMoc
     Files.createDirectories(tmpDir.resolve("plugins"))
     val updater = new CommunityIdeaUpdater(tmpDir, logger)
     updater.updateIdeaAndPlugins(
-      BuildInfo.apply("192.6262.9", Keys.IntelliJPlatform.IdeaCommunity),
+      BuildInfo.apply("192.6262.9", Keys.IntelliJPlatform.IdeaCommunity, None),
       "mobi.hsz.idea.gitignore".toPlugin :: "org.intellij.scala:2019.2.1144:Nightly".toPlugin :: Nil
     )
 //    sbt.IO.delete(tmpDir.toFile)
@@ -34,6 +34,11 @@ final class CommunityIdeaUpdaterTest extends FunSuite with Matchers with IdeaMoc
     val installDir = installIdeaMock
     installDir.toFile.exists() shouldBe true
     installDir.toFile.list() should contain allElementsOf Seq("lib", "bin", "plugins", "build.txt")
+  }
+
+  test("JBR downloading") {
+    val installDir = installIdeaMock
+    new JbrInstaller(installDir, Some("11_0_6b702.1"))(logger).downloadAndInstall(IDEA_BUILDINFO)
   }
 
 

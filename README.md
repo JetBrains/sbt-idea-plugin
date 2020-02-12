@@ -108,6 +108,14 @@ intellijExternalPlugins += "org.intellij.scala::Nightly".toPlugin
 intellijExternalPlugins += "org.intellij.scala:2019.3.2:Eap".toPlugin
 ```
 
+#### `jbrVersion :: Option[String]`
+
+Default: `Some(JbrInstaller.VERSION_AUTO)`
+
+JetBrains Java runtime version to use when running the IDE with the plugin. By default JBR version is extracted from
+IDE installation metadata. Only jbr 11 is supported. Available versions can be found on [jbr bintray](https://bintray.com/jetbrains/intellij-jbr/).
+To disable, set to `None`
+
 #### `patchPluginXml :: SettingKey[pluginXmlOptions]`
 
 Default: `pluginXmlOptions.DISABLED`

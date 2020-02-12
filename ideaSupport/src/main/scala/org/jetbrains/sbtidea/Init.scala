@@ -37,10 +37,11 @@ trait Init { this: Keys.type =>
   )
 
   lazy val buildSettings: Seq[Setting[_]] = Seq(
-    intellijPluginName      := name.in(LocalRootProject).value,
-    intellijBuild           := "LATEST-EAP-SNAPSHOT",
-    intellijPlatform         := IntelliJPlatform.IdeaCommunity,
-    intellijDownloadSources := true,
+    intellijPluginName        := name.in(LocalRootProject).value,
+    intellijBuild             := "LATEST-EAP-SNAPSHOT",
+    intellijPlatform          := IntelliJPlatform.IdeaCommunity,
+    intellijDownloadSources   := true,
+    jbrVersion                := Some(JbrInstaller.VERSION_AUTO),
     intellijPluginDirectory   := homePrefix / s".${intellijPluginName.value}Plugin${intellijPlatform.value.edition}",
     intellijBaseDirectory     := intellijDownloadDirectory.value / intellijBuild.value,
     intellijDownloadDirectory := intellijPluginDirectory.value / "sdk",
@@ -53,7 +54,8 @@ trait Init { this: Keys.type =>
         .updateIdeaAndPlugins(
           BuildInfo(
             intellijBuild.value,
-            intellijPlatform.value
+            intellijPlatform.value,
+            jbrVersion.value
           ),
           intellijExternalPlugins.?.all(ScopeFilter(inAnyProject)).value.flatten.flatten,
           intellijDownloadSources.value

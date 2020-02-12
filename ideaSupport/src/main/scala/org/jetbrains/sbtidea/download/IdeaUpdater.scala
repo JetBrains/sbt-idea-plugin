@@ -16,16 +16,22 @@ import org.jetbrains.sbtidea.download.api.{IdeaArtifactResolver, InstallerFactor
   */
 class IdeaUpdater(private val resolver: IdeaArtifactResolver,
                   private val installerFactory: InstallerFactory,
-                  val ideaInstallDir: Path, log: PluginLogger) {
+                  val ideaInstallDir: Path, implicit val log: PluginLogger) {
 import IdeaUpdater._
 
   private val downloader: FileDownloader = new FileDownloader(ideaInstallDir.getParent, log)
 
   //noinspection MapGetOrElseBoolean
   def updateIdeaAndPlugins(ideaBuildInfo: BuildInfo, plugins: Seq[IntellijPlugin], withSources: Boolean = true): Path = {
+
     val dumbOptions = sys.props.get(DUMB_KEY).getOrElse("").toLowerCase
     val installRoot = if (!dumbOptions.contains(DUMB_KEY_IDEA)) updateIdea(ideaBuildInfo) else Paths.get("")
     if (!dumbOptions.contains(DUMB_KEY_PLUGINS)) updatePlugins(ideaBuildInfo, plugins)
+    if (!dumbOptions.contains(DUMB_KEY_JBR) && ideaBuildInfo.jbrVersion.isDefined)
+      new JbrInstaller(
+        installRoot,
+        JbrInstaller.extractVersionFromIdea(installRoot)
+      ).downloadAndInstall(ideaBuildInfo)
     installRoot
   }
 
@@ -60,5 +66,6 @@ object IdeaUpdater {
   final val DUMB_KEY: String          = "IdeaUpdater.dumbMode"
   final val DUMB_KEY_IDEA: String     = "idea"
   final val DUMB_KEY_PLUGINS: String  = "plugins"
+  final val DUMB_KEY_JBR: String      = "jbr"
   final val IJ_REPO_OVERRIDE: String  = "sbtidea.ijrepo"
 }

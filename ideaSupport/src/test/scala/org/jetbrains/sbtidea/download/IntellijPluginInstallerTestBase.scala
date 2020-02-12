@@ -12,7 +12,7 @@ import sbt._
 trait IntellijPluginInstallerTestBase extends FunSuite with Matchers with IdeaMock with PluginMock with ConsoleLogger {
   protected lazy val ideaRoot: Path   = installIdeaMock
   protected val pluginsRoot: Path     = ideaRoot / "plugins"
-  protected val ideaBuild: BuildInfo  = BuildInfo(IDEA_VERSION, IntelliJPlatform.IdeaUltimate)
+  protected val ideaBuild: BuildInfo  = BuildInfo(IDEA_VERSION, IntelliJPlatform.IdeaUltimate, Some(JbrInstaller.VERSION_AUTO))
 
   protected def createInstaller(logger: PluginLogger = log): IdeaPluginInstaller = new IdeaPluginInstaller {
     override protected def buildInfo: BuildInfo = ideaBuild

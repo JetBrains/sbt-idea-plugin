@@ -27,6 +27,10 @@ object Keys extends Defns with Init with Utils with Quirks {
   lazy val intellijDownloadSources = settingKey[Boolean](
     "Flag indicating whether IntelliJ Platform sources should be downloaded too")
 
+  lazy val jbrVersion = settingKey[Option[String]](
+    "Version of JetBrains Runtime to download and install"
+  )
+
   lazy val updateIntellij = taskKey[Unit](
     "Download Intellij IntelliJ Platform binaries, sources and external plugins for specified build")
 

@@ -60,7 +60,9 @@ lazy val ideaSupport = (project in file(".") / "ideaSupport")
   .dependsOn(core, packaging, visualizer)
   .settings(
     name := "sbt-idea-plugin",
-    libraryDependencies += "org.scalaj" %% "scalaj-http" % "2.3.0"
+    libraryDependencies ++=
+        "org.scalaj" %% "scalaj-http" % "2.3.0"             ::
+          "org.rauschig" % "jarchivelib" % "1.0.0"          :: Nil
   )
 
 lazy val sbtIdeaPlugin = (project in file("."))

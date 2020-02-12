@@ -13,7 +13,7 @@ final class IdeaUpdaterTest extends FunSuite with Matchers with TmpDirUtils with
     tmpDir.toFile.deleteOnExit()
     val updater = new IdeaUpdater(null, null, tmpDir, capturingLogger)
     try {
-      sys.props += DUMB_KEY -> s"$DUMB_KEY_IDEA|$DUMB_KEY_PLUGINS"
+      sys.props += DUMB_KEY -> s"$DUMB_KEY_IDEA|$DUMB_KEY_PLUGINS|$DUMB_KEY_JBR"
       updater.updateIdeaAndPlugins(null, null)
       capturingLogger.messages shouldBe empty
     } finally {

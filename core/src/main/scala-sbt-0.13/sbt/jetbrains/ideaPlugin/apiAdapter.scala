@@ -1,5 +1,6 @@
 package sbt.jetbrains.ideaPlugin
 
+import java.io.InputStream
 import java.nio.file.{Files, Path}
 
 import sbt.File
@@ -57,6 +58,7 @@ object apiAdapter {
     def list: Seq[Path] = Files.list(path).iterator().asScala.toSeq
     def exists: Boolean = Files.exists(path)
     def isDir: Boolean = Files.isDirectory(path)
+    def inputStream: InputStream = Files.newInputStream(path)
   }
 
 }
