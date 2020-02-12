@@ -1,11 +1,16 @@
 package org.jetbrains.sbtidea.runIdea
 
 import java.io.File
-import java.nio.file.{Files, Path, Paths}
-import java.util.Properties
+import java.nio.file.Files.newInputStream
+import java.nio.file.{Path, Paths}
+import java.util.{Locale, Properties}
+import java.lang.{ProcessBuilder => JProcessBuilder}
 
 import org.jetbrains.sbtidea.PluginLogger
+import org.jetbrains.sbtidea.download.JbrInstaller
 import org.jetbrains.sbtidea.packaging.artifact
+import org.jetbrains.sbtidea.pathToPathExt
+import sbt._
 
 import scala.collection.JavaConverters._
 
@@ -16,7 +21,7 @@ class IdeaRunner(ideaClasspath: Seq[Path],
                  programArguments: Seq[String] = Seq.empty)(implicit log: PluginLogger) {
 
   def run(): Unit = {
-    val processBuilder = new ProcessBuilder()
+    val processBuilder = new JProcessBuilder()
     val process = processBuilder
       .command(buildCommand)
       .inheritIO()
@@ -25,31 +30,41 @@ class IdeaRunner(ideaClasspath: Seq[Path],
       process.waitFor()
   }
 
+  private def extractJBRVersion(home: Path): Option[Int] = try {
+    artifact.using(newInputStream(home / "release")) { stream =>
+      val props = new Properties()
+      props.load(stream)
+      val versionValue = props.get("JAVA_VERSION").toString
+      if (versionValue.startsWith("\"1."))
+        Some(versionValue.substring(3, 4).toInt)
+      else
+        Some(versionValue.substring(1, versionValue.indexOf('.')).toInt)
+    }
+  } catch {
+    case e: Exception =>
+      log.warn(s"Failed to get JBR version: $e")
+      None
+  }
+
   private def getBundledJRE: Option[JRE] = {
     val validJars = Set("idea.jar", "platform-api.jar", "platform-impl.jar", "openapi.jar")
+
     val ideaJar =
       ideaClasspath
         .find(validJars contains _.getFileName.toString)
         .getOrElse(throw new RuntimeException(s"Can't find any of the $validJars in classpath"))
-    val maybeJre = ideaJar.getParent.getParent.resolve("jbr")
-    if (!maybeJre.toFile.exists())
-      return None
-    val version = {
-      val props = new Properties()
-      try { artifact.using(Files.newInputStream(maybeJre.resolve("release"))) { stream =>
-        props.load(stream)
-        val versionValue = props.get("JAVA_VERSION").toString
-        if (versionValue.startsWith("\"1."))
-          versionValue.substring(3, 4).toInt
-        else
-          versionValue.substring(1, versionValue.indexOf('.')).toInt
-      }} catch {
-        case e: Exception =>
-          log.warn(s"Failed to get JBR version: $e")
-          return None
-      }
+
+    val maybeJre = sys.props.get("os.name").map {
+      case name if name.toLowerCase(Locale.ENGLISH).startsWith("mac") =>
+        ideaJar.getParent.getParent / JbrInstaller.JBR_DIR_NAME / "Contents" / "Home"
+      case _ =>
+        ideaJar.getParent.getParent / "jbr"
     }
-    Some(JRE(maybeJre, version))
+
+    maybeJre.flatMap { root =>
+      extractJBRVersion(root)
+        .map(JRE(root, _))
+    }
   }
 
   private def detectLocalJRE: JRE = {
@@ -74,9 +89,9 @@ class IdeaRunner(ideaClasspath: Seq[Path],
   private def getJavaExecutable(jre: JRE): Path = {
     val path =
       if (System.getProperty("os.name").startsWith("Win"))
-        Paths.get(System.getProperties.getProperty("java.home"), "bin", "java.exe")
+        jre.root / "bin" / "java.exe"
       else
-        Paths.get(System.getProperties.getProperty("java.home"), "bin", "java")
+        jre.root / "bin" / "java"
     if (path.toFile.exists())
       path
     else
