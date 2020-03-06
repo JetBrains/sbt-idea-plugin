@@ -6,10 +6,10 @@ import java.nio.ByteBuffer
 import java.nio.channels.{Channels, ReadableByteChannel}
 import java.nio.file.{Files, Path, Paths}
 
-import org.jetbrains.sbtidea.PluginLogger
+import org.jetbrains.sbtidea.{PluginLogger => log}
 import org.jetbrains.sbtidea._
 
-private class FileDownloader(private val baseDirectory: Path, log: PluginLogger) {
+class FileDownloader(private val baseDirectory: Path) {
 
   type ProgressCallback = (ProgressInfo, Path) => Unit
 
@@ -18,8 +18,9 @@ private class FileDownloader(private val baseDirectory: Path, log: PluginLogger)
 
   private val downloadDirectory = getOrCreateDLDir()
 
-  def download(artifactPart: ArtifactPart): Path = try {
-    val partFile = downloadNative(artifactPart.url) { case (progressInfo, to) =>
+  @throws(classOf[DownloadException])
+  def download(url: URL, optional: Boolean = false): Path = try {
+    val partFile = downloadNative(url) { case (progressInfo, to) =>
         val text = s"${progressInfo.renderAll} -> $to\r"
         if (!progressInfo.done) print(text) else println(text)
     }
@@ -31,8 +32,8 @@ private class FileDownloader(private val baseDirectory: Path, log: PluginLogger)
     Files.move(partFile, targetFile)
     targetFile
   } catch {
-    case e: Exception if artifactPart.optional =>
-      log.warn(s"Can't download optional ${artifactPart.url}: $e")
+    case e: Exception if optional =>
+      log.warn(s"Can't download optional ${url}: $e")
       Paths.get("")
   }
 
@@ -160,4 +161,8 @@ private class FileDownloader(private val baseDirectory: Path, log: PluginLogger)
     }
   }
 
+}
+
+object FileDownloader {
+  def apply(baseDirectory: Path): FileDownloader = new FileDownloader(baseDirectory)
 }

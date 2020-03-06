@@ -7,8 +7,9 @@ import java.util.{Locale, Properties}
 import java.lang.{ProcessBuilder => JProcessBuilder}
 
 import org.jetbrains.sbtidea.PluginLogger
-import org.jetbrains.sbtidea.download.JbrInstaller
+import org.jetbrains.sbtidea.download.jbr.JbrInstaller
 import org.jetbrains.sbtidea.packaging.artifact
+import org.jetbrains.sbtidea.{PluginLogger => log}
 import org.jetbrains.sbtidea.pathToPathExt
 import sbt._
 
@@ -18,7 +19,7 @@ class IdeaRunner(ideaClasspath: Seq[Path],
                  pluginRoot: Path,
                  vmOptions: IntellijVMOptions,
                  blocking: Boolean,
-                 programArguments: Seq[String] = Seq.empty)(implicit log: PluginLogger) {
+                 programArguments: Seq[String] = Seq.empty) {
 
   def run(): Unit = {
     val processBuilder = new JProcessBuilder()

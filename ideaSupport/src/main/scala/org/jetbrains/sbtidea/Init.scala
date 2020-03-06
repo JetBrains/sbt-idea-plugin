@@ -1,6 +1,7 @@
 package org.jetbrains.sbtidea
 
 import org.jetbrains.sbtidea.download._
+import org.jetbrains.sbtidea.download.jbr.JbrDependency
 import org.jetbrains.sbtidea.packaging.PackagingKeys._
 import org.jetbrains.sbtidea.packaging.artifact.{DistBuilder, IdeaArtifactXmlBuilder}
 import org.jetbrains.sbtidea.runIdea.{IdeaRunner, IntellijVMOptions}
@@ -41,7 +42,7 @@ trait Init { this: Keys.type =>
     intellijBuild             := "LATEST-EAP-SNAPSHOT",
     intellijPlatform          := IntelliJPlatform.IdeaCommunity,
     intellijDownloadSources   := true,
-    jbrVersion                := Some(JbrInstaller.VERSION_AUTO),
+    jbrVersion                := Some(JbrDependency.VERSION_AUTO),
     intellijPluginDirectory   := homePrefix / s".${intellijPluginName.value}Plugin${intellijPlatform.value.edition}",
     intellijBaseDirectory     := intellijDownloadDirectory.value / intellijBuild.value,
     intellijDownloadDirectory := intellijPluginDirectory.value / "sdk",
@@ -49,17 +50,17 @@ trait Init { this: Keys.type =>
     intellijTestSystemDir     := intellijPluginDirectory.value / "test-system",
     concurrentRestrictions in Global += Tags.limit(Tags.Test, 1), // IDEA tests can't be run in parallel
     updateIntellij := {
-      val logger = new SbtPluginLogger(streams.value)
-      new CommunityIdeaUpdater(intellijBaseDirectory.value.toPath, logger)
-        .updateIdeaAndPlugins(
-          BuildInfo(
-            intellijBuild.value,
-            intellijPlatform.value,
-            jbrVersion.value
-          ),
-          intellijExternalPlugins.?.all(ScopeFilter(inAnyProject)).value.flatten.flatten,
-          intellijDownloadSources.value
-        )
+      PluginLogger.bind(new SbtPluginLogger(streams.value))
+      new CommunityUpdater(
+        intellijBaseDirectory.value.toPath,
+        BuildInfo(
+          intellijBuild.value,
+          intellijPlatform.value,
+          jbrVersion.value
+        ),
+        intellijExternalPlugins.?.all(ScopeFilter(inAnyProject)).value.flatten.flatten,
+        intellijDownloadSources.value
+      ).update()
     },
     cleanUpTestEnvironment := {
       IO.delete(intellijTestSystemDir.value)
@@ -88,7 +89,7 @@ trait Init { this: Keys.type =>
     packageArtifactZipFile := target.value / s"${intellijPluginName.value}-${version.value}.zip",
     patchPluginXml := pluginXmlOptions.DISABLED,
     packageArtifact := {
-      implicit val logger: SbtPluginLogger = new SbtPluginLogger(streams.value)
+      PluginLogger.bind(new SbtPluginLogger(streams.value))
       val options = patchPluginXml.value
       val productDirs = productDirectories.in(Compile).value
       if (options != pluginXmlOptions.DISABLED) {
@@ -98,7 +99,7 @@ trait Init { this: Keys.type =>
       packageArtifact.value
     },
     packageArtifactDynamic := {
-      implicit val logger: SbtPluginLogger = new SbtPluginLogger(streams.value)
+      PluginLogger.bind(new SbtPluginLogger(streams.value))
       val options = patchPluginXml.value
       val productDirs = productDirectories.in(Compile).value
       if (options != pluginXmlOptions.DISABLED) {
@@ -153,7 +154,7 @@ trait Init { this: Keys.type =>
 
     runIDE := {
       import complete.DefaultParsers._
-      implicit val log: PluginLogger = new SbtPluginLogger(streams.value)
+      PluginLogger.bind(new SbtPluginLogger(streams.value))
       val opts = spaceDelimited("[noPCE] [noDebug] [suspend] [blocking]").parsed
       val vmOptions = intellijVMOptions.value.copy(
         noPCE = opts.contains("noPCE"),

@@ -3,9 +3,10 @@ package org.jetbrains.sbtidea.xml
 import java.nio.file.{Files, Path}
 
 import org.jetbrains.sbtidea.PluginLogger
+import org.jetbrains.sbtidea.{PluginLogger => log}
 import org.jetbrains.sbtidea.Keys.pluginXmlOptions
 
-class PluginXmlPatcher(input: Path, createCopy: Boolean = false)(implicit log: PluginLogger) {
+class PluginXmlPatcher(input: Path, createCopy: Boolean = false) {
 
   def patch(options: pluginXmlOptions): Path = try {
     val content = new String(Files.readAllBytes(input))

@@ -62,6 +62,7 @@ trait Defns { this: Keys.type =>
     val name: String
     def edition: String = name.takeRight(2)
     def platformPrefix: String
+    override def toString: String = name
   }
 
   object IntelliJPlatform {

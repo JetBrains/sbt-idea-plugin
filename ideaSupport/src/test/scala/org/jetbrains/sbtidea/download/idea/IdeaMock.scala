@@ -1,14 +1,14 @@
-package org.jetbrains.sbtidea.download
+package org.jetbrains.sbtidea.download.idea
 
-import java.net.URI
+import java.net.{URI, URL}
 import java.nio.file.{Files, Path, Paths}
 import java.util.zip.{ZipEntry, ZipInputStream}
 
-import org.jetbrains.sbtidea.{Keys, TmpDirUtils}
-import org.jetbrains.sbtidea.Keys.String2Plugin
+import org.jetbrains.sbtidea.download.BuildInfo
 import org.jetbrains.sbtidea.packaging.artifact
-
-import scala.collection.JavaConverters.asScalaIteratorConverter
+import org.jetbrains.sbtidea.{Keys, TmpDirUtils}
+import org.jetbrains.sbtidea.Keys._
+import org.jetbrains.sbtidea.download.jbr.JbrDependency
 
 trait IdeaMock extends TmpDirUtils {
   protected val IDEA_VERSION      = "192.5728.12"
@@ -16,9 +16,9 @@ trait IdeaMock extends TmpDirUtils {
   protected val IDEA_DIST         = s"idea$IDEA_EDITION-$IDEA_VERSION.zip"
   protected val IDEA_DIST_PATH    = s"/org/jetbrains/sbtidea/download/$IDEA_DIST"
   protected val IDEA_BUILDINFO: BuildInfo =
-    BuildInfo(IDEA_VERSION, Keys.IntelliJPlatform.IdeaUltimate, Some(JbrInstaller.VERSION_AUTO))
-
-
+    BuildInfo(IDEA_VERSION, Keys.IntelliJPlatform.IdeaUltimate, Some(JbrDependency.VERSION_AUTO))
+  protected val IDEA_DEP: IdeaDependency  = IdeaDependency(IDEA_BUILDINFO)
+  protected val IDEA_ART: IdeaDist        = IdeaDist(IDEA_DEP, new URL("file:"))
 
   protected val bundledPlugins: List[Keys.IntellijPlugin] =
     "org.jetbrains.plugins.yaml".toPlugin ::

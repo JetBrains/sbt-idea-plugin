@@ -1,7 +1,6 @@
 package org.jetbrains.sbtidea.download
 
 import org.jetbrains.sbtidea.Keys.IntellijPlugin
-import org.jetbrains.sbtidea.download.api.IdeaResolver
 import sbt.URL
 
 import scala.xml.XML

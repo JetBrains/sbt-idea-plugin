@@ -1,21 +1,51 @@
-package org.jetbrains.sbtidea.download
-
+package org.jetbrains.sbtidea.download.plugin
 import java.nio.file.{Files, Path}
 
+import org.jetbrains.sbtidea.download.{BuildInfo, FileDownloader, IdeaUpdater, LocalPluginRegistry, NioUtils, PluginRepoUtils, PluginXmlDetector, VersionComparatorUtil}
+import org.jetbrains.sbtidea.download.LocalPluginRegistry.{extractInstalledPluginDescriptor, extractPluginMetaData}
+import org.jetbrains.sbtidea.download.api._
+import org.jetbrains.sbtidea.{PluginLogger => log}
 import org.jetbrains.sbtidea.Keys.IntellijPlugin
-import org.jetbrains.sbtidea.download.LocalPluginRegistry._
-import org.jetbrains.sbtidea.download.api.{IdeaInstaller, PluginMetadata}
 
-trait IdeaPluginInstaller extends IdeaInstaller {
-  import IdeaPluginInstaller._
 
-  private val localPluginRegistry = new LocalPluginRegistry(getInstallDir, log)
+class PluginInstaller(buildInfo: BuildInfo) extends Installer[PluginArtifact] {
+  import PluginInstaller._
 
-  override def isPluginAlreadyInstalledAndUpdated(plugin: IntellijPlugin): Boolean =
-    localPluginRegistry.isPluginInstalled(plugin) && isInstalledPluginUpToDate(plugin)
+  override def isInstalled(art: PluginArtifact)(implicit ctx: InstallContext): Boolean =
+    !IdeaUpdater.isDumbPlugins &&
+      LocalPluginRegistry.instanceFor(ctx.baseDirectory).isPluginInstalled(art.caller.plugin) &&
+      isInstalledPluginUpToDate(art.caller.plugin)
 
-  protected def isInstalledPluginUpToDate(plugin: IntellijPlugin): Boolean = {
-    val pluginRoot = localPluginRegistry.getInstalledPluginRoot(plugin)
+  override def downloadAndInstall(art: PluginArtifact)(implicit ctx: InstallContext): Unit = {
+    val dist = FileDownloader(ctx.baseDirectory.getParent).download(art.dlUrl)
+    installIdeaPlugin(art.caller.plugin, dist)
+  }
+
+  private[plugin] def installIdeaPlugin(plugin: IntellijPlugin, artifact: Path)(implicit ctx: InstallContext): Path = {
+    val installedPluginRoot = if (!isPluginJar(artifact)) {
+      val extractDir = Files.createTempDirectory(ctx.baseDirectory, s"${buildInfo.edition.name}-${buildInfo.buildNumber}-plugin")
+      log.info(s"Extracting plugin '$plugin to $extractDir")
+      sbt.IO.unzip(artifact.toFile, extractDir.toFile)
+      assert(Files.list(extractDir).count() == 1, s"Expected only single plugin folder in extracted archive, got: ${extractDir.toFile.list().mkString}")
+      val tmpPluginDir = Files.list(extractDir).findFirst().get()
+      val installDir = pluginsDir.resolve(tmpPluginDir.getFileName)
+      NioUtils.delete(installDir)
+      Files.move(tmpPluginDir, installDir)
+      NioUtils.delete(tmpPluginDir.getParent)
+      log.info(s"Installed plugin '$plugin to $installDir")
+      installDir
+    } else {
+      val targetJar = pluginsDir.resolve(artifact.getFileName)
+      Files.move(artifact, targetJar)
+      log.info(s"Installed plugin '$plugin to $targetJar")
+      targetJar
+    }
+    LocalPluginRegistry.instanceFor(ctx.baseDirectory).markPluginInstalled(plugin, installedPluginRoot)
+    installedPluginRoot
+  }
+
+  private[plugin] def isInstalledPluginUpToDate(plugin: IntellijPlugin)(implicit ctx: InstallContext): Boolean = {
+    val pluginRoot = LocalPluginRegistry.instanceFor(ctx.baseDirectory).getInstalledPluginRoot(plugin)
     val descriptor = extractInstalledPluginDescriptor(pluginRoot)
     descriptor match {
       case Left(error) =>
@@ -45,30 +75,7 @@ trait IdeaPluginInstaller extends IdeaInstaller {
     true
   }
 
-  override def installIdeaPlugin(plugin: IntellijPlugin, artifact: Path): Path = {
-    val installedPluginRoot = if (!isPluginJar(artifact)) {
-      val extractDir = Files.createTempDirectory(getInstallDir, s"${buildInfo.edition.name}-${buildInfo.buildNumber}-plugin")
-      log.info(s"Extracting plugin '$plugin to $extractDir")
-      sbt.IO.unzip(artifact.toFile, extractDir.toFile)
-      assert(Files.list(extractDir).count() == 1, s"Expected only single plugin folder in extracted archive, got: ${extractDir.toFile.list().mkString}")
-      val tmpPluginDir = Files.list(extractDir).findFirst().get()
-      val installDir = pluginsDir.resolve(tmpPluginDir.getFileName)
-      NioUtils.delete(installDir)
-      Files.move(tmpPluginDir, installDir)
-      NioUtils.delete(tmpPluginDir.getParent)
-      log.info(s"Installed plugin '$plugin to $installDir")
-      installDir
-    } else {
-      val targetJar = pluginsDir.resolve(artifact.getFileName)
-      Files.move(artifact, targetJar)
-      log.info(s"Installed plugin '$plugin to $targetJar")
-      targetJar
-    }
-    localPluginRegistry.markPluginInstalled(plugin, installedPluginRoot)
-    installedPluginRoot
-  }
-
-  private def getMoreUpToDateVersion(metadata: PluginMetadata, channel: String): Option[String] = {
+  private[plugin] def getMoreUpToDateVersion(metadata: PluginMetadata, channel: String): Option[String] = {
     PluginRepoUtils.getLatestPluginVersion(buildInfo, metadata.id, channel) match {
       case Right(version) if VersionComparatorUtil.compare(metadata.version, version) < 0 =>
         Some(version)
@@ -79,7 +86,7 @@ trait IdeaPluginInstaller extends IdeaInstaller {
     }
   }
 
-  private def isPluginCompatibleWithIdea(metadata: PluginMetadata): Boolean = {
+  private[plugin] def isPluginCompatibleWithIdea(metadata: PluginMetadata): Boolean = {
     val lower = metadata.sinceBuild.replaceAll("^.+-", "") // strip IC- / PC- etc. prefixes
     val upper = metadata.untilBuild.replaceAll("^.+-", "")
     val lowerValid = compareIdeaVersions(lower, buildInfo.buildNumber) <= 0
@@ -87,19 +94,15 @@ trait IdeaPluginInstaller extends IdeaInstaller {
     lowerValid && upperValid
   }
 
-
-
-
-  private def isPluginJar(artifact: Path): Boolean = {
+  private[plugin] def isPluginJar(artifact: Path): Boolean = {
     val detector = new PluginXmlDetector
     detector.test(artifact)
   }
 
-  protected def pluginsDir: Path = getInstallDir.resolve("plugins")
+  private def pluginsDir(implicit ctx: InstallContext): Path = ctx.baseDirectory.resolve("plugins")
 }
 
-object IdeaPluginInstaller {
-
+object PluginInstaller {
   // sort of copied from com.intellij.openapi.util.BuildNumber#compareTo
   def compareIdeaVersions(a: String, b: String): Int = {
     val SNAPSHOT        = "SNAPSHOT"
@@ -120,5 +123,5 @@ object IdeaPluginInstaller {
     }
     c1.length - c2.length
   }
-
 }
+

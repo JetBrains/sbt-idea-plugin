@@ -1,4 +1,4 @@
-package org.jetbrains.sbtidea.download
+package org.jetbrains.sbtidea.download.plugin
 
 import java.nio.file.Files
 

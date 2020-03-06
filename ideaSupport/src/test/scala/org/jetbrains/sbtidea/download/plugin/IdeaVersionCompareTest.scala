@@ -1,7 +1,7 @@
-package org.jetbrains.sbtidea.download
+package org.jetbrains.sbtidea.download.plugin
 
-import org.jetbrains.sbtidea.download.IdeaPluginInstaller.compareIdeaVersions
 import org.scalatest.{FunSuite, Matchers}
+import PluginInstaller.compareIdeaVersions
 
 class IdeaVersionCompareTest extends FunSuite with Matchers {
 

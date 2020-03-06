@@ -4,7 +4,7 @@ import java.nio.file.{Files, StandardCopyOption}
 
 import org.jetbrains.sbtidea.ConsoleLogger
 import org.jetbrains.sbtidea.Keys.pluginXmlOptions
-import org.jetbrains.sbtidea.download.IdeaMock
+import org.jetbrains.sbtidea.download.idea.IdeaMock
 import org.jetbrains.sbtidea.packaging.artifact
 import org.scalatest.{FunSuite, Matchers}
 

@@ -1,12 +1,12 @@
-package org.jetbrains.sbtidea.download
+package org.jetbrains.sbtidea.download.plugin
 
 import java.net.URI
-import java.nio.file._
+import java.nio.file.{FileSystems, Files, Path}
 
-import org.jetbrains.sbtidea.Keys.IntellijPlugin
 import org.jetbrains.sbtidea.TmpDirUtils
 import org.jetbrains.sbtidea.download.api.PluginMetadata
 import org.jetbrains.sbtidea.packaging.artifact
+import org.jetbrains.sbtidea.Keys._
 
 import scala.collection.JavaConverters._
 

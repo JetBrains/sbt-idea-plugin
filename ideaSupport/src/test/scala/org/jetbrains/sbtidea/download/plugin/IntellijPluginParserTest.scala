@@ -1,4 +1,4 @@
-package org.jetbrains.sbtidea.download
+package org.jetbrains.sbtidea.download.plugin
 
 import org.jetbrains.sbtidea.Keys.IntellijPlugin._
 import org.jetbrains.sbtidea.Keys._
