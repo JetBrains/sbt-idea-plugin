@@ -1,18 +1,19 @@
-package org.jetbrains.sbtidea.download
+package org.jetbrains.sbtidea.download.plugin
 
 import org.jetbrains.sbtidea.Keys.IntellijPlugin
+import org.jetbrains.sbtidea.download._
 import sbt.URL
 
-import scala.xml.XML
+import scala.util.Try
 
-object PluginRepoUtils {
+class PluginRepoUtils extends PluginRepoApi {
   private val baseUrl = "https://plugins.jetbrains.com"
 
-  private def getPluginXmlDescriptor(idea: BuildInfo, pluginId: String, channel: String): xml.Elem = {
-    val chanStr = if (channel.nonEmpty) s"&channel=$channel" else ""
+  def getRemotePluginXmlDescriptor(idea: BuildInfo, pluginId: String, channel: Option[String]): Either[Throwable, PluginDescriptor] = {
+    val chanStr = channel.map(c => s"&channel=$c").getOrElse("")
     val urlStr = s"$baseUrl/plugins/list?pluginId=$pluginId$chanStr&build=${idea.edition.edition}-${idea.buildNumber}"
     val infoUrl = new URL(urlStr)
-    XML.load(infoUrl)
+    Try(PluginDescriptor.load(infoUrl)).toEither
   }
 
   def getPluginDownloadURL(idea: BuildInfo, pluginInfo: IntellijPlugin.Id): URL = {
@@ -29,21 +30,6 @@ object PluginRepoUtils {
     new URL(urlStr)
   }
 
-  def getPluginName(idea: BuildInfo, pluginId: String, channel: String): Either[String, String] = try {
-    val xmlData = getPluginXmlDescriptor(idea, pluginId, channel)
-    Right((xmlData \\ "name").text)
-  } catch {
-    case e: Exception => Left(e.getMessage)
-  }
-
-  def getLatestPluginVersion(idea: BuildInfo, pluginId: String, channel: String): Either[String, String] = try {
-    val xmlData = getPluginXmlDescriptor(idea, pluginId, channel)
-    val versionNode = xmlData \\ "version"
-    versionNode
-      .headOption
-      .map(node => Right(node.text))
-      .getOrElse(Left(s"Can't find version element: $xmlData"))
-  } catch {
-    case e: Exception => Left(e.getMessage)
-  }
+  def getLatestPluginVersion(idea: BuildInfo, pluginId: String, channel: Option[String]): Either[Throwable, String] =
+    getRemotePluginXmlDescriptor(idea, pluginId, channel).map(_.version)
 }
