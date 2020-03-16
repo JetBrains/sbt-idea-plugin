@@ -1,22 +1,23 @@
 package org.jetbrains.sbtidea.download.plugin
 import java.nio.file.{Files, Path}
 
-import org.jetbrains.sbtidea.download.{BuildInfo, FileDownloader, IdeaUpdater, LocalPluginRegistry, NioUtils, PluginRepoUtils, PluginXmlDetector, VersionComparatorUtil}
-import org.jetbrains.sbtidea.download.LocalPluginRegistry.{extractInstalledPluginDescriptor, extractPluginMetaData}
+import org.jetbrains.sbtidea.download.{BuildInfo, FileDownloader, IdeaUpdater, NioUtils, PluginXmlDetector, VersionComparatorUtil}
 import org.jetbrains.sbtidea.download.api._
 import org.jetbrains.sbtidea.{PluginLogger => log}
 import org.jetbrains.sbtidea.Keys.IntellijPlugin
+import LocalPluginRegistry.{extractInstalledPluginDescriptor, extractPluginMetaData}
 
 
-class PluginInstaller(buildInfo: BuildInfo) extends Installer[PluginArtifact] {
-  import PluginInstaller._
+class RepoPluginInstaller(buildInfo: BuildInfo)
+                         (implicit repo: PluginRepoApi, localRegistry: LocalPluginRegistryApi) extends Installer[RemotePluginArtifact] {
+  import RepoPluginInstaller._
 
-  override def isInstalled(art: PluginArtifact)(implicit ctx: InstallContext): Boolean =
+  override def isInstalled(art: RemotePluginArtifact)(implicit ctx: InstallContext): Boolean =
     !IdeaUpdater.isDumbPlugins &&
-      LocalPluginRegistry.instanceFor(ctx.baseDirectory).isPluginInstalled(art.caller.plugin) &&
+      localRegistry.isPluginInstalled(art.caller.plugin) &&
       isInstalledPluginUpToDate(art.caller.plugin)
 
-  override def downloadAndInstall(art: PluginArtifact)(implicit ctx: InstallContext): Unit = {
+  override def downloadAndInstall(art: RemotePluginArtifact)(implicit ctx: InstallContext): Unit = {
     val dist = FileDownloader(ctx.baseDirectory.getParent).download(art.dlUrl)
     installIdeaPlugin(art.caller.plugin, dist)
   }
@@ -40,12 +41,12 @@ class PluginInstaller(buildInfo: BuildInfo) extends Installer[PluginArtifact] {
       log.info(s"Installed plugin '$plugin to $targetJar")
       targetJar
     }
-    LocalPluginRegistry.instanceFor(ctx.baseDirectory).markPluginInstalled(plugin, installedPluginRoot)
+    localRegistry.markPluginInstalled(plugin, installedPluginRoot)
     installedPluginRoot
   }
 
   private[plugin] def isInstalledPluginUpToDate(plugin: IntellijPlugin)(implicit ctx: InstallContext): Boolean = {
-    val pluginRoot = LocalPluginRegistry.instanceFor(ctx.baseDirectory).getInstalledPluginRoot(plugin)
+    val pluginRoot = localRegistry.getInstalledPluginRoot(plugin)
     val descriptor = extractInstalledPluginDescriptor(pluginRoot)
     descriptor match {
       case Left(error) =>
@@ -53,20 +54,20 @@ class PluginInstaller(buildInfo: BuildInfo) extends Installer[PluginArtifact] {
         log.info(s"Up-to-date check failed, assuming plugin $plugin is out of date")
         return false
       case Right(data) =>
-        val metadata = extractPluginMetaData(data)
-        if (!isPluginCompatibleWithIdea(metadata)) {
-          log.warn(s"Plugin $plugin is incompatible with current ideaVersion(${buildInfo.buildNumber}): $metadata")
+        val descriptor = PluginDescriptor.load(data)
+        if (!isPluginCompatibleWithIdea(descriptor)) {
+          log.warn(s"Plugin $plugin is incompatible with current ideaVersion(${buildInfo.buildNumber}): $descriptor")
           return false
         }
         plugin match {
-          case IntellijPlugin.Id(_, Some(version), _) if metadata.version != version =>
-            log.info(s"Locally installed plugin $plugin has different version: ${metadata.version} != $version")
+          case IntellijPlugin.Id(_, Some(version), _) if descriptor.version != version =>
+            log.info(s"Locally installed plugin $plugin has different version: ${descriptor.version} != $version")
             return false
           case IntellijPlugin.Id(_, None, channel) =>
-            getMoreUpToDateVersion(metadata, channel.getOrElse("")) match {
+            getMoreUpToDateVersion(descriptor, channel) match {
               case None =>
               case Some(newVersion) =>
-                log.warn(s"Newer version of plugin $plugin is available: ${metadata.version} -> $newVersion")
+                log.warn(s"Newer version of plugin $plugin is available: ${descriptor.version} -> $newVersion")
                 return false
             }
           case _ =>
@@ -75,18 +76,18 @@ class PluginInstaller(buildInfo: BuildInfo) extends Installer[PluginArtifact] {
     true
   }
 
-  private[plugin] def getMoreUpToDateVersion(metadata: PluginMetadata, channel: String): Option[String] = {
-    PluginRepoUtils.getLatestPluginVersion(buildInfo, metadata.id, channel) match {
-      case Right(version) if VersionComparatorUtil.compare(metadata.version, version) < 0 =>
+  private[plugin] def getMoreUpToDateVersion(descriptor: PluginDescriptor, channel: Option[String]): Option[String] = {
+    repo.getLatestPluginVersion(buildInfo, descriptor.id, channel) match {
+      case Right(version) if VersionComparatorUtil.compare(descriptor.version, version) < 0 =>
         Some(version)
       case Left(error) =>
-        log.warn(s"Failed to fetch latest plugin ${metadata.id} version: $error")
+        log.warn(s"Failed to fetch latest plugin ${descriptor.id} version: $error")
         None
       case _ => None
     }
   }
 
-  private[plugin] def isPluginCompatibleWithIdea(metadata: PluginMetadata): Boolean = {
+  private[plugin] def isPluginCompatibleWithIdea(metadata: PluginDescriptor): Boolean = {
     val lower = metadata.sinceBuild.replaceAll("^.+-", "") // strip IC- / PC- etc. prefixes
     val upper = metadata.untilBuild.replaceAll("^.+-", "")
     val lowerValid = compareIdeaVersions(lower, buildInfo.buildNumber) <= 0
@@ -102,7 +103,7 @@ class PluginInstaller(buildInfo: BuildInfo) extends Installer[PluginArtifact] {
   private def pluginsDir(implicit ctx: InstallContext): Path = ctx.baseDirectory.resolve("plugins")
 }
 
-object PluginInstaller {
+object RepoPluginInstaller {
   // sort of copied from com.intellij.openapi.util.BuildNumber#compareTo
   def compareIdeaVersions(a: String, b: String): Int = {
     val SNAPSHOT        = "SNAPSHOT"

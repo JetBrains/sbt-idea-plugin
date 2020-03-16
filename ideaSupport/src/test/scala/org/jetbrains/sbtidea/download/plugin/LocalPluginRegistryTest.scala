@@ -5,7 +5,6 @@ import java.nio.file.Files
 
 import org.jetbrains.sbtidea.CapturingLogger.captureLog
 import org.jetbrains.sbtidea.Keys.String2Plugin
-import org.jetbrains.sbtidea.download.LocalPluginRegistry
 import org.jetbrains.sbtidea.download.idea.IdeaMock
 import org.jetbrains.sbtidea.packaging.artifact
 import org.jetbrains.sbtidea.{ConsoleLogger, pathToPathExt}

@@ -22,12 +22,17 @@ trait IntellijPluginInstallerTestBase extends FunSuite with Matchers with IdeaMo
 
   protected implicit val defaultBuildInfo: BuildInfo = IDEA_BUILDINFO
 
-  protected def createInstaller(implicit buildInfo: BuildInfo = IDEA_BUILDINFO): PluginInstaller = new PluginInstaller(buildInfo)
+  protected implicit val localRegistry: LocalPluginRegistryApi = new LocalPluginRegistry(ideaRoot)
+  protected implicit val repoAPI: PluginRepoApi = new PluginRepoUtils
+
+  protected def createInstaller(implicit buildInfo: BuildInfo = IDEA_BUILDINFO): RepoPluginInstaller =
+    new RepoPluginInstaller(buildInfo)
 
   protected implicit def plugin2PluginDep(pl: IntellijPlugin)(implicit buildInfo: BuildInfo): PluginDependency =
     PluginDependency(pl, buildInfo)
 
-  protected implicit def plugin2PluginArt(pl: IntellijPlugin): PluginArtifact = PluginArtifact(pl, new URL("file:"))
+  protected implicit def plugin2PluginArt(pl: IntellijPlugin): RemotePluginArtifact =
+    RemotePluginArtifact(pl, new URL("file:"))
 
   protected implicit def installContext: InstallContext = InstallContext(ideaRoot, ideaRoot.getParent)
 }

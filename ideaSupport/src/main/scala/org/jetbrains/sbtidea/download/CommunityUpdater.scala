@@ -4,15 +4,21 @@ import java.nio.file.Path
 
 import org.jetbrains.sbtidea.download.api._
 import org.jetbrains.sbtidea.download.idea.{IdeaDependency, IdeaDist}
-import org.jetbrains.sbtidea.download.plugin.PluginDependency
+import org.jetbrains.sbtidea.download.plugin.{LocalPluginRegistry, PluginDependency, PluginRepoUtils}
 import org.jetbrains.sbtidea.Keys.IntellijPlugin
 import org.jetbrains.sbtidea.{PluginLogger => log}
 import org.jetbrains.sbtidea.download.jbr.JbrDependency
 
 class CommunityUpdater(baseDirectory: Path, ideaBuildInfo: BuildInfo, plugins: Seq[IntellijPlugin], withSources: Boolean = true) {
 
-  implicit val context: InstallContext =
+  implicit private val context: InstallContext =
     InstallContext(baseDirectory = baseDirectory, downloadDirectory = baseDirectory.getParent)
+
+  implicit private val remoteRepoApi: PluginRepoUtils =
+    new PluginRepoUtils
+
+  implicit private val localRegistry: LocalPluginRegistry =
+    new LocalPluginRegistry(baseDirectory)
 
   protected val ideaDependency: IdeaDependency = IdeaDependency(ideaBuildInfo)
 

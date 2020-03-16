@@ -2,8 +2,7 @@ package org.jetbrains.sbtidea.download.plugin
 
 import org.jetbrains.sbtidea.CapturingLogger.captureLog
 import org.jetbrains.sbtidea.Keys.String2Plugin
-import org.jetbrains.sbtidea.download.api.PluginMetadata
-import org.jetbrains.sbtidea.download.{LocalPluginRegistry, NioUtils}
+import org.jetbrains.sbtidea.download.NioUtils
 import org.jetbrains.sbtidea.pathToPathExt
 import sbt._
 
@@ -16,7 +15,7 @@ final class IntellijPluginInstallerTest extends IntellijPluginInstallerTestBase 
   }
 
   test("Plugin installer installs zip artifact") {
-    val pluginMetadata = PluginMetadata("org.intellij.scala", "Scala", "2019.3.1", "193.0", "194.0")
+    val pluginMetadata = PluginDescriptor("org.intellij.scala", "Scala", "2019.3.1", "193.0", "194.0")
     val mockPluginDist = createPluginZipMock(pluginMetadata)
     val installer = createInstaller
     val pluginRoot = installer.installIdeaPlugin(pluginMetadata.toPluginId, mockPluginDist)
@@ -27,7 +26,7 @@ final class IntellijPluginInstallerTest extends IntellijPluginInstallerTestBase 
   }
 
   test("Plugin installer installs jar artifact") {
-    val pluginMetadata = PluginMetadata("org.intellij.scala", "Scala", "2019.3.1", "193.0", "194.0")
+    val pluginMetadata = PluginDescriptor("org.intellij.scala", "Scala", "2019.3.1", "193.0", "194.0")
     val mockPluginDist = createPluginJarMock(pluginMetadata)
     val installer = createInstaller
     val pluginRoot = installer.installIdeaPlugin(pluginMetadata.toPluginId, mockPluginDist)
@@ -38,26 +37,26 @@ final class IntellijPluginInstallerTest extends IntellijPluginInstallerTestBase 
   }
 
   test("Plugin installer checks IDEA compatibility") {
-    val pluginMetadata = PluginMetadata("org.intellij.scala", "Scala", "2019.2.423", "193.123", "193.4")
+    val pluginMetadata = PluginDescriptor("org.intellij.scala", "Scala", "2019.2.423", "193.123", "193.4")
     val mockPluginDist = createPluginJarMock(pluginMetadata)
     val installer = createInstaller
     val installedPluginRoot = installer.installIdeaPlugin(pluginMetadata.toPluginId, mockPluginDist)
     val messages = captureLog(installer.isInstalled(pluginMetadata.toPluginId) shouldBe false)
     messages should contain (
-      "Plugin org.intellij.scala is incompatible with current ideaVersion(192.5728.12): PluginMetadata(org.intellij.scala,Scala,2019.2.423,193.123,193.4)"
+      "Plugin org.intellij.scala is incompatible with current ideaVersion(192.5728.12): PluginDescriptor(org.intellij.scala,Scala,2019.2.423,193.123,193.4,List())"
     )
     NioUtils.delete(installedPluginRoot)
     NioUtils.delete(ideaRoot / "plugins.idx")
   }
 
   test("Plugin installer checks IDEA compatibility using wildcards") {
-    val pluginMetadata = PluginMetadata("org.intellij.scala", "Scala", "2019.2.423", "192.123", "193.*")
+    val pluginMetadata = PluginDescriptor("org.intellij.scala", "Scala", "2019.2.423", "192.123", "193.*")
     val mockPluginDist = createPluginJarMock(pluginMetadata)
     val installer = createInstaller
     val installedPluginRoot = installer.installIdeaPlugin(pluginMetadata.toPluginId, mockPluginDist)
     val messages = captureLog(installer.isInstalled(pluginMetadata.toPluginId) shouldBe true)
     messages should not contain (
-      "Plugin org.intellij.scala is incompatible with current ideaVersion(192.5728.12): PluginMetadata(org.intellij.scala,Scala,2019.2.423,193.123,193.*)"
+      "Plugin org.intellij.scala is incompatible with current ideaVersion(192.5728.12): PluginDescriptor(org.intellij.scala,Scala,2019.2.423,193.123,193.*,List())"
     )
     NioUtils.delete(installedPluginRoot)
     NioUtils.delete(ideaRoot / "plugins.idx")
@@ -65,7 +64,7 @@ final class IntellijPluginInstallerTest extends IntellijPluginInstallerTestBase 
 
 
   test("Plugin installer checks for newer plugin version") {
-    val pluginMetadata = PluginMetadata("org.intellij.scala", "Scala", "2019.2.1", "192.123", "193.4")
+    val pluginMetadata = PluginDescriptor("org.intellij.scala", "Scala", "2019.2.1", "192.123", "193.4")
     val mockPluginDist = createPluginJarMock(pluginMetadata)
     val installer = createInstaller
     val pluginId = pluginMetadata.toPluginId.copy(version = None)

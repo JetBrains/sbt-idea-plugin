@@ -2,8 +2,7 @@ package org.jetbrains.sbtidea.download.plugin
 
 import java.nio.file.Files
 
-import org.jetbrains.sbtidea.download.LocalPluginRegistry.MissingPluginRootException
-import org.jetbrains.sbtidea.download.api.PluginMetadata
+import org.jetbrains.sbtidea.download.plugin.LocalPluginRegistry.MissingPluginRootException
 import org.jetbrains.sbtidea.tasks.CreatePluginsClasspath
 import org.jetbrains.sbtidea.pathToPathExt
 import sbt._
@@ -12,9 +11,9 @@ class PluginClassPathTest extends IntellijPluginInstallerTestBase {
 
   test("plugin classpath contains all necessary jars") {
     val installer = createInstaller()
-    val pluginZipMetadata = PluginMetadata("org.intellij.scala", "Scala", "2019.3.1", "193.0", "194.0")
+    val pluginZipMetadata = PluginDescriptor("org.intellij.scala", "Scala", "2019.3.1", "193.0", "194.0")
     val mockPluginZipDist = createPluginZipMock(pluginZipMetadata)
-    val pluginJarMetadata = PluginMetadata("org.jetbrains.plugins.hocon", "HOCON", "0.0.1", "193.0", "194.0")
+    val pluginJarMetadata = PluginDescriptor("org.jetbrains.plugins.hocon", "HOCON", "0.0.1", "193.0", "194.0")
     val mockPluginJarDist = createPluginJarMock(pluginJarMetadata)
     installer.installIdeaPlugin(pluginZipMetadata.toPluginId, mockPluginZipDist)
     installer.installIdeaPlugin(pluginJarMetadata.toPluginId, mockPluginJarDist)
