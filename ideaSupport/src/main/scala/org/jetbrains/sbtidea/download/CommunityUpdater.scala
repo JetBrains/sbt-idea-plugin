@@ -21,7 +21,7 @@ class CommunityUpdater(baseDirectory: Path, ideaBuildInfo: BuildInfo, plugins: S
       JbrDependency(baseDirectory, ideaBuildInfo, Seq(ideaDependency))  +:
       plugins.map(pl => PluginDependency(pl, ideaBuildInfo, Seq(ideaDependency)))
 
-  def update(): Unit = dependencies.foreach(update)
+  def update(): Unit = topoSort(dependencies).foreach(update)
 
   def update(dependency: UnresolvedArtifact): Unit = {
     val resolved = dependency.resolve
