@@ -27,6 +27,7 @@ class CommunityUpdater(baseDirectory: Path, ideaBuildInfo: BuildInfo, plugins: S
     val resolved = dependency.resolve
     val (installed, nonInstalled) = resolved.partition(_.isInstalled)
     val numMissing = nonInstalled.size
+    val numInstalled = installed.size
     val numTotal = installed.size + nonInstalled.size
 
     if (resolved.isEmpty)
@@ -34,7 +35,7 @@ class CommunityUpdater(baseDirectory: Path, ideaBuildInfo: BuildInfo, plugins: S
     else if (nonInstalled.nonEmpty)
       log.info(s"~ Resolving $dependency -> $numMissing/$numTotal new artifacts")
     else
-      log.info(s"+ $dependency is up to date")
+      log.info(s"+ $dependency is up to date: $numInstalled/$numTotal")
 
     nonInstalled.foreach(_.install)
   }
