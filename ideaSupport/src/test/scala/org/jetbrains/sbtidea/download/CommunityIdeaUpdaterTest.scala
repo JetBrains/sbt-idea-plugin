@@ -4,20 +4,12 @@ import java.nio.file.{Files, Paths}
 
 import org.jetbrains.sbtidea.Keys.String2Plugin
 import org.jetbrains.sbtidea.download.idea.IdeaMock
-import org.jetbrains.sbtidea.download.jbr.JbrInstaller
-import org.jetbrains.sbtidea.{ConsoleLogger, Keys, PluginLogger}
+import org.jetbrains.sbtidea.{ConsoleLogger, pathToPathExt}
 import org.scalatest.{FunSuite, Ignore, Matchers}
-import org.jetbrains.sbtidea.pathToPathExt
 import sbt._
 
-@Ignore
+//@Ignore
 final class CommunityIdeaUpdaterTest extends FunSuite with Matchers with IdeaMock with ConsoleLogger {
-
-  private val logger = new PluginLogger {
-    override def info(msg: => String): Unit = println(msg)
-    override def warn(msg: => String): Unit = println(msg)
-    override def error(msg: => String): Unit = println(msg)
-  }
 
   test("IdeaUpdater Integration Test") {
     val dumbModeKey = "IdeaUpdater.dumbMode"
