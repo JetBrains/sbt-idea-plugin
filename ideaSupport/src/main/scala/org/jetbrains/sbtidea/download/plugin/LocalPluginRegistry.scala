@@ -1,4 +1,4 @@
-package org.jetbrains.sbtidea.download
+package org.jetbrains.sbtidea.download.plugin
 
 import java.io._
 import java.nio.file.{Files, Path, Paths}
@@ -7,13 +7,14 @@ import java.util.function.Consumer
 
 import org.jetbrains.sbtidea.Keys.IntellijPlugin
 import org.jetbrains.sbtidea.{PluginLogger => log}
-import org.jetbrains.sbtidea.download.api.PluginMetadata
 import org.jetbrains.sbtidea.packaging.artifact.using
+import org.jetbrains.sbtidea.download._
+import org.jetbrains.sbtidea.pathToPathExt
+import sbt._
 
 import scala.collection.mutable
-import scala.xml.XML
 
-class LocalPluginRegistry (ideaRoot: Path) {
+class LocalPluginRegistry (ideaRoot: Path) extends LocalPluginRegistryApi {
   import LocalPluginRegistry._
 
   type PluginIndex = util.HashMap[String, String]
@@ -28,7 +29,7 @@ class LocalPluginRegistry (ideaRoot: Path) {
     class IndexBuilder extends Consumer[Path] {
       override def accept(path: Path): Unit = extractPluginMetaData(path) match {
         case Left(error)      => log.warn(s"Failed to add plugin to index: $error")
-        case Right(metadata)  => fromPluginsDir.put(metadata.id, path.toString)
+        case Right(metadata)  => fromPluginsDir.put(metadata.id.repr, path.toString)
       }
     }
     Files.list(ideaRoot.resolve("plugins")).forEach(new IndexBuilder)
@@ -41,21 +42,21 @@ class LocalPluginRegistry (ideaRoot: Path) {
     if (!indexFile.toFile.exists())
       emptyIndex
     else try {
-        using(new ObjectInputStream(new BufferedInputStream(new FileInputStream(indexFile.toFile)))) { stream =>
-          stream.readObject() match {
-            case m: PluginIndex => m
-            case other =>
-              log.warn(s"Unexpected data type in plugin index: ${other.getClass}")
-              Files.delete(indexFile)
-              emptyIndex
-          }
+      using(new ObjectInputStream(new BufferedInputStream(new FileInputStream(indexFile.toFile)))) { stream =>
+        stream.readObject() match {
+          case m: PluginIndex => m
+          case other =>
+            log.warn(s"Unexpected data type in plugin index: ${other.getClass}")
+            Files.delete(indexFile)
+            emptyIndex
         }
-      } catch {
-        case e: Exception =>
-          log.warn(s"Failed to load local plugin index: $e")
-          Files.delete(indexFile)
-          emptyIndex
       }
+    } catch {
+      case e: Exception =>
+        log.warn(s"Failed to load local plugin index: $e")
+        Files.delete(indexFile)
+        emptyIndex
+    }
   }
 
   private def writeIndexFile(): Unit =
@@ -63,8 +64,14 @@ class LocalPluginRegistry (ideaRoot: Path) {
       stream.writeObject(index)
     }
 
+  private def getDescriptorFromPluginFolder(name: String): Either[String, PluginDescriptor] =
+    extractPluginMetaData(ideaRoot / "plugins" / name)
 
-  def markPluginInstalled(ideaPlugin: IntellijPlugin, to: Path): Unit = {
+  override def getPluginDescriptor(ideaPlugin: IntellijPlugin): Either[String, PluginDescriptor] =
+    extractPluginMetaData(getInstalledPluginRoot(ideaPlugin))
+
+
+  override def markPluginInstalled(ideaPlugin: IntellijPlugin, to: Path): Unit = {
     val key = ideaPlugin match {
       case IntellijPlugin.Url(url) => url.toString
       case IntellijPlugin.Id(id, _, _) => id
@@ -73,21 +80,37 @@ class LocalPluginRegistry (ideaRoot: Path) {
     writeIndexFile()
   }
 
-  def isPluginInstalled(ideaPlugin: IntellijPlugin): Boolean = {
+  override def isPluginInstalled(ideaPlugin: IntellijPlugin): Boolean = {
     ideaPlugin match {
       case IntellijPlugin.Url(url) => index.containsKey(url.toString)
-      case IntellijPlugin.Id(id, _, _) => index.containsKey(id)
+      case IntellijPlugin.Id(id,  _, _) => index.containsKey(id)
+      case IntellijPlugin.BundledFolder(name) => getDescriptorFromPluginFolder(name) match {
+        case Right(descriptor) if index.containsKey(descriptor.id) =>
+          true
+        case Right(descriptor) =>
+          log.warn(s"Bundled plugin folder - '$name(${descriptor.id})' exists but not in index: corrupt index file?")
+          true
+        case Left(_)  =>
+          false
+      }
     }
   }
 
-  def getInstalledPluginRoot(ideaPlugin: IntellijPlugin): Path = {
-    val key = ideaPlugin match {
-      case IntellijPlugin.Url(url) => url.toString
-      case IntellijPlugin.Id(id, _, _) => id
-    }
-    if (!index.containsKey(key))
-      throw new MissingPluginRootException(ideaPlugin.toString)
-    Paths.get(index.get(key))
+  override def getInstalledPluginRoot(ideaPlugin: IntellijPlugin): Path = ideaPlugin match {
+    case IntellijPlugin.BundledFolder(name) =>
+      val pluginRoot = ideaRoot / "plugins" / name
+      if (pluginRoot.exists)
+        pluginRoot
+      else
+        throw new MissingPluginRootException(ideaPlugin.toString)
+    case _ =>
+      val key = ideaPlugin match {
+        case IntellijPlugin.Url(url) => url.toString
+        case IntellijPlugin.Id(id, _, _) => id
+      }
+      if (!index.containsKey(key))
+        throw new MissingPluginRootException(ideaPlugin.toString)
+      Paths.get(index.get(key))
   }
 }
 
@@ -124,34 +147,12 @@ object LocalPluginRegistry {
     Left(s"Couldn't find plugin.xml in $pluginRoot")
   }
 
-  def extractPluginMetaData(data: String): PluginMetadata = {
-    val pluginXml = XML.withSAXParser(createNonValidatingParser).loadString(data)
-    val id      = (pluginXml \\ "id").text
-    val version = (pluginXml \\ "version").text
-    val name    = (pluginXml \\ "name").text
-    val since   = (pluginXml \\ "idea-version").headOption.map(_.attributes("since-build").text).getOrElse("")
-    val until   = (pluginXml \\ "idea-version").headOption.map(_.attributes("until-build").text).getOrElse("")
-    PluginMetadata(id = id, name = name, version = version, sinceBuild = since, untilBuild = until)
-  }
-
-  def extractPluginMetaData(pluginRoot: Path): Either[String, PluginMetadata] =
+  def extractPluginMetaData(pluginRoot: Path): Either[String, PluginDescriptor] =
     extractInstalledPluginDescriptor(pluginRoot)
       .fold(
         err => Left(err),
-        data => Right(extractPluginMetaData(data))
+        data => Right(PluginDescriptor.load(data))
       )
-
-  private def createNonValidatingParser = {
-    val factory = javax.xml.parsers.SAXParserFactory.newInstance()
-    // disable DTD validation
-    factory.setValidating(false)
-    factory.setFeature("http://xml.org/sax/features/validation", false)
-    factory.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false)
-    factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
-    factory.setFeature("http://xml.org/sax/features/external-general-entities", false)
-    factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false)
-    factory.newSAXParser()
-  }
 
   def instanceFor(ideaRoot: Path): LocalPluginRegistry = instances(ideaRoot)
 }
