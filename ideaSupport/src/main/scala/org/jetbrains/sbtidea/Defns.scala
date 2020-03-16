@@ -12,6 +12,7 @@ trait Defns { this: Keys.type =>
       { override def toString: String = url.toString }
     final case class Id(id: String, version: Option[String], channel: Option[String]) extends IntellijPlugin
      { override def toString: String = id }
+    final case class BundledFolder(name: String) extends IntellijPlugin
 
     val URL_PATTERN: Pattern = Pattern.compile("^(?:(\\w+):)??(https?://.+)$")
     val ID_PATTERN:  Pattern = Pattern.compile("^([^:]+):?([\\w.]+)?:?([\\w]+)?$")

@@ -1,6 +1,7 @@
 package org.jetbrains.sbtidea
 
 import org.jetbrains.sbtidea.download._
+import org.jetbrains.sbtidea.download.plugin.LocalPluginRegistry
 import org.jetbrains.sbtidea.download.jbr.JbrDependency
 import org.jetbrains.sbtidea.packaging.PackagingKeys._
 import org.jetbrains.sbtidea.packaging.artifact.{DistBuilder, IdeaArtifactXmlBuilder}
@@ -75,6 +76,7 @@ trait Init { this: Keys.type =>
   lazy val projectSettings: Seq[Setting[_]] = Seq(
     intellijInternalPlugins := Seq.empty,
     intellijExternalPlugins := Seq.empty,
+    intellijPlugins := intellijInternalPlugins.value.map(IntellijPlugin.BundledFolder(_)) ++ intellijExternalPlugins.value,
     intellijMainJars := (intellijBaseDirectory.value / "lib" * "*.jar").classpath,
     intellijPluginJars :=
       tasks.CreatePluginsClasspath(intellijBaseDirectory.value / "plugins",
@@ -130,7 +132,7 @@ trait Init { this: Keys.type =>
         case Left(error) => throw new IllegalStateException(s"Can't extract plugin id from artifact: $error")
         case Right(metadata) => metadata.id
       }
-        tasks.PublishPlugin.apply(token, pluginId, maybeChannel, packageArtifactZip.value, log)
+        tasks.PublishPlugin.apply(token, pluginId.repr, maybeChannel, packageArtifactZip.value, log)
     },
 
     createIDEAArtifactXml := Def.taskDyn {
