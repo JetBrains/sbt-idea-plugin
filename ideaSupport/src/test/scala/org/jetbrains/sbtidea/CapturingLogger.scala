@@ -15,4 +15,11 @@ object CapturingLogger {
     PluginLogger.bind(previousLogger)
     capturingLogger.messages
   }
+  def captureLogAndValue[T](f: => T): (Seq[String], T) = {
+    val capturingLogger = new CapturingLogger
+    val previousLogger = PluginLogger.bind(capturingLogger)
+    val result = f
+    PluginLogger.bind(previousLogger)
+    capturingLogger.messages -> result
+  }
 }
