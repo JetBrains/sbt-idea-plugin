@@ -45,6 +45,8 @@ abstract class IntellijPluginResolverTestBase extends IntellijPluginInstallerTes
       case IntellijPlugin.BundledFolder(name) =>
         descriptorMap.get(name).exists(_.name.contains("bundled"))
     }
+
+    override def getAllDescriptors: Seq[PluginDescriptor] = descriptorMap.values.toSeq
     override def markPluginInstalled(ideaPlugin: Keys.IntellijPlugin, to: Path): Unit = ()
     override def getInstalledPluginRoot(ideaPlugin: Keys.IntellijPlugin): Path =
       Paths.get("INVALID")

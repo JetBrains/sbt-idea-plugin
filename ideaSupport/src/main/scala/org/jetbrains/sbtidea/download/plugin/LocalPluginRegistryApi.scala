@@ -12,4 +12,6 @@ trait LocalPluginRegistryApi {
   def isPluginInstalled(ideaPlugin: Keys.IntellijPlugin): Boolean
 
   def getInstalledPluginRoot(ideaPlugin: Keys.IntellijPlugin): Path
+
+  def getAllDescriptors: Seq[PluginDescriptor]
 }

@@ -1,22 +1,56 @@
 package org.jetbrains.sbtidea.download.plugin
 
 import java.io.OutputStreamWriter
-import java.nio.file.Files
+import java.nio.file.{FileSystems, Files}
 
 import org.jetbrains.sbtidea.CapturingLogger.captureLog
 import org.jetbrains.sbtidea.Keys.String2Plugin
+import org.jetbrains.sbtidea.download.NioUtils
 import org.jetbrains.sbtidea.download.idea.IdeaMock
 import org.jetbrains.sbtidea.packaging.artifact
-import org.jetbrains.sbtidea.{ConsoleLogger, pathToPathExt}
+import org.jetbrains.sbtidea.{ConsoleLogger, packaging, pathToPathExt}
 import org.scalatest.{FunSuite, Matchers}
 import sbt._
+
+import scala.collection.JavaConverters.mapAsJavaMapConverter
 
 final class LocalPluginRegistryTest extends FunSuite with Matchers with IdeaMock with ConsoleLogger {
 
   private val ideaRoot = installIdeaMock
 
   private val pluginsFolder = ideaRoot / "plugins"
-  private val pluginsIndex  = ideaRoot / "plugins.idx"
+  private val pluginsIndex  = ideaRoot / "plugins-meta.idx"
+
+  private val hoconXML =
+    """
+      |<!DOCTYPE idea-plugin PUBLIC "Plugin/DTD" "https://plugins.jetbrains.com/plugin.dtd">
+      |<idea-plugin>
+      |    <id>org.jetbrains.plugins.hocon</id>
+      |    <name>HOCON</name>
+      |    <description>Standalone HOCON plugin for IntelliJ IDEA</description>
+      |    <version>2020.1.99-SNAPSHOT</version>
+      |    <vendor>Roman Janusz, AVSystem, JetBrains</vendor>
+      |    <idea-version since-build="201.0" until-build="220.0"/>
+      |    <depends>com.intellij.modules.platform</depends>
+      |    <depends>com.intellij.modules.lang</depends>
+      |    <depends optional="true" config-file="hocon-java.xml">com.intellij.modules.java</depends>
+      |</idea-plugin>
+      |""".stripMargin
+
+  private def usingFakePlugin[T](pluginName: String, pluginXml: String)(f: => T): T = {
+    val options = Map("create" -> "true").asJava
+    val pluginJar = pluginsFolder / pluginName / "lib" / s"$pluginName.jar"
+    Files.createDirectories(pluginJar.getParent)
+    val jarUri = new URI("jar:file:" + pluginJar.toString)
+    packaging.artifact.using(FileSystems.newFileSystem(jarUri, options)) {fs =>
+      val jarXml = fs.getPath("META-INF", "plugin.xml")
+      Files.createDirectories(jarXml.getParent)
+      Files.write(jarXml, pluginXml.getBytes())
+    }
+    val result = f
+    NioUtils.delete(pluginsFolder / pluginName)
+    result
+  }
 
   test("LocalPluginRegistry builds bundled plugin index") {
     val registry = new LocalPluginRegistry(ideaRoot)
@@ -68,29 +102,35 @@ final class LocalPluginRegistryTest extends FunSuite with Matchers with IdeaMock
     val oldRegistry = new LocalPluginRegistry(ideaRoot)
     val newPlugin = "org.jetbrains.hocon".toPlugin
     val newPluginRoot = pluginsFolder / "hocon"
-    oldRegistry.markPluginInstalled(newPlugin, newPluginRoot)
+    usingFakePlugin("hocon", hoconXML) {
+      oldRegistry.markPluginInstalled(newPlugin, newPluginRoot)
 
-    val newRegistry = LocalPluginRegistry.instanceFor(ideaRoot)
-    newRegistry.isPluginInstalled(newPlugin) shouldBe true
+      val newRegistry = LocalPluginRegistry.instanceFor(ideaRoot)
+      newRegistry.isPluginInstalled(newPlugin) shouldBe true
 
-    Files.delete(pluginsIndex)
+      Files.delete(pluginsIndex)
+    }
   }
 
   test("LocalPluginRegistry should handle corrupt index") {
     val oldRegistry = LocalPluginRegistry.instanceFor(ideaRoot)
     val newPlugin = "org.jetbrains.hocon".toPlugin
     val newPluginRoot = pluginsFolder / "hocon"
-    oldRegistry.markPluginInstalled(newPlugin, newPluginRoot)
+    usingFakePlugin("hocon", hoconXML) {
+      oldRegistry.markPluginInstalled(newPlugin, newPluginRoot)
 
-    artifact.using(new OutputStreamWriter(Files.newOutputStream(pluginsIndex))) { writer =>
-      writer.write(0xff)
+      artifact.using(new OutputStreamWriter(Files.newOutputStream(pluginsIndex))) { writer =>
+        writer.write(0xff)
+      }
+
+      val newRegistry = new LocalPluginRegistry(ideaRoot)
+
+      val messages = captureLog {
+        newRegistry.isPluginInstalled(newPlugin) shouldBe false
+      }
+      messages should contain("Failed to load local plugin index: java.io.EOFException")
+      pluginsIndex.toFile.exists() shouldBe false
     }
-
-    val newRegistry = new LocalPluginRegistry(ideaRoot)
-
-    val messages = captureLog { newRegistry.isPluginInstalled(newPlugin) shouldBe false }
-    messages should contain ("Failed to load local plugin index: java.io.EOFException")
-    pluginsIndex.toFile.exists() shouldBe false
   }
 
   test("irrelevant files and folders are ignored when building index") {

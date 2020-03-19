@@ -12,15 +12,18 @@ import org.jetbrains.sbtidea.download._
 import org.jetbrains.sbtidea.pathToPathExt
 import sbt._
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 class LocalPluginRegistry (ideaRoot: Path) extends LocalPluginRegistryApi {
   import LocalPluginRegistry._
 
-  type PluginIndex = util.HashMap[String, String]
+  type PluginId = String
+  type PluginFolder = String
+  type PluginIndex = util.HashMap[PluginId, (PluginFolder, PluginDescriptor)]
   private def emptyIndex = new PluginIndex
 
-  private val indexFile = ideaRoot.resolve("plugins.idx")
+  private val indexFile = ideaRoot.resolve("plugins-meta.idx")
 
   private lazy val index: PluginIndex = buildIdeaPluginIndex()
 
@@ -28,8 +31,8 @@ class LocalPluginRegistry (ideaRoot: Path) extends LocalPluginRegistryApi {
     val fromPluginsDir = emptyIndex
     class IndexBuilder extends Consumer[Path] {
       override def accept(path: Path): Unit = extractPluginMetaData(path) match {
-        case Left(error)      => log.warn(s"Failed to add plugin to index: $error")
-        case Right(metadata)  => fromPluginsDir.put(metadata.id.repr, path.toString)
+        case Left(error)        => log.warn(s"Failed to add plugin to index: $error")
+        case Right(descriptor)  => fromPluginsDir.put(descriptor.id, path.toString -> descriptor)
       }
     }
     Files.list(ideaRoot.resolve("plugins")).forEach(new IndexBuilder)
@@ -67,17 +70,29 @@ class LocalPluginRegistry (ideaRoot: Path) extends LocalPluginRegistryApi {
   private def getDescriptorFromPluginFolder(name: String): Either[String, PluginDescriptor] =
     extractPluginMetaData(ideaRoot / "plugins" / name)
 
-  override def getPluginDescriptor(ideaPlugin: IntellijPlugin): Either[String, PluginDescriptor] =
-    extractPluginMetaData(getInstalledPluginRoot(ideaPlugin))
+  override def getPluginDescriptor(ideaPlugin: IntellijPlugin): Either[String, PluginDescriptor] = ideaPlugin match {
+    case IntellijPlugin.Url(url) =>
+      index.getOrError("")(url.toString).right.map(_._2)
+    case IntellijPlugin.Id(id, _, _) =>
+      index.getOrError("")(id).right.map(_._2)
+    case IntellijPlugin.BundledFolder(name) => getDescriptorFromPluginFolder(name)
+  }
 
+  override def getAllDescriptors: Seq[PluginDescriptor] = index.values().asScala.map(_._2).toSeq
 
   override def markPluginInstalled(ideaPlugin: IntellijPlugin, to: Path): Unit = {
     val key = ideaPlugin match {
       case IntellijPlugin.Url(url) => url.toString
       case IntellijPlugin.Id(id, _, _) => id
     }
-    index.put(key, to.toString)
-    writeIndexFile()
+    val descriptor = extractPluginMetaData(to)
+    descriptor match {
+      case Right(value) =>
+        index.put(key, to.toString -> value)
+        writeIndexFile()
+      case Left(error) =>
+        log.error(s"Failed to mark plugin installed, can't get plugin descriptor: $error")
+    }
   }
 
   override def isPluginInstalled(ideaPlugin: IntellijPlugin): Boolean = {
@@ -110,12 +125,22 @@ class LocalPluginRegistry (ideaRoot: Path) extends LocalPluginRegistryApi {
       }
       if (!index.containsKey(key))
         throw new MissingPluginRootException(ideaPlugin.toString)
-      Paths.get(index.get(key))
+      val (path, _) = index.get(key)
+      Paths.get(path)
   }
 }
 
 
 object LocalPluginRegistry {
+  import org.jetbrains.sbtidea._
+
+  implicit class HashMapExt[K, V](val hm: util.HashMap[K,V]) extends AnyVal {
+    def getOrError[T](err: => T)(key: K): Either[T, V] = hm
+      .get(key)
+      .lift2Option
+      .map(Right(_))
+      .getOrElse(Left(err))
+  }
 
   private val instances: mutable.Map[Path, LocalPluginRegistry] =
     new mutable.WeakHashMap[Path, LocalPluginRegistry]().withDefault(new LocalPluginRegistry(_))
