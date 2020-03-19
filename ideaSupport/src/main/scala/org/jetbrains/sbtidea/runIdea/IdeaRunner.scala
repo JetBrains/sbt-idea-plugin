@@ -11,6 +11,7 @@ import org.jetbrains.sbtidea.download.jbr.JbrInstaller
 import org.jetbrains.sbtidea.packaging.artifact
 import org.jetbrains.sbtidea.{PluginLogger => log}
 import org.jetbrains.sbtidea.pathToPathExt
+import org.jetbrains.sbtidea.Keys.java9PlusGC
 import sbt._
 
 import scala.collection.JavaConverters._
@@ -106,7 +107,7 @@ class IdeaRunner(ideaClasspath: Seq[Path],
     (List(
       javaExe.toAbsolutePath.toString,
       "-cp",
-      classPath) ++ (vmOptions.asSeq :+ IntellijVMOptions.IDEA_MAIN) ++ programArguments).asJava
+      classPath) ++ (java9PlusGC(vmOptions).asSeq :+ IntellijVMOptions.IDEA_MAIN) ++ programArguments).asJava
   }
 
   private def buildCPString: String = ideaClasspath.mkString(File.pathSeparator)

@@ -1,5 +1,6 @@
 package org.jetbrains.sbtidea
 
+import org.jetbrains.sbtidea.runIdea.{IntellijVMOptions, JRE}
 import sbt._
 
 trait Quirks { this: Keys.type =>
@@ -22,5 +23,11 @@ trait Quirks { this: Keys.type =>
     else
       Seq.empty
   }
+
+  def java9PlusGC(intellijVMOptions: IntellijVMOptions)(implicit jre: JRE): IntellijVMOptions =
+    if(jre.version > 9)
+      intellijVMOptions.copy(gc = "")
+    else
+      intellijVMOptions
 
 }
