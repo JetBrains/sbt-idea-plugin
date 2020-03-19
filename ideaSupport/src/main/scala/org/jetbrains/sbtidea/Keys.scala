@@ -36,9 +36,8 @@ object Keys extends Defns with Init with Utils with Quirks {
     "Version of JetBrains Runtime to download and install"
   )
 
-  lazy val searchPluginId = inputKey[String](
-    "Search for plugin ID by plugin name or description"
-  )
+  lazy val searchPluginId = inputKey[Map[String, (String, Boolean)]](
+    "Search for plugin ID by plugin name or description")
 
   lazy val updateIntellij = taskKey[Unit](
     "Download Intellij IntelliJ Platform binaries, sources and external plugins for specified build")
