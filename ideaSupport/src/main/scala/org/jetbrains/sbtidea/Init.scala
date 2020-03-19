@@ -59,7 +59,7 @@ trait Init { this: Keys.type =>
           intellijPlatform.value,
           jbrVersion.value
         ),
-        intellijExternalPlugins.?.all(ScopeFilter(inAnyProject)).value.flatten.flatten,
+        intellijPlugins.?.all(ScopeFilter(inAnyProject)).value.flatten.flatten,
         intellijDownloadSources.value
       ).update()
     },
