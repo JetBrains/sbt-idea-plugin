@@ -10,6 +10,7 @@ case class JbrDependency(ideaRoot: Path, buildInfo: BuildInfo, dependsOn: Seq[Un
   override type U = JbrDependency
   override type R = JbrArtifact
   override protected def usedResolver: JbrBintrayResolver = new JbrBintrayResolver
+  override def toString: String = s"JbrDependency(${buildInfo.jbrVersion})"
 }
 
 object JbrDependency {

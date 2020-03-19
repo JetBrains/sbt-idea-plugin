@@ -11,7 +11,9 @@ package object download {
     val IDEA_DIST, IDEA_SRC, IDEA_PLUGIN, MISC = Value
   }
 
-  case class BuildInfo(buildNumber: String, edition: IntelliJPlatform, jbrVersion: Option[String])
+  case class BuildInfo(buildNumber: String, edition: IntelliJPlatform, jbrVersion: Option[String]) {
+    override def toString: String = s"BuildInfo($edition-$buildNumber)"
+  }
 
   case class ArtifactPart(url: URL,
                           kind: ArtifactKind.ArtifactKind,

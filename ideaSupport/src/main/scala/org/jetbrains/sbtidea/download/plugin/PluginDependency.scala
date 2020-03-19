@@ -12,4 +12,5 @@ case class PluginDependency(plugin: IntellijPlugin,
   override type U = PluginDependency
   override type R = PluginArtifact
   override protected def usedResolver: PluginResolver = new PluginResolver
+  override def toString: String = s"PluginDependency($plugin)"
 }
