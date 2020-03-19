@@ -62,7 +62,7 @@ class PluginResolver(private val processedPlugins: Set[IntellijPlugin] = Set.emp
   }
 
   private def resolveBundledPlugin(plugin: PluginDependency)(key: IntellijPlugin.BundledFolder): Seq[PluginArtifact] = {
-    if (!localRegistry.isPluginInstalled(key)) {
+    if (localRegistry.isPluginInstalled(key)) {
       val root = localRegistry.getInstalledPluginRoot(key)
       val descriptor = localRegistry.getPluginDescriptor(key)
       descriptor match {
