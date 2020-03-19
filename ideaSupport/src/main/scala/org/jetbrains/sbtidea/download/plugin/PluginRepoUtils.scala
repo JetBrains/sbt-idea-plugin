@@ -4,7 +4,7 @@ import org.jetbrains.sbtidea.Keys.IntellijPlugin
 import org.jetbrains.sbtidea.download._
 import sbt.URL
 
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 class PluginRepoUtils extends PluginRepoApi {
   private val baseUrl = "https://plugins.jetbrains.com"
@@ -13,7 +13,11 @@ class PluginRepoUtils extends PluginRepoApi {
     val chanStr = channel.map(c => s"&channel=$c").getOrElse("")
     val urlStr = s"$baseUrl/plugins/list?pluginId=$pluginId$chanStr&build=${idea.edition.edition}-${idea.buildNumber}"
     val infoUrl = new URL(urlStr)
-    Try(PluginDescriptor.load(infoUrl)).toEither
+    val res = Try(PluginDescriptor.load(infoUrl))
+    res match {
+      case Failure(exception) =>Left(exception)
+      case Success(value) => Right(value)
+    }
   }
 
   def getPluginDownloadURL(idea: BuildInfo, pluginInfo: IntellijPlugin.Id): URL = {
@@ -31,5 +35,5 @@ class PluginRepoUtils extends PluginRepoApi {
   }
 
   def getLatestPluginVersion(idea: BuildInfo, pluginId: String, channel: Option[String]): Either[Throwable, String] =
-    getRemotePluginXmlDescriptor(idea, pluginId, channel).map(_.version)
+    getRemotePluginXmlDescriptor(idea, pluginId, channel).right.map(_.version)
 }
