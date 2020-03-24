@@ -11,7 +11,19 @@ case class PluginDescriptor(id: String,
                             version: String,
                             sinceBuild: String,
                             untilBuild: String,
-                            dependsOn: Seq[PluginDescriptor.Dependency] = Seq.empty)
+                            dependsOn: Seq[PluginDescriptor.Dependency] = Seq.empty) {
+  def toXMLStr: String = {
+    s"""
+       |<idea-plugin>
+       |  <name>$name</name>
+       |  <id>$id</id>
+       |  <version>$version</version>
+       |  <idea-version since-build="$sinceBuild" until-build="$untilBuild"/>
+       |  ${dependsOn.map(dep => s"""<depends optional="${dep.optional}">${dep.id}</depends>""").mkString("\n")}
+       |</idea-plugin>
+       |""".stripMargin
+  }
+}
 
 object PluginDescriptor {
 
