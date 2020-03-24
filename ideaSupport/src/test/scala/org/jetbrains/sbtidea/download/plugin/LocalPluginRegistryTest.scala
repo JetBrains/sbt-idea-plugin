@@ -9,17 +9,17 @@ import org.jetbrains.sbtidea.download.NioUtils
 import org.jetbrains.sbtidea.download.idea.IdeaMock
 import org.jetbrains.sbtidea.packaging.artifact
 import org.jetbrains.sbtidea.{ConsoleLogger, packaging, pathToPathExt}
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.{BeforeAndAfter, FunSuite, Matchers}
 import sbt._
 
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 
-final class LocalPluginRegistryTest extends FunSuite with Matchers with IdeaMock with ConsoleLogger {
+final class LocalPluginRegistryTest extends FunSuite with Matchers with IdeaMock with PluginMock with ConsoleLogger with BeforeAndAfter {
 
   private val ideaRoot = installIdeaMock
 
   private val pluginsFolder = ideaRoot / "plugins"
-  private val pluginsIndex  = ideaRoot / "plugins-meta.idx"
+  private val pluginsIndex  = ideaRoot / PluginIndexImpl.INDEX_FILENAME
 
   private val hoconXML =
     """
@@ -50,6 +50,10 @@ final class LocalPluginRegistryTest extends FunSuite with Matchers with IdeaMock
     val result = f
     NioUtils.delete(pluginsFolder / pluginName)
     result
+  }
+
+  before {
+    pluginsIndex.toFile.delete()
   }
 
   test("LocalPluginRegistry builds bundled plugin index") {
@@ -100,12 +104,12 @@ final class LocalPluginRegistryTest extends FunSuite with Matchers with IdeaMock
 
   test("LocalPluginRegistry saves and restores plugin index") {
     val oldRegistry = new LocalPluginRegistry(ideaRoot)
-    val newPlugin = "org.jetbrains.hocon".toPlugin
+    val newPlugin = "org.jetbrains.plugins.hocon".toPlugin
     val newPluginRoot = pluginsFolder / "hocon"
     usingFakePlugin("hocon", hoconXML) {
       oldRegistry.markPluginInstalled(newPlugin, newPluginRoot)
 
-      val newRegistry = LocalPluginRegistry.instanceFor(ideaRoot)
+      val newRegistry = new LocalPluginRegistry(ideaRoot)
       newRegistry.isPluginInstalled(newPlugin) shouldBe true
 
       Files.delete(pluginsIndex)
@@ -114,7 +118,7 @@ final class LocalPluginRegistryTest extends FunSuite with Matchers with IdeaMock
 
   test("LocalPluginRegistry should handle corrupt index") {
     val oldRegistry = LocalPluginRegistry.instanceFor(ideaRoot)
-    val newPlugin = "org.jetbrains.hocon".toPlugin
+    val newPlugin = "org.jetbrains.plugins.hocon".toPlugin
     val newPluginRoot = pluginsFolder / "hocon"
     usingFakePlugin("hocon", hoconXML) {
       oldRegistry.markPluginInstalled(newPlugin, newPluginRoot)
@@ -128,7 +132,7 @@ final class LocalPluginRegistryTest extends FunSuite with Matchers with IdeaMock
       val messages = captureLog {
         newRegistry.isPluginInstalled(newPlugin) shouldBe false
       }
-      messages should contain("Failed to load local plugin index: java.io.EOFException")
+      messages should contain("Failed to load plugin index from disk: java.io.EOFException")
       pluginsIndex.toFile.exists() shouldBe false
     }
   }
