@@ -10,7 +10,7 @@ import org.jetbrains.sbtidea.download.api._
 
 import scala.language.postfixOps
 
-case class IdeaSources(caller: IdeaDependency, dlUrl: URL) extends IdeaArtifact {
+case class IdeaSources(caller: AbstractIdeaDependency, dlUrl: URL) extends IdeaArtifact {
   override type R = IdeaSources
   override protected def usedInstaller: Installer[IdeaSources] = new Installer[IdeaSources] {
     override def isInstalled(art: IdeaSources)(implicit ctx: InstallContext): Boolean =
