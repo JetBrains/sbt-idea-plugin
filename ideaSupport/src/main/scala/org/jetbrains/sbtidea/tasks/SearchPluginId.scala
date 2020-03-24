@@ -29,21 +29,10 @@ class SearchPluginId(ideaRoot: Path, buildInfo: BuildInfo, useBundled: Boolean =
         .map(descriptor => descriptor.id -> (descriptor.name, false))
         .toMap
   }
+
+  // Apparently we can't use json4s when cross-compiling for sbt because there are BOTH no shared versions AND binary compatibility
+  // FIXME: use java json parsing library to workaround this API nonsense
   private def searchPluginIdRemote(query: String): Map[String, (String, Boolean)] = {
-    import org.json4s._
-    import org.json4s.native.JsonMethods._
-    try {
-      val param = URLEncoder.encode(query, "UTF-8")
-      val url = REPO_QUERY.format(param, s"${buildInfo.edition.edition}-${buildInfo.buildNumber}")
-      val data = Http(url).asString.body
-      val json = parse(data)
-      val ids = (json \\ "xmlId").children.map(_.values.toString)
-      val names = (json \\ "name").children.map(_.values.toString).map(_ -> true)
-      ids.zip(names).toMap
-    } catch {
-      case ex: Throwable =>
-        PluginLogger.warn(s"Failed to query IJ plugin repo: $ex")
-        Map.empty
-    }
+    Map.empty
   }
 }
