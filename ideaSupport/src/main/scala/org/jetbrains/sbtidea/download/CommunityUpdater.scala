@@ -11,13 +11,13 @@ import org.jetbrains.sbtidea.download.jbr.JbrDependency
 
 class CommunityUpdater(baseDirectory: Path, ideaBuildInfo: BuildInfo, plugins: Seq[IntellijPlugin], withSources: Boolean = true) {
 
-  implicit private val context: InstallContext =
+  implicit protected val context: InstallContext =
     InstallContext(baseDirectory = baseDirectory, downloadDirectory = baseDirectory.getParent)
 
-  implicit private val remoteRepoApi: PluginRepoUtils =
+  implicit protected val remoteRepoApi: PluginRepoUtils =
     new PluginRepoUtils
 
-  implicit private val localRegistry: LocalPluginRegistry =
+  implicit protected val localRegistry: LocalPluginRegistry =
     new LocalPluginRegistry(baseDirectory)
 
   protected val ideaDependency: IdeaDependency = IdeaDependency(ideaBuildInfo)
