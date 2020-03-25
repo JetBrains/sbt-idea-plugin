@@ -6,9 +6,10 @@ import org.jetbrains.sbtidea.download.plugin.LocalPluginRegistry.MissingPluginRo
 import org.jetbrains.sbtidea.tasks.CreatePluginsClasspath
 import org.jetbrains.sbtidea.pathToPathExt
 import org.jetbrains.sbtidea.Keys._
+import org.jetbrains.sbtidea.download.idea.IdeaMock
 import sbt._
 
-class PluginClassPathTest extends IntellijPluginInstallerTestBase {
+class PluginClassPathTest extends IntellijPluginInstallerTestBase with IdeaMock {
 
   test("plugin classpath contains all necessary jars") {
     val installer = createInstaller()
@@ -20,7 +21,8 @@ class PluginClassPathTest extends IntellijPluginInstallerTestBase {
     installer.installIdeaPlugin(pluginJarMetadata.toPluginId, mockPluginJarDist)
 
     val classpath =
-      CreatePluginsClasspath(ideaRoot.toFile,
+      CreatePluginsClasspath(ideaRoot,
+        IDEA_BUILDINFO,
         Seq("com.intellij.properties".toPlugin,
             "org.jetbrains.plugins.yaml".toPlugin,
             pluginJarMetadata.toPluginId,
@@ -38,7 +40,8 @@ class PluginClassPathTest extends IntellijPluginInstallerTestBase {
     Files.createFile(pluginsRoot / wrongJar)
 
     val classpath =
-      CreatePluginsClasspath(ideaRoot.toFile,
+      CreatePluginsClasspath(ideaRoot,
+        IDEA_BUILDINFO,
         Seq("com.intellij.properties".toPlugin,
             "org.jetbrains.plugins.yaml".toPlugin),
         log)

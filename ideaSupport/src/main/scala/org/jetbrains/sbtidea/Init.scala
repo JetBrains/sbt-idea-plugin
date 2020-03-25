@@ -108,9 +108,16 @@ trait Init { this: Keys.type =>
     intellijPlugins := intellijInternalPlugins.value.map(IntellijPlugin.BundledFolder(_)) ++ intellijExternalPlugins.value,
     intellijMainJars := (intellijBaseDirectory.value / "lib" * "*.jar").classpath,
     intellijPluginJars :=
-      tasks.CreatePluginsClasspath(intellijBaseDirectory.value,
+      tasks.CreatePluginsClasspath(
+        intellijBaseDirectory.value.toPath,
+        BuildInfo(
+          intellijBuild.value,
+          intellijPlatform.value,
+          jbrVersion.value
+        ),
         intellijPlugins.value,
-        new SbtPluginLogger(streams.value)),
+        new SbtPluginLogger(streams.value),
+        name.value),
 
     intellijFullJars := intellijMainJars.value ++ intellijPluginJars.value,
     unmanagedJars in Compile ++= intellijFullJars.value,
