@@ -44,6 +44,7 @@ object PluginDescriptor {
   def load(stream: InputStream): PluginDescriptor =
     load(XML.withSAXParser(createNonValidatingParser).load(stream))
 
+  //noinspection ExistsEquals : scala 2.10
   def load(xml: Elem): PluginDescriptor = {
     val id      = (xml \\ "id").text
     val version = (xml \\ "version").text
@@ -52,7 +53,7 @@ object PluginDescriptor {
     val until   = (xml \\ "idea-version").headOption.map(_.attributes("until-build").text).getOrElse("")
     val dependencies = (xml \\ "depends").map { node =>
       val id        = node.text.replace(OPTIONAL_KEY, "")
-      val optional  = node.text.contains(OPTIONAL_KEY) || node.attributes(OPTIONAL_ATTR) != null
+      val optional  = node.text.contains(OPTIONAL_KEY) || node.attributes.asAttrMap.get(OPTIONAL_ATTR).exists(_ == "true")
       Dependency(id, optional)
     }
     val idOrName = if (id.isEmpty) name else id
