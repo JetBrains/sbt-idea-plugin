@@ -85,7 +85,7 @@ class PluginIndexImpl(ideaRoot: Path) extends PluginIndex {
       stream.writeInt(INDEX_VERSION)
       stream.writeInt(idx.size)
       val values = idx.values
-      val paths           = values.map(_._1.relativize(ideaRoot).toString).toArray
+      val paths           = values.map(x => ideaRoot.relativize(x._1).toString).toArray
       val descriptorsStr  = values.map(_._2.toXMLStr).toArray
       stream.writeObject(paths)
       stream.writeObject(descriptorsStr)
