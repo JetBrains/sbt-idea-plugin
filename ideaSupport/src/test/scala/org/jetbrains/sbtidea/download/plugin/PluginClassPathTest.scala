@@ -46,14 +46,5 @@ class PluginClassPathTest extends IntellijPluginInstallerTestBase {
     classpath.map(_.data.getName) should not contain (wrongJar)
   }
 
-  test("plugin classpath building is aborted when non-existent plugin is passed") {
-    assertThrows[MissingPluginRootException] {
-      CreatePluginsClasspath(ideaRoot.toFile,
-        Seq("com.intellij.properties".toPlugin,
-            "org.jetbrains.plugins.yaml".toPlugin,
-            "INVALID".toPlugin),
-        log)
-    }
-  }
 
 }
