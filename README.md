@@ -81,31 +81,48 @@ Default: `true`
 
 Flag indicating whether IntelliJ sources should be downloaded alongside binaries or not.
 
-#### `intellijInternalPlugins :: SettingKey[String]`
+#### `intellijPlugins :: SettingKey[IdeaPlugin]`
 
 Default: `Seq.empty`
 
-List of bundled IntelliJ plugins to depend upon. Their jars will be used in compilation.
-Available plugins can be found in `intellijBaseDirectory / "plugins"` directory.
-
-#### `intellijExternalPlugins :: SettingKey[IdeaPlugin]`
-
-Default: `Seq.empty`
-
-IntelliJ plugins to depend upon from IJ plugin repository or direct url to plugin artifact.
+IntelliJ plugins to depend on. Bundled(internal) plugins are specified by their plugin ID.
 Plugins from repo can be specified by the plugin's id, optional version and update channel.
-Plugins will be checked for compatibility with the `intellijBuild` you specified and updated to the latest version unless
- some specific version is given explicitly. [How to find plugin's id](https://github.com/JetBrains/sbt-idea-plugin/wiki/How-to-find-plugin's-id).
+Plugins will be checked for compatibility against the `intellijBuild` you specified and updated to the latest version unless
+ some specific version is given explicitly. Inter-plugin dependencies are also transitively resolved(e.g. depending
+ on the Scala plugin will automatically attach Java and other plugin dependencies)
+ 
+ Plugin IDs can be either searched by plugin name with the help of [searchPluginId](#searchpluginid--mapstring-string-boolean)
+ task or [manually](https://github.com/JetBrains/sbt-idea-plugin/wiki/How-to-find-plugin's-id)
+ 
+ :exclamation: Please note that keys `intellijInternalPlugins` and `intellijExternalPlugins` have been deprecated and this setting key
+ should be used instead.
+ 
+ :exclamation: Please note that Java support in IJ is implemented by a plugin: `com.intellij.java`
 
 ```SBT
+// use properties plugin bundled with IDEA
+intellijPlugins += "com.intellij.properties".toPlugin
 // use Scala plugin as a dependency
-intellijExternalPlugins += "org.intellij.scala".toPlugin
+intellijPlugins += "org.intellij.scala".toPlugin
 // use Scala plugin version 2019.2.1
-intellijExternalPlugins += "org.intellij.scala:2019.2.1".toPlugin
+intellijPlugins += "org.intellij.scala:2019.2.1".toPlugin
 // use latest nightly build from the repo
-intellijExternalPlugins += "org.intellij.scala::Nightly".toPlugin
+intellijPlugins += "org.intellij.scala::Nightly".toPlugin
 // use specific version from Eap update channel
-intellijExternalPlugins += "org.intellij.scala:2019.3.2:Eap".toPlugin
+intellijPlugins += "org.intellij.scala:2019.3.2:Eap".toPlugin
+```
+
+#### `searchPluginId :: Map[String, (String, Boolean)]`
+
+Usage: `searchPluginId [--nobundled|--noremote] <plugin name regexp>`
+
+Searches and prints plugins across locally installed IJ sdk and plugin marketplace.
+Use provided flags to limit search scope to only bundled or marketplace plugins.
+
+```
+> searchPluginId Prop
+[info] bundled          - Properties[com.intellij.properties]
+[info] bundled          - Resource Bundle Editor[com.intellij.properties.bundle.editor]
 ```
 
 #### `jbrVersion :: Option[String]`
