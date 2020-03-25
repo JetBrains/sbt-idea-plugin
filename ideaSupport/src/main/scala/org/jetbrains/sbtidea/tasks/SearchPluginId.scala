@@ -20,7 +20,7 @@ class SearchPluginId(ideaRoot: Path, buildInfo: BuildInfo, useBundled: Boolean =
   def apply(query: String): Map[String, (String, Boolean)] = {
     val local  = if (useBundled) searchPluginIdLocal(query) else Map.empty
     val remote = if (useRemote) searchPluginIdRemote(query) else Map.empty
-    local ++ remote
+    remote ++ local
   }
 
   private def searchPluginIdLocal(query: String): Map[String, (String, Boolean)] = {
