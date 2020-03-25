@@ -73,6 +73,7 @@ trait Init { this: Keys.type =>
       val log = streams.value.log
       val parsed = spaceDelimited("[--nobundled|--noremote] <plugin name regexp>").parsed
       val maybeQuery = parsed.lastOption.filterNot(_.startsWith("--"))
+      PluginLogger.bind(new SbtPluginLogger(streams.value))
       val result: Map[String, (String, Boolean)] = maybeQuery match {
         case Some(query) =>
           val searcher = new SearchPluginId(

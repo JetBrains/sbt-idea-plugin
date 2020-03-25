@@ -62,6 +62,7 @@ lazy val ideaSupport = (project in file(".") / "ideaSupport")
     name := "sbt-idea-plugin",
     libraryDependencies ++=
         "org.scalaj" %% "scalaj-http" % "2.3.0"             ::
+          "com.eclipsesource.minimal-json" % "minimal-json" % "0.9.5" ::
           "org.rauschig" % "jarchivelib" % "1.0.0"          :: Nil
   )
 
