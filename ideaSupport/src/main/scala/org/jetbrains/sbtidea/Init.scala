@@ -68,7 +68,34 @@ trait Init { this: Keys.type =>
       IO.delete(intellijTestSystemDir.value)
       IO.delete(intellijTestConfigDir.value)
     },
-
+    searchPluginId := {
+      import complete.DefaultParsers._
+      val log = streams.value.log
+      val parsed = spaceDelimited("[--nobundled|--noremote] <plugin name regexp>").parsed
+      val maybeQuery = parsed.lastOption.filterNot(_.startsWith("--"))
+      val result: Map[String, (String, Boolean)] = maybeQuery match {
+        case Some(query) =>
+          val searcher = new SearchPluginId(
+            intellijBaseDirectory.value.toPath,
+            BuildInfo(
+              intellijBuild.value,
+              intellijPlatform.value,
+              jbrVersion.value
+            ),
+            useBundled = !parsed.contains("--nobundled"),
+            useRemote  = !parsed.contains("--noremote")
+          )
+          searcher(query)
+        case None =>
+          log.error(s"search query expected")
+          Map.empty
+      }
+      result.foreach {
+        case (id, (name, false)) => log.info(s"bundled\t\t- $name[$id]")
+        case (id, (name, true)) => log.info(s"from repo\t- $name[$id]")
+      }
+      result
+    },
     onLoad in Global := ((s: State) => {
       "updateIntellij" :: s
     }) compose (onLoad in Global).value
@@ -133,35 +160,6 @@ trait Init { this: Keys.type =>
         case Right(metadata) => metadata.id
       }
         tasks.PublishPlugin.apply(token, pluginId.repr, maybeChannel, packageArtifactZip.value, log)
-    },
-
-    searchPluginId := {
-      import complete.DefaultParsers._
-      val log = streams.value.log
-      val parsed = spaceDelimited("[--nobundled|--noremote] <plugin name regexp>").parsed
-      val maybeQuery = parsed.lastOption.filterNot(_.startsWith("--"))
-      val result: Map[String, (String, Boolean)] = maybeQuery match {
-        case Some(query) =>
-          val searcher = new SearchPluginId(
-            intellijBaseDirectory.value.toPath,
-            BuildInfo(
-              intellijBuild.value,
-              intellijPlatform.value,
-              jbrVersion.value
-            ),
-             useBundled = !parsed.contains("--nobundled"),
-             useRemote  = !parsed.contains("--noremote")
-          )
-          searcher(query)
-        case None =>
-          log.error(s"search query expected")
-          Map.empty
-      }
-      result.foreach {
-        case (id, (name, false)) => log.info(s"bundled\t\t- $name[$id]")
-        case (id, (name, true)) => log.info(s"from repo\t- $name[$id]")
-      }
-      result
     },
 
     createIDEAArtifactXml := Def.taskDyn {
