@@ -14,7 +14,7 @@ import scala.collection.JavaConverters._
 
 class SearchPluginId(ideaRoot: Path, buildInfo: BuildInfo, useBundled: Boolean = true, useRemote: Boolean = true) {
 
-  private val REPO_QUERY = "https://plugins.jetbrains.com/api/search/plugins?query=%s&build=%s"
+  private val REPO_QUERY = "https://plugins.jetbrains.com/api/search/plugins?search=%s&build=%s"
 
   // true if plugin was found in the remote repo
   def apply(query: String): Map[String, (String, Boolean)] = {
