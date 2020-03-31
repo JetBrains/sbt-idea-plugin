@@ -3,8 +3,8 @@ language: scala
 jdk: openjdk11
 
 script:
-  ## runs both regular tests and sbt-scripted integration tests
-  - sbt -Dfile.encoding=UTF8 +test +scripted
+  ## runs tests
+  - sbt -Dfile.encoding=UTF8 +test
 
 after_success:
   - '[[ $TRAVIS_BRANCH == "master" ]] || [[ $TRAVIS_BRANCH =~ ^v[0-9.]+$ ]] && sbt "+ publish"'
