@@ -94,6 +94,11 @@ Plugins will be checked for compatibility against the `intellijBuild` you specif
  Plugin IDs can be either searched by plugin name with the help of [searchPluginId](#searchpluginid--mapstring-string-boolean)
  task or [manually](https://github.com/JetBrains/sbt-idea-plugin/wiki/How-to-find-plugin's-id)
  
+ You can tune plugin resolving on individual plugin level by specifying several options to `toPlugin` method:
+ - `transitive`   - use transitive plugin resolution(default: true)
+ - `optionalDeps` - resolve optional plugin dependencies(default: true)
+ - `excludedIds`  - blacklist certain plugins from transitive resolution(default: Set.empty)
+ 
  :exclamation: Please note that keys `intellijInternalPlugins` and `intellijExternalPlugins` have been deprecated and this setting key
  should be used instead.
  
@@ -110,6 +115,8 @@ intellijPlugins += "org.intellij.scala:2019.2.1".toPlugin
 intellijPlugins += "org.intellij.scala::Nightly".toPlugin
 // use specific version from Eap update channel
 intellijPlugins += "org.intellij.scala:2019.3.2:Eap".toPlugin
+// add JavaScript plugin but without its Grazie plugin dependency
+intellijPlugins += "JavaScript".toPlugin(excludedIds = Set("tanvd.grazi"))
 ```
 
 #### `searchPluginId :: Map[String, (String, Boolean)]`

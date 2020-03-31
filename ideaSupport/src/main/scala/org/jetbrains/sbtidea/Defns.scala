@@ -5,7 +5,11 @@ import java.util.regex.Pattern
 
 trait Defns { this: Keys.type =>
 
-  sealed trait IntellijPlugin
+  sealed trait IntellijPlugin {
+    var transitive = true
+    var optionalDeps = true
+    var excludedIds: Set[String] = Set.empty
+  }
 
   object IntellijPlugin {
     final case class Url(url: URL) extends IntellijPlugin
@@ -38,6 +42,13 @@ trait Defns { this: Keys.type =>
       } else {
         throw new RuntimeException(s"Failed to parse plugin: $str")
       }
+    }
+    def toPlugin(excludedIds: Set[String] = Set.empty, transitive: Boolean = true, optionalDeps: Boolean = true): IntellijPlugin = {
+      val res = toPlugin
+      res.excludedIds = excludedIds
+      res.optionalDeps = optionalDeps
+      res.transitive = transitive
+      res
     }
   }
 
