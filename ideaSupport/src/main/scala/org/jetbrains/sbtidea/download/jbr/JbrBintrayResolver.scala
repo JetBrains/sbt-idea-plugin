@@ -42,8 +42,8 @@ class JbrBintrayResolver extends Resolver[JbrDependency] {
   }
 
   private def arch: String = System.getProperty("os.arch") match {
-    case "amd64"  => "x64"
-    case other    => other
+    case "x86"  => "x86"
+    case _      => "x64"
   }
 
   private[jbr] def extractVersionFromIdea(ideaInstallationDir: Path): Option[String] = {
