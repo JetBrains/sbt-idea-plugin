@@ -6,9 +6,7 @@ import java.util.regex.Pattern
 trait Defns { this: Keys.type =>
 
   sealed trait IntellijPlugin {
-    var transitive = true
-    var optionalDeps = true
-    var excludedIds: Set[String] = Set.empty
+    var resolveSettings: IntellijPlugin.Settings = IntellijPlugin.defaultSettings
   }
 
   object IntellijPlugin {
@@ -20,6 +18,9 @@ trait Defns { this: Keys.type =>
 
     val URL_PATTERN: Pattern = Pattern.compile("^(?:(\\w+):)??(https?://.+)$")
     val ID_PATTERN:  Pattern = Pattern.compile("^([^:]+):?([\\w.]+)?:?([\\w]+)?$")
+
+    case class Settings(transitive: Boolean = true, optionalDeps: Boolean = true, excludedIds: Set[String] = Set.empty)
+    val defaultSettings: Settings = Settings()
 
     def isExternalPluginStr(str: String): Boolean =
       str.contains(":") || ID_PATTERN.matcher(str).matches() || URL_PATTERN.matcher(str).matches()
@@ -45,9 +46,8 @@ trait Defns { this: Keys.type =>
     }
     def toPlugin(excludedIds: Set[String] = Set.empty, transitive: Boolean = true, optionalDeps: Boolean = true): IntellijPlugin = {
       val res = toPlugin
-      res.excludedIds = excludedIds
-      res.optionalDeps = optionalDeps
-      res.transitive = transitive
+      val newSettings = Settings(transitive, optionalDeps, excludedIds)
+      res.resolveSettings = newSettings
       res
     }
   }

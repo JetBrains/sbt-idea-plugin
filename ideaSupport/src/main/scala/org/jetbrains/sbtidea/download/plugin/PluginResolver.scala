@@ -4,7 +4,7 @@ import org.jetbrains.sbtidea.{Keys, PluginLogger}
 import org.jetbrains.sbtidea.download.api._
 
 
-class PluginResolver(private val processedPlugins: Set[IntellijPlugin] = Set.empty, private val excludeSet: Set[String] = Set.empty)
+class PluginResolver(private val processedPlugins: Set[IntellijPlugin] = Set.empty, private val resolveSettings: IntellijPlugin.Settings)
                     (implicit ctx: InstallContext, repo: PluginRepoApi, localRegistry: LocalPluginRegistryApi) extends Resolver[PluginDependency] {
 
   // modules that are inside idea.jar
@@ -28,12 +28,12 @@ class PluginResolver(private val processedPlugins: Set[IntellijPlugin] = Set.emp
 
   private def resolveDependencies(plugin: PluginDependency, key: IntellijPlugin, descriptor: PluginDescriptor) = {
     descriptor.dependsOn
-      .filterNot(!key.optionalDeps && _.optional)         // skip all optional plugins if flag is set
-      .filterNot(dep => excludeSet.contains(dep.id))      // remove plugins specified by user blacklist
-      .filterNot(_.id.startsWith(INTERNAL_MODULE_PREFIX)) // skip plugins embedded in idea.jar
+      .filterNot(!resolveSettings.optionalDeps && _.optional)              // skip all optional plugins if flag is set
+      .filterNot(dep => resolveSettings.excludedIds.contains(dep.id))      // remove plugins specified by user blacklist
+      .filterNot(_.id.startsWith(INTERNAL_MODULE_PREFIX))                  // skip plugins embedded in idea.jar
       .filterNot(dep => dep.optional && !localRegistry.isPluginInstalled(dep.id.toPlugin)) // skip optional non-bundled plugins
       .map(dep => PluginDependency(dep.id.toPlugin, plugin.buildInfo))
-      .flatMap(new PluginResolver(processedPlugins = processedPlugins + key, excludeSet = excludeSet ++ key.excludedIds).resolve)
+      .flatMap(new PluginResolver(processedPlugins = processedPlugins + key, resolveSettings).resolve)
   }
 
   private def resolveUrlPlugin(plugin: PluginDependency)(key: IntellijPlugin.Url): Seq[PluginArtifact] =
@@ -57,7 +57,7 @@ class PluginResolver(private val processedPlugins: Set[IntellijPlugin] = Set.emp
             RemotePluginArtifact(plugin, repo.getPluginDownloadURL(plugin.buildInfo, key))
 
         val resolvedDeps =
-          if (key.transitive)
+          if (resolveSettings.transitive)
             resolveDependencies(plugin, key, descriptor)
           else
             Seq.empty
@@ -75,7 +75,7 @@ class PluginResolver(private val processedPlugins: Set[IntellijPlugin] = Set.emp
         case Right(value) =>
           val thisPluginArtifact = LocalPlugin(plugin, value, root)
           val resolvedDeps =
-            if (key.transitive)
+            if (resolveSettings.transitive)
               resolveDependencies(plugin, key, value)
             else
               Seq.empty

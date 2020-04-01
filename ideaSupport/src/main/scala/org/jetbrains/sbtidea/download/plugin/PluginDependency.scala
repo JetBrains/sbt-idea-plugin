@@ -11,6 +11,6 @@ case class PluginDependency(plugin: IntellijPlugin,
                            (implicit private val ctx: InstallContext, repo: PluginRepoApi, localRegistry: LocalPluginRegistryApi) extends UnresolvedArtifact {
   override type U = PluginDependency
   override type R = PluginArtifact
-  override protected def usedResolver: PluginResolver = new PluginResolver(excludeSet = plugin.excludedIds)
+  override protected def usedResolver: PluginResolver = new PluginResolver(resolveSettings = plugin.resolveSettings)
   override def toString: String = s"PluginDependency($plugin)"
 }
