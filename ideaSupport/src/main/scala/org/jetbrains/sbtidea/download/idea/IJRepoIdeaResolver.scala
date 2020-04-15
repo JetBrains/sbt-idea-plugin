@@ -16,8 +16,8 @@ class IJRepoIdeaResolver extends Resolver[IdeaDependency] {
     val ideaUrl           = getUrl(dep.buildInfo, ".zip")
     // sources are available only for Community Edition
     val srcJarUrl         = getUrl(dep.buildInfo.copy(edition = Keys.IntelliJPlatform.IdeaCommunity), "-sources.jar")
-    IdeaDist(dep, ideaUrl) ::
-    IdeaSources(dep, srcJarUrl) :: Nil
+    IdeaDistImpl(dep, ideaUrl) ::
+    IdeaSourcesImpl(dep, srcJarUrl) :: Nil
   }
 
   private val defaultBaseURL    = "https://www.jetbrains.com/intellij-repository"
