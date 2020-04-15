@@ -10,15 +10,17 @@ import org.jetbrains.sbtidea.download.api._
 
 import scala.language.postfixOps
 
-case class IdeaSources(caller: AbstractIdeaDependency, dlUrl: URL) extends IdeaArtifact {
+abstract class IdeaSources extends IdeaArtifact {
   override type R = IdeaSources
   override protected def usedInstaller: Installer[IdeaSources] = new Installer[IdeaSources] {
     override def isInstalled(art: IdeaSources)(implicit ctx: InstallContext): Boolean =
       ctx.baseDirectory / "sources.zip" exists
     override def downloadAndInstall(art: IdeaSources)(implicit ctx: InstallContext): Unit = {
-      val file = FileDownloader(ctx.baseDirectory.getParent).download(dlUrl, optional = true)
+      val file = FileDownloader(ctx.baseDirectory.getParent).download(art.dlUrl, optional = true)
       Files.move(file, ctx.baseDirectory.resolve("sources.zip"))
       PluginLogger.info(s"${caller.buildInfo.edition.name} sources installed")
     }
   }
 }
+
+case class IdeaSourcesImpl(caller: AbstractIdeaDependency, dlUrl: URL) extends IdeaSources
