@@ -61,7 +61,6 @@ class IdeaConfigBuilder(artifactName: String,
     val testVMOptions = intellijVMOptions.copy(test = true)
     s"""<component name="ProjectRunConfigurationManager">
        |  <configuration default="true" type="JUnit" factoryName="JUnit">
-       |    <module name="$moduleName" />
        |    <useClassPathOnly />
        |    $jreSettings
        |    <option name="MAIN_CLASS_NAME" value="" />
