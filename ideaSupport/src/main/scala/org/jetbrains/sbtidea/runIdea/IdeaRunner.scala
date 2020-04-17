@@ -47,7 +47,7 @@ class IdeaRunner(ideaClasspath: Seq[Path],
       None
   }
 
-  private def getBundledJRE: Option[JRE] = {
+  def getBundledJRE: Option[JRE] = {
     val validJars = Set("idea.jar", "platform-api.jar", "platform-impl.jar", "openapi.jar")
 
     val ideaJar =

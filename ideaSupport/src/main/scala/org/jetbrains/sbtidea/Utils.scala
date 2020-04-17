@@ -30,8 +30,9 @@ trait Utils { this: Keys.type =>
       name.in(from).value,
       configName,
       name.value,
-      vmOptions.asSeq,
-      intellijPluginDirectory.value)
+      vmOptions,
+      intellijPluginDirectory.value,
+      intellijBaseDirectory.value)
     val outFile = baseDirectory.in(ThisBuild).value / ".idea" / "runConfigurations" / s"$configName.xml"
     IO.write(outFile, data.getBytes)
   }
