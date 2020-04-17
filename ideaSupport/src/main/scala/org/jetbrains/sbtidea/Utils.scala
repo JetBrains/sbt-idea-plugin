@@ -7,11 +7,18 @@ import sbt.{Def, file, _}
 
 trait Utils { this: Keys.type =>
 
-  def createRunnerProject(from: ProjectReference, newProjectName: String = ""): Project =
-    Project(newProjectName, file(s"target/tools/$newProjectName"))
+  def createRunnerProject(from: ProjectReference, newProjectName: String = ""): Project = {
+    val baseName: String = from match {
+      case ProjectRef(_, project) => project
+      case LocalProject(project)  => project
+      case RootProject(build)     => build.hashCode().abs.toString
+      case LocalRootProject       => "plugin"
+      case ThisProject            => "plugin"
+    }
+    val newName = if (newProjectName.nonEmpty) newProjectName else s"$baseName-runner"
+    Project(newName, file(s"target/tools/$newName"))
       .dependsOn(from % Provided)
       .settings(
-        name := { if (newProjectName.nonEmpty) newProjectName else name.in(from) + "-runner"},
         scalaVersion := scalaVersion.in(from).value,
         dumpDependencyStructure := null, // avoid cyclic dependencies on products task
         products := packageArtifact.in(from).value :: Nil,  // build the artifact when IDEA delegates "Build" action to sbt shell
@@ -21,6 +28,7 @@ trait Utils { this: Keys.type =>
         createIDEARunConfiguration := genCreateRunConfigurationTask(from).value,
         autoScalaLibrary := !hasPluginsWithScala(intellijPlugins.?.all(ScopeFilter(inDependencies(from))).value.flatten.flatten)
       ).enablePlugins(SbtIdeaPlugin)
+  }
 
   def genCreateRunConfigurationTask(from: ProjectReference): Def.Initialize[Task[Unit]] = Def.task {
     implicit  val log: PluginLogger = new SbtPluginLogger(streams.value)
