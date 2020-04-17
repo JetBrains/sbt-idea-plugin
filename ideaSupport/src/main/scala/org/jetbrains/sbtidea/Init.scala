@@ -119,24 +119,22 @@ trait Init { this: Keys.type =>
     packageOutputDir := target.value / "plugin" / intellijPluginName.value,
     packageArtifactZipFile := target.value / s"${intellijPluginName.value}-${version.value}.zip",
     patchPluginXml := pluginXmlOptions.DISABLED,
-    packageArtifact := {
+    doPatchPluginXml := {
       PluginLogger.bind(new SbtPluginLogger(streams.value))
       val options = patchPluginXml.value
       val productDirs = productDirectories.in(Compile).value
       if (options != pluginXmlOptions.DISABLED) {
         val detectedXmls = productDirs.flatMap(f => PluginXmlDetector.getPluginXml(f.toPath))
+        PluginLogger.info(s"Detected plugin xmls, patching: ${detectedXmls.mkString("\n")}")
         detectedXmls.foreach { xml => new PluginXmlPatcher(xml).patch(options) }
       }
+    },
+    packageArtifact := {
+      doPatchPluginXml.value
       packageArtifact.value
     },
     packageArtifactDynamic := {
-      PluginLogger.bind(new SbtPluginLogger(streams.value))
-      val options = patchPluginXml.value
-      val productDirs = productDirectories.in(Compile).value
-      if (options != pluginXmlOptions.DISABLED) {
-        val detectedXmls = productDirs.flatMap(f => PluginXmlDetector.getPluginXml(f.toPath))
-        detectedXmls.foreach { xml => new PluginXmlPatcher(xml).patch(options) }
-      }
+      doPatchPluginXml.value
       packageArtifactDynamic.value
     },
     publishPlugin := {
