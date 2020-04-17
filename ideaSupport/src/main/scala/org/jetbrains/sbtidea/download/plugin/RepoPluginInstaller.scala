@@ -87,11 +87,11 @@ class RepoPluginInstaller(buildInfo: BuildInfo)
     }
   }
 
-  private[plugin] def isPluginCompatibleWithIdea(metadata: PluginDescriptor): Boolean = {
+  private[plugin] def isPluginCompatibleWithIdea(metadata: PluginDescriptor)(implicit ctx: InstallContext): Boolean = {
     val lower = metadata.sinceBuild.replaceAll("^.+-", "") // strip IC- / PC- etc. prefixes
     val upper = metadata.untilBuild.replaceAll("^.+-", "")
-    val lowerValid = compareIdeaVersions(lower, buildInfo.buildNumber) <= 0
-    val upperValid = compareIdeaVersions(upper, buildInfo.buildNumber) >= 0
+    val lowerValid = compareIdeaVersions(lower, buildInfo.getActualIdeaBuild(ctx.baseDirectory)) <= 0
+    val upperValid = compareIdeaVersions(upper, buildInfo.getActualIdeaBuild(ctx.baseDirectory)) >= 0
     lowerValid && upperValid
   }
 

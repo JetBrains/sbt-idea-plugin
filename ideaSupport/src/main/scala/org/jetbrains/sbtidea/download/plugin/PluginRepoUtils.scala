@@ -2,16 +2,17 @@ package org.jetbrains.sbtidea.download.plugin
 
 import org.jetbrains.sbtidea.Keys.IntellijPlugin
 import org.jetbrains.sbtidea.download._
+import org.jetbrains.sbtidea.download.api.InstallContext
 import sbt.URL
 
 import scala.util.{Failure, Success, Try}
 
-class PluginRepoUtils extends PluginRepoApi {
+class PluginRepoUtils(implicit ctx: InstallContext) extends PluginRepoApi {
   private val baseUrl = "https://plugins.jetbrains.com"
 
   def getRemotePluginXmlDescriptor(idea: BuildInfo, pluginId: String, channel: Option[String]): Either[Throwable, PluginDescriptor] = {
     val chanStr = channel.map(c => s"&channel=$c").getOrElse("")
-    val urlStr = s"$baseUrl/plugins/list?pluginId=$pluginId$chanStr&build=${idea.edition.edition}-${idea.buildNumber}"
+    val urlStr = s"$baseUrl/plugins/list?pluginId=$pluginId$chanStr&build=${idea.edition.edition}-${idea.getActualIdeaBuild(ctx.baseDirectory)}"
     val infoUrl = new URL(urlStr)
     val res = Try(PluginDescriptor.load(infoUrl))
     res match {
@@ -27,9 +28,9 @@ class PluginRepoUtils extends PluginRepoApi {
       case IntellijPlugin.Id(id, Some(version), None) =>
         s"$baseUrl/plugin/download?pluginId=$id&version=$version"
       case IntellijPlugin.Id(id, None, Some(channel)) =>
-        s"$baseUrl/pluginManager?action=download&id=$id&channel=$channel&build=${idea.edition.edition}-${idea.buildNumber}"
+        s"$baseUrl/pluginManager?action=download&id=$id&channel=$channel&build=${idea.edition.edition}-${idea.getActualIdeaBuild(ctx.baseDirectory)}"
       case IntellijPlugin.Id(id, None, None) =>
-        s"$baseUrl/pluginManager?action=download&id=$id&build=${idea.edition.edition}-${idea.buildNumber}"
+        s"$baseUrl/pluginManager?action=download&id=$id&build=${idea.edition.edition}-${idea.getActualIdeaBuild(ctx.baseDirectory)}"
     }
     new URL(urlStr)
   }

@@ -37,7 +37,7 @@ class SearchPluginId(ideaRoot: Path, buildInfo: BuildInfo, useBundled: Boolean =
   private def searchPluginIdRemote(query: String): Map[String, (String, Boolean)] = {
     try {
       val param = URLEncoder.encode(query, "UTF-8")
-      val url = REPO_QUERY.format(param, s"${buildInfo.edition.edition}-${buildInfo.buildNumber}")
+      val url = REPO_QUERY.format(param, s"${buildInfo.edition.edition}-${buildInfo.getActualIdeaBuild(ideaRoot)}")
       val data = Http(url).asString.body
       val json = Json.parse(data)
       val values = json.asArray().values().asScala.map(_.asObject())
