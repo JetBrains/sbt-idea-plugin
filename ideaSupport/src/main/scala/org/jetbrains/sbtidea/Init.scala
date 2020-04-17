@@ -35,7 +35,7 @@ trait Init { this: Keys.type =>
     concurrentRestrictions in Global += Tags.limit(Tags.Test, 1), // IDEA tests can't be run in parallel
     doProjectSetup := Def.taskDyn {
       if (!updateFinished && isRunningFromIDEA) Def.task {
-        streams.value.log.info("Detected IDEA, artifacts and run configurations have been generated")
+        println("Detected IDEA, artifacts and run configurations have been generated")
         updateIntellij.value
         createIDEAArtifactXml.?.all(ScopeFilter(inProjects(LocalRootProject))).value.flatten
         createIDEARunConfiguration.?.all(ScopeFilter(inAnyProject)).value
