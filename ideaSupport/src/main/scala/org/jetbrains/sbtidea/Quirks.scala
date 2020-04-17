@@ -24,7 +24,7 @@ trait Quirks { this: Keys.type =>
       Seq.empty
   }
 
-  def java9PlusGC(intellijVMOptions: IntellijVMOptions)(implicit jre: JRE): IntellijVMOptions =
+  def java9PlusOptions(intellijVMOptions: IntellijVMOptions)(implicit jre: JRE): IntellijVMOptions =
     if(jre.version > 9)
       intellijVMOptions.copy(gc = "")
     else

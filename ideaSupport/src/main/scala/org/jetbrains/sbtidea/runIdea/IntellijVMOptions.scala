@@ -52,7 +52,10 @@ case class IntellijVMOptions(platform: IntelliJPlatform,
     buffer
   }
 
-  def asSeq: Seq[String] = build
+  def add(opts: Seq[String]): IntellijVMOptions = copy(defaultOptions = defaultOptions ++ opts)
+  def add(opt: String): IntellijVMOptions = copy(defaultOptions = defaultOptions :+ opt)
+
+  def asSeq: Seq[String] = build.filter(_.nonEmpty)
   def asJava: java.util.List[String] = asSeq.asJava
 }
 
