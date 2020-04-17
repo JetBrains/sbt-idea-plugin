@@ -29,7 +29,7 @@ object BuildIndex {
     val vmOptions       = intellijVMOptions.value
 
     log.info("Building searchable plugin options index...")
-    val runner = new IdeaRunner(ideaCP, pluginRoot, vmOptions, blocking = true, programArguments = indexerCMD)
+    val runner = new IdeaRunner(ideaCP, vmOptions, blocking = true, programArguments = indexerCMD)
     runner.run()
 
     val indexRoots          = getIndexFiles(pluginRoot, indexOutputPath.toPath)

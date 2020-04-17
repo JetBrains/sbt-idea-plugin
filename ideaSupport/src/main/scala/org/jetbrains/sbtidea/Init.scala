@@ -15,7 +15,6 @@ import sbt.{file, _}
 
 trait Init { this: Keys.type =>
 
-  private val targetFileParser = DefaultParsers.fileParser(file("/"))
   protected lazy val homePrefix: File = sys.props.get("tc.idea.prefix").map(new File(_)).getOrElse(Path.userHome)
   protected lazy val ivyHomeDir: File = Option(System.getProperty("sbt.ivy.home")).fold(homePrefix / ".ivy2")(file)
 
@@ -199,8 +198,7 @@ trait Init { this: Keys.type =>
         suspend = opts.contains("suspend")
       )
       val ideaCP = intellijMainJars.value.map(_.data.toPath)
-      val pluginRoot = packageArtifact.value.toPath
-      val runner = new IdeaRunner(ideaCP, pluginRoot, vmOptions, opts.contains("blocking"))
+      val runner = new IdeaRunner(ideaCP, vmOptions, opts.contains("blocking"))
       runner.run()
     },
 

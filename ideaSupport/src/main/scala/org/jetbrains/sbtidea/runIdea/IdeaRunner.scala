@@ -17,7 +17,6 @@ import sbt._
 import scala.collection.JavaConverters._
 
 class IdeaRunner(ideaClasspath: Seq[Path],
-                 pluginRoot: Path,
                  vmOptions: IntellijVMOptions,
                  blocking: Boolean,
                  programArguments: Seq[String] = Seq.empty) {
