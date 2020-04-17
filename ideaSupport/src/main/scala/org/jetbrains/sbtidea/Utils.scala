@@ -24,17 +24,24 @@ trait Utils { this: Keys.type =>
 
   def genCreateRunConfigurationTask(from: ProjectReference): Def.Initialize[Task[Unit]] = Def.task {
     implicit  val log: PluginLogger = new SbtPluginLogger(streams.value)
+    val createJunitTemplate = generateJUnitTemplate.value
     val configName = name.in(from).value
     val vmOptions = intellijVMOptions.in(from).value.copy(debug = false)
-    val data = IdeaConfigBuilder.buildRunConfigurationXML(
+    val configBuilder = new IdeaConfigBuilder(
       name.in(from).value,
       configName,
       name.value,
       vmOptions,
       intellijPluginDirectory.value,
       intellijBaseDirectory.value)
+    val runConfigContent = configBuilder.buildRunConfigurationXML
     val outFile = baseDirectory.in(ThisBuild).value / ".idea" / "runConfigurations" / s"$configName.xml"
-    IO.write(outFile, data.getBytes)
+    IO.write(outFile, runConfigContent.getBytes)
+    if (createJunitTemplate) {
+      val templateContent = configBuilder.buildJUnitTemplate
+      val outFile = baseDirectory.in(ThisBuild).value / ".idea" / "runConfigurations" / "_template__of_JUnit.xml"
+      IO.write(outFile, templateContent.getBytes)
+    }
   }
 
 }

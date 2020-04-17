@@ -167,6 +167,12 @@ Example:
 intellijVMOptions := intellijVMOptions.value.copy(xmx = 2048, xms = 256) 
 ```
 
+#### `generateJUnitTemplate in ThisBuild :: SettingKey[Boolean]`
+
+Default: `true`
+
+Generate JUnit template when importing the project in IJ IDEA
+
 #### `runIDE [noPCE] [noDebug] [suspend] [blocking] :: InputKey[Unit]`
 
 Runs IntelliJ IDE with current plugin. This task is non-blocking by default, so you can continue using SBT console.
