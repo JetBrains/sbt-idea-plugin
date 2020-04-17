@@ -338,17 +338,11 @@ project of the plugin. Example:
 lazy val ideaRunner = createRunnerProject(scalaCommunity)
 ```
 
-- `sbt-idea-plugin` generates IDEA-readable artifact xml and run configuration using `createIDEARunConfiguration` and
-`createIDEAArtifactXml` tasks
-- :exclamation: At the moment, to correctly import the project in IDEA  please use "Import with sbt shell" option.
- Another `SBT Refresh` action might be necessary after the _initial_ import. This will automatically run the generators
-  above
-- If you don't want to use sbt shell, or automatic generation didn't work, you can manually run
- `$YOUR_RUNNER_PROJECT/createIDEARunConfiguration` and `$YOUR_PLUGIN_PROJECT/createIDEAArtifactXml` tasks
+- `sbt-idea-plugin` generates IDEA-readable artifact xml and run configuration on project import
 - After artifact and run configuration have been created(they're located in `.idea` folder of the project) you can 
 run or debug the new run configuration. This will compile the project, build the artifact and attach it to the
  new IDEA instance
-- Note that doing an "SBT Refresh" (or manually running the tasks above) is required after making changes to your build
+- :exclamation: Note that doing an "SBT Refresh" is required after making changes to your build
 that affect the final artifact(i.e. changing `libraryDependencies`), in order to update IDEA configs
   
 ## Custom IntelliJ artifacts repo
