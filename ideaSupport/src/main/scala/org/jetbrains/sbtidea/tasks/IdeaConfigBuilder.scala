@@ -17,10 +17,14 @@ object IdeaConfigBuilder {
     val jbrSettings = runner.getBundledJRE match {
       case None => ""
       case Some(jbr) =>
-        s"""
-           |<option name="ALTERNATIVE_JRE_PATH" value="${jbr.root}" />
+        val shortenClasspath =
+          if (jbr.version >= 9)
+            "<shortenClasspath name=\"ARGS_FILE\" />"
+          else
+            "<shortenClasspath name=\"NONE\" />"
+        s"""<option name="ALTERNATIVE_JRE_PATH" value="${jbr.root}" />
            |<option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
-           |""".stripMargin
+           |$shortenClasspath""".stripMargin
     }
     s"""<component name="ProjectRunConfigurationManager">
        |  <configuration default="false" name="$configName" type="Application" factoryName="Application">
@@ -29,7 +33,6 @@ object IdeaConfigBuilder {
        |    <option name="MAIN_CLASS_NAME" value="com.intellij.idea.Main" />
        |    <module name="$moduleName" />
        |    <option name="VM_PARAMETERS" value="${intellijVMOptions.asSeq.mkString(" ")}" />
-       |    <shortenClasspath name="CLASSPATH_FILE" />
        |    <RunnerSettings RunnerId="Debug">
        |      <option name="DEBUG_PORT" value="" />
        |      <option name="TRANSPORT" value="0" />
