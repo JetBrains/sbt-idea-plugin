@@ -22,7 +22,7 @@ trait Utils { this: Keys.type =>
         autoScalaLibrary := !hasPluginsWithScala(intellijExternalPlugins.?.all(ScopeFilter(inDependencies(from))).value.flatten.flatten)
       ).enablePlugins(SbtIdeaPlugin)
 
-  def genCreateRunConfigurationTask(from: ProjectReference): Def.Initialize[Task[File]] = Def.task {
+  def genCreateRunConfigurationTask(from: ProjectReference): Def.Initialize[Task[Unit]] = Def.task {
     implicit  val log: PluginLogger = new SbtPluginLogger(streams.value)
     val configName = name.in(from).value
     val vmOptions = intellijVMOptions.in(from).value.copy(debug = false)
@@ -34,7 +34,6 @@ trait Utils { this: Keys.type =>
       intellijPluginDirectory.value)
     val outFile = baseDirectory.in(ThisBuild).value / ".idea" / "runConfigurations" / s"$configName.xml"
     IO.write(outFile, data.getBytes)
-    outFile
   }
 
 }

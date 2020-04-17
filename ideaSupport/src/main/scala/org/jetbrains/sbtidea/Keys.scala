@@ -95,7 +95,8 @@ object Keys extends Defns with Init with Utils with Quirks {
 
   /* Utility tasks */
 
-  lazy val createIDEARunConfiguration: TaskKey[File] = taskKey("")
+  lazy val doProjectSetup: TaskKey[Unit] = taskKey("")
+  lazy val createIDEARunConfiguration: TaskKey[Unit] = taskKey("")
   lazy val createIDEAArtifactXml     : TaskKey[Unit] = taskKey("")
 
   lazy val dumpStructure             : TaskKey[Unit] = taskKey("")

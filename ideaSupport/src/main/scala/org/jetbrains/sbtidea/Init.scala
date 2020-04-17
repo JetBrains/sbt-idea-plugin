@@ -17,26 +17,9 @@ trait Init { this: Keys.type =>
 
   protected lazy val homePrefix: File = sys.props.get("tc.idea.prefix").map(new File(_)).getOrElse(Path.userHome)
   protected lazy val ivyHomeDir: File = Option(System.getProperty("sbt.ivy.home")).fold(homePrefix / ".ivy2")(file)
+  private var updateFinished = false
 
-  lazy val globalSettings: Seq[Setting[_]] = Seq(
-    dumpStructureTo in Global:= Def.inputTaskDyn {
-      val path = targetFileParser.parsed
-      createIDEAArtifactXml.?.all(ScopeFilter(inProjects(LocalRootProject))).value.flatten
-      createIDEARunConfiguration.?.all(ScopeFilter(inProjects(LocalRootProject))).value
-      val fromStructure = dumpStructureTo.in(Global).?.value
-      if (fromStructure.isDefined) {
-        Def.inputTask {
-          fromStructure.get.fullInput(path.getAbsolutePath).evaluated
-        }.toTask("")
-      } else
-        Def.task { new File(".") }
-    }.evaluated,
-    dumpStructure := Def.task {
-      createIDEAArtifactXml.?.all(ScopeFilter(inProjects(LocalRootProject))).value.flatten
-      createIDEARunConfiguration.?.all(ScopeFilter(inProjects(LocalRootProject))).value
-      dumpStructure.in(Global).?.value
-    }.value
-  )
+  private def isRunningFromIDEA: Boolean = sys.props.contains("idea.managed")
 
   lazy val buildSettings: Seq[Setting[_]] = Seq(
     intellijPluginName        := name.in(LocalRootProject).value,
@@ -50,6 +33,18 @@ trait Init { this: Keys.type =>
     intellijTestConfigDir     := intellijPluginDirectory.value / "test-config",
     intellijTestSystemDir     := intellijPluginDirectory.value / "test-system",
     concurrentRestrictions in Global += Tags.limit(Tags.Test, 1), // IDEA tests can't be run in parallel
+    doProjectSetup := Def.taskDyn {
+      if (!updateFinished && isRunningFromIDEA) Def.task {
+        streams.value.log.info("Detected IDEA, artifacts and run configurations have been generated")
+        updateIntellij.value
+        createIDEAArtifactXml.?.all(ScopeFilter(inProjects(LocalRootProject))).value.flatten
+        createIDEARunConfiguration.?.all(ScopeFilter(inAnyProject)).value
+        updateFinished = true
+      } else if (!updateFinished && !isRunningFromIDEA) Def.task {
+        updateIntellij.value
+        updateFinished = true
+      } else Def.task { }
+    }.value,
     updateIntellij := {
       PluginLogger.bind(new SbtPluginLogger(streams.value))
       new CommunityUpdater(
@@ -97,7 +92,7 @@ trait Init { this: Keys.type =>
       result
     },
     onLoad in Global := ((s: State) => {
-      "updateIntellij" :: s
+      "doProjectSetup" :: s
     }) compose (onLoad in Global).value
   )
 
@@ -184,6 +179,7 @@ trait Init { this: Keys.type =>
         }
       else Def.task { }
     }.value,
+    createIDEARunConfiguration := {},
 
     intellijVMOptions :=
       IntellijVMOptions(intellijPlatform.value, packageOutputDir.value.toPath, intellijPluginDirectory.value.toPath),

@@ -8,7 +8,6 @@ import sbt.{AutoPlugin, Setting}
 abstract class AbstractSbtIdeaPlugin extends AutoPlugin {
   val autoImport: Keys.type = sbtidea.Keys
   override def requires = PackagingPlugin && ProjectStructureVisualizerPlugin
-  override def globalSettings: Seq[Setting[_]]  = Keys.globalSettings
   override def buildSettings: Seq[Setting[_]]   = Keys.buildSettings
   override def projectSettings: Seq[Setting[_]] = Keys.projectSettings
 }
