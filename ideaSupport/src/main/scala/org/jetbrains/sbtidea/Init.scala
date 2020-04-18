@@ -130,6 +130,22 @@ trait Init { this: Keys.type =>
         detectedXmls.foreach { xml => new PluginXmlPatcher(xml).patch(options) }
       }
     },
+    libraryDependencies := {
+      val previousValue = libraryDependencies.value
+      val plugins       = intellijPlugins.all(ScopeFilter(inAnyProject)).value.flatten
+      if (hasPluginsWithScala(plugins))
+        makeScalaLibraryProvided(previousValue)
+      else
+        previousValue
+    },
+    packageLibraryMappings := {
+      val previousValue = packageLibraryMappings.value
+      val plugins       = intellijPlugins.all(ScopeFilter(inAnyProject)).value.flatten
+      if (hasPluginsWithScala(plugins))
+        filterScalaLibrary(previousValue)
+      else
+        previousValue
+    },
     packageArtifact := {
       doPatchPluginXml.value
       packageArtifact.value
