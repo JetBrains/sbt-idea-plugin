@@ -35,15 +35,15 @@ trait Init { this: Keys.type =>
     generateJUnitTemplate     := true,
     concurrentRestrictions in Global += Tags.limit(Tags.Test, 1), // IDEA tests can't be run in parallel
     doProjectSetup := Def.taskDyn {
-      if (!updateFinished && isRunningFromIDEA) Def.task {
-        println("Detected IDEA, artifacts and run configurations have been generated")
+      if (!updateFinished && isRunningFromIDEA) Def.sequential(
+        updateIntellij,
+        Def.task {
+          println("Detected IDEA, artifacts and run configurations have been generated")
+          createIDEAArtifactXml.?.all(ScopeFilter(inProjects(LocalRootProject))).value.flatten
+          createIDEARunConfiguration.?.all(ScopeFilter(inAnyProject)).value
+          updateFinished = true
+        }) else if (!updateFinished && !isRunningFromIDEA) Def.task {
         updateIntellij.value
-        createIDEAArtifactXml.?.all(ScopeFilter(inProjects(LocalRootProject))).value.flatten
-        createIDEARunConfiguration.?.all(ScopeFilter(inAnyProject)).value
-        updateFinished = true
-      } else if (!updateFinished && !isRunningFromIDEA) Def.task {
-        updateIntellij.value
-        updateFinished = true
       } else Def.task { }
     }.value,
     updateIntellij := {
@@ -58,6 +58,7 @@ trait Init { this: Keys.type =>
         intellijPlugins.?.all(ScopeFilter(inAnyProject)).value.flatten.flatten,
         intellijDownloadSources.value
       ).update()
+      updateFinished = true
     },
     cleanUpTestEnvironment := {
       IO.delete(intellijTestSystemDir.value)
