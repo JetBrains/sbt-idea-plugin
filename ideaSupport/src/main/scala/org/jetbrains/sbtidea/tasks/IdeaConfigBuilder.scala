@@ -68,6 +68,7 @@ class IdeaConfigBuilder(artifactName: String,
        |    <option name="TEST_OBJECT" value="class" />
        |    <option name="VM_PARAMETERS" value="${testVMOptions.asSeq.mkString(" ")}" />
        |    <option name="PARAMETERS" value="" />
+       |    <option name="WORKING_DIRECTORY" value="$$PROJECT_DIR$$/" />
        |    <option name="TEST_SEARCH_SCOPE">
        |      <value defaultName="moduleWithDependencies" />
        |    </option>
