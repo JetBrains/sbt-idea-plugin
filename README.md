@@ -167,11 +167,10 @@ Example:
 intellijVMOptions := intellijVMOptions.value.copy(xmx = 2048, xms = 256) 
 ```
 
-#### `generateJUnitTemplate in ThisBuild :: SettingKey[Boolean]`
+#### `ideaConfigOptions :: SettingKey[IdeaConfigBuildingOptions]`
 
-Default: `true`
-
-Generate JUnit template when importing the project in IJ IDEA
+Fine tune how IntelliJ run configurations are generated when importing the project in IDEA.
+This key should be overridden in the [runner project](#from-idea) to take effect.
 
 #### `runIDE [noPCE] [noDebug] [suspend] [blocking] :: InputKey[Unit]`
 

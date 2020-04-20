@@ -78,8 +78,8 @@ object Keys extends Defns with Init with Utils with Quirks {
   lazy val runIDE = inputKey[Unit](
     "Runs debug IntelliJ Platform instance with plugin")
 
-  lazy val generateJUnitTemplate = settingKey[Boolean](
-    "Generate JUnit template when importing the project in IJ IDEA"
+  lazy val ideaConfigOptions = settingKey[IdeaConfigBuildingOptions](
+    "Options to tune generation of IDEA run configurations"
   )
 
   /* Deprecated task aliases */

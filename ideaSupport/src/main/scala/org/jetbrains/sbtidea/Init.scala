@@ -32,7 +32,6 @@ trait Init { this: Keys.type =>
     intellijDownloadDirectory := intellijPluginDirectory.value / "sdk",
     intellijTestConfigDir     := intellijPluginDirectory.value / "test-config",
     intellijTestSystemDir     := intellijPluginDirectory.value / "test-system",
-    generateJUnitTemplate     := true,
     concurrentRestrictions in Global += Tags.limit(Tags.Test, 1), // IDEA tests can't be run in parallel
     doProjectSetup := Def.taskDyn {
       if (!updateFinished && isRunningFromIDEA) Def.sequential(
@@ -196,6 +195,7 @@ trait Init { this: Keys.type =>
       else Def.task { }
     }.value,
     createIDEARunConfiguration := {},
+    ideaConfigOptions := IdeaConfigBuildingOptions(),
 
     intellijVMOptions :=
       IntellijVMOptions(intellijPlatform.value, packageOutputDir.value.toPath, intellijPluginDirectory.value.toPath),

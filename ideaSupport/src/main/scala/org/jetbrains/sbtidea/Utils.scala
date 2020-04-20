@@ -31,25 +31,27 @@ trait Utils { this: Keys.type =>
   }
 
   def genCreateRunConfigurationTask(from: ProjectReference): Def.Initialize[Task[Unit]] = Def.task {
-    implicit  val log: PluginLogger = new SbtPluginLogger(streams.value)
-    val createJunitTemplate = generateJUnitTemplate.value
-    val configName = name.in(from).value
-    val vmOptions = intellijVMOptions.in(from).value.copy(debug = false)
-    val configBuilder = new IdeaConfigBuilder(
+    PluginLogger.bind(new SbtPluginLogger(streams.value))
+    val vmOptions             = intellijVMOptions.in(from).value.copy(debug = false)
+    val configName            = name.in(from).value
+    val dotIdeaFolder         = baseDirectory.in(ThisBuild).value / ".idea"
+    val sbtRunEnv             = envVars.in(from).value
+    val sbtTestEnv            = envVars.in(from, Test).value
+    val config                = Some(ideaConfigOptions.value)
+      .map(x => if (x.ideaRunEnv.isEmpty) x.copy(ideaRunEnv = sbtRunEnv) else x)
+      .map(x => if (x.ideaTestEnv.isEmpty) x.copy(ideaTestEnv = sbtTestEnv) else x)
+      .get
+    val configBuilder         = new IdeaConfigBuilder(
       name.in(from).value,
       configName,
       name.value,
       vmOptions,
       intellijPluginDirectory.value,
-      intellijBaseDirectory.value)
-    val runConfigContent = configBuilder.buildRunConfigurationXML
-    val outFile = baseDirectory.in(ThisBuild).value / ".idea" / "runConfigurations" / s"$configName.xml"
-    IO.write(outFile, runConfigContent.getBytes)
-    if (createJunitTemplate) {
-      val templateContent = configBuilder.buildJUnitTemplate
-      val outFile = baseDirectory.in(ThisBuild).value / ".idea" / "runConfigurations" / "_template__of_JUnit.xml"
-      IO.write(outFile, templateContent.getBytes)
-    }
+      intellijBaseDirectory.value,
+      dotIdeaFolder,
+      config)
+
+    configBuilder.build()
   }
 
 }
