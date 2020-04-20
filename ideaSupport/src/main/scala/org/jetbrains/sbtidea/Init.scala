@@ -33,6 +33,7 @@ trait Init { this: Keys.type =>
     intellijTestConfigDir     := intellijPluginDirectory.value / "test-config",
     intellijTestSystemDir     := intellijPluginDirectory.value / "test-system",
     concurrentRestrictions in Global += Tags.limit(Tags.Test, 1), // IDEA tests can't be run in parallel
+    bundleScalaLibrary        := !hasPluginsWithScala(intellijPlugins.?.all(ScopeFilter(inAnyProject)).value.flatten.flatten),
     doProjectSetup := Def.taskDyn {
       if (!updateFinished && isRunningFromIDEA) Def.sequential(
         updateIntellij,
@@ -132,19 +133,17 @@ trait Init { this: Keys.type =>
     },
     libraryDependencies := {
       val previousValue = libraryDependencies.value
-      val plugins       = intellijPlugins.all(ScopeFilter(inAnyProject)).value.flatten
-      if (hasPluginsWithScala(plugins))
-        makeScalaLibraryProvided(previousValue)
-      else
+      if (bundleScalaLibrary.value)
         previousValue
+      else
+        makeScalaLibraryProvided(previousValue)
     },
     packageLibraryMappings := {
       val previousValue = packageLibraryMappings.value
-      val plugins       = intellijPlugins.all(ScopeFilter(inAnyProject)).value.flatten
-      if (hasPluginsWithScala(plugins))
-        filterScalaLibrary(previousValue)
-      else
+      if (bundleScalaLibrary.value)
         previousValue
+      else
+        filterScalaLibrary(previousValue)
     },
     packageArtifact := {
       doPatchPluginXml.value

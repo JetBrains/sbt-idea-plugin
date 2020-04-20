@@ -26,7 +26,7 @@ trait Utils { this: Keys.type =>
         unmanagedJars in Compile := intellijMainJars.value,
         unmanagedJars in Compile ++= maybeToolsJar,
         createIDEARunConfiguration := genCreateRunConfigurationTask(from).value,
-        autoScalaLibrary := !hasPluginsWithScala(intellijPlugins.?.all(ScopeFilter(inDependencies(from))).value.flatten.flatten)
+        autoScalaLibrary := !bundleScalaLibrary.value
       ).enablePlugins(SbtIdeaPlugin)
   }
 

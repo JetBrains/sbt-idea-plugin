@@ -298,6 +298,16 @@ libraries from IntelliJ platform such as protobuf.
 shadePatterns += ShadePattern("com.google.protobuf.**", "zinc.protobuf.@1")
 ```
 
+#### `bundleScalaLibrary in ThisBuild :: SettingKey[Boolean]`
+
+Trying to load the same classes in your plugin's classloader which have already been loaded by a parent classloader
+will result in classloader constraint violation. A vivid example of this scenario is depending on some other plugin,
+that bundles scala-library.jar(e.g. Scala plugin for IJ) and still bundling your own.
+
+To workaround this issue `sbt-idea-plugin` tries to automatically detect if your plugin project has dependencies on 
+other plugins with Scala and filter out scala-library.jar from the resulting artifact. However, the heuristic cannot
+cover all possible cases and thereby this setting is exposed to allow manual control over bundling the scala-library.jar  
+
 #### `packageArtifact :: TaskKey[File]`
 
 Builds unpacked plugin distribution. This task traverses dependency graph of the

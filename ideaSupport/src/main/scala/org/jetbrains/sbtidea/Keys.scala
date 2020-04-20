@@ -82,6 +82,9 @@ object Keys extends Defns with Init with Utils with Quirks {
     "Options to tune generation of IDEA run configurations"
   )
 
+  lazy val bundleScalaLibrary = settingKey[Boolean](
+    "Include scala-library.jar in the artifact and generated run configurations")
+
   /* Deprecated task aliases */
 
   lazy val packagePlugin = taskKey[File](
