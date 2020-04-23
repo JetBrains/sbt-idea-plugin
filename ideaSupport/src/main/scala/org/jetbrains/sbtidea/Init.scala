@@ -102,14 +102,14 @@ trait Init { this: Keys.type =>
     intellijInternalPlugins := Seq.empty,
     intellijExternalPlugins := Seq.empty,
     intellijPlugins := intellijInternalPlugins.value.map(IntellijPlugin.BundledFolder(_)) ++ intellijExternalPlugins.value,
-    intellijMainJars := (intellijBaseDirectory.value / "lib" * "*.jar").classpath,
+    intellijMainJars := (intellijBaseDirectory.in(ThisBuild).value / "lib" * "*.jar").classpath,
     intellijPluginJars :=
       tasks.CreatePluginsClasspath(
-        intellijBaseDirectory.value.toPath,
+        intellijBaseDirectory.in(ThisBuild).value.toPath,
         BuildInfo(
-          intellijBuild.value,
-          intellijPlatform.value,
-          jbrVersion.value
+          intellijBuild.in(ThisBuild).value,
+          intellijPlatform.in(ThisBuild).value,
+          jbrVersion.in(ThisBuild).value
         ),
         intellijPlugins.value,
         new SbtPluginLogger(streams.value),
@@ -118,8 +118,8 @@ trait Init { this: Keys.type =>
     intellijFullJars := intellijMainJars.value ++ intellijPluginJars.value,
     unmanagedJars in Compile ++= intellijFullJars.value,
 
-    packageOutputDir := target.value / "plugin" / intellijPluginName.value,
-    packageArtifactZipFile := target.value / s"${intellijPluginName.value}-${version.value}.zip",
+    packageOutputDir := target.value / "plugin" / intellijPluginName.in(ThisBuild).value,
+    packageArtifactZipFile := target.value / s"${intellijPluginName.in(ThisBuild).value}-${version.value}.zip",
     patchPluginXml := pluginXmlOptions.DISABLED,
     doPatchPluginXml := {
       PluginLogger.bind(new SbtPluginLogger(streams.value))
@@ -140,7 +140,7 @@ trait Init { this: Keys.type =>
     },
     packageLibraryMappings := {
       val previousValue = packageLibraryMappings.value
-      if (bundleScalaLibrary.value)
+      if (bundleScalaLibrary.in(ThisBuild).value)
         previousValue
       else
         filterScalaLibrary(previousValue)
@@ -197,7 +197,7 @@ trait Init { this: Keys.type =>
     ideaConfigOptions := IdeaConfigBuildingOptions(),
 
     intellijVMOptions :=
-      IntellijVMOptions(intellijPlatform.value, packageOutputDir.value.toPath, intellijPluginDirectory.value.toPath),
+      IntellijVMOptions(intellijPlatform.in(ThisBuild).value, packageOutputDir.value.toPath, intellijPluginDirectory.in(ThisBuild).value.toPath),
 
     runIDE := {
       import complete.DefaultParsers._
