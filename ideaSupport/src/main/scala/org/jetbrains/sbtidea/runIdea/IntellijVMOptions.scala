@@ -77,5 +77,10 @@ object IntellijVMOptions {
       |-Djdk.attach.allowAttachSelf=true
       |-Djdk.module.illegalAccess.silent=true
       |-XX:MaxJavaStackTraceDepth=10000
+      |-Didea.debug.mode=true
+      |-Dapple.laf.useScreenMenuBar=true
+      |-Duse.linux.keychain=false
+      |-Dast.loading.filter=true
+      |-Didea.initially.ask.config=true
       |""".stripMargin.split("\n").toSeq
 }
