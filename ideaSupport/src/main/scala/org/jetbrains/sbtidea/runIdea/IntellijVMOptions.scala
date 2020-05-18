@@ -80,7 +80,6 @@ object IntellijVMOptions {
       |-Didea.debug.mode=true
       |-Dapple.laf.useScreenMenuBar=true
       |-Duse.linux.keychain=false
-      |-Dast.loading.filter=true
       |-Didea.initially.ask.config=true
       |""".stripMargin.split("\n").toSeq
 }
