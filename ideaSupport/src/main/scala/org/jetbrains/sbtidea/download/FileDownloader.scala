@@ -93,10 +93,20 @@ class FileDownloader(private val baseDirectory: Path) {
     var inChannel: ReadableByteChannel = null
     var outStream: FileOutputStream    = null
     try {
+      val blockSize = 1 << 24 // 16M
+      var transferred = -1L
       inChannel = Channels.newChannel(connection.getInputStream)
       outStream = new FileOutputStream(to.toFile, to.toFile.exists())
       val rbc   = new RBCWrapper(inChannel, remoteMetaData.length, localLength, progressCallback, to)
-      outStream.getChannel.transferFrom(rbc, 0, Long.MaxValue)
+      val fileChannel = outStream.getChannel
+      var position = fileChannel.position()
+      while (transferred != 0) {
+        transferred = fileChannel.transferFrom(rbc, position, blockSize)
+        position += transferred
+      }
+      if (remoteMetaData.length > 0 && Files.size(to) != remoteMetaData.length) {
+        throw new DownloadException(s"Incorrect downloaded file size: expected ${remoteMetaData.length}, got ${Files.size(to)}")
+      }
       to
     } finally {
       try { if (inChannel != null) inChannel.close() } catch { case e: Exception => log.error(s"Failed to close input channel: $e") }
