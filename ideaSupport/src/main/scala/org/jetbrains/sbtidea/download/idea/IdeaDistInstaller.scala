@@ -39,7 +39,9 @@ class IdeaDistInstaller(buildInfo: BuildInfo) extends Installer[IdeaDist] {
     Files.createDirectories(tmpDir)
 
     if (artifact.getFileName.toString.endsWith(".zip")) {
-      sbt.IO.unzip(artifact.toFile, tmpDir.toFile)
+      val res = sbt.IO.unzip(artifact.toFile, tmpDir.toFile)
+      if (res.isEmpty)
+        throw new RuntimeException(s"Failed to unzip ${artifact.toFile} - bad archive")
     } else if (artifact.getFileName.toString.endsWith(".tar.gz")) {
       if (s"tar xfz $artifact -C $tmpDir --strip 1".! != 0) {
         throw new RuntimeException(s"Failed to install ${buildInfo.edition.name} dist: tar command failed")
