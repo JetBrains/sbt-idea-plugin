@@ -23,4 +23,10 @@ abstract class IdeaSources extends IdeaArtifact {
   }
 }
 
-case class IdeaSourcesImpl(caller: AbstractIdeaDependency, dlUrl: URL) extends IdeaSources
+class IdeaSourcesImpl(override val caller: AbstractIdeaDependency, dlUrlProvider: () => URL) extends IdeaSources {
+  override def dlUrl: URL = dlUrlProvider()
+}
+
+object IdeaSourcesImpl {
+  def apply(caller: AbstractIdeaDependency, dlUrlProvider: () => URL): IdeaSourcesImpl = new IdeaSourcesImpl(caller, dlUrlProvider)
+}

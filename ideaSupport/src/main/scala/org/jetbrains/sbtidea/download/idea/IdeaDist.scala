@@ -9,4 +9,10 @@ abstract class IdeaDist extends IdeaArtifact {
   override protected def usedInstaller: Installer[IdeaDist] = new IdeaDistInstaller(caller.buildInfo)
 }
 
-case class IdeaDistImpl(caller: AbstractIdeaDependency, dlUrl: URL) extends IdeaDist
+class IdeaDistImpl(override val caller: AbstractIdeaDependency, dlUrlProvider: () => URL) extends IdeaDist {
+  override def dlUrl: URL = dlUrlProvider()
+}
+
+object IdeaDistImpl {
+  def apply(caller: AbstractIdeaDependency, dlUrlProvider: () => URL): IdeaDistImpl = new IdeaDistImpl(caller, dlUrlProvider)
+}

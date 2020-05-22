@@ -13,9 +13,9 @@ import sbt.{URL, url}
 class IJRepoIdeaResolver extends Resolver[IdeaDependency] {
 
   override def resolve(dep: IdeaDependency): Seq[IdeaArtifact] = {
-    val ideaUrl           = getUrl(dep.buildInfo, ".zip")
+    val ideaUrl           = () => getUrl(dep.buildInfo, ".zip")
     // sources are available only for Community Edition
-    val srcJarUrl         = getUrl(dep.buildInfo.copy(edition = Keys.IntelliJPlatform.IdeaCommunity), "-sources.jar")
+    val srcJarUrl         = () => getUrl(dep.buildInfo.copy(edition = Keys.IntelliJPlatform.IdeaCommunity), "-sources.jar")
     IdeaDistImpl(dep, ideaUrl) ::
     IdeaSourcesImpl(dep, srcJarUrl) :: Nil
   }
