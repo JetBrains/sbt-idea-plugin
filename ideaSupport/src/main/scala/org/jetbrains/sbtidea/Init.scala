@@ -201,6 +201,7 @@ trait Init { this: Keys.type =>
 
     runIDE := {
       import complete.DefaultParsers._
+      packageArtifact.value // build the plugin before running
       PluginLogger.bind(new SbtPluginLogger(streams.value))
       val opts = spaceDelimited("[noPCE] [noDebug] [suspend] [blocking]").parsed
       val vmOptions = intellijVMOptions.value.copy(
