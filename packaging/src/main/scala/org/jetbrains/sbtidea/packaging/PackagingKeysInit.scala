@@ -48,7 +48,9 @@ trait PackagingKeysInit {
       val logger: SbtPluginLogger = new SbtPluginLogger(streams.value)
       Def.task {
         val structure = new SbtPackagingStructureExtractor(rootProject, data, buildDeps, logger).extract
-        new LinearMappingsBuilder(outputDir, logger).buildMappings(structure)
+        val res = new LinearMappingsBuilder(outputDir, logger).buildMappings(structure)
+        logger.throwFatalErrors()
+        res
       }
     }.value,
     packageMappingsOffline := Def.taskDyn {
@@ -60,7 +62,9 @@ trait PackagingKeysInit {
       val logger: SbtPluginLogger = new SbtPluginLogger(streams.value)
       Def.task {
         val structure = new SbtPackagingStructureExtractor(rootProject, data, buildDeps, logger).extract
-        new LinearMappingsBuilder(outputDir, logger).buildMappings(structure)
+        val res = new LinearMappingsBuilder(outputDir, logger).buildMappings(structure)
+        logger.throwFatalErrors()
+        res
       }
     }.value,
     dumpDependencyStructure         := apiAdapter.dumpDependencyStructure.value,

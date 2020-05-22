@@ -106,7 +106,7 @@ class LinearMappingsBuilder(override val outputDir: File, log: PluginLogger) ext
     val invalidMappings = mappings
       .filterNot { case (key, _) => key.org == "org.scala-lang.modules" || node.libs.exists(_.key == key) }
     invalidMappings.foreach { m =>
-      log.error(s"No library dependencies match mapping $m in module ${node.name}")
+      log.fatal(s"No library dependencies match mapping $m in module ${node.name}")
     }
     node.libs.foreach {
       case lib if !mappings.contains(lib.key) =>
