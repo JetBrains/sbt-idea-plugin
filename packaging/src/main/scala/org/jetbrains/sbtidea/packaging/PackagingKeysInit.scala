@@ -1,10 +1,9 @@
 package org.jetbrains.sbtidea.packaging
 
-import org.jetbrains.sbtidea.{NullLogger, SbtPluginLogger}
 import org.jetbrains.sbtidea.packaging.artifact._
 import org.jetbrains.sbtidea.packaging.mappings._
-import org.jetbrains.sbtidea.packaging.structure.sbtImpl.{SbtPackageProjectData, SbtPackagedProjectNodeImpl, SbtPackagingStructureExtractor}
-import org.jetbrains.sbtidea.structure.ModuleKey
+import org.jetbrains.sbtidea.packaging.structure.sbtImpl.SbtPackagingStructureExtractor
+import org.jetbrains.sbtidea.{NullLogger, SbtPluginLogger}
 import sbt.Def.spaceDelimited
 import sbt.Keys._
 import sbt._
