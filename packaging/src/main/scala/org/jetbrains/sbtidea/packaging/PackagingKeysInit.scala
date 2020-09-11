@@ -1,9 +1,11 @@
 package org.jetbrains.sbtidea.packaging
 
-import org.jetbrains.sbtidea.SbtPluginLogger
+import org.jetbrains.sbtidea.{NullLogger, SbtPluginLogger}
 import org.jetbrains.sbtidea.packaging.artifact._
 import org.jetbrains.sbtidea.packaging.mappings._
-import org.jetbrains.sbtidea.packaging.structure.sbtImpl.{SbtPackageProjectData, SbtPackagingStructureExtractor}
+import org.jetbrains.sbtidea.packaging.structure.sbtImpl.{SbtPackageProjectData, SbtPackagedProjectNodeImpl, SbtPackagingStructureExtractor}
+import org.jetbrains.sbtidea.structure.ModuleKey
+import sbt.Def.spaceDelimited
 import sbt.Keys._
 import sbt._
 import sbt.jetbrains.ideaPlugin.apiAdapter._
@@ -67,6 +69,24 @@ trait PackagingKeysInit {
         res
       }
     }.value,
+    findLibraryMapping := {
+      val args        = spaceDelimited("<arg>").parsed
+      val rootProject = thisProjectRef.value
+      val buildDeps   = buildDependencies.value
+      val data        = dumpDependencyStructureOffline.?.all(ScopeFilter(inAnyProject)).value.flatten.filterNot(_ == null)
+      val structure   = new SbtPackagingStructureExtractor(rootProject, data, buildDeps, NullLogger).extract
+      val result = structure.flatMap { node =>
+        val mappings     = node.packagingOptions.libraryMappings.toMap
+        val matchingLibs = node.libs.filter(lib => args.exists(token => lib.key.toString.contains(token)))
+        val filteredLibs = matchingLibs
+          .filter(lib => mappings.getOrElse(lib.key, Some("")).isDefined)
+          .map   (lib => lib.key -> mappings.getOrElse(lib.key, Some("*")))
+        if (filteredLibs.nonEmpty)
+          Some(node.name -> filteredLibs)
+        else None
+      }
+      result
+    },
     dumpDependencyStructure         := apiAdapter.dumpDependencyStructure.value,
     dumpDependencyStructureOffline  := apiAdapter.dumpDependencyStructureOffline.value,
     packageArtifact := Def.taskDyn {

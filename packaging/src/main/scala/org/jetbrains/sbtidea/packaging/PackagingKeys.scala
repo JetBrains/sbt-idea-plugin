@@ -1,6 +1,7 @@
 package org.jetbrains.sbtidea.packaging
 
 import org.jetbrains.sbtidea.packaging.structure.sbtImpl.SbtPackageProjectData
+import org.jetbrains.sbtidea.structure.ModuleKey
 import sbt._
 
 object PackagingKeys extends PackagingDefs with PackagingKeysInit {
@@ -44,6 +45,9 @@ object PackagingKeys extends PackagingDefs with PackagingKeysInit {
 
   lazy val packageArtifactZip = taskKey[File](
     "Create distribution zip file")
+
+  lazy val findLibraryMapping = inputKey[Seq[(String, Seq[(ModuleKey, Option[String])])]](
+    "Find and debug library mappings by library name")
 
 
   lazy val dumpDependencyStructure: TaskKey[SbtPackageProjectData] = taskKey("")//.withRank(Invisible)

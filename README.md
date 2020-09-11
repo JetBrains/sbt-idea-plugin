@@ -326,6 +326,19 @@ This is later used by `publishPlugin` as an artifact to upload.
 
 ## Utils
 
+#### `findLibraryMapping :: InputKey[Seq[(String, Seq[(ModuleKey, Option[String])])]]`
+
+Returns detailed info about libraries and their mappings by a library substring.
+Helps to answer questions such as "Why is this jar in the artifact?" or "Which module introduced this jar?"
+Example:
+```
+sbt:scalaUltimate> show findMapping interface
+[info] * (runtimeDependencies,ArrayBuffer((org.scala-sbt:compiler-interface:1.4.0-M12[],Some(lib/jps/compiler-interface.jar)), (org.scala-sbt:util-interface:1.3.0[],Some(lib/jps/sbt-interface.jar))))
+[info] * (repackagedZinc,ArrayBuffer((org.scala-sbt:compiler-interface:1.4.0-M12[],Some(*)), (org.scala-sbt:launcher-interface:1.1.3[],Some(*)), (org.scala-sbt:util-interface:1.3.0[],Some(*))))
+[info] * (compiler-jps,ArrayBuffer((org.scala-sbt:util-interface:1.3.0[],Some(*)), (org.scala-sbt:compiler-interface:1.4.0-M12[],Some(lib/jps/compiler-interface.jar))))
+[info] * (compiler-shared,ArrayBuffer((org.scala-sbt:util-interface:1.3.0[],Some(*)), (org.scala-sbt:compiler-interface:1.4.0-M12[],Some(*))))
+```
+
 #### `printProjectGraph :: TaskKey[Unit]`
 
 Prints ASCII graph of currently selected project to console. Useful for debugging complex builds.
