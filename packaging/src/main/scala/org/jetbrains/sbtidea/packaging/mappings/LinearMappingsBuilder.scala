@@ -2,8 +2,9 @@ package org.jetbrains.sbtidea.packaging.mappings
 
 import org.jetbrains.sbtidea.PluginLogger
 import org.jetbrains.sbtidea.packaging.structure.PackagedProjectNode
-import org.jetbrains.sbtidea.packaging.{MAPPING_KIND, Mapping, Mappings}
+import org.jetbrains.sbtidea.packaging.{MAPPING_KIND, Mapping, Mappings, PackagingKeys}
 import org.jetbrains.sbtidea.packaging.structure.PackagingMethod
+import org.jetbrains.sbtidea.structure.sbtImpl.ModuleIdExt
 import org.jetbrains.sbtidea.structure.{Library, ProjectNode}
 import sbt._
 
@@ -104,7 +105,11 @@ class LinearMappingsBuilder(override val outputDir: File, log: PluginLogger) ext
         Mapping(lib.jarFile, to, node.mmd.copy(kind = MAPPING_KIND.LIB))
     val mappings = node.packagingOptions.libraryMappings.toMap
     val invalidMappings = mappings
-      .filterNot { case (key, _) => key.org == "org.scala-lang.modules" || node.libs.exists(_.key == key) }
+      .filterNot { case (key, _) =>
+        key.org   == "org.scala-lang.modules" || // filter out default mappings
+          key.org == "org.scala-lang"         || // filter out default mappings
+          node.libs.exists(_.key == key)
+      }
     invalidMappings.foreach { m =>
       log.fatal(s"No library dependencies match mapping $m in module ${node.name}")
     }
