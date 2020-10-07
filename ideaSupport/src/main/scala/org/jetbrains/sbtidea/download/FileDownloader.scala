@@ -6,8 +6,8 @@ import java.nio.ByteBuffer
 import java.nio.channels.{Channels, ReadableByteChannel}
 import java.nio.file.{Files, Path, Paths}
 
-import org.jetbrains.sbtidea.{PluginLogger => log}
-import org.jetbrains.sbtidea._
+import org.jetbrains.sbtidea.download.FileDownloader.ProgressInfo
+import org.jetbrains.sbtidea.{PluginLogger => log, _}
 
 class FileDownloader(private val baseDirectory: Path) {
 
@@ -43,28 +43,6 @@ class FileDownloader(private val baseDirectory: Path) {
     if (!dir.toFile.exists())
       Files.createDirectories(dir)
     dir
-  }
-
-  case class ProgressInfo(percent: Int, speed: Double, downloaded: Long, total: Long) {
-    def renderBar: String = {
-      val width = jline.TerminalFactory.get().getWidth / 4 // quarter width for a progressbar is fine
-      s"[${"=" * ((percent * width / 100) - 1)}>${"." * (width-(percent * width / 100))}]"
-    }
-
-    def renderSpeed: String = {
-      if (speed < 1024)                     "%.0f B/s".format(speed)
-      else if (speed < 1024 * 1024)         "%.2f KB/s".format(speed / 1024.0)
-      else if (speed < 1024 * 1024 * 1024)  "%.2f MB/s".format(speed / (1024.0 * 1024.0))
-      else                                  "%.2f GB/s".format(speed / (1024.0 * 1024.0 * 1024.0))
-    }
-
-    private def space = if (percent == 100) "" else " "
-
-    def renderText: String = s"$renderSpeed; ${(downloaded / (1024 * 1024)).toInt}/${(total / (1024 * 1024)).toInt}MB"
-
-    def renderAll: String = s"$percent%$space $renderBar @ $renderText"
-
-    def done: Boolean = downloaded == total
   }
 
   private def downloadNative(url: URL)(progressCallback: ProgressCallback): Path = {
@@ -174,5 +152,28 @@ class FileDownloader(private val baseDirectory: Path) {
 }
 
 object FileDownloader {
+
   def apply(baseDirectory: Path): FileDownloader = new FileDownloader(baseDirectory)
+
+  case class ProgressInfo(percent: Int, speed: Double, downloaded: Long, total: Long) {
+    def renderBar: String = {
+      val width = jline.TerminalFactory.get().getWidth / 4 // quarter width for a progressbar is fine
+      s"[${"=" * ((percent * width / 100) - 1)}>${"." * (width-(percent * width / 100))}]"
+    }
+
+    def renderSpeed: String = {
+      if (speed < 1024)                     "%.0f B/s".format(speed)
+      else if (speed < 1024 * 1024)         "%.2f KB/s".format(speed / 1024.0)
+      else if (speed < 1024 * 1024 * 1024)  "%.2f MB/s".format(speed / (1024.0 * 1024.0))
+      else                                  "%.2f GB/s".format(speed / (1024.0 * 1024.0 * 1024.0))
+    }
+
+    private def space = if (percent == 100) "" else " "
+
+    def renderText: String = s"$renderSpeed; ${(downloaded / (1024 * 1024)).toInt}/${(total / (1024 * 1024)).toInt}MB"
+
+    def renderAll: String = s"$percent%$space $renderBar @ $renderText"
+
+    def done: Boolean = downloaded == total
+  }
 }
