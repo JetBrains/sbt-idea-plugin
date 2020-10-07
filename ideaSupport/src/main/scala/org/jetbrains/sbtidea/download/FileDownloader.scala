@@ -158,7 +158,24 @@ object FileDownloader {
   case class ProgressInfo(percent: Int, speed: Double, downloaded: Long, total: Long) {
     def renderBar: String = {
       val width = jline.TerminalFactory.get().getWidth / 4 // quarter width for a progressbar is fine
-      s"[${"=" * ((percent * width / 100) - 1)}>${"." * (width-(percent * width / 100))}]"
+      renderBar(width, '=', '.')
+    }
+
+    def renderBar(width: Int, doneChar: Char, leftChar: Char): String = {
+      val inner = if (percent == 100)
+        doneChar.toString * width
+      else {
+        val done = percent * width / 100
+        val curr = 1
+        val left = width - done - curr
+
+        val doneStr = doneChar.toString * done
+        val currStr = ">"
+        val leftStr = leftChar.toString * left
+
+        s"$doneStr$currStr$leftStr"
+      }
+      s"[$inner]"
     }
 
     def renderSpeed: String = {
