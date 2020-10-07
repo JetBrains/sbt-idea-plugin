@@ -18,7 +18,7 @@ trait IdeaMock extends TmpDirUtils {
   protected val IDEA_BUILDINFO: BuildInfo =
     BuildInfo(IDEA_VERSION, Keys.IntelliJPlatform.IdeaUltimate, Some(JbrDependency.VERSION_AUTO))
   protected val IDEA_DEP: IdeaDependency  = IdeaDependency(IDEA_BUILDINFO)
-  protected val IDEA_ART: IdeaDist        = IdeaDistImpl(IDEA_DEP, new URL("file:"))
+  protected val IDEA_ART: IdeaDist        = IdeaDistImpl(IDEA_DEP, () => new URL("file:"))
 
   protected val bundledPlugins: List[Keys.IntellijPlugin] =
     "org.jetbrains.plugins.yaml".toPlugin ::

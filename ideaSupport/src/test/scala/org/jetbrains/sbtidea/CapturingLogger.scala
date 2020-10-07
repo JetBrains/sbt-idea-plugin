@@ -5,6 +5,7 @@ private class CapturingLogger extends PluginLogger {
   override def info(msg: => String): Unit  = {messages += msg; println(msg)}
   override def warn(msg: => String): Unit  = {messages += msg; println(msg)}
   override def error(msg: => String): Unit = {messages += msg; println(msg)}
+  override def fatal(msg: => String): Unit = {messages += msg; println(msg)}
 }
 
 object CapturingLogger {
