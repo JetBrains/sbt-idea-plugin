@@ -12,15 +12,15 @@ object PublishPlugin {
   final val TOKEN_FILENAME  = ".ij-plugin-repo-token"
   final val TOKEN_KEY       = "IJ_PLUGIN_REPO_TOKEN"
 
-  def apply(token: String, pluginId: String, channel: Option[String], pluginFile: File, log: PluginLogger): Unit = {
+  def apply(token: String, xmlId: String, channel: Option[String], pluginFile: File, log: PluginLogger): Unit = {
     val host = "https://plugins.jetbrains.com"
     log.info(s"Uploading ${pluginFile.getName}(${pluginFile.length} bytes) to $host...")
     sbt.jetbrains.ideaPlugin.apiAdapter.Using.fileInputStream(pluginFile) { pluginStream =>
       val response = Http(s"$host/plugin/uploadPlugin")
         .timeout(connTimeoutMs = 5000, readTimeoutMs = 60000)
         .postForm(Seq(
-          "pluginId" -> pluginId,
-          "channel"  -> channel.getOrElse("")
+          "xmlId"   -> xmlId,
+          "channel" -> channel.getOrElse("")
         ))
         .header("Authorization", s"Bearer $token")
         .postMulti(createMultipartData(pluginFile, pluginStream))
