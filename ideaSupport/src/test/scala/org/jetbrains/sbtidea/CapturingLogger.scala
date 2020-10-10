@@ -2,10 +2,11 @@ package org.jetbrains.sbtidea
 
 private class CapturingLogger extends PluginLogger {
   val messages = new scala.collection.mutable.ArrayBuffer[String]()
-  override def info(msg: => String): Unit  = {messages += msg; println(msg)}
-  override def warn(msg: => String): Unit  = {messages += msg; println(msg)}
-  override def error(msg: => String): Unit = {messages += msg; println(msg)}
-  override def fatal(msg: => String): Unit = {messages += msg; println(msg)}
+  private def capture(msg: => String): Unit = {messages += msg; println(msg)}
+  override def info(msg: => String): Unit  = capture(msg)
+  override def warn(msg: => String): Unit  = capture(msg)
+  override def error(msg: => String): Unit = capture(msg)
+  override def fatal(msg: => String): Unit = capture(msg)
 }
 
 object CapturingLogger {

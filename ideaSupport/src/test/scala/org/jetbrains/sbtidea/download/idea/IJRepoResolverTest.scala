@@ -15,7 +15,7 @@ class IJRepoResolverTest extends FunSuite with Matchers with IdeaMock with TmpDi
       val resolver = new IJRepoIdeaResolver
 
       val messages = captureLog(
-        assertThrows[java.net.ConnectException](resolver.resolve(IDEA_DEP))
+        assertThrows[java.net.ConnectException](resolver.resolve(IDEA_DEP).foreach(_.dlUrl))
       )
 
       messages should contain("Using non-default IntelliJ repository URL: https://127.0.0.1:/non-existing-path")
