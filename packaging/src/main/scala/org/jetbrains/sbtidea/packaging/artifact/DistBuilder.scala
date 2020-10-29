@@ -71,4 +71,7 @@ class DistBuilder(stream: TaskStreams, private val target: File) extends Mapping
     target
   }
 
+  override def produceArtifact(structure: Mappings): sbt.File =
+    timed("<== Artifact total assembly ==>", {super.produceArtifact(structure)})
+
 }
