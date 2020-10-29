@@ -13,6 +13,8 @@ trait Quirks { this: Keys.type =>
     "intellij.haskell"
   )
 
+  final val newClassloadingSinceVersion = "203.5251"
+
   def makeScalaLibraryProvided(libs: Seq[ModuleID]): Seq[ModuleID] = libs.map {
     case id if id.name.contains("scala-library") => id % "provided"
     case other => other

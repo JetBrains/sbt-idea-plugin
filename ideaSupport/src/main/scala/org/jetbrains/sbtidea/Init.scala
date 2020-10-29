@@ -4,13 +4,12 @@ import org.jetbrains.sbtidea.download._
 import org.jetbrains.sbtidea.download.plugin.LocalPluginRegistry
 import org.jetbrains.sbtidea.download.jbr.JbrDependency
 import org.jetbrains.sbtidea.packaging.PackagingKeys._
-import org.jetbrains.sbtidea.packaging.artifact.{DistBuilder, IdeaArtifactXmlBuilder}
+import org.jetbrains.sbtidea.packaging.artifact.IdeaArtifactXmlBuilder
 import org.jetbrains.sbtidea.runIdea.{IdeaRunner, IntellijVMOptions}
 import org.jetbrains.sbtidea.searchableoptions.BuildIndex
 import org.jetbrains.sbtidea.tasks.SearchPluginId
 import org.jetbrains.sbtidea.xml.{PluginXmlDetector, PluginXmlPatcher}
 import sbt.Keys._
-import sbt.complete.DefaultParsers
 import sbt.{file, _}
 
 trait Init { this: Keys.type =>
@@ -218,6 +217,7 @@ trait Init { this: Keys.type =>
     aggregate.in(packageMappings) := false,
     aggregate.in(packageArtifact) := false,
     aggregate.in(updateIntellij) := false,
+    aggregate.in(Test) := false,
     unmanagedJars in Compile += file(System.getProperty("java.home")).getParentFile / "lib" / "tools.jar",
     // Deprecated task aliases
     packagePlugin := {
@@ -240,7 +240,30 @@ trait Init { this: Keys.type =>
     logBuffered       := false,
     parallelExecution := false,
     intellijVMOptions in Test := intellijVMOptions.value.copy(test = true, debug = false),
-    javaOptions       in Test := intellijVMOptions.in(Test).value.asSeq :+ s"-Dsbt.ivy.home=$ivyHomeDir",
-    envVars           in Test += "NO_FS_ROOTS_ACCESS_CHECK" -> "yes"
+    envVars           in Test += "NO_FS_ROOTS_ACCESS_CHECK" -> "yes",
+
+    testOnly.in(Test) := { testOnly.in(Test).dependsOn(packageArtifact).evaluated },
+
+    fullClasspath.in(Test) := {
+      val oldClasspath = fullClasspath.in(Test).value
+      if (VersionComparatorUtil.compare(intellijBuild.value, newClassloadingSinceVersion) >= 0) {
+        val pathFinder = PathFinder.empty +++
+          (packageOutputDir.value * globFilter("*.jar")) +++
+          (packageOutputDir.value / "lib" * globFilter("*.jar"))
+        pathFinder.classpath ++ oldClasspath
+      } else oldClasspath
+    },
+
+    javaOptions.in(Test) := {
+      val path = packageOutputDir.value.toPath
+      val forceClassloader = if (VersionComparatorUtil.compare(intellijBuild.value, newClassloadingSinceVersion) >= 0) {
+        val pluginId = LocalPluginRegistry.extractPluginMetaData(path) match {
+          case Left(error) => throw new IllegalStateException(s"Plugin ID is required to run tests! Can't extract plugin id from artifact: $error")
+          case Right(metadata) => metadata.id
+        }
+        s"-Didea.use.core.classloader.for=$pluginId"
+      } else ""
+      intellijVMOptions.in(Test).value.asSeq :+ s"-Dsbt.ivy.home=$ivyHomeDir" :+ forceClassloader
+    }
   )
 }
