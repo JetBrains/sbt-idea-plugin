@@ -65,13 +65,13 @@ trait Utils { this: Keys.type =>
           new SbtPluginLogger(streams.value),
           name.value)
       val pluginIds = LocalPluginRegistry.extractPluginIdsFromResources(resourceDirectories.all(ScopeFilter(inAnyProject, inConfigurations(Compile))).value.flatten.map(_.toPath)) match {
-        case Right(value) => value
         case Right(Nil) =>
           PluginLogger.warn(s"No plugin descriptors found in resource folders. Tests may fail to start.")
           Seq.empty
         case Left(error) =>
           PluginLogger.warn(s"Failed to extract plugin IDs from resources to generate IDEA configs. Tests may fail to start:\n$error")
           Seq.empty
+        case Right(value) => value
       }
       val config = Some(ideaConfigOptions.value)
         .map(x => if (x.ideaRunEnv.isEmpty) x.copy(ideaRunEnv = sbtRunEnv) else  x)
