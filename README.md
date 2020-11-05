@@ -355,13 +355,6 @@ Debugger can later be attached to the process remotely - the default port is 500
 
 ### From IDEA
 
-To run your plugin from IDEA, one needs to define a synthetic runner project in the build.
-This can be achieved with the helper function `createRunnerProject` which will set it up based on the root
-project of the plugin. Example:
-```SBT
-lazy val ideaRunner = createRunnerProject(scalaCommunity)
-```
-
 - `sbt-idea-plugin` generates IDEA-readable artifact xml and run configuration on project import
 - After artifact and run configuration have been created(they're located in `.idea` folder of the project) you can 
 run or debug the new run configuration. This will compile the project, build the artifact and attach it to the
