@@ -7,7 +7,7 @@ import org.jetbrains.sbtidea.packaging.PackagingKeys._
 import org.jetbrains.sbtidea.packaging.artifact.IdeaArtifactXmlBuilder
 import org.jetbrains.sbtidea.runIdea.{IdeaRunner, IntellijVMOptions}
 import org.jetbrains.sbtidea.searchableoptions.BuildIndex
-import org.jetbrains.sbtidea.tasks.SearchPluginId
+import org.jetbrains.sbtidea.tasks.{IdeaConfigBuilder, SearchPluginId}
 import org.jetbrains.sbtidea.xml.{PluginXmlDetector, PluginXmlPatcher}
 import sbt.Keys._
 import sbt.{file, _}
@@ -39,7 +39,7 @@ trait Init { this: Keys.type =>
         Def.task {
           println("Detected IDEA, artifacts and run configurations have been generated")
           createIDEAArtifactXml.?.all(ScopeFilter(inProjects(LocalRootProject))).value.flatten
-          createIDEARunConfiguration.?.all(ScopeFilter(inAnyProject)).value
+          createIDEARunConfiguration.?.all(ScopeFilter(inProjects(LocalRootProject))).value
           updateFinished = true
         }) else if (!updateFinished && !isRunningFromIDEA) Def.task {
         updateIntellij.value
@@ -192,7 +192,8 @@ trait Init { this: Keys.type =>
         }
       else Def.task { }
     }.value,
-    createIDEARunConfiguration := {},
+
+    createIDEARunConfiguration := genCreateRunConfigurationTask.value,
     ideaConfigOptions := IdeaConfigBuildingOptions(),
 
     intellijVMOptions :=
@@ -261,7 +262,7 @@ trait Init { this: Keys.type =>
           case Left(error) => throw new IllegalStateException(s"Plugin ID is required to run tests! Can't extract plugin id from artifact: $error")
           case Right(metadata) => metadata.id
         }
-        s"-Didea.use.core.classloader.for=$pluginId"
+        s"-D$CLASSLOADER_KEY=$pluginId"
       } else ""
       intellijVMOptions.in(Test).value.asSeq :+ s"-Dsbt.ivy.home=$ivyHomeDir" :+ forceClassloader
     }

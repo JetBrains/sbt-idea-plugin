@@ -1,5 +1,7 @@
 package org.jetbrains.sbtidea
 
+import org.jetbrains.sbtidea.download.BuildInfo
+import org.jetbrains.sbtidea.download.plugin.LocalPluginRegistry
 import org.jetbrains.sbtidea.packaging.PackagingKeys._
 import org.jetbrains.sbtidea.tasks._
 import sbt.Keys._
@@ -25,33 +27,64 @@ trait Utils { this: Keys.type =>
         packageMethod := org.jetbrains.sbtidea.packaging.PackagingKeys.PackagingMethod.Skip(),
         unmanagedJars in Compile := intellijMainJars.value,
         unmanagedJars in Compile ++= maybeToolsJar,
-        createIDEARunConfiguration := genCreateRunConfigurationTask(from).value,
         autoScalaLibrary := !bundleScalaLibrary.value
       ).enablePlugins(SbtIdeaPlugin)
   }
 
-  def genCreateRunConfigurationTask(from: ProjectReference): Def.Initialize[Task[Unit]] = Def.task {
-    PluginLogger.bind(new SbtPluginLogger(streams.value))
-    val vmOptions             = intellijVMOptions.in(from).value.copy(debug = false)
-    val configName            = name.in(from).value
-    val dotIdeaFolder         = baseDirectory.in(ThisBuild).value / ".idea"
-    val sbtRunEnv             = envVars.in(from).value
-    val sbtTestEnv            = envVars.in(from, Test).value
-    val config                = Some(ideaConfigOptions.value)
-      .map(x => if (x.ideaRunEnv.isEmpty) x.copy(ideaRunEnv = sbtRunEnv) else x)
-      .map(x => if (x.ideaTestEnv.isEmpty) x.copy(ideaTestEnv = sbtTestEnv) else x)
-      .get
-    val configBuilder         = new IdeaConfigBuilder(
-      name.in(from).value,
-      configName,
-      name.value,
-      vmOptions,
-      intellijPluginDirectory.value,
-      intellijBaseDirectory.value,
-      dotIdeaFolder,
-      config)
+  def genCreateRunConfigurationTask: Def.Initialize[Task[Unit]] = Def.taskDyn {
+    val buildRoot = baseDirectory.in(ThisBuild).value
+    val projectRoot = baseDirectory.in(ThisProject).value
 
-    configBuilder.build()
+    if (buildRoot == projectRoot) Def.task {
+      PluginLogger.bind(new SbtPluginLogger(streams.value))
+      val vmOptions = intellijVMOptions.value.copy(debug = false)
+      val configName = name.value
+      val dotIdeaFolder = baseDirectory.in(ThisBuild).value / ".idea"
+      val sbtRunEnv = envVars.value
+      val sbtTestEnv = envVars.in(Test).value
+      val ownClassPath =
+        productDirectories.all(ScopeFilter(inDependencies(ThisProject), inConfigurations(Compile))).value.flatten ++
+          productDirectories.all(ScopeFilter(inDependencies(ThisProject), inConfigurations(Test))).value.flatten
+      val allPlugins = intellijPlugins.all(ScopeFilter(inDependencies(ThisProject))).value.flatten.distinct
+      val ideaJars = intellijMainJars.value ++
+        tasks.CreatePluginsClasspath(
+          intellijBaseDirectory.in(ThisBuild).value.toPath,
+          BuildInfo(
+            intellijBuild.in(ThisBuild).value,
+            intellijPlatform.in(ThisBuild).value,
+            jbrVersion.in(ThisBuild).value
+          ),
+          allPlugins,
+          new SbtPluginLogger(streams.value),
+          name.value)
+      val pluginIds = LocalPluginRegistry.extractPluginIdsFromResources(resourceDirectories.all(ScopeFilter(inAnyProject, inConfigurations(Compile))).value.flatten.map(_.toPath)) match {
+        case Right(value) => value
+        case Right(Nil) =>
+          PluginLogger.warn(s"No plugin descriptors found in resource folders. Tests may fail to start.")
+          Seq.empty
+        case Left(error) =>
+          PluginLogger.warn(s"Failed to extract plugin IDs from resources to generate IDEA configs. Tests may fail to start:\n$error")
+          Seq.empty
+      }
+      val config = Some(ideaConfigOptions.value)
+        .map(x => if (x.ideaRunEnv.isEmpty) x.copy(ideaRunEnv = sbtRunEnv) else  x)
+        .map(x => if (x.ideaTestEnv.isEmpty) x.copy(ideaTestEnv = sbtTestEnv) else x)
+        .get
+      val configBuilder = new IdeaConfigBuilder(
+        name.value,
+        configName,
+        vmOptions,
+        intellijPluginDirectory.value,
+        intellijBaseDirectory.value,
+        dotIdeaFolder,
+        packageOutputDir.value,
+        ownClassPath,
+        ideaJars.map(_.data),
+        pluginIds,
+        config)
+
+      configBuilder.build()
+    } else Def.task { }
   }
 
 }

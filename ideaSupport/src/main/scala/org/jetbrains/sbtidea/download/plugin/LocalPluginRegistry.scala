@@ -9,6 +9,7 @@ import org.jetbrains.sbtidea.{pathToPathExt, PluginLogger => log}
 import sbt._
 
 import scala.collection.mutable
+import scala.util.{Failure, Success, Try}
 
 class LocalPluginRegistry (ideaRoot: Path) extends LocalPluginRegistryApi {
   import LocalPluginRegistry._
@@ -90,6 +91,26 @@ object LocalPluginRegistry {
 
   class MissingPluginRootException(pluginName: String) extends
     RuntimeException(s"Can't find plugin root for $pluginName: check plugin name")
+
+  def extractDescriptorFromResources(resourceDirs: Seq[Path]): Either[String, Seq[PluginDescriptor]] = {
+    val (errors, descriptors) = resourceDirs
+      .toStream
+      .map(_ / "META-INF" / "plugin.xml")
+      .filter(Files.exists(_))
+      .map(file => Try(
+        PluginDescriptor.load(new String(Files.readAllBytes(file))))
+      ).foldLeft(Seq.empty[String] -> Seq.empty[PluginDescriptor]) {
+      case ((errors, results), Success(descriptor))  => errors -> (results :+ descriptor)
+      case ((errors, results), Failure(exception))   => (errors :+ exception.getMessage) -> results
+    }
+    if (errors.nonEmpty)
+      Left(errors.mkString("\n"))
+    else
+      Right(descriptors)
+  }
+
+  def extractPluginIdsFromResources(resourceDirs: Seq[Path]): Either[String, Seq[String]] =
+    extractDescriptorFromResources(resourceDirs).right.map(descriptors => descriptors.map(_.id).distinct)
 
   def extractInstalledPluginDescriptor(pluginRoot: Path): Either[String, String] = {
     try {
