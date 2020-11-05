@@ -1,13 +1,13 @@
 package org.jetbrains.sbtidea
 
 import org.jetbrains.sbtidea.download._
-import org.jetbrains.sbtidea.download.plugin.LocalPluginRegistry
 import org.jetbrains.sbtidea.download.jbr.JbrDependency
+import org.jetbrains.sbtidea.download.plugin.LocalPluginRegistry
 import org.jetbrains.sbtidea.packaging.PackagingKeys._
 import org.jetbrains.sbtidea.packaging.artifact.IdeaArtifactXmlBuilder
 import org.jetbrains.sbtidea.runIdea.{IdeaRunner, IntellijVMOptions}
 import org.jetbrains.sbtidea.searchableoptions.BuildIndex
-import org.jetbrains.sbtidea.tasks.{IdeaConfigBuilder, SearchPluginId}
+import org.jetbrains.sbtidea.tasks.SearchPluginId
 import org.jetbrains.sbtidea.xml.{PluginXmlDetector, PluginXmlPatcher}
 import sbt.Keys._
 import sbt.{file, _}

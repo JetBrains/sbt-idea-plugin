@@ -23,7 +23,8 @@ class IdeaConfigBuilder(moduleName: String,
                         ownProductDirs: Seq[File],
                         intellijJars: Seq[File],
                         pluginIds: Seq[String],
-                        options: IdeaConfigBuildingOptions) {
+                        options: IdeaConfigBuildingOptions,
+                        newClasspathStrategy: Boolean = true) {
 
   private val runConfigDir = dotIdeaFolder / "runConfigurations"
 
@@ -174,11 +175,17 @@ class IdeaConfigBuilder(moduleName: String,
   private def buildJUnitTemplate: String = {
     val testVMOptions = intellijVMOptions.copy(test = true)
     val env = mkEnv(options.ideaTestEnv)
-    val ijRuntimeJars = guessIJRuntimeJars()
-    val classpathStr =
-      (pluginAssemblyDir / "lib").toString + File.separator + "*" +  // plugin jars must go first when using CLASSLOADER_KEY
-        File.pathSeparator + (intellijJars ++ ownProductDirs).mkString(File.pathSeparator) +
-        File.pathSeparator + ijRuntimeJars.mkString(File.pathSeparator) // runtime jars from the *currently running* IJ to actually start the tests
+    val vmOptionsStr =
+      if (newClasspathStrategy) {
+        val ijRuntimeJars = guessIJRuntimeJars()
+        val classpathStr =
+          (pluginAssemblyDir / "lib").toString + File.separator + "*" + // plugin jars must go first when using CLASSLOADER_KEY
+            File.pathSeparator + (intellijJars ++ ownProductDirs).mkString(File.pathSeparator) +
+            File.pathSeparator + ijRuntimeJars.mkString(File.pathSeparator) // runtime jars from the *currently running* IJ to actually start the tests
+        s"-cp $classpathStr ${testVMOptions.asSeq.mkString(" ")} -D$CLASSLOADER_KEY=${pluginIds.mkString(",")}"
+      } else {
+        testVMOptions.asSeq.mkString(" ")
+      }
     val searchScope = if (options.testSearchScope.nonEmpty)
       s"""<option name="TEST_SEARCH_SCOPE">
         |      <value defaultName="${options.testSearchScope}" />
@@ -191,7 +198,8 @@ class IdeaConfigBuilder(moduleName: String,
        |    <option name="MAIN_CLASS_NAME" value="" />
        |    <option name="METHOD_NAME" value="" />
        |    <option name="TEST_OBJECT" value="class" />
-       |    <option name="VM_PARAMETERS" value="-cp $classpathStr ${testVMOptions.asSeq.mkString(" ")} -D$CLASSLOADER_KEY=${pluginIds.mkString(",")}" />
+       |    <module name="$moduleName" />
+       |    <option name="VM_PARAMETERS" value="$vmOptionsStr" />
        |    <option name="WORKING_DIRECTORY" value="${options.workingDir}" />
        |    $searchScope
        |    <RunnerSettings RunnerId="Profile " />

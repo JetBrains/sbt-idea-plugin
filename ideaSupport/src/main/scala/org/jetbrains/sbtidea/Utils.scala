@@ -1,6 +1,6 @@
 package org.jetbrains.sbtidea
 
-import org.jetbrains.sbtidea.download.BuildInfo
+import org.jetbrains.sbtidea.download.{BuildInfo, VersionComparatorUtil}
 import org.jetbrains.sbtidea.download.plugin.LocalPluginRegistry
 import org.jetbrains.sbtidea.packaging.PackagingKeys._
 import org.jetbrains.sbtidea.tasks._
@@ -37,6 +37,7 @@ trait Utils { this: Keys.type =>
 
     if (buildRoot == projectRoot) Def.task {
       PluginLogger.bind(new SbtPluginLogger(streams.value))
+      val newClassLoadingStrategy = VersionComparatorUtil.compare(intellijBuild.value, newClassloadingSinceVersion) >= 0
       val vmOptions = intellijVMOptions.value.copy(debug = false)
       val configName = name.value
       val dotIdeaFolder = baseDirectory.in(ThisBuild).value / ".idea"
@@ -81,7 +82,8 @@ trait Utils { this: Keys.type =>
         ownClassPath,
         ideaJars.map(_.data),
         pluginIds,
-        config)
+        config,
+        newClassLoadingStrategy)
 
       configBuilder.build()
     } else Def.task { }
