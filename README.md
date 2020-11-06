@@ -172,7 +172,6 @@ intellijVMOptions := intellijVMOptions.value.copy(xmx = 2048, xms = 256)
 #### `ideaConfigOptions :: SettingKey[IdeaConfigBuildingOptions]`
 
 Fine tune how IntelliJ run configurations are generated when importing the project in IDEA.
-This key should be overridden in the [runner project](#from-idea) to take effect.
 
 #### `runIDE [noPCE] [noDebug] [suspend] [blocking] :: InputKey[Unit]`
 
