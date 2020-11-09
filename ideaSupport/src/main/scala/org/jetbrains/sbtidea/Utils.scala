@@ -50,11 +50,10 @@ trait Utils { this: Keys.type =>
       val sbtRunEnv = envVars.value
       val sbtTestEnv = envVars.in(Test).value
       val ownClassPath =
-        productDirectories.all(ScopeFilter(inDependencies(ThisProject), inConfigurations(Compile))).value.flatten ++
-          productDirectories.all(ScopeFilter(inDependencies(ThisProject), inConfigurations(Test))).value.flatten
+          classDirectory.all(ScopeFilter(inDependencies(ThisProject), inConfigurations(Test))).value
       val allPlugins = intellijPlugins.all(ScopeFilter(inDependencies(ThisProject))).value.flatten.distinct
-      val ideaJars = intellijMainJars.value ++
-        tasks.CreatePluginsClasspath(
+      val pluginRoots =
+        tasks.CreatePluginsClasspath.collectPluginRoots(
           intellijBaseDirectory.in(ThisBuild).value.toPath,
           BuildInfo(
             intellijBuild.in(ThisBuild).value,
@@ -63,7 +62,7 @@ trait Utils { this: Keys.type =>
           ),
           allPlugins,
           new SbtPluginLogger(streams.value),
-          name.value)
+          name.value).map(_.toFile)
       val pluginIds = LocalPluginRegistry.extractPluginIdsFromResources(resourceDirectories.all(ScopeFilter(inAnyProject, inConfigurations(Compile))).value.flatten.map(_.toPath)) match {
         case Right(Nil) =>
           PluginLogger.warn(s"No plugin descriptors found in resource folders. Tests may fail to start.")
@@ -78,18 +77,19 @@ trait Utils { this: Keys.type =>
         .map(x => if (x.ideaTestEnv.isEmpty) x.copy(ideaTestEnv = sbtTestEnv) else x)
         .get
       val configBuilder = new IdeaConfigBuilder(
-        name.value,
-        configName,
-        vmOptions,
-        intellijPluginDirectory.value,
-        intellijBaseDirectory.value,
-        dotIdeaFolder,
-        packageOutputDir.value,
-        ownClassPath,
-        ideaJars.map(_.data),
-        pluginIds,
-        config,
-        newClassLoadingStrategy)
+        moduleName = name.value,
+        configName = configName,
+        intellijVMOptions = vmOptions,
+        dataDir = intellijPluginDirectory.value,
+        ideaBaseDir = intellijBaseDirectory.value,
+        dotIdeaFolder = dotIdeaFolder,
+        pluginAssemblyDir = packageOutputDir.value,
+        ownProductDirs = ownClassPath,
+        intellijDir = intellijBaseDirectory.in(ThisBuild).value,
+        pluginRoots = pluginRoots,
+        pluginIds = pluginIds,
+        options = config,
+        newClasspathStrategy = newClassLoadingStrategy)
 
       configBuilder.build()
     } else Def.task { }
