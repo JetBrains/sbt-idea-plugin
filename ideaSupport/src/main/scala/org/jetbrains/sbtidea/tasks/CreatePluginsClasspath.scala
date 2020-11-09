@@ -12,8 +12,7 @@ import sbt._
 
 object CreatePluginsClasspath {
 
-  def apply(ideaBaseDir: Path, ideaBuildInfo: BuildInfo, plugins: Seq[IntellijPlugin], log: PluginLogger, moduleNameHint: String = ""): Classpath = {
-
+  def collectPluginRoots(ideaBaseDir: Path, ideaBuildInfo: BuildInfo, plugins: Seq[IntellijPlugin], log: PluginLogger, moduleNameHint: String = ""): Seq[Path] = {
     implicit val context: InstallContext = InstallContext(baseDirectory = ideaBaseDir, downloadDirectory = ideaBaseDir)
     implicit val remoteRepoApi: PluginRepoUtils = new PluginRepoUtils
     implicit val localRegistry: LocalPluginRegistry = new LocalPluginRegistry(ideaBaseDir)
@@ -38,6 +37,11 @@ object CreatePluginsClasspath {
         log.warn(s"Plugin [$id] is already included by: [${parentIds.mkString(", ")}]${if (moduleNameHint.nonEmpty) s" in project '$moduleNameHint'" else ""}")
     }
     val roots = allDependencies.collect { case LocalPlugin(_, _, root) => root }.distinct
+    roots
+  }
+
+  def apply(ideaBaseDir: Path, ideaBuildInfo: BuildInfo, plugins: Seq[IntellijPlugin], log: PluginLogger, moduleNameHint: String = ""): Classpath = {
+    val roots = collectPluginRoots(ideaBaseDir, ideaBuildInfo, plugins, log, moduleNameHint)
     val pluginsFinder = roots
       .foldLeft(PathFinder.empty) { (pathFinder, pluginRoot) =>
         if (pluginRoot.toFile.isDirectory)

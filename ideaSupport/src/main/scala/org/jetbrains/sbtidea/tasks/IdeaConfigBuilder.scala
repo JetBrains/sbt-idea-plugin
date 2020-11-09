@@ -21,7 +21,8 @@ class IdeaConfigBuilder(moduleName: String,
                         dotIdeaFolder: File,
                         pluginAssemblyDir: File,
                         ownProductDirs: Seq[File],
-                        intellijJars: Seq[File],
+                        intellijDir: File,
+                        pluginRoots: Seq[File],
                         pluginIds: Seq[String],
                         options: IdeaConfigBuildingOptions,
                         newClasspathStrategy: Boolean = true) {
@@ -149,7 +150,7 @@ class IdeaConfigBuilder(moduleName: String,
        |    <log_file alias="IJ LOG" path="$dataDir/system/log/idea.log" />
        |    <option name="MAIN_CLASS_NAME" value="com.intellij.idea.Main" />
        |    <module name="$moduleName" />
-       |    <option name="VM_PARAMETERS" value="-cp ${intellijJars.mkString(File.pathSeparator)} ${vmOptions.asSeq.mkString(" ")}" />
+       |    <option name="VM_PARAMETERS" value="-cp ${intellijDir / "lib"}${File.separator}* ${vmOptions.asSeq.mkString(" ")}" />
        |    <RunnerSettings RunnerId="Debug">
        |      <option name="DEBUG_PORT" value="" />
        |      <option name="TRANSPORT" value="0" />
@@ -180,7 +181,9 @@ class IdeaConfigBuilder(moduleName: String,
         val ijRuntimeJars = guessIJRuntimeJars()
         val classpathStr =
           (pluginAssemblyDir / "lib").toString + File.separator + "*" + // plugin jars must go first when using CLASSLOADER_KEY
-            File.pathSeparator + (intellijJars ++ ownProductDirs).mkString(File.pathSeparator) +
+            File.pathSeparator + (intellijDir / "lib").toString + File.separator + "*" +
+            File.pathSeparator + pluginRoots.map(f => if (f.isDirectory) s"${f / "lib"}${File.separator}*" else f.toString).mkString(File.pathSeparator) +
+            File.pathSeparator + ownProductDirs.mkString(File.pathSeparator) +
             File.pathSeparator + ijRuntimeJars.mkString(File.pathSeparator) // runtime jars from the *currently running* IJ to actually start the tests
         s"-cp $classpathStr ${testVMOptions.asSeq.mkString(" ")} -D$CLASSLOADER_KEY=${pluginIds.mkString(",")}"
       } else {
