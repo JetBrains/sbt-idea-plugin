@@ -4,7 +4,7 @@ import java.io.File
 import java.nio.file.{Path, Paths}
 import java.util.regex.Pattern
 
-import org.jetbrains.sbtidea.Keys.{CLASSLOADER_KEY, IdeaConfigBuildingOptions}
+import org.jetbrains.sbtidea.Keys.IdeaConfigBuildingOptions
 import org.jetbrains.sbtidea.runIdea.{IdeaRunner, IntellijVMOptions}
 import org.jetbrains.sbtidea.tasks.IdeaConfigBuilder.{pathPattern, pluginsPattern}
 import org.jetbrains.sbtidea.{pathToPathExt, PluginLogger => log}
@@ -23,7 +23,6 @@ class IdeaConfigBuilder(moduleName: String,
                         ownProductDirs: Seq[File],
                         intellijDir: File,
                         pluginRoots: Seq[File],
-                        pluginIds: Seq[String],
                         options: IdeaConfigBuildingOptions,
                         newClasspathStrategy: Boolean = true) {
 
@@ -185,7 +184,7 @@ class IdeaConfigBuilder(moduleName: String,
             File.pathSeparator + pluginRoots.map(f => if (f.isDirectory) s"${f / "lib"}${File.separator}*" else f.toString).mkString(File.pathSeparator) +
             File.pathSeparator + ownProductDirs.mkString(File.pathSeparator) +
             File.pathSeparator + ijRuntimeJars.mkString(File.pathSeparator) // runtime jars from the *currently running* IJ to actually start the tests
-        s"-cp $classpathStr ${testVMOptions.asSeq.mkString(" ")} -D$CLASSLOADER_KEY=${pluginIds.mkString(",")}"
+        s"-cp $classpathStr ${testVMOptions.asSeq.mkString(" ")}"
       } else {
         testVMOptions.asSeq.mkString(" ")
       }

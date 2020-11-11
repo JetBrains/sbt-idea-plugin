@@ -63,15 +63,6 @@ trait Utils { this: Keys.type =>
           allPlugins,
           new SbtPluginLogger(streams.value),
           name.value).map(_.toFile)
-      val pluginIds = LocalPluginRegistry.extractPluginIdsFromResources(resourceDirectories.all(ScopeFilter(inAnyProject, inConfigurations(Compile))).value.flatten.map(_.toPath)) match {
-        case Right(Nil) =>
-          PluginLogger.warn(s"No plugin descriptors found in resource folders. Tests may fail to start.")
-          Seq.empty
-        case Left(error) =>
-          PluginLogger.warn(s"Failed to extract plugin IDs from resources to generate IDEA configs. Tests may fail to start:\n$error")
-          Seq.empty
-        case Right(value) => value
-      }
       val config = Some(ideaConfigOptions.value)
         .map(x => if (x.ideaRunEnv.isEmpty) x.copy(ideaRunEnv = sbtRunEnv) else  x)
         .map(x => if (x.ideaTestEnv.isEmpty) x.copy(ideaTestEnv = sbtTestEnv) else x)
@@ -87,7 +78,6 @@ trait Utils { this: Keys.type =>
         ownProductDirs = ownClassPath,
         intellijDir = intellijBaseDirectory.in(ThisBuild).value,
         pluginRoots = pluginRoots,
-        pluginIds = pluginIds,
         options = config,
         newClasspathStrategy = newClassLoadingStrategy)
 

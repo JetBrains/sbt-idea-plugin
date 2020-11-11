@@ -256,16 +256,6 @@ trait Init { this: Keys.type =>
       } else oldClasspath
     },
 
-    javaOptions.in(Test) := {
-      val path = packageOutputDir.value.toPath
-      val forceClassloader = if (VersionComparatorUtil.compare(intellijBuild.value, newClassloadingSinceVersion) >= 0) {
-        val pluginId = LocalPluginRegistry.extractPluginMetaData(path) match {
-          case Left(error) => throw new IllegalStateException(s"Plugin ID is required to run tests! Can't extract plugin id from artifact: $error")
-          case Right(metadata) => metadata.id
-        }
-        s"-D$CLASSLOADER_KEY=$pluginId"
-      } else ""
-      intellijVMOptions.in(Test).value.asSeq :+ s"-Dsbt.ivy.home=$ivyHomeDir" :+ forceClassloader
-    }
+    javaOptions.in(Test) := { intellijVMOptions.in(Test).value.asSeq :+ s"-Dsbt.ivy.home=$ivyHomeDir" }
   )
 }

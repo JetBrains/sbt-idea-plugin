@@ -7,8 +7,6 @@ trait Quirks { this: Keys.type =>
 
   val toolsJar: File = file(System.getProperty("java.home")).getParentFile / "lib" / "tools.jar"
 
-  final val CLASSLOADER_KEY = "idea.use.core.classloader.for"
-
   val pluginsWithScala = Seq( // TODO: add more
     "org.intellij.scala",
     "org.jetbrains.plugins.hocon",
