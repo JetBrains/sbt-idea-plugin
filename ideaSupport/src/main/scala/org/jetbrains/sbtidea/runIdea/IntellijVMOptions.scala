@@ -39,7 +39,8 @@ case class IntellijVMOptions(platform: IntelliJPlatform,
     buffer += s"-Didea.system.path=$system"
     buffer += s"-Didea.config.path=$config"
     buffer += s"-Dplugin.path=$pluginPath"
-    buffer += "-Didea.use.core.classloader.for.plugin.path=true"
+    if(test)
+      buffer += "-Didea.use.core.classloader.for.plugin.path=true"
     if (noPCE)
       buffer += "-Didea.ProcessCanceledException=disabled"
     if (!test)
