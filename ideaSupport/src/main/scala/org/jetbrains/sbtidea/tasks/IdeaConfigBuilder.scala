@@ -184,7 +184,7 @@ class IdeaConfigBuilder(moduleName: String,
             File.pathSeparator + pluginRoots.map(f => if (f.isDirectory) s"${f / "lib"}${File.separator}*" else f.toString).mkString(File.pathSeparator) +
             File.pathSeparator + ownProductDirs.mkString(File.pathSeparator) +
             File.pathSeparator + ijRuntimeJars.mkString(File.pathSeparator) // runtime jars from the *currently running* IJ to actually start the tests
-        s"-cp $classpathStr ${testVMOptions.asSeq.mkString(" ")}"
+        s"-cp &quot;$classpathStr&quot; ${testVMOptions.asSeq.mkString(" ")}"
       } else {
         testVMOptions.asSeq.mkString(" ")
       }
