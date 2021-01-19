@@ -27,8 +27,7 @@ object PublishPlugin {
           .asString
 
       if (response.isError) {
-        log.error(s"Failed to upload plugin")
-        log.error(s"(${response.code}) : ${response.body}")
+        throw new IllegalStateException(s"Failed to upload plugin: (${response.code}) : ${response.body}")
       } else {
         log.info(s"Successfully uploaded ${pluginFile.name} to $host")
       }
