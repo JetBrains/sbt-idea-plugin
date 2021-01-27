@@ -71,7 +71,7 @@ Edition of IntelliJ IDE to use in project. Currently available options are:
 
 #### `intellijDownloadDirectory in ThisBuild :: SettingKey[File]`
 
-Default: `homePrefix / s".${intellijPluginName.value}Plugin${intellijPlatform.value.shortname}" / "sdk"`
+Default: `homePrefix / s".${intellijPluginName.value.removeSpaces}Plugin${intellijPlatform.value.shortname}" / "sdk"`
 
 Directory where IntelliJ binaries and sources will be downloaded.
 

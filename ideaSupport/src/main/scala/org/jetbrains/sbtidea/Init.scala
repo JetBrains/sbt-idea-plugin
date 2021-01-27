@@ -26,7 +26,7 @@ trait Init { this: Keys.type =>
     intellijPlatform          := IntelliJPlatform.IdeaCommunity,
     intellijDownloadSources   := true,
     jbrVersion                := Some(JbrDependency.VERSION_AUTO),
-    intellijPluginDirectory   := homePrefix / s".${intellijPluginName.value}Plugin${intellijPlatform.value.edition}",
+    intellijPluginDirectory   := homePrefix / s".${intellijPluginName.value.removeSpaces}Plugin${intellijPlatform.value.edition}",
     intellijBaseDirectory     := intellijDownloadDirectory.value / intellijBuild.value,
     intellijDownloadDirectory := intellijPluginDirectory.value / "sdk",
     intellijTestConfigDir     := intellijPluginDirectory.value / "test-config",
@@ -115,8 +115,8 @@ trait Init { this: Keys.type =>
     intellijFullJars := intellijMainJars.value ++ intellijPluginJars.value,
     unmanagedJars in Compile ++= intellijFullJars.value,
 
-    packageOutputDir := target.value / "plugin" / intellijPluginName.in(ThisBuild).value,
-    packageArtifactZipFile := target.value / s"${intellijPluginName.in(ThisBuild).value}-${version.value}.zip",
+    packageOutputDir := target.value / "plugin" / intellijPluginName.in(ThisBuild).value.removeSpaces,
+    packageArtifactZipFile := target.value / s"${intellijPluginName.in(ThisBuild).value.removeSpaces}-${version.value}.zip",
     patchPluginXml := pluginXmlOptions.DISABLED,
     doPatchPluginXml := {
       PluginLogger.bind(new SbtPluginLogger(streams.value))

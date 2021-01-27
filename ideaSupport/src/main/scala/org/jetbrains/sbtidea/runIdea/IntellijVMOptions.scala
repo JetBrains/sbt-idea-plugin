@@ -6,6 +6,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 import org.jetbrains.sbtidea.Keys.IntelliJPlatform
+import org.jetbrains.sbtidea._
 
 case class IntellijVMOptions(platform: IntelliJPlatform,
                              pluginPath: Path,
@@ -36,9 +37,9 @@ case class IntellijVMOptions(platform: IntelliJPlatform,
     val (system, config) =
       if (test) (ideaHome.resolve("test-system"), ideaHome.resolve("test-config"))
       else      (ideaHome.resolve("system"), ideaHome.resolve("config"))
-    buffer += s"-Didea.system.path=$system"
-    buffer += s"-Didea.config.path=$config"
-    buffer += s"-Dplugin.path=$pluginPath"
+    buffer += s"-Didea.system.path=${system.toString.escapeSpaces}"
+    buffer += s"-Didea.config.path=${config.toString.escapeSpaces}"
+    buffer += s"-Dplugin.path=${pluginPath.toString.escapeSpaces}"
     if(test)
       buffer += "-Didea.use.core.classloader.for.plugin.path=true"
     if (noPCE)
