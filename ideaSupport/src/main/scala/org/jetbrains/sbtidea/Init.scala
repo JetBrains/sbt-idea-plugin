@@ -214,6 +214,9 @@ trait Init { this: Keys.type =>
       runner.run()
     },
 
+    unmanagedResourceDirectories in Compile += baseDirectory.value / "resources",
+    unmanagedResourceDirectories in Test    += baseDirectory.value / "testResources",
+
     aggregate.in(packageArtifactZip) := false,
     aggregate.in(packageMappings) := false,
     aggregate.in(packageArtifact) := false,
