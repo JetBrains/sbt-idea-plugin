@@ -18,14 +18,6 @@ object Keys extends Defns with Init with Utils with Quirks {
   lazy val intellijPlugins = settingKey[Seq[IntellijPlugin]](
     "List of IntelliJ platform plugin to depend on")
 
-  @deprecated("use intellijPlugins instead", "3.6.0")
-  lazy val intellijInternalPlugins = settingKey[Seq[String]](
-    "DEPRECATED List of names of bundled IntelliJ IntelliJ Platform plugins this project depends on")
-
-  @deprecated("use intellijPlugins instead", "3.6.0")
-  lazy val intellijExternalPlugins = settingKey[Seq[IntellijPlugin]](
-    "DEPRECATED List of third-party plugins this project depends on")
-
   lazy val intellijPlatform = settingKey[IntelliJPlatform](
     "Edition of Intellij Platform to use in project")
 

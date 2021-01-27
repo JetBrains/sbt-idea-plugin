@@ -98,11 +98,9 @@ trait Init { this: Keys.type =>
   )
 
   lazy val projectSettings: Seq[Setting[_]] = Seq(
-    intellijInternalPlugins := Seq.empty,
-    intellijExternalPlugins := Seq.empty,
-    intellijPlugins := intellijInternalPlugins.value.map(IntellijPlugin.BundledFolder(_)) ++ intellijExternalPlugins.value,
-    intellijMainJars := (intellijBaseDirectory.in(ThisBuild).value / "lib" * "*.jar").classpath,
-    intellijPluginJars :=
+    intellijPlugins     := Seq.empty,
+    intellijMainJars    := (intellijBaseDirectory.in(ThisBuild).value / "lib" * "*.jar").classpath,
+    intellijPluginJars  :=
       tasks.CreatePluginsClasspath(
         intellijBaseDirectory.in(ThisBuild).value.toPath,
         BuildInfo(

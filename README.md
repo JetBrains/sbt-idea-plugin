@@ -99,9 +99,6 @@ Plugins will be checked for compatibility against the `intellijBuild` you specif
  - `optionalDeps` - resolve optional plugin dependencies(default: true)
  - `excludedIds`  - blacklist certain plugins from transitive resolution(default: Set.empty)
  
- :exclamation: Please note that keys `intellijInternalPlugins` and `intellijExternalPlugins` have been deprecated and this setting key
- should be used instead.
- 
  :exclamation: Please note that Java support in IJ is implemented by a plugin: `com.intellij.java`
  
  :exclamation: Please remember that you must [declare plugin dependencies in plugin.xml](https://jetbrains.org/intellij/sdk/docs/basics/plugin_structure/plugin_dependencies.html#dependency-declaration-in-pluginxml) or your plugin may fail to load.
