@@ -256,6 +256,6 @@ trait Init { this: Keys.type =>
       } else oldClasspath
     },
 
-    javaOptions.in(Test) := { intellijVMOptions.in(Test).value.asSeq :+ s"-Dsbt.ivy.home=$ivyHomeDir" }
+    javaOptions.in(Test) ++= { intellijVMOptions.in(Test).value.asSeq :+ s"-Dsbt.ivy.home=$ivyHomeDir" }
   )
 }
