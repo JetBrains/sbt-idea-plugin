@@ -27,17 +27,21 @@ class PluginIndexImpl(ideaRoot: Path) extends PluginIndex {
         case e: Throwable =>
           log.warn(s"Failed to load plugin index from disk: $e")
           (ideaRoot / INDEX_FILENAME).toFile.delete()
-          new Repr
+          buildAndSaveIndex()
       }
     } else {
-      val fromPluginsDir = buildFromPluginsDir()
-      try {
-        saveToFile(fromPluginsDir)
-      } catch {
-        case e: Throwable => log.warn(s"Failed to write back plugin index: $e")
-      }
-      fromPluginsDir
+      buildAndSaveIndex()
     }
+  }
+
+  private def buildAndSaveIndex() = {
+    val fromPluginsDir = buildFromPluginsDir()
+    try {
+      saveToFile(fromPluginsDir)
+    } catch {
+      case e: Throwable => log.warn(s"Failed to write back plugin index: $e")
+    }
+    fromPluginsDir
   }
 
   override def put(descriptor: PluginDescriptor, installPath: Path): Unit = {
