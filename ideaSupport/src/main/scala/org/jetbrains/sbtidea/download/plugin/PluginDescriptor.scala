@@ -7,6 +7,7 @@ import java.nio.file.{Files, Path}
 import scala.xml._
 
 case class PluginDescriptor(id: String,
+                            vendor: String,
                             name: String,
                             version: String,
                             sinceBuild: String,
@@ -16,6 +17,7 @@ case class PluginDescriptor(id: String,
     s"""
        |<idea-plugin>
        |  <name>$name</name>
+       |  <vendor>$vendor</vendor>
        |  <id>$id</id>
        |  <version>$version</version>
        |  <idea-version since-build="$sinceBuild" until-build="$untilBuild"/>
@@ -49,6 +51,7 @@ object PluginDescriptor {
     val id      = (xml \\ "id").text
     val version = (xml \\ "version").text
     val name    = (xml \\ "name").text
+    val vendor    = (xml \\ "vendor").text
     val since   = (xml \\ "idea-version").headOption.map(_.attributes("since-build").text).getOrElse("")
     val until   = (xml \\ "idea-version").headOption.map(_.attributes("until-build").text).getOrElse("")
     val dependencies = (xml \\ "depends").map { node =>
@@ -57,7 +60,7 @@ object PluginDescriptor {
       Dependency(id, optional)
     }
     val idOrName = if (id.isEmpty) name else id
-    PluginDescriptor(idOrName, name, version, since, until, dependencies)
+    PluginDescriptor(idOrName, vendor, name, version, since, until, dependencies)
   }
 
   private def createNonValidatingParser = {
