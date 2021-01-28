@@ -29,14 +29,6 @@ trait Quirks { this: Keys.type =>
   def hasPluginsWithScala(plugins: Seq[IntellijPlugin]): Boolean =
     plugins.exists(plugin => pluginsWithScala.exists(id => plugin.toString.matches(s".*$id.*")))
 
-  //noinspection MapGetOrElseBoolean : scala 2.10 nas no Option.exists
-  def maybeToolsJar: Seq[File] = {  // JDI requires tools.jar for JDK 8 and earlier
-    if (sys.props("java.version").split("\\.").headOption.map(_.toInt < 9).getOrElse(false))
-      Seq(toolsJar)
-    else
-      Seq.empty
-  }
-
   def java9PlusOptions(intellijVMOptions: IntellijVMOptions)(implicit jre: JRE): IntellijVMOptions =
     if(jre.version > 9)
       intellijVMOptions.copy(gc = "")

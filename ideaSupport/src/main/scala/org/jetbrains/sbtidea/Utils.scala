@@ -32,7 +32,6 @@ trait Utils { this: Keys.type =>
         products := packageArtifact.in(from).value :: Nil,  // build the artifact when IDEA delegates "Build" action to sbt shell
         packageMethod := org.jetbrains.sbtidea.packaging.PackagingKeys.PackagingMethod.Skip(),
         unmanagedJars in Compile := intellijMainJars.value,
-        unmanagedJars in Compile ++= maybeToolsJar,
         autoScalaLibrary := !bundleScalaLibrary.value
       ).enablePlugins(SbtIdeaPlugin)
   }
