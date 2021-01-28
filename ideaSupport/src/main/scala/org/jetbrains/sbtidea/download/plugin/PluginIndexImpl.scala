@@ -116,5 +116,5 @@ object PluginIndexImpl {
 
   val INDEX_FILENAME = "plugins.idx"
   val PLUGINS_DIR = "plugins"
-  val INDEX_VERSION = 1
+  val INDEX_VERSION = 2
 }

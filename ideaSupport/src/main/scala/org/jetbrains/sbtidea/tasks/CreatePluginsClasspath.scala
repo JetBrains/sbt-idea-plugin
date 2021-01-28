@@ -28,15 +28,15 @@ object CreatePluginsClasspath {
       .map { case (k, v) => k -> v.flatMap { case (_, j) => j } }
       .filter(_._2.nonEmpty)
 
-    duplicates.collect { case (LocalPlugin(_, PluginDescriptor(id, _, _, _, _, _), _), parents) =>
+    duplicates.collect { case (LocalPlugin(_, PluginDescriptor(id, _, _, _, _, _, _), _), parents) =>
       val thisNonOptionalDependency = PluginDescriptor.Dependency(id, optional = false)
       val parentIds = parents.collect {
-        case LocalPlugin(_, PluginDescriptor(parentId, _, _, _, _, deps), _) if deps.contains(thisNonOptionalDependency) => parentId
+        case LocalPlugin(_, PluginDescriptor(parentId, _, _, _, _, _, deps), _) if deps.contains(thisNonOptionalDependency) => parentId
       }
       if (parentIds.nonEmpty)
         log.warn(s"Plugin [$id] is already included by: [${parentIds.mkString(", ")}]${if (moduleNameHint.nonEmpty) s" in project '$moduleNameHint'" else ""}")
     }
-    val roots = allDependencies.collect { case LocalPlugin(_, _, root) => root }.distinct
+    val roots = allDependencies.collect { case LocalPlugin(_, descriptor, root) => descriptor -> root }.distinct
     roots
   }
 
