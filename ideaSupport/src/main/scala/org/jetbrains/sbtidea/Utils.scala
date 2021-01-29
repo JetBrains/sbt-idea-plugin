@@ -61,7 +61,7 @@ trait Utils { this: Keys.type =>
           ),
           allPlugins,
           new SbtPluginLogger(streams.value),
-          name.value).map(_.toFile)
+          name.value).map(_._2.toFile)
       val config = Some(ideaConfigOptions.value)
         .map(x => if (x.ideaRunEnv.isEmpty) x.copy(ideaRunEnv = sbtRunEnv) else  x)
         .map(x => if (x.ideaTestEnv.isEmpty) x.copy(ideaTestEnv = sbtTestEnv) else x)

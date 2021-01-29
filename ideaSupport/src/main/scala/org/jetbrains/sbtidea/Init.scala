@@ -1,8 +1,9 @@
 package org.jetbrains.sbtidea
 
 import org.jetbrains.sbtidea.download._
+import org.jetbrains.sbtidea.download.idea.IdeaSourcesImpl
 import org.jetbrains.sbtidea.download.jbr.JbrDependency
-import org.jetbrains.sbtidea.download.plugin.LocalPluginRegistry
+import org.jetbrains.sbtidea.download.plugin.{LocalPluginRegistry, PluginDescriptor}
 import org.jetbrains.sbtidea.packaging.PackagingKeys._
 import org.jetbrains.sbtidea.packaging.artifact.IdeaArtifactXmlBuilder
 import org.jetbrains.sbtidea.runIdea.{IdeaRunner, IntellijVMOptions}
@@ -19,6 +20,10 @@ trait Init { this: Keys.type =>
   private var updateFinished = false
 
   private def isRunningFromIDEA: Boolean = sys.props.contains("idea.managed")
+
+  lazy val globalSettings : Seq[Setting[_]] = Seq(
+    intellijAttachSources     := true
+  )
 
   lazy val buildSettings: Seq[Setting[_]] = Seq(
     intellijPluginName        := name.in(LocalRootProject).value,
@@ -97,11 +102,16 @@ trait Init { this: Keys.type =>
     }) compose (onLoad in Global).value
   )
 
+  private val ideaJarsArtifact    = Artifact("INTELLIJ-SDK", "IJ-SDK")
+  private val ideaSourcesArtifact = Artifact("INTELLIJ-SDK", Artifact.SourceType, "zip", "IJ-SDK")
+  private def buildIdeaModule(build: String): ModuleID =
+    "org.jetbrains" % "INTELLIJ-SDK" % build withSources()
+
   lazy val projectSettings: Seq[Setting[_]] = Seq(
     intellijPlugins     := Seq.empty,
     intellijMainJars    := (intellijBaseDirectory.in(ThisBuild).value / "lib" * "*.jar").classpath,
     intellijPluginJars  :=
-      tasks.CreatePluginsClasspath(
+      tasks.CreatePluginsClasspath.buildPluginClassPaths(
         intellijBaseDirectory.in(ThisBuild).value.toPath,
         BuildInfo(
           intellijBuild.in(ThisBuild).value,
@@ -112,8 +122,47 @@ trait Init { this: Keys.type =>
         new SbtPluginLogger(streams.value),
         name.value),
 
-    intellijFullJars := intellijMainJars.value ++ intellijPluginJars.value,
-    unmanagedJars in Compile ++= intellijFullJars.value,
+    externalDependencyClasspath in Compile ++= {
+      val ideaModule: ModuleID = buildIdeaModule(intellijBuild.in(ThisBuild).value)
+      val sdkAttrs: AttributeMap = AttributeMap.empty
+        .put(artifact.key, ideaJarsArtifact)
+        .put(moduleID.key, ideaModule)
+        .put(configuration.key, Compile)
+
+      val pluginClassPaths = intellijPluginJars.value.flatMap(_._2)
+
+      intellijMainJars.value.map(_.data).map{ i=>Attributed(i)(sdkAttrs)} ++ pluginClassPaths
+    },
+
+    update := {
+      import org.jetbrains.sbtidea.ApiAdapter._
+      val attachSources           = intellijAttachSources.in(Global).value
+      val ijBuild                 = intellijBuild.in(ThisBuild).value
+      val ideaModule              = buildIdeaModule(ijBuild)
+      val originalReport          = update.value
+      val intelliJSourcesArchive  = intellijBaseDirectory.value / IdeaSourcesImpl.SOURCES_ZIP
+      val ideaArtifacts           =
+        intellijMainJars.value.map(ideaJarsArtifact -> _.data) ++
+          (if (attachSources)  Seq(ideaSourcesArtifact -> intelliJSourcesArchive)
+           else                Seq.empty)
+      val reportWithIdeaMainJars  = injectIntoUpdateReport(originalReport, ideaArtifacts, ideaModule)
+
+      val pluginClassPaths = intellijPluginJars.value
+      pluginClassPaths.foldLeft(reportWithIdeaMainJars) { case (report, (_, classpath)) =>
+        classpath.headOption.map { f =>
+          val pluginModule = f.get(moduleID.key).get
+          val pluginArtifact = f.get(artifact.key).get
+          if (attachSources && pluginModule.revision == ijBuild) { // bundled plugin has the same version as platform, add sources
+            val pluginArtifacts = classpath.map(pluginArtifact -> _.data) :+
+              (Artifact(pluginArtifact.name, Artifact.SourceType, "zip", Artifact.SourceClassifier) -> intelliJSourcesArchive)
+            injectIntoUpdateReport(report, pluginArtifacts, pluginModule)
+          } else {
+            val pluginArtifacts = classpath.map(pluginArtifact -> _.data)
+            injectIntoUpdateReport(report, pluginArtifacts, pluginModule)
+          }
+        }.getOrElse(report)
+      }
+    },
 
     packageOutputDir := target.value / "plugin" / intellijPluginName.in(ThisBuild).value.removeSpaces,
     packageArtifactZipFile := target.value / s"${intellijPluginName.in(ThisBuild).value.removeSpaces}-${version.value}.zip",
