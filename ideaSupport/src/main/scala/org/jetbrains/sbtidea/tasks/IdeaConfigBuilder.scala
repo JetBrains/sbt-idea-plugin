@@ -49,7 +49,7 @@ class IdeaConfigBuilder(moduleName: String,
     */
   @tailrec
   private def findIdeaRoot(current: Path): Option[Path] = {
-    val isToolboxPluginsFolder  = pluginsPattern.matcher(current.getFileName.toString).matches() && (current / "Scala" / "lib").exists
+    val isToolboxPluginsFolder  = current.getFileName != null && pluginsPattern.matcher(current.getFileName.toString).matches() && (current / "Scala" / "lib").exists
     val isIJRootFolder          = (current / "lib" / "idea.jar").exists
     if (isIJRootFolder) { // for non-toolbox installations
       Some(current)
