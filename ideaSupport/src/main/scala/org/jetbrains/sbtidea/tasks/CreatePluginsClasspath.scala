@@ -12,7 +12,7 @@ import sbt._
 
 object CreatePluginsClasspath {
 
-  def collectPluginRoots(ideaBaseDir: Path, ideaBuildInfo: BuildInfo, plugins: Seq[IntellijPlugin], log: PluginLogger, moduleNameHint: String = ""): Seq[Path] = {
+  def collectPluginRoots(ideaBaseDir: Path, ideaBuildInfo: BuildInfo, plugins: Seq[IntellijPlugin], log: PluginLogger, moduleNameHint: String = ""): Seq[(PluginDescriptor, Path)] = {
     implicit val context: InstallContext = InstallContext(baseDirectory = ideaBaseDir, downloadDirectory = ideaBaseDir)
     implicit val remoteRepoApi: PluginRepoUtils = new PluginRepoUtils
     implicit val localRegistry: LocalPluginRegistry = new LocalPluginRegistry(ideaBaseDir)
@@ -36,20 +36,35 @@ object CreatePluginsClasspath {
       if (parentIds.nonEmpty)
         log.warn(s"Plugin [$id] is already included by: [${parentIds.mkString(", ")}]${if (moduleNameHint.nonEmpty) s" in project '$moduleNameHint'" else ""}")
     }
-    val roots = allDependencies.collect { case LocalPlugin(_, descriptor, root) => root }.distinct
+    val roots = allDependencies.collect { case LocalPlugin(_, descriptor, root) => descriptor -> root }.distinct
     roots
   }
 
-  def apply(ideaBaseDir: Path, ideaBuildInfo: BuildInfo, plugins: Seq[IntellijPlugin], log: PluginLogger, moduleNameHint: String = ""): Classpath = {
+  def buildPluginClassPaths(ideaBaseDir: Path, ideaBuildInfo: BuildInfo, plugins: Seq[IntellijPlugin], log: PluginLogger, addSources: Boolean, moduleNameHint: String = ""): Seq[(PluginDescriptor, Classpath)] = {
     val roots = collectPluginRoots(ideaBaseDir, ideaBuildInfo, plugins, log, moduleNameHint)
-    val pluginsFinder = roots
-      .foldLeft(PathFinder.empty) { (pathFinder, pluginRoot) =>
+    roots.map { case (descriptor, pluginRoot) =>
+      val pluginsFinder =
         if (pluginRoot.toFile.isDirectory)
-          pathFinder +++ ((pluginRoot.toFile / "lib") * (globFilter("*.jar") -- "asm*.jar"))
+          PathFinder.empty +++ ((pluginRoot.toFile / "lib") * (globFilter("*.jar") -- "asm*.jar"))
         else
-          pathFinder +++ pluginRoot.toFile
-      }
-    pluginsFinder.classpath
+          PathFinder.empty +++ pluginRoot.toFile
+
+      val pluginModule =
+        if (addSources) descriptor.vendor % descriptor.id % descriptor.version withSources()
+        else            descriptor.vendor % descriptor.id % descriptor.version
+
+      val pluginArtifact  = Artifact(s"IJ-PLUGIN[${descriptor.id}]", "IJ-PLUGIN")
+
+      val pluginAttrs: AttributeMap = AttributeMap.empty
+        .put(artifact.key, pluginArtifact)
+        .put(moduleID.key, pluginModule)
+        .put(configuration.key, Compile)
+
+      descriptor -> pluginsFinder.classpath.map(f => Attributed(f.data)(pluginAttrs))
+    }
   }
+
+  def apply(ideaBaseDir: Path, ideaBuildInfo: BuildInfo, plugins: Seq[IntellijPlugin], log: PluginLogger, addSources: Boolean, moduleNameHint: String = ""): Classpath =
+    buildPluginClassPaths(ideaBaseDir, ideaBuildInfo, plugins, log, addSources, moduleNameHint).flatMap(_._2)
 
 }

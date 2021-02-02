@@ -1,5 +1,6 @@
 package org.jetbrains.sbtidea
 
+import org.jetbrains.sbtidea.download.plugin.PluginDescriptor
 import org.jetbrains.sbtidea.runIdea.IntellijVMOptions
 import sbt.Keys._
 import sbt._
@@ -24,6 +25,10 @@ object Keys extends Defns with Init with Utils with Quirks {
   lazy val intellijDownloadSources = settingKey[Boolean](
     "Flag indicating whether IntelliJ Platform sources should be downloaded too")
 
+  lazy val intellijAttachSources = settingKey[Boolean](
+    "Flag indicating whether to add sources to IntelliJ Platform SDK libraries"
+  )
+
   lazy val jbrVersion = settingKey[Option[String]](
     "Version of JetBrains Runtime to download and install"
   )
@@ -46,11 +51,15 @@ object Keys extends Defns with Init with Utils with Quirks {
   lazy val intellijMainJars = taskKey[Classpath](
     "Classpath containing main IntelliJ Platform jars")
 
-  lazy val intellijPluginJars = taskKey[Classpath](
+  lazy val intellijPluginJars = taskKey[Seq[(PluginDescriptor, Classpath)]](
     "Classpath containing jars of internal IntelliJ Platform plugins used in this project")
 
+  /**
+    * Deprecated. Use intellijMainJars or intellijPluginJars
+    */
+  @deprecated("IJ sdk jars and plugin jars are treated separately", "4.9.0")
   lazy val intellijFullJars = taskKey[Classpath](
-    "Complete classpath of IntelliJ Platform's internal and external plugins' jars")
+    "[DEPRECATED]Complete classpath of IntelliJ Platform's internal and external plugins' jars")
 
   lazy val intellijTestConfigDir = settingKey[File](
     "IntelliJ Platform's config directory for tests")
