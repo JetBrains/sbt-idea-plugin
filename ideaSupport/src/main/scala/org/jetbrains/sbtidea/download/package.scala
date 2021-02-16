@@ -10,7 +10,7 @@ import sbt._
 
 package object download {
 
-  case class BuildInfo(buildNumber: String, edition: IntelliJPlatform, jbrVersion: Option[String]) {
+  case class BuildInfo(buildNumber: String, edition: IntelliJPlatform) {
     override def toString: String = s"BuildInfo($edition-$buildNumber)"
   }
 

@@ -1,15 +1,15 @@
 package org.jetbrains.sbtidea.download
 
 import java.nio.file.Path
-
 import org.jetbrains.sbtidea.download.api._
-import org.jetbrains.sbtidea.download.idea.{IdeaDependency, IdeaDist}
+import org.jetbrains.sbtidea.download.idea.IdeaDependency
 import org.jetbrains.sbtidea.download.plugin.{LocalPluginRegistry, PluginDependency, PluginRepoUtils}
 import org.jetbrains.sbtidea.Keys.IntellijPlugin
 import org.jetbrains.sbtidea.{PluginLogger => log}
+import org.jetbrains.sbtidea.Keys.JbrInfo
 import org.jetbrains.sbtidea.download.jbr.JbrDependency
 
-class CommunityUpdater(baseDirectory: Path, ideaBuildInfo: BuildInfo, plugins: Seq[IntellijPlugin], withSources: Boolean = true) {
+class CommunityUpdater(baseDirectory: Path, ideaBuildInfo: BuildInfo, jbrInfo: JbrInfo, plugins: Seq[IntellijPlugin], withSources: Boolean = true) {
 
   implicit protected val context: InstallContext =
     InstallContext(baseDirectory = baseDirectory, downloadDirectory = baseDirectory.getParent)
@@ -23,8 +23,8 @@ class CommunityUpdater(baseDirectory: Path, ideaBuildInfo: BuildInfo, plugins: S
   protected val ideaDependency: IdeaDependency = IdeaDependency(ideaBuildInfo)
 
   protected def dependencies: Seq[UnresolvedArtifact] =
-    ideaDependency                                                      +:
-      JbrDependency(baseDirectory, ideaBuildInfo, Seq(ideaDependency))  +:
+    ideaDependency                                                               +:
+      JbrDependency(baseDirectory, ideaBuildInfo, jbrInfo, Seq(ideaDependency))  +:
       plugins.map(pl => PluginDependency(pl, ideaBuildInfo, Seq(ideaDependency)))
 
   def update(): Unit = topoSort(dependencies).foreach(update)

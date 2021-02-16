@@ -56,8 +56,7 @@ trait Utils { this: Keys.type =>
           intellijBaseDirectory.in(ThisBuild).value.toPath,
           BuildInfo(
             intellijBuild.in(ThisBuild).value,
-            intellijPlatform.in(ThisBuild).value,
-            jbrVersion.in(ThisBuild).value
+            intellijPlatform.in(ThisBuild).value
           ),
           allPlugins,
           new SbtPluginLogger(streams.value),

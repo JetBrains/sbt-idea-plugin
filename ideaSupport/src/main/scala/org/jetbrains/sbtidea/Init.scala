@@ -30,7 +30,8 @@ trait Init { this: Keys.type =>
     intellijBuild             := "LATEST-EAP-SNAPSHOT",
     intellijPlatform          := IntelliJPlatform.IdeaCommunity,
     intellijDownloadSources   := true,
-    jbrVersion                := Some(JbrDependency.VERSION_AUTO),
+    jbrVersion                := Some("__auto__"),
+    jbrInfo                   := AutoJbr(),
     intellijPluginDirectory   := homePrefix / s".${intellijPluginName.value.removeSpaces}Plugin${intellijPlatform.value.edition}",
     intellijBaseDirectory     := intellijDownloadDirectory.value / intellijBuild.value,
     intellijDownloadDirectory := intellijPluginDirectory.value / "sdk",
@@ -56,9 +57,9 @@ trait Init { this: Keys.type =>
         intellijBaseDirectory.value.toPath,
         BuildInfo(
           intellijBuild.value,
-          intellijPlatform.value,
-          jbrVersion.value
+          intellijPlatform.value
         ),
+        jbrInfo.value,
         intellijPlugins.?.all(ScopeFilter(inAnyProject)).value.flatten.flatten,
         intellijDownloadSources.value
       ).update()
@@ -80,8 +81,7 @@ trait Init { this: Keys.type =>
             intellijBaseDirectory.value.toPath,
             BuildInfo(
               intellijBuild.value,
-              intellijPlatform.value,
-              jbrVersion.value
+              intellijPlatform.value
             ),
             useBundled = !parsed.contains("--nobundled"),
             useRemote  = !parsed.contains("--noremote")
@@ -115,8 +115,7 @@ trait Init { this: Keys.type =>
         intellijBaseDirectory.in(ThisBuild).value.toPath,
         BuildInfo(
           intellijBuild.in(ThisBuild).value,
-          intellijPlatform.in(ThisBuild).value,
-          jbrVersion.in(ThisBuild).value
+          intellijPlatform.in(ThisBuild).value
         ),
         intellijPlugins.value,
         new SbtPluginLogger(streams.value),

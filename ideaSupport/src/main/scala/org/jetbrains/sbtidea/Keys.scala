@@ -29,8 +29,13 @@ object Keys extends Defns with Init with Utils with Quirks {
     "Flag indicating whether to add sources to IntelliJ Platform SDK libraries"
   )
 
+  @deprecated("use jbrInfo instead", "3.9.1")
   lazy val jbrVersion = settingKey[Option[String]](
-    "Version of JetBrains Runtime to download and install"
+    "DEPRECATED: use jbrInfo instead"
+  )
+
+  lazy val jbrInfo = settingKey[JbrInfo](
+    "Version and variant of JetBrains Runtime to download and install"
   )
 
   lazy val searchPluginId = inputKey[Map[String, (String, Boolean)]](
