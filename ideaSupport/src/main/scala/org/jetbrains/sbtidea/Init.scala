@@ -269,7 +269,6 @@ trait Init { this: Keys.type =>
     aggregate.in(packageArtifact) := false,
     aggregate.in(updateIntellij) := false,
     aggregate.in(Test) := false,
-    unmanagedJars in Compile += file(System.getProperty("java.home")).getParentFile / "lib" / "tools.jar",
     // Deprecated task aliases
     packagePlugin := {
       streams.value.log.warn("this task is deprecated, please use packageArtifact")
