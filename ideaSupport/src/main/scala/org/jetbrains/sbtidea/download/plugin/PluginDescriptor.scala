@@ -51,9 +51,9 @@ object PluginDescriptor {
     val id      = (xml \\ "id").text
     val version = (xml \\ "version").text
     val name    = (xml \\ "name").text
-    val vendor    = (xml \\ "vendor").text
-    val since   = (xml \\ "idea-version").headOption.map(_.attributes("since-build").text).getOrElse("")
-    val until   = (xml \\ "idea-version").headOption.map(_.attributes("until-build").text).getOrElse("")
+    val vendor  = (xml \\ "vendor").text
+    val since   = (xml \\ "idea-version").headOption.flatMap(tag => Option(tag.attributes("since-build")).map(_.text)).getOrElse("")
+    val until   = (xml \\ "idea-version").headOption.flatMap(tag => Option(tag.attributes("until-build")).map(_.text)).getOrElse("")
     val dependencies = (xml \\ "depends").map { node =>
       val id        = node.text.replace(OPTIONAL_KEY, "")
       val optional  = node.text.contains(OPTIONAL_KEY) || node.attributes.asAttrMap.get(OPTIONAL_ATTR).exists(_ == "true")
