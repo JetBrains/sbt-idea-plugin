@@ -21,7 +21,7 @@ class FileDownloader(private val baseDirectory: Path) {
   @throws(classOf[DownloadException])
   def download(url: URL, optional: Boolean = false): Path = try {
     val partFile = downloadNative(url) { case (progressInfo, to) =>
-        val text = s"${progressInfo.renderAll} -> $to\r"
+        val text = s"\r${progressInfo.renderAll} -> $to"
         if (!progressInfo.done) print(text) else println(text)
     }
     val targetFile = partFile.getParent.resolve(partFile.getFileName.toString.replace(".part", ""))
