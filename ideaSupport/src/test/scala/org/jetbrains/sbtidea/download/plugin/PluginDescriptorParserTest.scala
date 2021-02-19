@@ -33,4 +33,9 @@ class PluginDescriptorParserTest extends FunSuite with Matchers with IdeaMock wi
     load(descriptor.toXMLStr) shouldBe descriptor
   }
 
+  test("parses plugin absent until-build") {
+    val descriptor = pluginDescriptor.copy(untilBuild = "")
+    load(descriptor.toXMLStr) shouldBe descriptor
+  }
+
 }
