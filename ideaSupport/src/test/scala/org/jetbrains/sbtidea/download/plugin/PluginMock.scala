@@ -25,7 +25,7 @@ trait PluginMock extends TmpDirUtils {
       Files.createDirectory(fs.getPath("/", "META-INF"))
       Files.write(
         fs.getPath("/", "META-INF", "plugin.xml"),
-        createPluginXmlContent(metaData).getBytes
+        metaData.toXMLStr.getBytes
       )
     }
     targetPath
@@ -49,22 +49,4 @@ trait PluginMock extends TmpDirUtils {
     }
     targetPath
   }
-
-
-  protected def createPluginXmlContent(metaData: PluginDescriptor): String = {
-    val depStr = metaData.dependsOn.map {
-      case Dependency(id, true)  => s"""<depends optional="true">$id</depends>"""
-      case Dependency(id, false) => s"<depends>$id</depends>"
-    }
-    s"""
-       |<idea-plugin>
-       |  <name>${metaData.name}</name>
-       |  <id>${metaData.id}</id>
-       |  <version>${metaData.version}</version>
-       |  <idea-version since-build="${metaData.sinceBuild}" until-build="${metaData.untilBuild}"/>
-       |  ${depStr.mkString("\n")}
-       |</idea-plugin>
-       |""".stripMargin
-  }
-
 }

@@ -15,19 +15,19 @@ class JbIdeaRepoArtifactResolverTest extends FunSuite with Matchers with IdeaMoc
 
   test("latest eap is resolved") {
     val resolver = createResolver
-    val result = resolver.resolve(BuildInfo("LATEST-EAP-SNAPSHOT", IntelliJPlatform.IdeaCommunity, None))
+    val result = resolver.resolve(BuildInfo("LATEST-EAP-SNAPSHOT", IntelliJPlatform.IdeaCommunity))
     result should not be empty
   }
 
   test("latest 192 release is resolved") {
     val resolver = createResolver
-    val result = resolver.resolve(BuildInfo("192.6603.28", IntelliJPlatform.IdeaCommunity, None))
+    val result = resolver.resolve(BuildInfo("192.6603.28", IntelliJPlatform.IdeaCommunity))
     result should not be empty
   }
 
   test("latest 191 release is resolved") {
     val resolver = createResolver
-    val result = resolver.resolve(BuildInfo("191.7479.19", IntelliJPlatform.IdeaCommunity, None))
+    val result = resolver.resolve(BuildInfo("191.7479.19", IntelliJPlatform.IdeaCommunity))
     result should not be empty
   }
 

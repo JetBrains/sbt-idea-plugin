@@ -1,21 +1,20 @@
 package org.jetbrains.sbtidea.download.plugin
 
-import java.nio.file.Files
-
-import org.jetbrains.sbtidea.download.plugin.LocalPluginRegistry.MissingPluginRootException
-import org.jetbrains.sbtidea.tasks.CreatePluginsClasspath
-import org.jetbrains.sbtidea.pathToPathExt
 import org.jetbrains.sbtidea.Keys._
 import org.jetbrains.sbtidea.download.idea.IdeaMock
+import org.jetbrains.sbtidea.pathToPathExt
+import org.jetbrains.sbtidea.tasks.CreatePluginsClasspath
 import sbt._
+
+import java.nio.file.Files
 
 class PluginClassPathTest extends IntellijPluginInstallerTestBase with IdeaMock {
 
   test("plugin classpath contains all necessary jars") {
     val installer = createInstaller()
-    val pluginZipMetadata = PluginDescriptor("org.intellij.scala", "Scala", "2019.3.1", "193.0", "194.0")
+    val pluginZipMetadata = PluginDescriptor("org.intellij.scala", "JetBrains", "Scala", "2019.3.1", "193.0", "194.0")
     val mockPluginZipDist = createPluginZipMock(pluginZipMetadata)
-    val pluginJarMetadata = PluginDescriptor("org.jetbrains.plugins.hocon", "HOCON", "0.0.1", "193.0", "194.0")
+    val pluginJarMetadata = PluginDescriptor("org.jetbrains.plugins.hocon", "JetBrains", "HOCON", "0.0.1", "193.0", "194.0")
     val mockPluginJarDist = createPluginJarMock(pluginJarMetadata)
     installer.installIdeaPlugin(pluginZipMetadata.toPluginId, mockPluginZipDist)
     installer.installIdeaPlugin(pluginJarMetadata.toPluginId, mockPluginJarDist)
@@ -27,7 +26,8 @@ class PluginClassPathTest extends IntellijPluginInstallerTestBase with IdeaMock 
             "org.jetbrains.plugins.yaml".toPlugin,
             pluginJarMetadata.toPluginId,
             pluginZipMetadata.toPluginId),
-        log)
+        log,
+        addSources = true)
 
     classpath.map(_.data.getName) should contain allElementsOf Seq("HOCON.jar", "yaml.jar", "Scala.jar", "properties.jar")
   }
@@ -44,7 +44,8 @@ class PluginClassPathTest extends IntellijPluginInstallerTestBase with IdeaMock 
         IDEA_BUILDINFO,
         Seq("com.intellij.properties".toPlugin,
             "org.jetbrains.plugins.yaml".toPlugin),
-        log)
+        log,
+        addSources = true)
 
     classpath.map(_.data.getName) should not contain (wrongJar)
   }

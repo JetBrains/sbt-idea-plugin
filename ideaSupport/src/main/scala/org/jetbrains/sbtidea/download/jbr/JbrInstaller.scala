@@ -40,7 +40,7 @@ class JbrInstaller extends Installer[JbrArtifact] {
         })
     } catch {
       case e: Exception =>
-        log.error(s"Failed to check locally installed JBR version(assuming true): ${e.getMessage}")
+        log.warn(s"Failed to check locally installed JBR version(assuming true): ${e.getMessage}")
         true
     }
   }

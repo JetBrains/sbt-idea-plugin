@@ -15,66 +15,56 @@ final class IntellijPluginInstallerTest extends IntellijPluginInstallerTestBase 
   }
 
   test("Plugin installer installs zip artifact") {
-    val pluginMetadata = PluginDescriptor("org.intellij.scala", "Scala", "2019.3.1", "193.0", "194.0")
+    val pluginMetadata = PluginDescriptor("org.intellij.scala", "JetBrains", "Scala", "2019.3.1", "193.0", "194.0")
     val mockPluginDist = createPluginZipMock(pluginMetadata)
     val installer = createInstaller
     val pluginRoot = installer.installIdeaPlugin(pluginMetadata.toPluginId, mockPluginDist)
     pluginRoot.toFile.exists() shouldBe true
     LocalPluginRegistry.extractInstalledPluginDescriptor(pluginRoot) shouldBe 'right
-    NioUtils.delete(pluginRoot)
-    NioUtils.delete(ideaRoot / "plugins.idx")
   }
 
   test("Plugin installer installs jar artifact") {
-    val pluginMetadata = PluginDescriptor("org.intellij.scala", "Scala", "2019.3.1", "193.0", "194.0")
+    val pluginMetadata = PluginDescriptor("org.intellij.scala", "JetBrains", "Scala", "2019.3.1", "193.0", "194.0")
     val mockPluginDist = createPluginJarMock(pluginMetadata)
     val installer = createInstaller
     val pluginRoot = installer.installIdeaPlugin(pluginMetadata.toPluginId, mockPluginDist)
     pluginRoot.toFile.exists() shouldBe true
     LocalPluginRegistry.extractInstalledPluginDescriptor(pluginRoot) shouldBe 'right
-    NioUtils.delete(pluginRoot)
-    NioUtils.delete(ideaRoot / "plugins.idx")
   }
 
   test("Plugin installer checks IDEA compatibility") {
-    val pluginMetadata = PluginDescriptor("org.intellij.scala", "Scala", "2019.2.423", "193.123", "193.4")
+    val pluginMetadata = PluginDescriptor("org.intellij.scala", "JetBrains", "Scala", "2019.2.423", "193.123", "193.4")
     val mockPluginDist = createPluginJarMock(pluginMetadata)
     val installer = createInstaller
-    val installedPluginRoot = installer.installIdeaPlugin(pluginMetadata.toPluginId, mockPluginDist)
+    installer.installIdeaPlugin(pluginMetadata.toPluginId, mockPluginDist)
     val messages = captureLog(installer.isInstalled(pluginMetadata.toPluginId) shouldBe false)
     messages should contain (
-      "Plugin org.intellij.scala is incompatible with current ideaVersion(192.5728.12): PluginDescriptor(org.intellij.scala,Scala,2019.2.423,193.123,193.4,List())"
+      "Plugin org.intellij.scala is incompatible with current ideaVersion(211.5538.2): PluginDescriptor(org.intellij.scala,JetBrains,Scala,2019.2.423,193.123,193.4,List())"
     )
-    NioUtils.delete(installedPluginRoot)
-    NioUtils.delete(ideaRoot / "plugins.idx")
   }
 
   test("Plugin installer checks IDEA compatibility using wildcards") {
-    val pluginMetadata = PluginDescriptor("org.intellij.scala", "Scala", "2019.2.423", "192.123", "193.*")
+    val pluginMetadata = PluginDescriptor("org.intellij.scala", "JetBrains", "Scala", "2019.2.423", "211.0", "211.*")
     val mockPluginDist = createPluginJarMock(pluginMetadata)
     val installer = createInstaller
-    val installedPluginRoot = installer.installIdeaPlugin(pluginMetadata.toPluginId, mockPluginDist)
+    installer.installIdeaPlugin(pluginMetadata.toPluginId, mockPluginDist)
     val messages = captureLog(installer.isInstalled(pluginMetadata.toPluginId) shouldBe true)
     messages should not contain (
-      "Plugin org.intellij.scala is incompatible with current ideaVersion(192.5728.12): PluginDescriptor(org.intellij.scala,Scala,2019.2.423,193.123,193.*,List())"
+      "Plugin org.intellij.scala is incompatible with current ideaVersion(211.5538.2): PluginDescriptor(org.intellij.scala,JetBrains,Scala,2019.2.423,193.123,193.*,List())"
     )
-    NioUtils.delete(installedPluginRoot)
-    NioUtils.delete(ideaRoot / "plugins.idx")
   }
 
 
   test("Plugin installer checks for newer plugin version") {
-    val pluginMetadata = PluginDescriptor("org.intellij.scala", "Scala", "2019.2.1", "192.123", "193.4")
+    val pluginMetadata = PluginDescriptor("org.intellij.scala", "JetBrains", "Scala", "2019.2.1", "211.0", "211.*")
     val mockPluginDist = createPluginJarMock(pluginMetadata)
     val installer = createInstaller
     val pluginId = pluginMetadata.toPluginId.copy(version = None)
-    val installedPluginRoot = installer.installIdeaPlugin(pluginId, mockPluginDist)
+    installer.installIdeaPlugin(pluginId, mockPluginDist)
 
     val messages = captureLog(installer.isInstalled(pluginId) shouldBe false)
 
     messages.exists(_.startsWith("Newer version of plugin org.intellij.scala is available:")) shouldBe true
-    NioUtils.delete(installedPluginRoot)
-    NioUtils.delete(ideaRoot / "plugins.idx")
   }
 
 }

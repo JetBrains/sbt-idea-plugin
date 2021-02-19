@@ -2,19 +2,18 @@ package org.jetbrains.sbtidea.download.plugin
 
 import java.io.OutputStreamWriter
 import java.nio.file.{FileSystems, Files}
-
 import org.jetbrains.sbtidea.CapturingLogger.captureLog
 import org.jetbrains.sbtidea.Keys.String2Plugin
 import org.jetbrains.sbtidea.download.NioUtils
 import org.jetbrains.sbtidea.download.idea.IdeaMock
 import org.jetbrains.sbtidea.packaging.artifact
 import org.jetbrains.sbtidea.{ConsoleLogger, packaging, pathToPathExt}
-import org.scalatest.{BeforeAndAfter, FunSuite, Matchers}
+import org.scalatest.{BeforeAndAfter, FunSuite, Inspectors, Matchers}
 import sbt._
 
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 
-final class LocalPluginRegistryTest extends FunSuite with Matchers with IdeaMock with PluginMock with ConsoleLogger with BeforeAndAfter {
+final class LocalPluginRegistryTest extends FunSuite with Matchers with Inspectors with IdeaMock with PluginMock with ConsoleLogger with BeforeAndAfter {
 
   private val ideaRoot = installIdeaMock
 
@@ -120,21 +119,23 @@ final class LocalPluginRegistryTest extends FunSuite with Matchers with IdeaMock
     val oldRegistry = LocalPluginRegistry.instanceFor(ideaRoot)
     val newPlugin = "org.jetbrains.plugins.hocon".toPlugin
     val newPluginRoot = pluginsFolder / "hocon"
+
     usingFakePlugin("hocon", hoconXML) {
       oldRegistry.markPluginInstalled(newPlugin, newPluginRoot)
-
-      artifact.using(new OutputStreamWriter(Files.newOutputStream(pluginsIndex))) { writer =>
-        writer.write(0xff)
-      }
-
-      val newRegistry = new LocalPluginRegistry(ideaRoot)
-
-      val messages = captureLog {
-        newRegistry.isPluginInstalled(newPlugin) shouldBe false
-      }
-      messages should contain("Failed to load plugin index from disk: java.io.EOFException")
-      pluginsIndex.toFile.exists() shouldBe false
     }
+    NioUtils.delete(newPluginRoot) // so that registry won't reindex
+
+    artifact.using(new OutputStreamWriter(Files.newOutputStream(pluginsIndex))) { writer =>
+      writer.write(0xff)
+    }
+
+    val newRegistry = new LocalPluginRegistry(ideaRoot)
+
+    val messages = captureLog {
+      newRegistry.isPluginInstalled(newPlugin) shouldBe false // deleted plugin is not re-indexed
+      forAll (bundledPlugins) { newRegistry.isPluginInstalled(_) shouldBe true }
+    }
+    messages should contain("Failed to load plugin index from disk: java.io.EOFException")
   }
 
   test("irrelevant files and folders are ignored when building index") {

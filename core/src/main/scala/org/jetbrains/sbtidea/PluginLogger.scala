@@ -17,15 +17,19 @@ object PluginLogger extends PluginLogger {
     override def warn(msg: => String): Unit = buffer += lWARN -> msg
     override def error(msg: => String): Unit = buffer += lERR -> msg
     override def fatal(msg: => String): Unit = buffer += lFATAL -> msg
-    def flush(actualLogger: PluginLogger): Unit = buffer.foreach {
-      case (level, msg) if level == lINFO => actualLogger.info(msg)
-      case (level, msg) if level == lWARN => actualLogger.warn(msg)
-      case (level, msg) if level == lERR  => actualLogger.error(msg)
-      case (level, msg) if level == lFATAL  => actualLogger.fatal(msg)
+    def flush(actualLogger: PluginLogger): Unit = {
+      buffer.foreach {
+        case (level, msg) if level == lINFO => actualLogger.info(msg)
+        case (level, msg) if level == lWARN => actualLogger.warn(msg)
+        case (level, msg) if level == lERR  => actualLogger.error(msg)
+        case (level, msg) if level == lFATAL  => actualLogger.fatal(msg)
+      }
+      buffer.clear()
     }
 
   }
   private var instance: PluginLogger = new BufferLogger
+
   def bind(actualLogger: PluginLogger): PluginLogger = {
     val savedInstance = instance
     instance match {

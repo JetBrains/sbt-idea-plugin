@@ -11,12 +11,13 @@ import org.jetbrains.sbtidea.Keys._
 import org.jetbrains.sbtidea.download.jbr.JbrDependency
 
 trait IdeaMock extends TmpDirUtils {
-  protected val IDEA_VERSION      = "192.5728.12"
+  protected val IDEA_VERSION      = "211.5538.2"
   protected val IDEA_EDITION      = "IU"
   protected val IDEA_DIST         = s"idea$IDEA_EDITION-$IDEA_VERSION.zip"
   protected val IDEA_DIST_PATH    = s"/org/jetbrains/sbtidea/download/$IDEA_DIST"
   protected val IDEA_BUILDINFO: BuildInfo =
-    BuildInfo(IDEA_VERSION, Keys.IntelliJPlatform.IdeaUltimate, Some(JbrDependency.VERSION_AUTO))
+    BuildInfo(IDEA_VERSION, Keys.IntelliJPlatform.IdeaUltimate)
+  protected val JBR_INFO: JbrInfo         = AutoJbr()
   protected val IDEA_DEP: IdeaDependency  = IdeaDependency(IDEA_BUILDINFO)
   protected val IDEA_ART: IdeaDist        = IdeaDistImpl(IDEA_DEP, () => new URL("file:"))
 

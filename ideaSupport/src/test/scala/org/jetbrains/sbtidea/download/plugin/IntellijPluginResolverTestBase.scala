@@ -12,13 +12,13 @@ import scala.language.implicitConversions
 
 abstract class IntellijPluginResolverTestBase extends IntellijPluginInstallerTestBase with Inside {
 
-  protected val pluginA: PluginDescriptor = PluginDescriptor("org.A", "A - bundled", "0", "", "")
-  protected val pluginB: PluginDescriptor = PluginDescriptor("org.B", "B - remote", "0", "", "")
-  protected val pluginC: PluginDescriptor = PluginDescriptor("org.C", "C - remote", "0", "", "",
+  protected val pluginA: PluginDescriptor = PluginDescriptor("org.A", "VENDOR", "A - bundled", "0", "", "")
+  protected val pluginB: PluginDescriptor = PluginDescriptor("org.B", "VENDOR", "B - remote", "0", "", "")
+  protected val pluginC: PluginDescriptor = PluginDescriptor("org.C", "VENDOR", "C - remote", "0", "", "",
     Seq(Dependency("org.A", optional = true), Dependency("org.B", optional = false)))
-  protected val pluginD: PluginDescriptor = PluginDescriptor("org.D", "D - remote cyclic", "0", "", "",
+  protected val pluginD: PluginDescriptor = PluginDescriptor("org.D", "VENDOR", "D - remote cyclic", "0", "", "",
     Seq(Dependency("org.E", optional = false), Dependency("org.A", optional = true)))
-  protected val pluginE: PluginDescriptor = PluginDescriptor("org.E", "C - remote cyclic", "0", "", "",
+  protected val pluginE: PluginDescriptor = PluginDescriptor("org.E", "VENDOR", "C - remote cyclic", "0", "", "",
     Seq(Dependency("org.D", optional = false), Dependency("org.C", optional = true)))
 
   protected val descriptorMap: Map[String, PluginDescriptor] =
@@ -29,7 +29,7 @@ abstract class IntellijPluginResolverTestBase extends IntellijPluginInstallerTes
         IDEA_BUILDINFO,
         descriptor.dependsOn.map(p => plugin2PluginDep(p.id.toPlugin)))
 
-  override protected implicit val localRegistry: LocalPluginRegistryApi = new LocalPluginRegistryApi {
+  override protected implicit def localRegistry: LocalPluginRegistryApi = new LocalPluginRegistryApi {
     override def getPluginDescriptor(ideaPlugin: Keys.IntellijPlugin): Either[String, PluginDescriptor] = ideaPlugin match {
       case IntellijPlugin.Url(_) =>
         throw new IllegalArgumentException("url plugin not supported")
@@ -52,7 +52,7 @@ abstract class IntellijPluginResolverTestBase extends IntellijPluginInstallerTes
       Paths.get("INVALID")
   }
 
-  override protected implicit val repoAPI: PluginRepoApi = new PluginRepoApi {
+  override protected implicit def repoAPI: PluginRepoApi = new PluginRepoApi {
     override def getRemotePluginXmlDescriptor(idea: download.BuildInfo, pluginId: String, channel: Option[String]): Either[Throwable, PluginDescriptor] =
       descriptorMap.get(pluginId).filter(_.name.contains("remote")).toRight(null)
     override def getPluginDownloadURL(idea: download.BuildInfo, pluginInfo: Keys.IntellijPlugin.Id): URL =

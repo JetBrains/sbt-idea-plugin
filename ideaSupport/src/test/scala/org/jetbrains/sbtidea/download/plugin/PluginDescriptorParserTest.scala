@@ -7,27 +7,29 @@ import PluginDescriptor.{Dependency, load}
 
 class PluginDescriptorParserTest extends FunSuite with Matchers with IdeaMock with PluginMock with ConsoleLogger {
 
+  private val pluginDescriptor = PluginDescriptor("id", "vendor", "name", "1.0", "111", "222",
+    Seq(Dependency("foo", optional = true), Dependency("bar", optional = true)))
+
   test("parses simple plugin") {
-    val descriptor = PluginDescriptor("id", "name", "1.0", "111", "222")
+    val descriptor = pluginDescriptor.copy(dependsOn = Nil)
     load(descriptor.toXMLStr) shouldBe descriptor
   }
 
   test("parses plugin with optional dependencies") {
-    val descriptor = PluginDescriptor("id", "name", "1.0", "111", "222",
-      Seq(Dependency("foo", optional = true), Dependency("bar", optional = true)))
+    val descriptor = pluginDescriptor
     load(descriptor.toXMLStr) shouldBe descriptor
   }
 
   test("parses plugin with required dependencies") {
-    val descriptor = PluginDescriptor("id", "name", "1.0", "111", "222",
-      Seq(Dependency("foo", optional = false), Dependency("bar", optional = false)))
+    val descriptor = pluginDescriptor
+      .copy(dependsOn = Seq(Dependency("foo", optional = false), Dependency("bar", optional = false)))
     load(descriptor.toXMLStr) shouldBe descriptor
   }
 
 
   test("parses plugin with mixed dependencies") {
-    val descriptor = PluginDescriptor("id", "name", "1.0", "111", "222",
-      Seq(Dependency("foo", optional = false), Dependency("bar", optional = true)))
+    val descriptor = pluginDescriptor
+      .copy(dependsOn = Seq(Dependency("foo", optional = false), Dependency("bar", optional = true)))
     load(descriptor.toXMLStr) shouldBe descriptor
   }
 

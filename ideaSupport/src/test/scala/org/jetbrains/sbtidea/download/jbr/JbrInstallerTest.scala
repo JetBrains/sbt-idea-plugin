@@ -24,7 +24,7 @@ class JbrInstallerTest extends FunSuite with Matchers with IdeaMock with TmpDirU
   test("detect jbr is not installed") {
     val ideaRoot = installIdeaMock
     implicit val ctx: InstallContext = InstallContext(ideaRoot, ideaRoot / "downloads")
-    val jbrArtifact = JbrArtifact(JbrDependency.apply(ideaRoot,IDEA_BUILDINFO), new URL("file:"))
+    val jbrArtifact = JbrArtifact(JbrDependency.apply(ideaRoot,IDEA_BUILDINFO, JBR_INFO), new URL("file:"))
     val installer = new JbrInstaller
     installer.isInstalled(jbrArtifact) shouldBe false
   }
@@ -33,7 +33,7 @@ class JbrInstallerTest extends FunSuite with Matchers with IdeaMock with TmpDirU
     val ideaRoot = installIdeaMock
     Files.createDirectory(ideaRoot / "jbr")
     implicit val ctx: InstallContext = InstallContext(ideaRoot, ideaRoot / "downloads")
-    val jbrArtifact = JbrArtifact(JbrDependency.apply(ideaRoot,IDEA_BUILDINFO), new URL("file:"))
+    val jbrArtifact = JbrArtifact(JbrDependency.apply(ideaRoot,IDEA_BUILDINFO, JBR_INFO), new URL("file:"))
     val installer = new JbrInstaller
     installer.isInstalled(jbrArtifact) shouldBe true
   }
