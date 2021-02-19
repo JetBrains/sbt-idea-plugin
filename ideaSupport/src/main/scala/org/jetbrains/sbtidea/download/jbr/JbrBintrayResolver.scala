@@ -17,7 +17,7 @@ class JbrBintrayResolver extends Resolver[JbrDependency] {
     val maybeArtifact =
       for {
         (major, minor)  <- getJbrVersion(dep)
-        kind            <- getJbrKind(dep)
+        kind            <- getJbrKind(dep, minor)
         url             =  buildJbrDlUrl(major, minor, kind, dep)
         resolvedJbrInfo = JBR(major, minor, kind, dep.jbrInfo.platform, dep.jbrInfo.arch)
       } yield JbrArtifact(dep.copy(jbrInfo = resolvedJbrInfo), url)
@@ -40,7 +40,7 @@ class JbrBintrayResolver extends Resolver[JbrDependency] {
       Some(major -> minor)
   }
 
-  private[jbr] def getJbrKind(dep: JbrDependency): Option[String] = dep.jbrInfo match {
+  private[jbr] def getJbrKind(dep: JbrDependency, minorVersion: String): Option[String] = dep.jbrInfo match {
     case JBR(_, _, kind, _, _) =>
       Some(kind)
     case AutoJbrWithKind(kind) =>
@@ -48,8 +48,8 @@ class JbrBintrayResolver extends Resolver[JbrDependency] {
     case AutoJbrWithPlatform(_, _, kind) =>
       Some(kind)
     case AutoJbr() =>
-      if (compareIdeaVersions(dep.buildInfo.buildNumber, "211.0") >= 0)
-        Some(JDR_DCEVM_KIND)
+      if (compareIdeaVersions(minorVersion, "1145.77") >= 0)
+        Some(JBR_DCEVM_KIND)
       else
         Some(JBR_DEFAULT_KIND)
   }
@@ -66,8 +66,9 @@ class JbrBintrayResolver extends Resolver[JbrDependency] {
 object JbrBintrayResolver {
   val BASE_URL        = "https://cache-redirector.jetbrains.com/jetbrains.bintray.com/intellij-jbr"
 
-  val JBR_DEFAULT_KIND  = "jbr"
-  val JDR_DCEVM_KIND    = "jbr_dcevm"
+  val JBR_DEFAULT_KIND      = "jbr"
+  val JBR_DCEVM_KIND        = "jbr_dcevm"
+  val JBR_JCEF_KIND         = "jbr_jcef"
 
   def splitVersion(version: String): Option[(String, String)] = {
     val lastIndexOfB = version.lastIndexOf('b')

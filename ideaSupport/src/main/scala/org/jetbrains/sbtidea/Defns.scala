@@ -140,7 +140,7 @@ trait Defns { this: Keys.type =>
     def kind: String  = throw new IllegalStateException("Static evaluation of JBR kind is unsupported in AutoJbr")
   }
   case class AutoJbr() extends JbrInfo with AutoJbrPlatform with DynamicJbrInfo
-  case class AutoJbrWithPlatform(major: String, minor: String, kind: String = JbrBintrayResolver.JDR_DCEVM_KIND) extends JbrInfo with AutoJbrPlatform
+  case class AutoJbrWithPlatform(major: String, minor: String, kind: String = JbrBintrayResolver.JBR_DCEVM_KIND) extends JbrInfo with AutoJbrPlatform
   case class AutoJbrWithKind(override val kind: String) extends JbrInfo with AutoJbrPlatform with DynamicJbrInfo
 
 
