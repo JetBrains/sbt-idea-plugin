@@ -293,6 +293,7 @@ trait Init { this: Keys.type =>
     envVars           in Test += "NO_FS_ROOTS_ACCESS_CHECK" -> "yes",
 
     testOnly.in(Test) := { testOnly.in(Test).dependsOn(packageArtifact).evaluated },
+    test.in(Test)     := { test.in(Test).dependsOn(packageArtifact).value },
 
     fullClasspath.in(Test) := {
       val oldClasspath = fullClasspath.in(Test).value
