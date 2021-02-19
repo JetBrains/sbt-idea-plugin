@@ -3,6 +3,8 @@ val scala212 = "2.12.9"
 
 ThisBuild / scalaVersion := scala212
 
+Global / concurrentRestrictions := Seq(Tags.limit(Tags.Test, 1))
+
 lazy val commonSettings: Seq[Def.Setting[_]] = Seq(
   organization          := "org.jetbrains",
   licenses              += ("MIT", url("https://opensource.org/licenses/MIT")),
