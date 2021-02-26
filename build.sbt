@@ -1,3 +1,5 @@
+import xerial.sbt.Sonatype.GitHubHosting
+
 val scala210 = "2.10.7"
 val scala212 = "2.12.9"
 
@@ -23,9 +25,10 @@ lazy val commonSettings: Seq[Def.Setting[_]] = Seq(
   scriptedLaunchOpts := { scriptedLaunchOpts.value ++
     Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
   },
-  publishMavenStyle     := false,
-  bintrayRepository     := "sbt-plugins",
-  bintrayOrganization   := Some("jetbrains"),
+  sonatypeProfileName := "org.jetbrains",
+  homepage := Some(url("https://github.com/JetBrains/sbt-idea-plugin")),
+  sonatypeProjectHosting := Some(GitHubHosting("JetBrains", "sbt-idea-plugin", "scala-developers@jetbrains.com")),
+  licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0")),
   sources in (Compile,doc) := Seq.empty,
   publishArtifact in (Compile, packageDoc) := false,
   libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.8" % "test"
