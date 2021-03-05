@@ -22,9 +22,6 @@ lazy val commonSettings: Seq[Def.Setting[_]] = Seq(
       case "2.12" => (ThisBuild / sbtVersion).value
     }
   },
-  scriptedLaunchOpts := { scriptedLaunchOpts.value ++
-    Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
-  },
   sonatypeProfileName := "org.jetbrains",
   homepage := Some(url("https://github.com/JetBrains/sbt-idea-plugin")),
   sonatypeProjectHosting := Some(GitHubHosting("JetBrains", "sbt-idea-plugin", "scala-developers@jetbrains.com")),
@@ -72,5 +69,6 @@ lazy val ideaSupport = (project in file(".") / "ideaSupport")
   )
 
 lazy val sbtIdeaPlugin = (project in file("."))
+  .settings(commonSettings)
   .settings(publish := {}, publishLocal := {})
   .aggregate(core, packaging, ideaSupport, visualizer)
