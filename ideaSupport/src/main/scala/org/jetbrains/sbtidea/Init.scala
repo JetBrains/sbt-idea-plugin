@@ -136,6 +136,7 @@ trait Init { this: Keys.type =>
 
     update := {
       import org.jetbrains.sbtidea.ApiAdapter._
+      val targetConfiguration     = Configurations.Compile
       val attachSources           = intellijAttachSources.in(Global).value
       val ijBuild                 = intellijBuild.in(ThisBuild).value
       val ideaModule              = buildIdeaModule(ijBuild)
@@ -145,7 +146,7 @@ trait Init { this: Keys.type =>
         intellijMainJars.value.map(ideaJarsArtifact -> _.data) ++
           (if (attachSources)  Seq(ideaSourcesArtifact -> intelliJSourcesArchive)
            else                Seq.empty)
-      val reportWithIdeaMainJars  = injectIntoUpdateReport(originalReport, ideaArtifacts, ideaModule)
+      val reportWithIdeaMainJars  = injectIntoUpdateReport(originalReport, targetConfiguration, ideaArtifacts, ideaModule)
 
       val pluginClassPaths = intellijPluginJars.value
       pluginClassPaths.foldLeft(reportWithIdeaMainJars) { case (report, (_, classpath)) =>
@@ -155,10 +156,10 @@ trait Init { this: Keys.type =>
           if (attachSources && pluginModule.revision == ijBuild) { // bundled plugin has the same version as platform, add sources
             val pluginArtifacts = classpath.map(pluginArtifact -> _.data) :+
               (Artifact(pluginArtifact.name, Artifact.SourceType, "zip", Artifact.SourceClassifier) -> intelliJSourcesArchive)
-            injectIntoUpdateReport(report, pluginArtifacts, pluginModule)
+            injectIntoUpdateReport(report, targetConfiguration, pluginArtifacts, pluginModule)
           } else {
             val pluginArtifacts = classpath.map(pluginArtifact -> _.data)
-            injectIntoUpdateReport(report, pluginArtifacts, pluginModule)
+            injectIntoUpdateReport(report, targetConfiguration, pluginArtifacts, pluginModule)
           }
         }.getOrElse(report)
       }
