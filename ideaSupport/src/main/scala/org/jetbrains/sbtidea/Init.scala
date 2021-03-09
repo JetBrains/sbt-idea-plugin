@@ -27,7 +27,7 @@ trait Init { this: Keys.type =>
 
   lazy val buildSettings: Seq[Setting[_]] = Seq(
     intellijPluginName        := name.in(LocalRootProject).value,
-    intellijBuild             := "LATEST-EAP-SNAPSHOT",
+    intellijBuild             := BuildInfo.LATEST_EAP_SNAPSHOT,
     intellijPlatform          := IntelliJPlatform.IdeaCommunity,
     intellijDownloadSources   := true,
     jbrVersion                := Some("__auto__"),

@@ -28,6 +28,8 @@ class IdeaConfigBuilder(moduleName: String,
 
   private val runConfigDir = dotIdeaFolder / "runConfigurations"
 
+  private val IDEA_ROOT_KEY = "idea.installation.dir"
+
   def build(): Unit = {
     if (options.generateDefaultRunConfig)
       writeToFile(runConfigDir / s"$configName.xml", buildRunConfigurationXML())
@@ -42,13 +44,15 @@ class IdeaConfigBuilder(moduleName: String,
     catch { case e: Throwable => log.error(s"can't generate $file: $e")}
   }
 
+  private def getExplicitIDEARoot:Option[Path] = sys.props.get(IDEA_ROOT_KEY).map(Paths.get(_))
+
   /**
     * Tries to locate IJ installation root. The one with the "lib", "bin", "plugins", etc. folders.
     * Implementation is wonky since it relies on folder naming a lot, which is prone to changes.
     * TODO: ask toolbox team how to do this properly
     */
   @tailrec
-  private def findIdeaRoot(current: Path): Option[Path] = {
+  private def scanForIDEARoot(current: Path): Option[Path] = {
     val isToolboxPluginsFolder  = current.getFileName != null && pluginsPattern.matcher(current.getFileName.toString).matches() && (current / "Scala" / "lib").exists
     val isIJRootFolder          = (current / "lib" / "idea.jar").exists
     if (isIJRootFolder) { // for non-toolbox installations
@@ -65,7 +69,7 @@ class IdeaConfigBuilder(moduleName: String,
     } else if (current.getParent == null) {
       None
     } else {
-      findIdeaRoot(current.getParent)
+      scanForIDEARoot(current.getParent)
     }
   }
 
@@ -81,7 +85,21 @@ class IdeaConfigBuilder(moduleName: String,
     * and thereby, resides somewhere close to the IJ core libraries.
     * @return
     */
-  private def guessIJRuntimeJars(): Seq[Path] = {
+  private def guessIJRuntimeJars(): Seq[Path] =
+    getExplicitIDEARoot
+      .orElse(getCurrentLaunchPath.flatMap(scanForIDEARoot)) match {
+      case Some(ijRoot) =>
+        log.info(s"Got IDEA installation root at: $ijRoot")
+        Seq(
+          ijRoot / "lib" / "idea_rt.jar",
+          ijRoot / "plugins" / "junit" / "lib" / "junit5-rt.jar",
+          ijRoot / "plugins" / "junit" / "lib" / "junit-rt.jar")
+       case None =>
+         log.error(s"Unable to detect IDEA installation root, JUnit template may fail")
+         Seq.empty
+      }
+
+  private def getCurrentLaunchPath: Option[Path] = {
     /*
     (java.class.path,/home/miha/.local/share/JetBrains/Toolbox/apps/IDEA-C/ch-1/203.5419.21.plugins/Scala/launcher/sbt-launch.jar)
     /home/miha/.local/share/JetBrains/Toolbox/apps/IDEA-C/ch-1/203.5419.21.plugins/Scala/launcher/sbt-launch.jar early(addPluginSbtFile="""/tmp/idea1.sbt""") ; set ideaPort in Global := 33925 ; idea-shell
@@ -95,18 +113,10 @@ class IdeaConfigBuilder(moduleName: String,
     if (matcher.find()) {
       val pathString = matcher.group(1)
       val currentPath = Paths.get(pathString)
-      findIdeaRoot(currentPath) match {
-        case Some(ijRoot) => Seq(
-          ijRoot / "lib" / "idea_rt.jar",
-          ijRoot / "plugins" / "junit" / "lib" / "junit5-rt.jar",
-          ijRoot / "plugins" / "junit" / "lib" / "junit-rt.jar")
-        case None =>
-          log.warn(s"Failed to detect IJ root from cmdline: $runCMD")
-          Seq.empty
-      }
+      Some(currentPath)
     } else {
-      log.warn(s"Can't get sbt-launch.jar location from cmdline, no IJ runtime jars will be detected: $runCMD")
-      Seq.empty
+      log.warn(s"Can't get sbt-launch.jar location from cmdline: $runCMD")
+      None
     }
   }
 

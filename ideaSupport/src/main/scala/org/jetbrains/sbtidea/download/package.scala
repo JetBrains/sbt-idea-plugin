@@ -14,6 +14,10 @@ package object download {
     override def toString: String = s"BuildInfo($edition-$buildNumber)"
   }
 
+  object BuildInfo {
+    val LATEST_EAP_SNAPSHOT = "LATEST-EAP-SNAPSHOT"
+  }
+
   def withConnection[V](url: URL)(f: => HttpURLConnection => V): V = {
     var connection: HttpURLConnection = null
     try {
@@ -30,6 +34,13 @@ package object download {
   }
 
   implicit class BuildInfoOps(val buildInfo: BuildInfo) {
+
+    def getDeclaredOrActualNoSnapshotBuild(ideaRoot: Path): String =
+      if (buildInfo.buildNumber == BuildInfo.LATEST_EAP_SNAPSHOT)
+        getActualIdeaBuild(ideaRoot)
+      else
+        buildInfo.buildNumber
+
     def getActualIdeaBuild(ideaRoot: Path): String = {
       val productInfo = ideaRoot / "product-info.json"
       if (buildInfo.buildNumber.count(_ == '.') < 2 && productInfo.exists) { // most likely some LATEST-EAP-SNAPSHOT kind of version
@@ -42,6 +53,6 @@ package object download {
         }
       } else buildInfo.buildNumber
     }
-  }
 
+  }
 }

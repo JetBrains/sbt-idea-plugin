@@ -1,7 +1,6 @@
 package org.jetbrains.sbtidea
 
 import org.jetbrains.sbtidea.download.{BuildInfo, VersionComparatorUtil}
-import org.jetbrains.sbtidea.download.plugin.LocalPluginRegistry
 import org.jetbrains.sbtidea.packaging.PackagingKeys._
 import org.jetbrains.sbtidea.tasks._
 import sbt.Keys._
@@ -42,7 +41,11 @@ trait Utils { this: Keys.type =>
 
     if (buildRoot == projectRoot) Def.task {
       PluginLogger.bind(new SbtPluginLogger(streams.value))
-      val newClassLoadingStrategy = VersionComparatorUtil.compare(intellijBuild.value, newClassloadingSinceVersion) >= 0
+      val buildInfo = BuildInfo(
+        intellijBuild.in(ThisBuild).value,
+        intellijPlatform.in(ThisBuild).value)
+      val actualIntellijBuild = buildInfo.getDeclaredOrActualNoSnapshotBuild(intellijBaseDirectory.in(ThisBuild).value.toPath)
+      val newClassLoadingStrategy = VersionComparatorUtil.compare(actualIntellijBuild, newClassloadingSinceVersion) >= 0
       val vmOptions = intellijVMOptions.value.copy(debug = false)
       val configName = name.value
       val dotIdeaFolder = baseDirectory.in(ThisBuild).value / ".idea"
@@ -54,10 +57,7 @@ trait Utils { this: Keys.type =>
       val pluginRoots =
         tasks.CreatePluginsClasspath.collectPluginRoots(
           intellijBaseDirectory.in(ThisBuild).value.toPath,
-          BuildInfo(
-            intellijBuild.in(ThisBuild).value,
-            intellijPlatform.in(ThisBuild).value
-          ),
+          buildInfo,
           allPlugins,
           new SbtPluginLogger(streams.value),
           name.value).map(_._2.toFile)
