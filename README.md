@@ -1,6 +1,6 @@
 # sbt-idea-plugin
 
-[ ![Version](https://api.bintray.com/packages/sbt/sbt-plugin-releases/sbt-idea-plugin/images/download.svg) ](https://bintray.com/jetbrains/sbt-plugins/sbt-idea-plugin/_latestVersion) 
+[ ![Version](https://maven-badges.herokuapp.com/maven-central/org.jetbrains/sbt-idea-plugin/badge.svg) ](https://maven-badges.herokuapp.com/maven-central/org.jetbrains/sbt-idea-plugin) 
 [![Build Status](https://travis-ci.org/jetbrains/sbt-idea-plugin.svg)](https://travis-ci.org/jetbrains/sbt-idea-plugin)
 [![JetBrains team project](http://jb.gg/badges/team.svg)](https://confluence.jetbrains.com/display/ALL/JetBrains+on+GitHub)
 
@@ -20,7 +20,18 @@ or [package artifacts](#packaging) you can depend on:
 `"org.jetbrains" % "sbt-declarative-visualizer" % "LATEST_VERSION"` or
 
 `"org.jetbrains" % "sbt-declarative-packaging" % "LATEST_VERSION"`
-## Installation
+
+## Quickstart: IJ Plugin Template Project
+
+To quickly create a Scala based IJ Plugin we provide a template project. You can use it in two ways:
+
+1. **Recommended**: If you have Scala plugin version 2021.1+ simply use `New Project | Scala | IntelliJ Platform Plugin`
+   This wizard will automatically clone the project template from GH and setup it with the most recent dependencies.
+   
+2. Manually create your own repo on GH from the [ JetBrains / **sbt-idea-example** ](https://github.com/JetBrains/sbt-idea-example) template by clicking the green `Use this template` button.
+   Clone the sources and open the `build.sbt` via `File | Open` menu in IDEA by choosing `Open as a project`.
+
+## Manual Installation (adding to an already existing sbt build)
 
 From version 1.0.0, this plugin is published for sbt 0.13 and 1.0
 
