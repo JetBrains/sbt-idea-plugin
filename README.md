@@ -14,6 +14,8 @@ SBT plugin that makes development of IntelliJ Platform plugins in Scala easier b
 For a comprehensive usage example see [Scala plugin](https://github.com/JetBrains/intellij-scala) or 
 [HOCON plugin](https://github.com/JetBrains/intellij-hocon/) build definition.
 
+A complete list of public IJ plugins implemented in Scala/SBT can be found on [IntelliJ Platform Explorer](https://plugins.jetbrains.com/intellij-platform-explorer/?buildSystem=sbt)
+
 Note that some features of this plugin may be used independently, i.e. if you only want to [print project structure](#printprojectgraph--taskkeyunit)
 or [package artifacts](#packaging) you can depend on:
 
