@@ -1,7 +1,7 @@
 # sbt-idea-plugin
 
 [ ![Version](https://maven-badges.herokuapp.com/maven-central/org.jetbrains/sbt-idea-plugin/badge.svg) ](https://maven-badges.herokuapp.com/maven-central/org.jetbrains/sbt-idea-plugin) 
-[![Build Status](https://travis-ci.org/jetbrains/sbt-idea-plugin.svg)](https://travis-ci.org/jetbrains/sbt-idea-plugin)
+![Build Status](https://github.com/jetbrains/sbt-idea-plugin/actions/workflows/scala.yml/badge.svg)
 [![JetBrains team project](http://jb.gg/badges/team.svg)](https://confluence.jetbrains.com/display/ALL/JetBrains+on+GitHub)
 
 SBT plugin that makes development of IntelliJ Platform plugins in Scala easier by providing features such as:
