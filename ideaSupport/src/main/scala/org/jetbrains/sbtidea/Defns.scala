@@ -121,7 +121,7 @@ trait Defns { this: Keys.type =>
     def platform: String
     def arch: String
   }
-  case class  JBR(major: String, minor: String, kind: String, platform: String, arch: String) extends JbrInfo
+  final case class JBR(major: String, minor: String, kind: String, platform: String, arch: String) extends JbrInfo
   trait AutoJbrPlatform {
     def platform: String = System.getProperty("os.name", "").toLowerCase(Locale.ENGLISH) match {
       case value if value.startsWith("win") => "windows"
