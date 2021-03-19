@@ -159,7 +159,7 @@ class IdeaConfigBuilder(moduleName: String,
        |    <log_file alias="IJ LOG" path="$dataDir/system/log/idea.log" />
        |    <option name="MAIN_CLASS_NAME" value="com.intellij.idea.Main" />
        |    <module name="$moduleName" />
-       |    <option name="VM_PARAMETERS" value="-cp ${intellijDir / "lib"}${File.separator}* ${vmOptions.asSeq.mkString(" ")}" />
+       |    <option name="VM_PARAMETERS" value="-cp &quot;${intellijDir / "lib"}${File.separator}*&quot; ${vmOptions.asSeq.mkString(" ")}" />
        |    <RunnerSettings RunnerId="Debug">
        |      <option name="DEBUG_PORT" value="" />
        |      <option name="TRANSPORT" value="0" />

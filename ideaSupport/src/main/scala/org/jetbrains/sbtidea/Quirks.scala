@@ -1,6 +1,5 @@
 package org.jetbrains.sbtidea
 
-import org.jetbrains.sbtidea.runIdea.{IntellijVMOptions, JRE}
 import sbt._
 
 trait Quirks { this: Keys.type =>
@@ -26,11 +25,5 @@ trait Quirks { this: Keys.type =>
 
   def hasPluginsWithScala(plugins: Seq[IntellijPlugin]): Boolean =
     plugins.exists(plugin => pluginsWithScala.exists(id => plugin.toString.matches(s".*$id.*")))
-
-  def java9PlusOptions(intellijVMOptions: IntellijVMOptions)(implicit jre: JRE): IntellijVMOptions =
-    if(jre.version > 9)
-      intellijVMOptions.copy(gc = "")
-    else
-      intellijVMOptions
 
 }

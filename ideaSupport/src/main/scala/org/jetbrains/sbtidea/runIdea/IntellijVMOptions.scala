@@ -15,14 +15,14 @@ case class IntellijVMOptions(platform: IntelliJPlatform,
                              xms: Int = 128,
                              reservedCodeCacheSize: Int = 240,
                              softRefLRUPolicyMSPerMB: Int = 50,
-                             gc: String = "-XX:+UseConcMarkSweepGC",
+                             gc: String = "-XX:+UseG1GC",
                              gcOpt: String = "-XX:CICompilerCount=2",
                              noPCE: Boolean = false,
                              debug: Boolean = true,
                              debugPort: Int = 5005,
                              suspend: Boolean = false,
                              test: Boolean = false,
-                             defaultOptions: Seq[String] = IntellijVMOptions.STATIC_OPTS) {
+                             defaultOptions: Seq[String] = IntellijVMOptions.DEFAULT_STATIC_OPTS) {
 
 
   private def build: Seq[String] = {
@@ -66,7 +66,7 @@ object IntellijVMOptions {
 
   val IDEA_MAIN = "com.intellij.idea.Main"
 
-  val STATIC_OPTS: Seq[String] =
+  val DEFAULT_STATIC_OPTS: Seq[String] =
     """-Dsun.io.useCanonPrefixCache=false
       |-ea
       |-Djava.net.preferIPv4Stack=true
