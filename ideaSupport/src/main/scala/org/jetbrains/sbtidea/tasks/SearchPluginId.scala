@@ -3,11 +3,12 @@ package org.jetbrains.sbtidea.tasks
 import java.net.URLEncoder
 import java.nio.file.Path
 import java.util.regex.Pattern
-
-import org.jetbrains.sbtidea.PluginLogger
+import org.jetbrains.sbtidea.{PluginLogger, SbtPluginLogger}
 import org.jetbrains.sbtidea.download.BuildInfo
 import org.jetbrains.sbtidea.download.plugin.LocalPluginRegistry
 import com.eclipsesource.json._
+import org.jetbrains.sbtidea.Keys.{intellijBaseDirectory, intellijBuild, intellijPlatform}
+import sbt.Keys.streams
 import scalaj.http.Http
 
 import scala.collection.JavaConverters._
@@ -49,5 +50,37 @@ class SearchPluginId(ideaRoot: Path, buildInfo: BuildInfo, useBundled: Boolean =
         PluginLogger.warn(s"Failed to query IJ plugin repo: $ex")
         Map.empty
     }
+  }
+}
+
+object SearchPluginId extends SbtIdeaInputTask[Map[String, (String, Boolean)]] {
+  import sbt._
+  override def createTask: Def.Initialize[InputTask[Map[String, (String, Boolean)]]] = Def.inputTask {
+    import complete.DefaultParsers._
+    val log = streams.value.log
+    val parsed = spaceDelimited("[--nobundled|--noremote] <plugin name regexp>").parsed
+    val maybeQuery = parsed.lastOption.filterNot(_.startsWith("--"))
+    PluginLogger.bind(new SbtPluginLogger(streams.value))
+    val result: Map[String, (String, Boolean)] = maybeQuery match {
+      case Some(query) =>
+        val searcher = new SearchPluginId(
+          intellijBaseDirectory.value.toPath,
+          BuildInfo(
+            intellijBuild.value,
+            intellijPlatform.value
+          ),
+          useBundled = !parsed.contains("--nobundled"),
+          useRemote  = !parsed.contains("--noremote")
+        )
+        searcher(query)
+      case None =>
+        log.error(s"search query expected")
+        Map.empty
+    }
+    result.foreach {
+      case (id, (name, false)) => log.info(s"bundled\t\t- $name[$id]")
+      case (id, (name, true)) => log.info(s"from repo\t- $name[$id]")
+    }
+    result
   }
 }
