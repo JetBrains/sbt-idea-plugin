@@ -40,6 +40,7 @@ class SbtPackagingStructureExtractor(override val rootProject: ProjectRef,
     SbtProjectPackagingOptionsImpl(
       data.packageMethod,
       data.libMapping.map(x => x._1.key -> x._2),
+      data.libraryBaseDir,
       data.additionalMappings,
       data.shadePatterns,
       data.excludeFilter,

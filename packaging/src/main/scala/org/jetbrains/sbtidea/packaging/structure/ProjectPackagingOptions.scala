@@ -9,6 +9,7 @@ import org.jetbrains.sbtidea.structure.{ModuleKey, ProjectNode}
 trait ProjectPackagingOptions {
     def packageMethod: PackagingMethod
     def libraryMappings: Seq[(ModuleKey, Option[String])]
+    def libraryBaseDir: File
     def fileMappings: Seq[(File, String)]
     def shadePatterns: Seq[ShadePattern]
     def excludeFilter: ExcludeFilter

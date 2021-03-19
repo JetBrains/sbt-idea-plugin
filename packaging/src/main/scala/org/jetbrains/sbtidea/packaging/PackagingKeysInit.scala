@@ -32,6 +32,7 @@ trait PackagingKeysInit {
         "org.scala-lang" % "scala-.*" % ".*"          -> None ::
         "org.scala-lang.modules" % "scala-.*" % ".*"  -> None :: Nil
     },
+    packageLibraryBaseDir := file("lib"),
     packageFileMappings := Seq.empty,
     packageAdditionalProjects := Seq.empty,
     packageAssembleLibraries := false,

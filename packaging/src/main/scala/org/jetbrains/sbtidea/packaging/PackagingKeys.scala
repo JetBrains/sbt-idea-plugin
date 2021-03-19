@@ -16,6 +16,10 @@ object PackagingKeys extends PackagingDefs with PackagingKeysInit {
   
   lazy val packageLibraryMappings = settingKey[Seq[(ModuleID, Option[String])]](
     "Overrides for library mappings in artifact")
+
+  lazy val packageLibraryBaseDir = settingKey[File](
+    "Directory to place library dependencies into. *Relative* to the artifact output dir"
+  )
   
   lazy val packageFileMappings = settingKey[Seq[(File, String)]](
     "Extra files or directories to include into the artifact")

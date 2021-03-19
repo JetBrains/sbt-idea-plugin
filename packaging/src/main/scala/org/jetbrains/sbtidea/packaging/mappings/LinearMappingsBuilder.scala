@@ -42,16 +42,16 @@ class LinearMappingsBuilder(override val outputDir: File, log: PluginLogger) ext
         outputDir / targetPath
       case PackagingMethod.MergeIntoParent() =>
         val eligibleParentProject = findParentToMerge(node)
-        val parentJar = mkProjectJarPath(eligibleParentProject)
+        val parentJar = mkProjectJarDefaultPath(eligibleParentProject)
         validateMerge(node, eligibleParentProject)
         addProductDirs(node, outputDir / parentJar)
       case PackagingMethod.MergeIntoOther(project) =>
         val eligibleParentProject = findParentToMerge(project)
-        val otherJar = mkProjectJarPath(eligibleParentProject)
+        val otherJar = mkProjectJarDefaultPath(eligibleParentProject)
         validateMerge(node, eligibleParentProject)
         addProductDirs(node, outputDir / otherJar)
       case PackagingMethod.Standalone("", isStatic) =>
-        val target = outputDir / mkProjectJarPath(node)
+        val target = outputDir / mkProjectJarDefaultPath(node)
         addProductDirs(node, target, isStatic)
       case PackagingMethod.Standalone(targetPath, isStatic) =>
         val target = outputDir / targetPath
@@ -115,7 +115,7 @@ class LinearMappingsBuilder(override val outputDir: File, log: PluginLogger) ext
     }
     node.libs.foreach {
       case lib if !mappings.contains(lib.key) =>
-        mappingsBuffer += mapping(lib, outputDir / mkRelativeLibPath(lib))
+        mappingsBuffer += mapping(lib, outputDir / s"${node.packagingOptions.libraryBaseDir}/${lib.jarFile.getName}")
       case lib if mappings.getOrElse(lib.key, None).isDefined =>
         mappingsBuffer += mapping(lib, outputDir / mappings(lib.key).get)
       case _ =>
@@ -135,9 +135,7 @@ class LinearMappingsBuilder(override val outputDir: File, log: PluginLogger) ext
     mappingsBuffer.toSeq
   }
 
-  private def mkProjectJarPath(node: ProjectNode): String = s"lib/${node.name}.jar"
-
-  private def mkRelativeLibPath(lib: Library) = s"lib/${lib.jarFile.getName}"
+  private def mkProjectJarDefaultPath(node: ProjectNode): String = s"lib/${node.name}.jar"
 
   private def fixPaths(str: String): String = System.getProperty("os.name") match {
     case os if os.startsWith("Windows") => str.replace('/', '\\')

@@ -9,6 +9,7 @@ import org.jetbrains.sbtidea.structure.ModuleKey
 
 case class SbtProjectPackagingOptionsImpl(override val packageMethod: PackagingMethod,
                                           override val libraryMappings: Seq[(ModuleKey, Option[String])],
+                                          override val libraryBaseDir: File,
                                           override val fileMappings: Seq[(File, String)],
                                           override val shadePatterns: Seq[ShadePattern],
                                           override val excludeFilter: ExcludeFilter,
