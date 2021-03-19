@@ -1,8 +1,8 @@
 package org.jetbrains.sbtidea.packaging
 
 import org.jetbrains.sbtidea.packaging.structure.PackagedProjectNode
-import org.jetbrains.sbtidea.packaging.structure.PackagingMethod
-import org.jetbrains.sbtidea.structure._
+import org.jetbrains.sbtidea.structure.ProjectNode
+import org.jetbrains.sbtidea.packaging.structure.{PackagingMethod => StructurePackagingMethod}
 
 package object mappings {
 
@@ -20,7 +20,7 @@ package object mappings {
     }
 
     def collectStandaloneParents: Seq[ProjectNode] = collectNodes(node) {
-      _.packagingOptions.packageMethod.isInstanceOf[PackagingMethod.Standalone]
+      _.packagingOptions.packageMethod.isInstanceOf[StructurePackagingMethod.Standalone]
     }
 
     /**
@@ -28,7 +28,7 @@ package object mappings {
       */
     def hasRealParents: Boolean = collectNodes(node) { n =>
       n.packagingOptions.packageMethod match {
-        case _: PackagingMethod.Skip | _:PackagingMethod.DepsOnly => false
+        case _: StructurePackagingMethod.Skip | _:StructurePackagingMethod.DepsOnly => false
         case _ => true
       }
     }.nonEmpty

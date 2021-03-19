@@ -2,8 +2,8 @@ package org.jetbrains.sbtidea.packaging.structure.sbtImpl
 
 import java.io.File
 
-import org.jetbrains.sbtidea.packaging.PackagingKeys.ExcludeFilter.ExcludeFilter
-import org.jetbrains.sbtidea.packaging.PackagingKeys.ShadePattern
+import org.jetbrains.sbtidea.packaging.ExcludeFilter.ExcludeFilter
+import org.jetbrains.sbtidea.packaging.ShadePattern
 import org.jetbrains.sbtidea.packaging.structure.{PackagedProjectNode, PackagingMethod, ProjectPackagingOptions}
 import org.jetbrains.sbtidea.structure.ModuleKey
 

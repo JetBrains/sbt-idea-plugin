@@ -1,7 +1,7 @@
 package org.jetbrains.sbtidea.packaging.structure.sbtImpl
 
 import org.jetbrains.sbtidea.PluginLogger
-import org.jetbrains.sbtidea.packaging.{PackagingKeys, structure}
+import org.jetbrains.sbtidea.packaging.{PackagingKeys, PackagingMethod, structure}
 import org.jetbrains.sbtidea.packaging.structure.ProjectPackagingOptions
 import org.jetbrains.sbtidea.structure.sbtImpl._
 import sbt._
@@ -65,16 +65,16 @@ class SbtPackagingStructureExtractor(override val rootProject: ProjectRef,
     node
   }
 
-  implicit def keys2Structure(p: PackagingKeys.PackagingMethod): structure.PackagingMethod = p match {
-    case PackagingKeys.PackagingMethod.Skip() =>
+  implicit def keys2Structure(p: PackagingMethod): structure.PackagingMethod = p match {
+    case PackagingMethod.Skip() =>
       structure.PackagingMethod.Skip()
-    case PackagingKeys.PackagingMethod.MergeIntoParent() =>
+    case PackagingMethod.MergeIntoParent() =>
       structure.PackagingMethod.MergeIntoParent()
-    case PackagingKeys.PackagingMethod.DepsOnly(targetPath) =>
+    case PackagingMethod.DepsOnly(targetPath) =>
       structure.PackagingMethod.DepsOnly(targetPath)
-    case PackagingKeys.PackagingMethod.Standalone(targetPath, static) =>
+    case PackagingMethod.Standalone(targetPath, static) =>
       structure.PackagingMethod.Standalone(targetPath, static)
-    case PackagingKeys.PackagingMethod.MergeIntoOther(project) =>
+    case PackagingMethod.MergeIntoOther(project) =>
       structure.PackagingMethod.MergeIntoOther(findProjectRef(project).map(projectCache).getOrElse(???))
   }
 }

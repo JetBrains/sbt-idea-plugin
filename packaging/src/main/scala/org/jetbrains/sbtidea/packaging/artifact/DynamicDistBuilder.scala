@@ -2,7 +2,7 @@ package org.jetbrains.sbtidea.packaging.artifact
 
 import java.nio.file.{Files, Path, Paths, StandardCopyOption}
 
-import org.jetbrains.sbtidea.packaging.PackagingKeys.ExcludeFilter
+import org.jetbrains.sbtidea.packaging.ExcludeFilter
 import org.jetbrains.sbtidea.packaging._
 import sbt.File
 import sbt.Keys.TaskStreams

@@ -4,7 +4,7 @@ import org.jetbrains.sbtidea.packaging.structure.sbtImpl.SbtPackageProjectData
 import org.jetbrains.sbtidea.structure.ModuleKey
 import sbt._
 
-object PackagingKeys extends PackagingDefs with PackagingKeysInit {
+object PackagingKeys extends PackagingKeysInit {
 
   /* Settings */
 

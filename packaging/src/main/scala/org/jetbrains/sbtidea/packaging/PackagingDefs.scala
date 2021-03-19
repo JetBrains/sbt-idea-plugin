@@ -1,30 +1,43 @@
 package org.jetbrains.sbtidea.packaging
 
-import java.nio.file.Path
+import org.jetbrains.sbtidea.packaging.ExcludeFilter.ExcludeFilter
 
+import java.nio.file.Path
 import sbt._
 
-trait PackagingDefs {
-  case class ShadePattern(from: String, to: String)
+import java.io.File
 
-  sealed trait PackagingMethod
+case class ShadePattern(from: String, to: String)
 
-  object PackagingMethod {
-    final case class Skip() extends PackagingMethod
-    final case class MergeIntoParent() extends PackagingMethod
-    final case class DepsOnly(targetPath: String = "") extends PackagingMethod
-    final case class MergeIntoOther(project: Project) extends PackagingMethod
-    final case class Standalone(targetPath: String = "", static: Boolean = false) extends PackagingMethod
-  }
+sealed trait PackagingMethod
 
-  object ExcludeFilter {
-    type ExcludeFilter = Path=>Boolean
+object PackagingMethod {
+  final case class Skip() extends PackagingMethod
+  final case class MergeIntoParent() extends PackagingMethod
+  final case class DepsOnly(targetPath: String = "") extends PackagingMethod
+  final case class MergeIntoOther(project: Project) extends PackagingMethod
+  final case class Standalone(targetPath: String = "", static: Boolean = false) extends PackagingMethod
+}
 
-    val AllPass: ExcludeFilter = (_:Path) => false
+object ExcludeFilter {
+  type ExcludeFilter = Path=>Boolean
 
-    def merge(filters: Iterable[ExcludeFilter]): ExcludeFilter =
-      path => filters.exists(f => f(path))
+  val AllPass: ExcludeFilter = (_:Path) => false
 
-  }
+  def merge(filters: Iterable[ExcludeFilter]): ExcludeFilter =
+    path => filters.exists(f => f(path))
 
 }
+
+object MAPPING_KIND extends Enumeration {
+  type MAPPING_KIND = Value
+  val TARGET, LIB, LIB_ASSEMBLY, MISC, UNDEFINED = Value
+}
+
+case class MappingMetaData(shading: Seq[ShadePattern], excludeFilter: ExcludeFilter, static: Boolean, project: Option[String], kind: MAPPING_KIND.MAPPING_KIND)
+object     MappingMetaData { val EMPTY: MappingMetaData = MappingMetaData(Seq.empty, ExcludeFilter.AllPass, static = true, project = None, kind = MAPPING_KIND.UNDEFINED) }
+
+case class Mapping(from: File, to: File, metaData: MappingMetaData)
+
+
+class SkipEntryException extends Exception

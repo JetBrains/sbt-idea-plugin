@@ -2,8 +2,8 @@ package org.jetbrains.sbtidea.packaging.structure
 
 import java.io.File
 
-import org.jetbrains.sbtidea.packaging.PackagingKeys.ExcludeFilter._
-import org.jetbrains.sbtidea.packaging.PackagingKeys.ShadePattern
+import org.jetbrains.sbtidea.packaging.ExcludeFilter._
+import org.jetbrains.sbtidea.packaging.ShadePattern
 import org.jetbrains.sbtidea.structure.{ModuleKey, ProjectNode}
 
 trait ProjectPackagingOptions {

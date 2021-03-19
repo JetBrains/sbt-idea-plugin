@@ -2,10 +2,9 @@ package org.jetbrains.sbtidea.packaging.artifact
 
 import java.nio.file._
 
-import org.jetbrains.sbtidea.packaging.PackagingKeys.ExcludeFilter
-import org.jetbrains.sbtidea.packaging.PackagingKeys.ExcludeFilter._
+import org.jetbrains.sbtidea.packaging.ExcludeFilter
+import org.jetbrains.sbtidea.packaging.ExcludeFilter._
 import org.jetbrains.sbtidea.packaging._
-import org.jetbrains.sbtidea.packaging.PackagingKeys._
 import sbt.Keys.TaskStreams
 import sbt._
 

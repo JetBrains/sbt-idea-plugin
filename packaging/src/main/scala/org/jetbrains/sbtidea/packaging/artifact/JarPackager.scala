@@ -6,8 +6,8 @@ import java.nio.file.attribute.BasicFileAttributes
 import java.util
 import java.util.Collections
 
-import org.jetbrains.sbtidea.packaging.PackagingKeys.ExcludeFilter
-import org.jetbrains.sbtidea.packaging.PackagingKeys.ExcludeFilter._
+import org.jetbrains.sbtidea.packaging.ExcludeFilter
+import org.jetbrains.sbtidea.packaging.ExcludeFilter._
 import sbt.Keys.TaskStreams
 
 trait JarPackager {
