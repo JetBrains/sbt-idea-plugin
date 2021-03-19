@@ -86,6 +86,8 @@ trait Init { this: Keys.type =>
         name.value),
 
     externalDependencyClasspath in Compile ++= UpdateWithIDEAInjectionTask.buildExternalDependencyClassPath.value,
+    externalDependencyClasspath in Test    ++= (externalDependencyClasspath in Compile).value,
+
     update := UpdateWithIDEAInjectionTask.createTask.value,
 
     packageOutputDir := target.value / "plugin" / intellijPluginName.in(ThisBuild).value.removeSpaces,
