@@ -37,9 +37,9 @@ case class IntellijVMOptions(platform: IntelliJPlatform,
     val (system, config) =
       if (test) (ideaHome.resolve("test-system"), ideaHome.resolve("test-config"))
       else      (ideaHome.resolve("system"), ideaHome.resolve("config"))
-    buffer += s"-Didea.system.path=${system.toString.escapeSpaces}"
-    buffer += s"-Didea.config.path=${config.toString.escapeSpaces}"
-    buffer += s"-Dplugin.path=${pluginPath.toString.escapeSpaces}"
+    buffer += s"-Didea.system.path=${system.toString.xmlQuote}"
+    buffer += s"-Didea.config.path=${config.toString.xmlQuote}"
+    buffer += s"-Dplugin.path=${pluginPath.toString.xmlQuote}"
     if(test)
       buffer += "-Didea.use.core.classloader.for.plugin.path=true"
     if (noPCE)
