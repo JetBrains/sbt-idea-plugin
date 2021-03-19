@@ -42,12 +42,12 @@ class LinearMappingsBuilder(override val outputDir: File, log: PluginLogger) ext
         outputDir / targetPath
       case PackagingMethod.MergeIntoParent() =>
         val eligibleParentProject = findParentToMerge(node)
-        val parentJar = mkProjectJarDefaultPath(eligibleParentProject)
+        val parentJar = getTopLevelJarPath(eligibleParentProject)
         validateMerge(node, eligibleParentProject)
         addProductDirs(node, outputDir / parentJar)
       case PackagingMethod.MergeIntoOther(project) =>
         val eligibleParentProject = findParentToMerge(project)
-        val otherJar = mkProjectJarDefaultPath(eligibleParentProject)
+        val otherJar = getTopLevelJarPath(eligibleParentProject)
         validateMerge(node, eligibleParentProject)
         addProductDirs(node, outputDir / otherJar)
       case PackagingMethod.Standalone("", isStatic) =>
@@ -133,6 +133,23 @@ class LinearMappingsBuilder(override val outputDir: File, log: PluginLogger) ext
     log.info(s"building mappings for ${nodes.size} nodes")
     nodes.foreach(processNode)
     mappingsBuffer.toSeq
+  }
+
+  private def getTopLevelJarPath(node: PackagedProjectNode): String = node.packagingOptions.packageMethod match {
+    case PackagingMethod.Skip() =>
+      throw new MappingBuildException(s"$node cannot be a top-level project")
+    case PackagingMethod.MergeIntoParent() =>
+      throw new MappingBuildException(s"$node cannot be a top-level project")
+    case PackagingMethod.MergeIntoOther(_) =>
+      throw new MappingBuildException(s"$node cannot be a top-level project")
+    case PackagingMethod.DepsOnly("") =>
+      mkProjectJarDefaultPath(node)
+    case PackagingMethod.DepsOnly(nonEmptyPath) =>
+      nonEmptyPath
+    case PackagingMethod.Standalone("", _) =>
+      mkProjectJarDefaultPath(node)
+    case PackagingMethod.Standalone(nonEmptyPath, _) =>
+      nonEmptyPath
   }
 
   private def mkProjectJarDefaultPath(node: ProjectNode): String = s"lib/${node.name}.jar"
