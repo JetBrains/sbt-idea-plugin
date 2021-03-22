@@ -4,7 +4,7 @@ import java.nio.file.{Files, Path}
 import org.jetbrains.sbtidea.download.{BuildInfo, FileDownloader, IdeaUpdater, NioUtils, PluginXmlDetector, VersionComparatorUtil}
 import org.jetbrains.sbtidea.download.api._
 import org.jetbrains.sbtidea.{PluginLogger => log}
-import org.jetbrains.sbtidea.Keys.IntellijPlugin
+import org.jetbrains.sbtidea.IntellijPlugin
 import LocalPluginRegistry.{extractInstalledPluginDescriptor, extractPluginMetaData}
 
 

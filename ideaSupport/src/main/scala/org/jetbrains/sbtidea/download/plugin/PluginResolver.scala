@@ -1,6 +1,6 @@
 package org.jetbrains.sbtidea.download.plugin
-import org.jetbrains.sbtidea.Keys.{IntellijPlugin, String2Plugin}
-import org.jetbrains.sbtidea.{Keys, PluginLogger}
+import org.jetbrains.sbtidea.Keys.String2Plugin
+import org.jetbrains.sbtidea._
 import org.jetbrains.sbtidea.download.api._
 
 

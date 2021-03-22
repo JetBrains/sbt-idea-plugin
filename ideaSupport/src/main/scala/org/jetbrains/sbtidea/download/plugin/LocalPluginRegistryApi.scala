@@ -1,17 +1,17 @@
 package org.jetbrains.sbtidea.download.plugin
 import java.nio.file.Path
 
-import org.jetbrains.sbtidea.Keys
+import org.jetbrains.sbtidea.IntellijPlugin
 
 trait LocalPluginRegistryApi {
 
-  def getPluginDescriptor(ideaPlugin: Keys.IntellijPlugin): Either[String, PluginDescriptor]
+  def getPluginDescriptor(ideaPlugin: IntellijPlugin): Either[String, PluginDescriptor]
 
-  def markPluginInstalled(ideaPlugin: Keys.IntellijPlugin, to: Path): Unit
+  def markPluginInstalled(ideaPlugin: IntellijPlugin, to: Path): Unit
 
-  def isPluginInstalled(ideaPlugin: Keys.IntellijPlugin): Boolean
+  def isPluginInstalled(ideaPlugin: IntellijPlugin): Boolean
 
-  def getInstalledPluginRoot(ideaPlugin: Keys.IntellijPlugin): Path
+  def getInstalledPluginRoot(ideaPlugin: IntellijPlugin): Path
 
   def getAllDescriptors: Seq[PluginDescriptor]
 }

@@ -1,6 +1,6 @@
 package org.jetbrains.sbtidea.download.plugin
 
-import org.jetbrains.sbtidea.Keys._
+import org.jetbrains.sbtidea.Keys.String2Plugin
 import org.jetbrains.sbtidea.download.idea.IdeaMock
 import org.jetbrains.sbtidea.pathToPathExt
 import org.jetbrains.sbtidea.tasks.CreatePluginsClasspath

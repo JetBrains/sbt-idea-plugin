@@ -1,7 +1,7 @@
 package org.jetbrains.sbtidea.download.plugin
 
-import org.jetbrains.sbtidea.Keys.IntellijPlugin._
-import org.jetbrains.sbtidea.Keys._
+import org.jetbrains.sbtidea.IntellijPlugin._
+import org.jetbrains.sbtidea.Keys.String2Plugin
 import org.scalatest.{FunSuite, Matchers}
 
 import scala.language.postfixOps

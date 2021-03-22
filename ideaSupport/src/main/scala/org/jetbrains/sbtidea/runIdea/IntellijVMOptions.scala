@@ -5,7 +5,6 @@ import java.nio.file.Path
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
-import org.jetbrains.sbtidea.Keys.IntelliJPlatform
 import org.jetbrains.sbtidea._
 
 case class IntellijVMOptions(platform: IntelliJPlatform,

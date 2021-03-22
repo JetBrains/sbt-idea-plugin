@@ -2,9 +2,10 @@ package org.jetbrains.sbtidea.download.plugin
 
 import java.nio.file.{Path, Paths}
 
-import org.jetbrains.sbtidea.Keys._
+import org.jetbrains.sbtidea._
 import org.jetbrains.sbtidea.download.plugin.PluginDescriptor.Dependency
-import org.jetbrains.sbtidea.{Keys, download, pathToPathExt}
+import org.jetbrains.sbtidea.{download, pathToPathExt}
+import Keys.String2Plugin
 import org.scalatest.Inside
 import sbt._
 
@@ -25,12 +26,12 @@ abstract class IntellijPluginResolverTestBase extends IntellijPluginInstallerTes
     Seq(pluginA, pluginB, pluginC, pluginD, pluginE).map(p => p.id -> p).toMap
 
   protected implicit def descriptor2Plugin(descriptor: PluginDescriptor): PluginDependency =
-      PluginDependency(Keys.IntellijPlugin.Id(descriptor.id, None, None),
+      PluginDependency(IntellijPlugin.Id(descriptor.id, None, None),
         IDEA_BUILDINFO,
         descriptor.dependsOn.map(p => plugin2PluginDep(p.id.toPlugin)))
 
   override protected implicit def localRegistry: LocalPluginRegistryApi = new LocalPluginRegistryApi {
-    override def getPluginDescriptor(ideaPlugin: Keys.IntellijPlugin): Either[String, PluginDescriptor] = ideaPlugin match {
+    override def getPluginDescriptor(ideaPlugin: IntellijPlugin): Either[String, PluginDescriptor] = ideaPlugin match {
       case IntellijPlugin.Url(_) =>
         throw new IllegalArgumentException("url plugin not supported")
       case IntellijPlugin.Id(id, _, _) =>
@@ -38,7 +39,7 @@ abstract class IntellijPluginResolverTestBase extends IntellijPluginInstallerTes
       case IntellijPlugin.BundledFolder(name) =>
         descriptorMap.get(name).filterNot(_.name.contains("remote")).toRight("plugin is remote")
     }
-    override def isPluginInstalled(ideaPlugin: Keys.IntellijPlugin): Boolean = ideaPlugin match {
+    override def isPluginInstalled(ideaPlugin: IntellijPlugin): Boolean = ideaPlugin match {
       case IntellijPlugin.Url(_) => false
       case IntellijPlugin.Id(id, _, _) =>
         descriptorMap.get(id).exists(_.name.contains("bundled"))
@@ -47,15 +48,15 @@ abstract class IntellijPluginResolverTestBase extends IntellijPluginInstallerTes
     }
 
     override def getAllDescriptors: Seq[PluginDescriptor] = descriptorMap.values.toSeq
-    override def markPluginInstalled(ideaPlugin: Keys.IntellijPlugin, to: Path): Unit = ()
-    override def getInstalledPluginRoot(ideaPlugin: Keys.IntellijPlugin): Path =
+    override def markPluginInstalled(ideaPlugin: IntellijPlugin, to: Path): Unit = ()
+    override def getInstalledPluginRoot(ideaPlugin: IntellijPlugin): Path =
       Paths.get("INVALID")
   }
 
   override protected implicit def repoAPI: PluginRepoApi = new PluginRepoApi {
     override def getRemotePluginXmlDescriptor(idea: download.BuildInfo, pluginId: String, channel: Option[String]): Either[Throwable, PluginDescriptor] =
       descriptorMap.get(pluginId).filter(_.name.contains("remote")).toRight(null)
-    override def getPluginDownloadURL(idea: download.BuildInfo, pluginInfo: Keys.IntellijPlugin.Id): URL =
+    override def getPluginDownloadURL(idea: download.BuildInfo, pluginInfo: IntellijPlugin.Id): URL =
       new URL("file:INVALID")
     override def getLatestPluginVersion(idea: download.BuildInfo, pluginId: String, channel: Option[String]): Either[Throwable, String] =
       throw new IllegalArgumentException

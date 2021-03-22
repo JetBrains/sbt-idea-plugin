@@ -1,7 +1,8 @@
 package org.jetbrains.sbtidea.download.plugin
 
 import org.jetbrains.sbtidea.CapturingLogger._
-import org.jetbrains.sbtidea.Keys._
+import org.jetbrains.sbtidea._
+import org.jetbrains.sbtidea.Keys.String2Plugin
 import org.jetbrains.sbtidea.pathToPathExt
 import sbt._
 

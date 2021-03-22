@@ -1,8 +1,8 @@
 package org.jetbrains.sbtidea.download
 
 import org.jetbrains.sbtidea.download.FileDownloader.ProgressInfo
+import org.scalatest.FeatureSpec
 import org.scalatest.Matchers.convertToAnyShouldWrapper
-import org.scalatest.{FeatureSpec, FunSuite}
 
 class ProgressInfoTest extends FeatureSpec {
 

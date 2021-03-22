@@ -3,7 +3,7 @@ package org.jetbrains.sbtidea.download.plugin
 import java.nio.file.{Files, Path}
 import java.util
 
-import org.jetbrains.sbtidea.Keys.IntellijPlugin
+import org.jetbrains.sbtidea.IntellijPlugin
 import org.jetbrains.sbtidea.download._
 import org.jetbrains.sbtidea.{pathToPathExt, PluginLogger => log}
 import sbt._

@@ -2,7 +2,7 @@ package org.jetbrains.sbtidea.download.plugin
 
 import java.net.URL
 
-import org.jetbrains.sbtidea.Keys.IntellijPlugin
+import org.jetbrains.sbtidea.IntellijPlugin
 import org.jetbrains.sbtidea.download.BuildInfo
 
 trait PluginRepoApi {

@@ -1,157 +1,38 @@
 package org.jetbrains.sbtidea
 
-import org.jetbrains.sbtidea.download.jbr.JbrBintrayResolver
+/**
+  * type aliases and val aliases for sbt autoImport
+  * all of the types mentioned in PackagingKeys aka exposed to the user should be aliased here to avoid the
+  * necessity of explicit importing
+  */
+trait Defns {
 
-import java.net.URL
-import java.util.Locale
-import java.util.regex.Pattern
+  type IdeaConfigBuildingOptions = org.jetbrains.sbtidea.IdeaConfigBuildingOptions
+  final val IdeaConfigBuildingOptions: org.jetbrains.sbtidea.IdeaConfigBuildingOptions.type = org.jetbrains.sbtidea.IdeaConfigBuildingOptions
 
-trait Defns { this: Keys.type =>
+  type IntellijVMOptions = org.jetbrains.sbtidea.runIdea.IntellijVMOptions
+  final val IntellijVMOptions: org.jetbrains.sbtidea.runIdea.IntellijVMOptions.type = org.jetbrains.sbtidea.runIdea.IntellijVMOptions
 
-  sealed trait IntellijPlugin {
-    var resolveSettings: IntellijPlugin.Settings = IntellijPlugin.defaultSettings
-  }
+  type pluginXmlOptions = org.jetbrains.sbtidea.pluginXmlOptions
+  final val pluginXmlOptions: org.jetbrains.sbtidea.pluginXmlOptions.type = org.jetbrains.sbtidea.pluginXmlOptions
 
-  object IntellijPlugin {
-    final case class Url(url: URL) extends IntellijPlugin
-      { override def toString: String = url.toString }
-    final case class Id(id: String, version: Option[String], channel: Option[String]) extends IntellijPlugin
-     { override def toString: String = id }
-    final case class BundledFolder(name: String) extends IntellijPlugin
+  type IntellijPlugin = org.jetbrains.sbtidea.IntellijPlugin
+  final val intellijPlugin: org.jetbrains.sbtidea.IntellijPlugin.type = org.jetbrains.sbtidea.IntellijPlugin
 
-    val URL_PATTERN: Pattern = Pattern.compile("^(?:(\\w+):)??(https?://.+)$")
-    val ID_PATTERN:  Pattern = Pattern.compile("^([^:]+):?([\\w.]+)?:?([\\w]+)?$")
+  type IntelliJPlatform = org.jetbrains.sbtidea.IntelliJPlatform
+  final val IntelliJPlatform: org.jetbrains.sbtidea.IntelliJPlatform.type = org.jetbrains.sbtidea.IntelliJPlatform
 
-    case class Settings(transitive: Boolean = true, optionalDeps: Boolean = true, excludedIds: Set[String] = Set.empty)
-    val defaultSettings: Settings = Settings()
+  type JbrInfo = org.jetbrains.sbtidea.JbrInfo
 
-    def isExternalPluginStr(str: String): Boolean =
-      str.contains(":") || ID_PATTERN.matcher(str).matches() || URL_PATTERN.matcher(str).matches()
-  }
+  type JBR = org.jetbrains.sbtidea.JBR
+  final val JBR: org.jetbrains.sbtidea.JBR.type = org.jetbrains.sbtidea.JBR
 
-  implicit class String2Plugin(str: String) {
-    import IntellijPlugin._
-    def toPlugin: IntellijPlugin = {
-      val idMatcher  = ID_PATTERN.matcher(str)
-      val urlMatcher = URL_PATTERN.matcher(str)
-      if (idMatcher.find()) {
-        val id = idMatcher.group(1)
-        val version = Option(idMatcher.group(2))
-        val channel = Option(idMatcher.group(3))
-        IntellijPlugin.Id(id, version, channel)
-      } else if (urlMatcher.find()) {
-        val name = Option(urlMatcher.group(1)).getOrElse("")
-        val url  = urlMatcher.group(2)
-        Url(new URL(url))
-      } else {
-        throw new RuntimeException(s"Failed to parse plugin: $str")
-      }
-    }
-    def toPlugin(excludedIds: Set[String] = Set.empty, transitive: Boolean = true, optionalDeps: Boolean = true): IntellijPlugin = {
-      val res = toPlugin
-      val newSettings = Settings(transitive, optionalDeps, excludedIds)
-      res.resolveSettings = newSettings
-      res
-    }
-  }
+  type AutoJbr = org.jetbrains.sbtidea.AutoJbr
+  final val AutoJbr: org.jetbrains.sbtidea.AutoJbr.type = org.jetbrains.sbtidea.AutoJbr
 
-  class pluginXmlOptions {
-    var version: String = _
-    var sinceBuild: String = _
-    var untilBuild: String = _
-    var pluginDescription: String = _
-    var changeNotes: String = _
-    def apply(func: pluginXmlOptions => Unit): pluginXmlOptions = { func(this); this }
-  }
+  type AutoJbrWithPlatform = org.jetbrains.sbtidea.AutoJbrWithPlatform
+  final val AutoJbrWithPlatform: org.jetbrains.sbtidea.AutoJbrWithPlatform.type = org.jetbrains.sbtidea.AutoJbrWithPlatform
 
-  object pluginXmlOptions {
-    val DISABLED = new pluginXmlOptions()
-    def apply(init: pluginXmlOptions => Unit): pluginXmlOptions = {
-      val xml = new pluginXmlOptions()
-      init(xml)
-      xml
-    }
-  }
-
-  sealed trait IntelliJPlatform {
-    val name: String
-    def edition: String = name.takeRight(2)
-    def platformPrefix: String
-    override def toString: String = name
-  }
-
-  object IntelliJPlatform {
-    object IdeaCommunity extends IntelliJPlatform {
-      override val name = "ideaIC"
-      override def platformPrefix: String = "Idea"
-    }
-
-    object IdeaUltimate extends IntelliJPlatform {
-      override val name = "ideaIU"
-      override def platformPrefix: String = ""
-    }
-
-    object PyCharmCommunity extends IntelliJPlatform {
-      override val name: String = "pycharmPC"
-      override def platformPrefix: String = "PyCharmCore"
-    }
-
-    object PyCharmProfessional extends IntelliJPlatform {
-      override val name: String = "pycharmPY"
-      override def platformPrefix: String = "Python"
-    }
-
-    object CLion extends IntelliJPlatform {
-      override val name: String = "clion"
-      override def edition: String = name
-      override def platformPrefix: String = "CLion"
-    }
-
-    object MPS extends IntelliJPlatform {
-      override val name: String = "mps"
-      override def edition: String = name
-      override def platformPrefix: String = ""
-    }
-  }
-
-  sealed trait JbrInfo {
-    def major: String
-    def minor: String
-    def kind: String
-    def platform: String
-    def arch: String
-  }
-  final case class JBR(major: String, minor: String, kind: String, platform: String, arch: String) extends JbrInfo
-  trait AutoJbrPlatform {
-    def platform: String = System.getProperty("os.name", "").toLowerCase(Locale.ENGLISH) match {
-      case value if value.startsWith("win") => "windows"
-      case value if value.startsWith("lin") => "linux"
-      case value if value.startsWith("mac") => "osx"
-      case other => throw new IllegalStateException(s"OS $other is unsupported")
-    }
-    def arch: String = System.getProperty("os.arch") match {
-      case "x86"  => "x86"
-      case _      => "x64"
-    }
-  }
-  trait DynamicJbrInfo {
-    def major: String = throw new IllegalStateException("Static evaluation of JBR major version is unsupported in AutoJbr")
-    def minor: String = throw new IllegalStateException("Static evaluation of JBR minor version is unsupported in AutoJbr")
-    def kind: String  = throw new IllegalStateException("Static evaluation of JBR kind is unsupported in AutoJbr")
-  }
-  case class AutoJbr() extends JbrInfo with AutoJbrPlatform with DynamicJbrInfo
-  case class AutoJbrWithPlatform(major: String, minor: String, kind: String = JbrBintrayResolver.JBR_DCEVM_KIND) extends JbrInfo with AutoJbrPlatform
-  case class AutoJbrWithKind(override val kind: String) extends JbrInfo with AutoJbrPlatform with DynamicJbrInfo
-
-
-  case class IdeaConfigBuildingOptions(generateDefaultRunConfig: Boolean = true,
-                                       generateJUnitTemplate: Boolean = true,
-                                       generateNoPCEConfiguration: Boolean = false,
-                                       programParams: String = "",
-                                       ideaRunEnv: Map[String, String] = Map.empty,
-                                       ideaTestEnv: Map[String, String] = Map.empty,
-                                       testModuleName: String = "",
-                                       workingDir: String = "$PROJECT_DIR$/",
-                                       testSearchScope: String = "moduleWithDependencies")
-
+  type AutoJbrWithKind = org.jetbrains.sbtidea.AutoJbrWithKind
+  final val AutoJbrWithKind: org.jetbrains.sbtidea.AutoJbrWithKind.type = org.jetbrains.sbtidea.AutoJbrWithKind
 }

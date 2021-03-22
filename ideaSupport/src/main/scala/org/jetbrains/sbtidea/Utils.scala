@@ -1,36 +1,31 @@
 package org.jetbrains.sbtidea
 
-import org.jetbrains.sbtidea.packaging.PackagingKeys._
-import sbt.Keys._
-import sbt.{file, _}
+import java.net.URL
 
-trait Utils { this: Keys.type =>
-
-  /**
-    * Runner projects were required to generate a synthetic IJ module with only IJ platform jars for the run configurations
-    * to work. Since run configuration classpaths are now calculated statically, runner projects are no longer necessary.
-    */
-  @deprecated("runner projects are not required anymore", "3.8.0")
-  def createRunnerProject(from: ProjectReference, newProjectName: String = ""): Project = {
-    val baseName: String = from match {
-      case ProjectRef(_, project) => project
-      case LocalProject(project)  => project
-      case RootProject(build)     => build.hashCode().abs.toString
-      case LocalRootProject       => "plugin"
-      case ThisProject            => "plugin"
+trait Utils {
+  implicit class String2Plugin(str: String) {
+    import org.jetbrains.sbtidea.IntellijPlugin._
+    def toPlugin: IntellijPlugin = {
+      val idMatcher  = ID_PATTERN.matcher(str)
+      val urlMatcher = URL_PATTERN.matcher(str)
+      if (idMatcher.find()) {
+        val id = idMatcher.group(1)
+        val version = Option(idMatcher.group(2))
+        val channel = Option(idMatcher.group(3))
+        IntellijPlugin.Id(id, version, channel)
+      } else if (urlMatcher.find()) {
+        val name = Option(urlMatcher.group(1)).getOrElse("")
+        val url  = urlMatcher.group(2)
+        Url(new URL(url))
+      } else {
+        throw new RuntimeException(s"Failed to parse plugin: $str")
+      }
     }
-    println("Runner projects are deprecated, see createRunnerProject documentation")
-    val newName = if (newProjectName.nonEmpty) newProjectName else s"$baseName-runner"
-    Project(newName, file(s"target/tools/$newName"))
-      .dependsOn(from % Provided)
-      .settings(
-        scalaVersion := scalaVersion.in(from).value,
-        dumpDependencyStructure := null, // avoid cyclic dependencies on products task
-        products := packageArtifact.in(from).value :: Nil,  // build the artifact when IDEA delegates "Build" action to sbt shell
-        packageMethod := org.jetbrains.sbtidea.packaging.PackagingMethod.Skip(),
-        unmanagedJars in Compile := intellijMainJars.value,
-        autoScalaLibrary := !bundleScalaLibrary.value
-      ).enablePlugins(SbtIdeaPlugin)
+    def toPlugin(excludedIds: Set[String] = Set.empty, transitive: Boolean = true, optionalDeps: Boolean = true): IntellijPlugin = {
+      val res = toPlugin
+      val newSettings = Settings(transitive, optionalDeps, excludedIds)
+      res.resolveSettings = newSettings
+      res
+    }
   }
-
 }

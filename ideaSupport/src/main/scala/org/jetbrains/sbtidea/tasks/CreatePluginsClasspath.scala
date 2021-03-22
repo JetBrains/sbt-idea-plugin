@@ -2,7 +2,7 @@ package org.jetbrains.sbtidea.tasks
 
 import java.nio.file.Path
 
-import org.jetbrains.sbtidea.Keys._
+import org.jetbrains.sbtidea._
 import org.jetbrains.sbtidea.PluginLogger
 import org.jetbrains.sbtidea.download.BuildInfo
 import org.jetbrains.sbtidea.download.api.InstallContext

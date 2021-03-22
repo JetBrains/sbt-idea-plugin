@@ -1,7 +1,7 @@
 package org.jetbrains.sbtidea.download.idea
 
 import org.jetbrains.sbtidea.ConsoleLogger
-import org.jetbrains.sbtidea.Keys._
+import org.jetbrains.sbtidea._
 import org.jetbrains.sbtidea.download.BuildInfo
 import org.scalatest.{FunSuite, Matchers}
 
