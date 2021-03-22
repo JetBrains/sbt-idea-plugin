@@ -1,7 +1,8 @@
 package org.jetbrains.sbtidea.packaging.structure.sbtImpl
 
 import org.jetbrains.sbtidea.PluginLogger
-import org.jetbrains.sbtidea.packaging.{PackagingKeys, PackagingMethod, structure}
+import org.jetbrains.sbtidea.packaging
+import org.jetbrains.sbtidea.packaging.structure
 import org.jetbrains.sbtidea.packaging.structure.ProjectPackagingOptions
 import org.jetbrains.sbtidea.structure.sbtImpl._
 import sbt._
@@ -65,16 +66,20 @@ class SbtPackagingStructureExtractor(override val rootProject: ProjectRef,
     node
   }
 
-  implicit def keys2Structure(p: PackagingMethod): structure.PackagingMethod = p match {
-    case PackagingMethod.Skip() =>
+  /**
+    * converts SBT-bound packaging.PackagingMethod into sbt-agnostic structure.PackagingMethod
+    * by resolving sbt's Project ito an abstract ProjectNode
+    */
+  implicit def keys2Structure(p: packaging.PackagingMethod): structure.PackagingMethod = p match {
+    case packaging.PackagingMethod.Skip() =>
       structure.PackagingMethod.Skip()
-    case PackagingMethod.MergeIntoParent() =>
+    case packaging.PackagingMethod.MergeIntoParent() =>
       structure.PackagingMethod.MergeIntoParent()
-    case PackagingMethod.DepsOnly(targetPath) =>
+    case packaging.PackagingMethod.DepsOnly(targetPath) =>
       structure.PackagingMethod.DepsOnly(targetPath)
-    case PackagingMethod.Standalone(targetPath, static) =>
+    case packaging.PackagingMethod.Standalone(targetPath, static) =>
       structure.PackagingMethod.Standalone(targetPath, static)
-    case PackagingMethod.MergeIntoOther(project) =>
+    case packaging.PackagingMethod.MergeIntoOther(project) =>
       structure.PackagingMethod.MergeIntoOther(findProjectRef(project).map(projectCache).getOrElse(???))
   }
 }
