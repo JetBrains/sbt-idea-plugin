@@ -61,4 +61,13 @@ object apiAdapter {
     def inputStream: InputStream = Files.newInputStream(path)
   }
 
+  // sbt 0.13 doesn't supprt key ranking
+  final implicit class SbtTaskKeyExt[T](val key: sbt.TaskKey[T]) extends AnyVal {
+    def invisible: sbt.TaskKey[T] = key
+  }
+
+  final implicit class SbtInputKeyExt[T](val key: sbt.InputKey[T]) extends AnyVal {
+    def invisible: sbt.InputKey[T] = key
+  }
+
 }

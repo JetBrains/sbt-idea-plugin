@@ -4,6 +4,7 @@ import org.jetbrains.sbtidea.download.plugin.PluginDescriptor
 import org.jetbrains.sbtidea.runIdea.IntellijVMOptions
 import sbt.Keys._
 import sbt._
+import sbt.jetbrains.ideaPlugin.apiAdapter.{SbtTaskKeyExt, SbtInputKeyExt}
 
 object Keys extends Defns with Init with Utils with Quirks {
 
@@ -103,12 +104,11 @@ object Keys extends Defns with Init with Utils with Quirks {
 
   /* Utility tasks */
 
-  lazy val doPatchPluginXml          : TaskKey[Unit] = taskKey("")
-  lazy val doProjectSetup            : TaskKey[Unit] = taskKey("")
-  lazy val createIDEARunConfiguration: TaskKey[Unit] = taskKey("")
-  lazy val createIDEAArtifactXml     : TaskKey[Unit] = taskKey("")
-
-  lazy val dumpStructure             : TaskKey[Unit] = taskKey("")
-  lazy val dumpStructureTo           : InputKey[File] = inputKey("")
+  lazy val doPatchPluginXml           = taskKey[Unit]("").invisible
+  lazy val doProjectSetup             = taskKey[Unit]("").invisible
+  lazy val createIDEARunConfiguration = taskKey[Unit]("").invisible
+  lazy val createIDEAArtifactXml      = taskKey[Unit]("").invisible
+  lazy val dumpStructure              = taskKey[Unit]("").invisible
+  lazy val dumpStructureTo            = inputKey[File]("").invisible
 
 }

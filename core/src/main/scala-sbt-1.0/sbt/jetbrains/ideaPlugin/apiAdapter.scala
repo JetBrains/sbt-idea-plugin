@@ -22,4 +22,14 @@ object apiAdapter {
     def isDir: Boolean = Files.isDirectory(path)
     def inputStream: InputStream = Files.newInputStream(path)
   }
+
+  final implicit class SbtTaskKeyExt[T](val key: sbt.TaskKey[T]) extends AnyVal {
+    def invisible: sbt.TaskKey[T] =
+      key.withRank(sbt.KeyRanks.Invisible)
+  }
+
+  final implicit class SbtInputKeyExt[T](val key: sbt.InputKey[T]) extends AnyVal {
+    def invisible: sbt.InputKey[T] =
+      key.withRank(sbt.KeyRanks.Invisible)
+  }
 }
