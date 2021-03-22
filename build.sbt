@@ -22,6 +22,7 @@ lazy val commonSettings: Seq[Def.Setting[_]] = Seq(
       case "2.12" => (ThisBuild / sbtVersion).value
     }
   },
+  Test / classLoaderLayeringStrategy := ClassLoaderLayeringStrategy.Flat,
   sonatypeProfileName := "org.jetbrains",
   homepage := Some(url("https://github.com/JetBrains/sbt-idea-plugin")),
   sonatypeProjectHosting := Some(GitHubHosting("JetBrains", "sbt-idea-plugin", "scala-developers@jetbrains.com")),

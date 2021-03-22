@@ -1,0 +1,37 @@
+lazy val dump = inputKey[Unit]("")
+dump    := {
+  import org.jetbrains.sbtidea.packaging.structure.sbtImpl.{SbtPackagedProjectNodeImpl, SbtPackagingStructureExtractor}
+  val revision = complete.DefaultParsers.spaceDelimited("revision").parsed.head
+  val rootProject = thisProjectRef.value
+  val buildDeps = buildDependencies.value
+  val data = dumpDependencyStructureOffline.?.all(ScopeFilter(inAnyProject)).value.flatten.filterNot(_ == null)
+  val outputDir = packageOutputDir.value
+  val logger = new SbtPluginLogger(streams.value)
+  val base = baseDirectory.value
+  val mappings = packageMappingsOffline.value
+  val structure: Seq[SbtPackagedProjectNodeImpl] = new SbtPackagingStructureExtractor(rootProject, data, buildDeps, logger).extract
+  val userHome = file(sys.props("user.home"))
+  val relative = mappings.map{ x=>
+    x.copy(
+      from = x.from.relativeTo(base).orElse(x.from.relativeTo(userHome)).getOrElse(x.from),
+      to = x.to.relativeTo(base).orElse(x.to.relativeTo(userHome)).getOrElse(x.to)
+    )
+  }
+  writeHeader()
+  write(relative, "mappings")
+  write(structure, "structure")
+
+  def writeHeader(): Unit = {
+    val str = new ObjectOutputStream(new FileOutputStream(s"$revision.dat"))
+    str.writeUTF(base.getAbsolutePath)
+    str.writeUTF(userHome.getAbsolutePath)
+    str.writeUTF(outputDir.getAbsolutePath)
+    str.close()
+  }
+
+  def write(value: Any, suff: String): Unit = {
+    val str = new ObjectOutputStream(new FileOutputStream(s"$revision-$suff.dat"))
+    str.writeObject(value)
+    str.close()
+  }
+}
