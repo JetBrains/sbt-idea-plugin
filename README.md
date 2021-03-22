@@ -257,7 +257,8 @@ Default for all other projects:
 ```
 
 Sequence of rules to fine-tune how the library dependencies are packaged. By default all dependencies
-including transitive are placed in the "lib" subfolder of the plugin artifact. 
+including transitive are placed in the subfolder defined by 
+[`packageLibraryBaseDir`](#packagelibrarybasedir--settingkeyfile)(defaults to "lib") of the plugin artifact.
 ```SBT
 // merge all scalameta jars into a single jar
 packageLibraryMappings += "org.scalameta" %% ".*" % ".*" -> Some("lib/scalameta.jar")
@@ -267,6 +268,26 @@ packageLibraryMappings += "com.google.protobuf" % "protobuf-java" % ".*" -> None
 
 // rename scala library(strip version suffix)
 packageLibraryMappings += "org.scala-lang" % "scala-library" % scalaVersion -> Some("lib/scala-library.jar")
+```
+
+#### `packageLibraryBaseDir :: SettingKey[File]`
+
+Default: `file("lib")`
+
+Sets the per-project default sub-folder into which external libraries are packaged. Rules from [`packageLibraryMappings`](#packagefilemappings--settingkeyseqfile-string)
+will override this setting. 
+
+**NB!**: This directory must be relative to the [`packageOutputDir`](#packageoutputdir--settingkeyfile) so don't prepend
+values of the keys with absolute paths (such as `target` or `baseDirectory`) to it
+
+**NB!**: IDEA plugin classloader **only** adds the `lib` folder to the classpath when loading your plugin. Modifying 
+this setting will essentially exclude the libraries of a project from automatic classloading
+
+```SBT
+packageLibraryBaseDir  := file("lib") / "third-party"
+
+// protobuf will still be packaged into lib/protobuf.jar
+packageLibraryMappings += "com.google.protobuf" % "protobuf-java" % ".*" -> Some("lib/protobuf.jar")
 ```
 
 #### `packageFileMappings :: SettingKey[Seq[(File, String)]]`
@@ -318,6 +339,12 @@ that bundles scala-library.jar(e.g. Scala plugin for IJ) and still bundling your
 To workaround this issue `sbt-idea-plugin` tries to automatically detect if your plugin project has dependencies on 
 other plugins with Scala and filter out scala-library.jar from the resulting artifact. However, the heuristic cannot
 cover all possible cases and thereby this setting is exposed to allow manual control over bundling the scala-library.jar  
+
+#### `packageOutputDir :: SettingKey[File]`
+
+Default: `target.value / "plugin" / intellijPluginName.in(ThisBuild).value.removeSpaces`
+
+Folder to place the assembled artifact into.
 
 #### `packageArtifact :: TaskKey[File]`
 
