@@ -26,17 +26,14 @@ object Keys extends Defns with Init with Utils with Quirks {
     "Flag indicating whether IntelliJ Platform sources should be downloaded too")
 
   lazy val intellijAttachSources = settingKey[Boolean](
-    "Flag indicating whether to add sources to IntelliJ Platform SDK libraries"
-  )
+    "Flag indicating whether to add sources to IntelliJ Platform SDK libraries")
 
   @deprecated("use jbrInfo instead", "3.9.1")
   lazy val jbrVersion = settingKey[Option[String]](
-    "DEPRECATED: use jbrInfo instead"
-  )
+    "DEPRECATED: use jbrInfo instead")
 
   lazy val jbrInfo = settingKey[JbrInfo](
-    "Version and variant of JetBrains Runtime to download and install"
-  )
+    "Version and variant of JetBrains Runtime to download and install")
 
   lazy val searchPluginId = inputKey[Map[String, (String, Boolean)]](
     "Search for plugin ID by plugin name or description")
@@ -85,8 +82,7 @@ object Keys extends Defns with Init with Utils with Quirks {
     "Runs debug IntelliJ Platform instance with plugin")
 
   lazy val ideaConfigOptions = settingKey[IdeaConfigBuildingOptions](
-    "Options to tune generation of IDEA run configurations"
-  )
+    "Options to tune generation of IDEA run configurations")
 
   lazy val bundleScalaLibrary = settingKey[Boolean](
     "Include scala-library.jar in the artifact and generated run configurations")
@@ -103,8 +99,7 @@ object Keys extends Defns with Init with Utils with Quirks {
     "Create plugin distribution zip file")
 
   lazy val buildIntellijOptionsIndex = taskKey[Unit](
-    "Build index for searching plugin options"
-  )
+    "Build index for searching plugin options")
 
   /* Utility tasks */
 
