@@ -35,4 +35,7 @@ trait Defns {
 
   type AutoJbrWithKind = org.jetbrains.sbtidea.AutoJbrWithKind
   final val AutoJbrWithKind: org.jetbrains.sbtidea.AutoJbrWithKind.type = org.jetbrains.sbtidea.AutoJbrWithKind
+
+  type NoJbr = org.jetbrains.sbtidea.NoJbr.type
+  final val NoJbr = org.jetbrains.sbtidea.NoJbr
 }

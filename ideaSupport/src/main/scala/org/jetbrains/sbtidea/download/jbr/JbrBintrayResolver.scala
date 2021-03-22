@@ -14,14 +14,18 @@ class JbrBintrayResolver extends Resolver[JbrDependency] {
   import JbrBintrayResolver._
 
   override def resolve(dep: JbrDependency): Seq[JbrArtifact] = {
-    val maybeArtifact =
-      for {
-        (major, minor)  <- getJbrVersion(dep)
-        kind            <- getJbrKind(dep, minor)
-        url             =  buildJbrDlUrl(major, minor, kind, dep)
-        resolvedJbrInfo = JBR(major, minor, kind, dep.jbrInfo.platform, dep.jbrInfo.arch)
-      } yield JbrArtifact(dep.copy(jbrInfo = resolvedJbrInfo), url)
-    maybeArtifact.toSeq
+    dep.jbrInfo match {
+      case NoJbr => Seq.empty
+      case jbrInfo =>
+        val maybeArtifact =
+          for {
+            (major, minor)  <- getJbrVersion(dep)
+            kind            <- getJbrKind(dep, minor)
+            url             =  buildJbrDlUrl(major, minor, kind, dep)
+            resolvedJbrInfo = JBR(major, minor, kind, jbrInfo.platform, jbrInfo.arch)
+          } yield JbrArtifact(dep.copy(jbrInfo = resolvedJbrInfo), url)
+        maybeArtifact.toSeq
+    }
   }
 
   private[jbr] def buildJbrDlUrl(major: String, minor: String, kind: String, dep: JbrDependency): URL = {

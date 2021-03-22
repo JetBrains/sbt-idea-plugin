@@ -1,9 +1,8 @@
 package org.jetbrains.sbtidea.download.jbr
 
 import org.jetbrains.sbtidea.download.idea.IdeaMock
-import org.jetbrains.sbtidea.{ConsoleLogger, TmpDirUtils, pathToPathExt}
+import org.jetbrains.sbtidea.{ConsoleLogger, NoJbr, TmpDirUtils, pathToPathExt}
 import org.scalatest.{FunSuite, Matchers}
-import org.jetbrains.sbtidea.pathToPathExt
 import sbt._
 
 
@@ -28,6 +27,13 @@ class JbrResolverTest extends FunSuite with Matchers with IdeaMock with TmpDirUt
     artifacts.head.dlUrl.toString should include ("https://cache-redirector.jetbrains.com/jetbrains.bintray.com/intellij-jbr/")
     artifacts.head.dlUrl.toString should include ("b1304.1")
     artifacts.head.dlUrl.toString should include ("jbr_dcevm-11_0_10")
+  }
+
+  test("NoJbr jbrInfo resolves to 0 artifacts") {
+    val ideaRoot = installIdeaMock
+    val resolver = new JbrBintrayResolver()
+    val results = resolver.resolve(JbrDependency(ideaRoot, IDEA_BUILDINFO, NoJbr))
+    results shouldBe empty
   }
 
 }
