@@ -14,9 +14,6 @@ class IvyLibraryExtractor(private val data: CommonSbtProjectData)
 
   private val configuration = "compile"
 
-  private case class SbtIvyLibrary(override val key: ModuleKey,
-                                   override val jarFile: File) extends Library
-
   def extract: Seq[Library] = {
     val resolver = new TransitiveDeps(data.report, configuration)
     val resolvedLibsNoEvicted = buildModuleIdMap(data.cp)

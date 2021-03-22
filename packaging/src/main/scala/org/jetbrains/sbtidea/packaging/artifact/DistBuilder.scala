@@ -2,8 +2,6 @@ package org.jetbrains.sbtidea.packaging.artifact
 
 import java.nio.file._
 
-import org.jetbrains.sbtidea.packaging.ExcludeFilter
-import org.jetbrains.sbtidea.packaging.ExcludeFilter._
 import org.jetbrains.sbtidea.packaging._
 import sbt.Keys.TaskStreams
 import sbt._
@@ -57,7 +55,7 @@ class DistBuilder(stream: TaskStreams, private val target: File) extends Mapping
   override def patch(to: Path, mappings: Mappings): Unit = {
     timed(s"patch(${mappings.size}): $to", {
       val shader    = createShader(Seq.empty)
-      val filter    = (_:Path) => false
+      val filter    = ExcludeFilter.AllPass
       val packager  = createPackager(to, shader, filter)
       packager.mergeIntoOne(mappings.map(_.from.toPath))
     })

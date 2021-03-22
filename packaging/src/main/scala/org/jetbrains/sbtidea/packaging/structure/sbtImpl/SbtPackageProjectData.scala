@@ -2,7 +2,7 @@ package org.jetbrains.sbtidea.packaging.structure.sbtImpl
 
 import java.io.File
 
-import org.jetbrains.sbtidea.packaging.ExcludeFilter._
+import org.jetbrains.sbtidea.packaging.ExcludeFilter
 import org.jetbrains.sbtidea.packaging.{PackagingMethod, ShadePattern}
 import org.jetbrains.sbtidea.structure.sbtImpl.CommonSbtProjectData
 import sbt.Def.Classpath

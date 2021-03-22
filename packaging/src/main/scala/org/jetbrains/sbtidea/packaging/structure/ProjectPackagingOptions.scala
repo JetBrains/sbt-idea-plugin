@@ -2,9 +2,9 @@ package org.jetbrains.sbtidea.packaging.structure
 
 import java.io.File
 
-import org.jetbrains.sbtidea.packaging.ExcludeFilter._
+import org.jetbrains.sbtidea.packaging.ExcludeFilter
 import org.jetbrains.sbtidea.packaging.ShadePattern
-import org.jetbrains.sbtidea.structure.{ModuleKey, ProjectNode}
+import org.jetbrains.sbtidea.structure.ModuleKey
 
 trait ProjectPackagingOptions {
     def packageMethod: PackagingMethod

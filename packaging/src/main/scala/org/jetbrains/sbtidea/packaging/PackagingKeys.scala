@@ -36,7 +36,7 @@ object PackagingKeys extends PackagingKeysInit with PackagingDefs {
   lazy val shadePatterns = settingKey[Seq[ShadePattern]](
     "Class renaming patterns in jars")
 
-  lazy val pathExcludeFilter = settingKey[ExcludeFilter.ExcludeFilter](
+  lazy val pathExcludeFilter = settingKey[ExcludeFilter](
     "Paths to exclude within merged jars")
 
   /* Tasks */

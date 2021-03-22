@@ -2,12 +2,17 @@ package org.jetbrains.sbtidea.packaging
 
 import java.nio.file.Path
 
+trait ExcludeFilter extends Serializable {
+  def apply(path: Path): Boolean
+}
+
+//noinspection ConvertExpressionToSAM : scala 2.10 compat
 object ExcludeFilter {
-  type ExcludeFilter = Path=>Boolean
+  val AllPass: ExcludeFilter = new ExcludeFilter {
+    override def apply(path: Path): Boolean = false
+  }
 
-  val AllPass: ExcludeFilter = (_:Path) => false
-
-  def merge(filters: Iterable[ExcludeFilter]): ExcludeFilter =
-    path => filters.exists(f => f(path))
-
+  def merge(filters: Iterable[ExcludeFilter]): ExcludeFilter = new ExcludeFilter {
+    override def apply(path: Path): Boolean = filters.exists(f => f(path))
+  }
 }

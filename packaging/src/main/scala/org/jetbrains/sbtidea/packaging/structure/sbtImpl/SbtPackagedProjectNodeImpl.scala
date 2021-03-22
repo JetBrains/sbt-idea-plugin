@@ -10,7 +10,7 @@ class SbtPackagedProjectNodeImpl(override val ref: ProjectRef,
                                       var children: Seq[PackagedProjectNode],
                                       var libs: Seq[Library],
                                       var packagingOptions: ProjectPackagingOptions
-) extends SbtProjectNode with PackagedProjectNode {
+) extends SbtProjectNode with PackagedProjectNode with Serializable {
   override type T = PackagedProjectNode
 }
 

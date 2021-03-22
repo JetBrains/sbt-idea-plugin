@@ -2,7 +2,7 @@ package org.jetbrains.sbtidea.packaging.artifact
 
 import java.nio.file.{FileSystem, Files, Path}
 
-import org.jetbrains.sbtidea.packaging.ExcludeFilter._
+import org.jetbrains.sbtidea.packaging.ExcludeFilter
 import sbt.Keys.TaskStreams
 
 class DynamicPackager(myOutput: Path,

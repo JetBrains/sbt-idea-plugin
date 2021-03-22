@@ -7,7 +7,6 @@ import java.util
 import java.util.Collections
 
 import org.jetbrains.sbtidea.packaging.ExcludeFilter
-import org.jetbrains.sbtidea.packaging.ExcludeFilter._
 import sbt.Keys.TaskStreams
 
 trait JarPackager {
