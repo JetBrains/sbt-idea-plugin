@@ -144,13 +144,13 @@ Use provided flags to limit search scope to only bundled or marketplace plugins.
 [info] bundled          - Resource Bundle Editor[com.intellij.properties.bundle.editor]
 ```
 
-#### `jbrVersion :: Option[String]`
+#### `jbrInfo :: Option[JbrInfo]`
 
-Default: `Some(JbrInstaller.VERSION_AUTO)`
+Default: `AutoJbr()`
 
 JetBrains Java runtime version to use when running the IDE with the plugin. By default JBR version is extracted from
 IDE installation metadata. Only jbr 11 is supported. Available versions can be found on [jbr bintray](https://bintray.com/jetbrains/intellij-jbr/).
-To disable, set to `None`
+To disable, set to `NoJbr`
 
 #### `patchPluginXml :: SettingKey[pluginXmlOptions]`
 
