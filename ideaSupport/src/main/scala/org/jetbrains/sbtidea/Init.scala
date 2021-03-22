@@ -2,7 +2,6 @@ package org.jetbrains.sbtidea
 
 import org.jetbrains.sbtidea.download._
 import org.jetbrains.sbtidea.packaging.PackagingKeys._
-import org.jetbrains.sbtidea.runIdea.IntellijVMOptions
 import org.jetbrains.sbtidea.searchableoptions.BuildIndex
 import org.jetbrains.sbtidea.tasks._
 import sbt.Keys._
@@ -171,6 +170,6 @@ trait Init { this: Keys.type =>
       } else oldClasspath
     },
 
-    javaOptions.in(Test) ++= { intellijVMOptions.in(Test).value.asSeq :+ s"-Dsbt.ivy.home=$ivyHomeDir" }
+    javaOptions.in(Test) ++= { intellijVMOptions.in(Test).value.asSeq() :+ s"-Dsbt.ivy.home=$ivyHomeDir" }
   )
 }

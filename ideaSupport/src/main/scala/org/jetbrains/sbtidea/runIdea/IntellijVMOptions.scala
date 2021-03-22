@@ -21,47 +21,50 @@ case class IntellijVMOptions(platform: IntelliJPlatform,
                              debugPort: Int = 5005,
                              suspend: Boolean = false,
                              test: Boolean = false,
-                             defaultOptions: Seq[String] = IntellijVMOptions.DEFAULT_STATIC_OPTS) {
-
-
-  private def build: Seq[String] = {
-    val buffer = new mutable.ArrayBuffer[String]()
-    buffer ++= defaultOptions
-    buffer +=  s"-Xms${xms}m"
-    buffer +=  s"-Xmx${xmx}m"
-    buffer +=  s"-XX:ReservedCodeCacheSize=${reservedCodeCacheSize}m"
-    buffer +=  s"-XX:SoftRefLRUPolicyMSPerMB=$softRefLRUPolicyMSPerMB"
-    buffer +=  gc
-    buffer +=  gcOpt
-    val (system, config) =
-      if (test) (ideaHome.resolve("test-system"), ideaHome.resolve("test-config"))
-      else      (ideaHome.resolve("system"), ideaHome.resolve("config"))
-    buffer += s"-Didea.system.path=${system.toString.xmlQuote}"
-    buffer += s"-Didea.config.path=${config.toString.xmlQuote}"
-    buffer += s"-Dplugin.path=${pluginPath.toString.xmlQuote}"
-    if(test)
-      buffer += "-Didea.use.core.classloader.for.plugin.path=true"
-    if (noPCE)
-      buffer += "-Didea.ProcessCanceledException=disabled"
-    if (!test)
-      buffer += "-Didea.is.internal=true"
-    if (debug) {
-      val suspendValue = if (suspend) "y" else "n"
-      buffer += s"-agentlib:jdwp=transport=dt_socket,server=y,suspend=$suspendValue,address=$debugPort"
-    }
-    if (platform.platformPrefix.nonEmpty)
-      buffer += s"-Didea.platform.prefix=${platform.platformPrefix}"
-    buffer
-  }
-
-  def add(opts: Seq[String]): IntellijVMOptions = copy(defaultOptions = defaultOptions ++ opts)
-  def add(opt: String): IntellijVMOptions = copy(defaultOptions = defaultOptions :+ opt)
-
-  def asSeq: Seq[String] = build.filter(_.nonEmpty)
-  def asJava: java.util.List[String] = asSeq.asJava
-}
+                             defaultOptions: Seq[String] = IntellijVMOptions.DEFAULT_STATIC_OPTS)
 
 object IntellijVMOptions {
+
+  implicit class VMOptionOps(val options: IntellijVMOptions) extends AnyVal {
+    import options._
+
+    private def build(quoteValues: Boolean): Seq[String] = {
+      def OQ(str: String): String = if (quoteValues) str.xmlQuote else str
+      val buffer = new mutable.ArrayBuffer[String]()
+      buffer ++= defaultOptions
+      buffer +=  s"-Xms${xms}m"
+      buffer +=  s"-Xmx${xmx}m"
+      buffer +=  s"-XX:ReservedCodeCacheSize=${reservedCodeCacheSize}m"
+      buffer +=  s"-XX:SoftRefLRUPolicyMSPerMB=$softRefLRUPolicyMSPerMB"
+      buffer +=  gc
+      buffer +=  gcOpt
+      val (system, config) =
+        if (test) (ideaHome.resolve("test-system"), ideaHome.resolve("test-config"))
+        else      (ideaHome.resolve("system"), ideaHome.resolve("config"))
+      buffer += s"-Didea.system.path=${OQ(system.toString)}"
+      buffer += s"-Didea.config.path=${OQ(config.toString)}"
+      buffer += s"-Dplugin.path=${OQ(pluginPath.toString)}"
+      if(test)
+        buffer += "-Didea.use.core.classloader.for.plugin.path=true"
+      if (noPCE)
+        buffer += "-Didea.ProcessCanceledException=disabled"
+      if (!test)
+        buffer += "-Didea.is.internal=true"
+      if (debug) {
+        val suspendValue = if (suspend) "y" else "n"
+        buffer += s"-agentlib:jdwp=transport=dt_socket,server=y,suspend=$suspendValue,address=$debugPort"
+      }
+      if (platform.platformPrefix.nonEmpty)
+        buffer += s"-Didea.platform.prefix=${platform.platformPrefix}"
+      buffer
+    }
+
+    def add(opts: Seq[String]): IntellijVMOptions = copy(defaultOptions = defaultOptions ++ opts)
+    def add(opt: String): IntellijVMOptions = copy(defaultOptions = defaultOptions :+ opt)
+
+    def asSeq(quoteValues: Boolean = false): Seq[String] = build(quoteValues).filter(_.nonEmpty)
+    def asJava(quoteValues: Boolean = false): java.util.List[String] = asSeq(quoteValues).asJava
+  }
 
   val IDEA_MAIN = "com.intellij.idea.Main"
 

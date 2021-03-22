@@ -105,7 +105,7 @@ class IdeaRunner(ideaClasspath: Seq[Path],
     (List(
       javaExe.toAbsolutePath.toString,
       "-cp",
-      classPath) ++ (vmOptions.asSeq.filter(_.nonEmpty) :+ IntellijVMOptions.IDEA_MAIN) ++ programArguments).asJava
+      classPath) ++ (vmOptions.asSeq().filter(_.nonEmpty) :+ IntellijVMOptions.IDEA_MAIN) ++ programArguments).asJava
   }
 
   private def buildCPString: String = ideaClasspath.mkString(File.pathSeparator)
