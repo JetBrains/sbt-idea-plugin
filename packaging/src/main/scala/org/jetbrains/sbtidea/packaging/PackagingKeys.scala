@@ -20,9 +20,6 @@ object PackagingKeys extends PackagingKeysInit with PackagingDefs {
 
   lazy val packageLibraryBaseDir = settingKey[File](
     "Directory to place library dependencies into. *Relative* to the artifact output dir")
-  
-  lazy val packageFileMappings = settingKey[Seq[(File, String)]](
-    "Extra files or directories to include into the artifact")
 
   lazy val packageAssembleLibraries = settingKey[Boolean](
     "Should the project library dependencies be merged inside the project artifact")
@@ -40,6 +37,9 @@ object PackagingKeys extends PackagingKeysInit with PackagingDefs {
     "Paths to exclude within merged jars")
 
   /* Tasks */
+
+  lazy val packageFileMappings = taskKey[Seq[(File, String)]](
+    "Extra files or directories to include into the artifact")
 
   lazy val packageArtifact = taskKey[File](
     "Produce the artifact")

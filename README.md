@@ -307,7 +307,7 @@ packageLibraryBaseDir  := file("lib") / "third-party"
 packageLibraryMappings += "com.google.protobuf" % "protobuf-java" % ".*" -> Some("lib/protobuf.jar")
 ```
 
-#### `packageFileMappings :: SettingKey[Seq[(File, String)]]`
+#### `packageFileMappings :: TaskKey[Seq[(File, String)]]`
 
 Default: `Seq.empty`
 
