@@ -1,7 +1,6 @@
 package org.jetbrains.sbtidea
 
 import org.jetbrains.sbtidea.download.plugin.PluginDescriptor
-import org.jetbrains.sbtidea.runIdea.IntellijVMOptions
 import sbt.Keys._
 import sbt._
 import sbt.jetbrains.ideaPlugin.apiAdapter.{SbtTaskKeyExt, SbtInputKeyExt}
@@ -101,6 +100,12 @@ object Keys extends Defns with Init with Utils with Quirks {
 
   lazy val buildIntellijOptionsIndex = taskKey[Unit](
     "Build index for searching plugin options")
+
+  lazy val runPluginVerifier = taskKey[File](
+    "Runs the IntelliJ Plugin Verifier tool to check the binary compatibility with specified IntelliJ IDE builds")
+
+  lazy val pluginVerifierOptions = settingKey[PluginVerifierOptions](
+    "Options for the IntelliJ Plugin Verifier tool")
 
   /* Utility tasks */
 

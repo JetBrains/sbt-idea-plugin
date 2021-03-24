@@ -63,6 +63,7 @@ trait Init { this: Keys.type =>
       IO.delete(intellijTestSystemDir.value)
       IO.delete(intellijTestConfigDir.value)
     },
+
     searchPluginId := SearchPluginId.createTask.evaluated,
     onLoad in Global := ((s: State) => {
       "doProjectSetup" :: s
@@ -88,6 +89,9 @@ trait Init { this: Keys.type =>
     externalDependencyClasspath in Test    ++= (externalDependencyClasspath in Compile).value,
 
     update := UpdateWithIDEAInjectionTask.createTask.value,
+
+    runPluginVerifier     := RunPluginVerifierTask.createTask.value,
+    pluginVerifierOptions := RunPluginVerifierTask.defaultVerifierOptions.value,
 
     packageOutputDir := target.value / "plugin" / intellijPluginName.in(ThisBuild).value.removeSpaces,
     packageArtifactZipFile := target.value / s"${intellijPluginName.in(ThisBuild).value.removeSpaces}-${version.value}.zip",

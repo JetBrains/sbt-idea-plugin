@@ -38,4 +38,8 @@ trait Defns {
 
   type NoJbr = org.jetbrains.sbtidea.NoJbr.type
   final val NoJbr = org.jetbrains.sbtidea.NoJbr
+
+  type PluginVerifierOptions = org.jetbrains.sbtidea.verifier.PluginVerifierOptions
+  final val PluginVerifierOptions = org.jetbrains.sbtidea.verifier.PluginVerifierOptions
+
 }

@@ -203,6 +203,23 @@ This task also expects an optional argument - a [custom release channel](http://
 If omitted, plugin will be published to the default plugin repository channel (Stable) 
  
 
+#### `runPluginVerifier :: TaskKey[File]`
+
+[IntelliJ Plugin Verifier](https://github.com/JetBrains/intellij-plugin-verifier) integration task allows to 
+check the binary compatibility of the built plugin against the currently used or explicitly specified 
+IntelliJ IDE builds. The task returns a folder with the verification reports.
+
+The verification can be customized by changing the default options defined in the `pluginVerifierOptions` key.
+```SBT
+pluginVerifierOptions := pluginVerifierOptions.value.copy(
+  version = "1.254",        // use a specific verifier version
+  offline = true,           // forbid the verifier from reaching the internet
+  overrideIDEs  = Seq("IC-2019.3.5", "PS-2019.3.2"), // verify against specific products instead of 'intellijBuild'
+  failureLevels = Set(FailureLevel.DEPRECATED_API_USAGES) // only fail if deprecated APIs are used
+   // ...
+),
+```
+
 #### `updateIntellij :: TaskKey[Unit]`
 
 This task is run automatically when sbt project is loaded. 
