@@ -123,7 +123,7 @@ trait Init { this: Keys.type =>
     intellijVMOptions :=
       IntellijVMOptions(intellijPlatform.in(ThisBuild).value, packageOutputDir.value.toPath, intellijPluginDirectory.in(ThisBuild).value.toPath),
 
-    runIDE := RunIDETask.createTask.inputTaskValue,
+    runIDE := RunIDETask.createTask.evaluated,
 
     unmanagedResourceDirectories in Compile += baseDirectory.value / "resources",
     unmanagedResourceDirectories in Test    += baseDirectory.value / "testResources",
