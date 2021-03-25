@@ -119,7 +119,11 @@ trait Init { this: Keys.type =>
       doPatchPluginXml.value
       packageArtifactDynamic.value
     },
-    publishPlugin := PublishPlugin.createTask.evaluated,
+
+    publishPlugin     := PublishPlugin.createTask.evaluated,
+    signPlugin        := SignPluginArtifactTask.createTask.value,
+    signPluginOptions := SignPluginArtifactTask.defaultSignOptions,
+
     createIDEAArtifactXml := CreateIdeaArtifactXmlTask.createTask.value,
     createIDEARunConfiguration := GenerateIdeaRunConfigurations.createTask.value,
     ideaConfigOptions := IdeaConfigBuildingOptions(),

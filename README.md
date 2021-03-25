@@ -220,6 +220,26 @@ pluginVerifierOptions := pluginVerifierOptions.value.copy(
 ),
 ```
 
+#### `signPlugin :: TaskKey[File]`
+
+Utility task that signs the plugin artifact before uploading to the [JetBrains Marketplace](https://plugins.jetbrains.com/marketplace).
+Signing is performed using the [Marketplace zip signer](https://github.com/JetBrains/marketplace-zip-signer)
+library. To sign a plugin a valid certificate chain, and a private key are required.
+
+Signing is disabled by default at the moment. To enable it and set the options, modify the `signPluginOptions` key:
+```SBT
+signPluginOptions := signPluginOptions.value.copy(
+  enabled = true,
+  certFile = Some(file("/path/to/certificate")), // or via PLUGIN_SIGN_KEY env var
+  privateKeyFile  = Some(file("/path/to/privateKey")), // or via PLUGIN_SIGN_CERT env var
+  keyPassphrase = Some("keyPassword") // or None if password is not set(or via PLUGIN_SIGN_KEY_PWD env var)
+)
+```
+
+If signing the plugin artifact zip is enabled via `signPluginOptions`, this task will be used a dependency of the
+[`publishPlugin`](#publishplugin-channel--inputkeystring) task, so that the artifact is automatically signed before 
+uploading to the [JetBrains Marketplace](https://plugins.jetbrains.com/marketplace)
+
 #### `updateIntellij :: TaskKey[Unit]`
 
 This task is run automatically when sbt project is loaded. 

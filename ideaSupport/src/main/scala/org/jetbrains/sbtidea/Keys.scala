@@ -44,6 +44,12 @@ object Keys extends Defns with Init with Utils with Quirks {
   lazy val publishPlugin =inputKey[Unit](
     "Publish IntelliJ Platform plugin on plugins.jetbrains.com")
 
+  lazy val signPlugin = taskKey[File](
+    "Sign the zipped plugin artifact using your private key and certificate chain.")
+
+  lazy val signPluginOptions = settingKey[PluginSigningOptions](
+    "Enable/Disable plugin signing and set the private key and certificate chain via this setting.")
+
   lazy val intellijPluginDirectory = settingKey[File](
     "Default base directory of IntelliJ Platform config directories for this plugin")
 

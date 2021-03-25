@@ -51,9 +51,11 @@ object PublishPlugin extends SbtIdeaInputTask[Unit] {
   private def isProgressSupported: Boolean =
     jline.TerminalFactory.get.isAnsiSupported
 
-  override def createTask: Def.Initialize[InputTask[Unit]] = Def.inputTask {
+  override def createTask: Def.Initialize[InputTask[Unit]] = Def.inputTaskDyn {
     import complete.DefaultParsers._
+    import org.jetbrains.sbtidea.Keys.{signPlugin, signPluginOptions}
     val log = new SbtPluginLogger(streams.value)
+    val signingEnabled = signPluginOptions.value.enabled
     val maybeChannel = spaceDelimited("<channel>").parsed.headOption
     val tokenFile = file(s"${sys.props.get("user.home").getOrElse(".")}/$TOKEN_FILENAME")
     val fromEnv = sys.env.get(TOKEN_KEY)
@@ -72,6 +74,10 @@ object PublishPlugin extends SbtIdeaInputTask[Unit] {
       case Left(error) => throw new IllegalStateException(s"Can't extract plugin id from artifact: $error")
       case Right(metadata) => metadata.id
     }
-    tasks.PublishPlugin.apply(token, pluginId.repr, maybeChannel, packageArtifactZip.value, log)
+    if (signingEnabled) Def.task {
+      tasks.PublishPlugin.apply(token, pluginId.repr, maybeChannel, signPlugin.value, log)
+    } else Def.task {
+      tasks.PublishPlugin.apply(token, pluginId.repr, maybeChannel, packageArtifactZip.value, log)
+    }
   }
 }

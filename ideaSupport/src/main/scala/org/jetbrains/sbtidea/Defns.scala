@@ -42,4 +42,6 @@ trait Defns {
   type PluginVerifierOptions = org.jetbrains.sbtidea.verifier.PluginVerifierOptions
   final val PluginVerifierOptions = org.jetbrains.sbtidea.verifier.PluginVerifierOptions
 
+  type PluginSigningOptions = org.jetbrains.sbtidea.PluginSigningOptions
+  final val PluginSigningOptions = org.jetbrains.sbtidea.PluginSigningOptions
 }
