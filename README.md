@@ -23,6 +23,9 @@ or [package artifacts](#packaging) you can depend on:
 
 `"org.jetbrains" % "sbt-declarative-packaging" % "LATEST_VERSION"`
 
+Please see the [Known Issues](#known-issues-and-limitations) section if you come across a problem, and feel free
+file a bug on the [Issues](https://github.com/JetBrains/sbt-idea-plugin/issues) page of this repo if you find one.
+
 ## Quickstart: IJ Plugin Template Project
 
 To quickly create a Scala based IJ Plugin we provide a template project. You can use it in two ways:
@@ -56,7 +59,8 @@ addSbtPlugin("org.jetbrains" % "sbt-idea-plugin" % "LATEST_VERSION")
 Default: `name.in(LocalRootProject).value`
 
 Name of your plugin. Better set this beforehand since several other settings such as
-IntelliJ Platform directories and artifact names depend on it.
+IntelliJ Platform directories and artifact names depend on it. Please see [name troubleshooting](#name-key-in-projects)
+for more info.
 
 #### `intellijBuild in ThisBuild :: SettingKey[String]`
 
@@ -434,6 +438,8 @@ run or debug the new run configuration. This will compile the project, build the
  new IDEA instance
 - :exclamation: Note that doing an "SBT Refresh" is required after making changes to your build
 that affect the final artifact(i.e. changing `libraryDependencies`), in order to update IDEA configs
+- :exclamation: You may need to [manually build the artifact](#plugin-artifact-not-built-when-running-from-idea-after-importing-the-project)
+  when running your plugin for the first time
   
 ## Custom IntelliJ artifacts repo
 
@@ -463,3 +469,26 @@ object AutoSbtIdeaPlugin extends AbstractSbtIdeaPlugin {
   override def trigger  = allRequirements
 }
 ``` 
+
+## Known Issues and Limitations
+
+### `name` key in projects
+
+Please do not explicitly set the `name` setting key for projects that have `SbtIdeaPlugin` attached.
+SBT will automatically set it from the `lazy val`'s name of the project definition.
+
+IDEA cannot correctly handle the sutuation when `name` key and `lazy val`'s name of a project are different,
+thus making the generated artifact and run configuration xml's invalid.
+
+Related issue: https://github.com/JetBrains/sbt-idea-plugin/issues/72
+
+### Plugin artifact not built when running from IDEA after importing the project
+
+The generated IDEA run configurations depend on the built artifact of the plugin, so it should be built 
+automatically when running or debugging the generated configuration.
+
+However, when the IDEA xml configuration file is created externally, like in the case of `sbt-idea-plugin`,
+it is sometimes not picked up immediately and requires an explicit loading.
+
+It is recommended to explicitly invoke `Build | Build Artifacts | Rebuild` from IDEA after importing the project 
+for the first time(i.e. when xmls are first generated).
