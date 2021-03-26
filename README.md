@@ -52,11 +52,13 @@ addSbtPlugin("org.jetbrains" % "sbt-idea-plugin" % "LATEST_VERSION")
 
 * Start coding
 
-## IntelliJ Platform and plugin
+## SBT Related Settings and Tasks
+
+### IntelliJ Platform and Plugin
 
 #### `intellijPluginName in ThisBuild :: SettingKey[String]`
 
-Default: `name.in(LocalRootProject).value`
+**Default**: `name.in(LocalRootProject).value`
 
 Name of your plugin. Better set this beforehand since several other settings such as
 IntelliJ Platform directories and artifact names depend on it. Please see [name troubleshooting](#name-key-in-projects)
@@ -64,7 +66,7 @@ for more info.
 
 #### `intellijBuild in ThisBuild :: SettingKey[String]`
 
-Default: `LATEST-EAP-SNAPSHOT`
+**Default**: `LATEST-EAP-SNAPSHOT`
 
 Selected IDE's build number. Binaries and sources of this build will be downloaded from the
 [repository](https://www.jetbrains.org/intellij/sdk/docs/reference_guide/intellij_artifacts.html) and used in 
@@ -75,7 +77,7 @@ incomplete, so it is strongly recommended to verify it against
 
 #### `intellijPlatform in ThisBuild :: SettingKey[IntelliJPlatform]`
 
-Default: `IntelliJPlatform.IdeaCommunity`
+**Default**: `IntelliJPlatform.IdeaCommunity`
 
 Edition of IntelliJ IDE to use in project. Currently available options are:
 
@@ -86,21 +88,9 @@ Edition of IntelliJ IDE to use in project. Currently available options are:
 - CLion
 - MPS
 
-#### `intellijDownloadDirectory in ThisBuild :: SettingKey[File]`
-
-Default: `homePrefix / s".${intellijPluginName.value.removeSpaces}Plugin${intellijPlatform.value.shortname}" / "sdk"`
-
-Directory where IntelliJ binaries and sources will be downloaded.
-
-#### `intellijDownloadSources in ThisBuild :: SettingKey[Boolean]`
-
-Default: `true`
-
-Flag indicating whether IntelliJ sources should be downloaded alongside binaries or not.
-
 #### `intellijPlugins :: SettingKey[IdeaPlugin]`
 
-Default: `Seq.empty`
+**Default**: `Seq.empty`
 
 IntelliJ plugins to depend on. Bundled(internal) plugins are specified by their plugin ID.
 Plugins from repo can be specified by the plugin's id, optional version and update channel.
@@ -150,7 +140,7 @@ Use provided flags to limit search scope to only bundled or marketplace plugins.
 
 #### `jbrInfo :: Option[JbrInfo]`
 
-Default: `AutoJbr()`
+**Default**: `AutoJbr()`
 
 JetBrains Java runtime version to use when running the IDE with the plugin. By default JBR version is extracted from
 IDE installation metadata. Only jbr 11 is supported. Available versions can be found on [jbr bintray](https://bintray.com/jetbrains/intellij-jbr/).
@@ -158,7 +148,7 @@ To disable, set to `NoJbr`
 
 #### `patchPluginXml :: SettingKey[pluginXmlOptions]`
 
-Default: `pluginXmlOptions.DISABLED`
+**Default**: `pluginXmlOptions.DISABLED`
 
 Define some [`plugin.xml`](https://www.jetbrains.org/intellij/sdk/docs/basics/plugin_structure/plugin_configuration_file.html)
 fields to be patched when building the artifact. Only the file in `target` folder
@@ -191,10 +181,12 @@ Fine tune how IntelliJ run configurations are generated when importing the proje
 
 Runs IntelliJ IDE with current plugin. This task is non-blocking by default, so you can continue using SBT console.
 
-By default IDE is run with non-suspending debug agent on port `5005`. This can be overridden by either optional
+By default, IDE is run with non-suspending debug agent on port `5005`. This can be overridden by either optional
 arguments above, or by modifying default [`intellijVMOptions`](#intellijvmoptions--settingkeyintellijvmoptions). 
 [`ProcessCancelledExceptiona`](https://www.jetbrains.org/intellij/sdk/docs/basics/architectural_overview/general_threading_rules.html#background-processes-and-processcanceledexception)
 can also be disabled for current run by providing `noPCE` option.
+
+### Publishing and Verification
 
 #### `publishPlugin [channel] :: InputKey[String]`
 
@@ -221,7 +213,7 @@ pluginVerifierOptions := pluginVerifierOptions.value.copy(
   overrideIDEs  = Seq("IC-2019.3.5", "PS-2019.3.2"), // verify against specific products instead of 'intellijBuild'
   failureLevels = Set(FailureLevel.DEPRECATED_API_USAGES) // only fail if deprecated APIs are used
    // ...
-),
+)
 ```
 
 #### `signPlugin :: TaskKey[File]`
@@ -244,12 +236,6 @@ If signing the plugin artifact zip is enabled via `signPluginOptions`, this task
 [`publishPlugin`](#publishplugin-channel--inputkeystring) task, so that the artifact is automatically signed before 
 uploading to the [JetBrains Marketplace](https://plugins.jetbrains.com/marketplace)
 
-#### `updateIntellij :: TaskKey[Unit]`
-
-This task is run automatically when sbt project is loaded. 
-Downloads IntelliJ's binaries and sources, puts them into
-`intellijBaseDirectory` directory. Also downloads or updates external plugins.
-
 #### `buildIntellijOptionsIndex :: TaskKey[Unit]`
 
 Builds index of options provided by the plugin to make them searchable via 
@@ -257,13 +243,13 @@ Builds index of options provided by the plugin to make them searchable via
 This task should either be manually called instead of `packageArtifact` or before `packageArtifactZip` since it patches 
 jars already built by `packageArtifact`.
 
-## Packaging
+### Packaging
 
 #### `packageMethod :: SettingKey[PackagingMethod]`
 
-Default for root project: `PackagingMethod.Standalone(targetPath = s"lib/${name.value}.jar")`
+**Default for root project**: `PackagingMethod.Standalone(targetPath = s"lib/${name.value}.jar")`
 
-Default for all other subprojects: `PackagingMethod.MergeIntoParent()`
+**Default for all other subprojects**: `PackagingMethod.MergeIntoParent()`
 
 Controls how current project will be treated when packaging the plugin artifact.
 ```SBT
@@ -289,9 +275,9 @@ packageMethod := PackagingMethod.Skip()
 
 #### `packageLibraryMappings :: SettingKey[Seq[(ModuleID, Option[String])]]`
 
-Default for root project: `Seq.empty`
+**Default for root project**: `Seq.empty`
 
-Default for all other projects:
+**Default for all other project**s:
 ```SBT
 "org.scala-lang"  % "scala-.*" % ".*"        -> None ::
 "org.scala-lang.modules" % "scala-.*" % ".*" -> None :: Nil
@@ -300,6 +286,10 @@ Default for all other projects:
 Sequence of rules to fine-tune how the library dependencies are packaged. By default all dependencies
 including transitive are placed in the subfolder defined by 
 [`packageLibraryBaseDir`](#packagelibrarybasedir--settingkeyfile)(defaults to "lib") of the plugin artifact.
+
+You can use the [`findLibraryMapping`](#findlibrarymapping--inputkeyseqstring-seqmodulekey-optionstring)
+task to debug the library mappings
+
 ```SBT
 // merge all scalameta jars into a single jar
 packageLibraryMappings += "org.scalameta" %% ".*" % ".*" -> Some("lib/scalameta.jar")
@@ -313,7 +303,7 @@ packageLibraryMappings += "org.scala-lang" % "scala-library" % scalaVersion -> S
 
 #### `packageLibraryBaseDir :: SettingKey[File]`
 
-Default: `file("lib")`
+**Default**: `file("lib")`
 
 Sets the per-project default sub-folder into which external libraries are packaged. Rules from [`packageLibraryMappings`](#packagefilemappings--settingkeyseqfile-string)
 will override this setting. 
@@ -333,7 +323,7 @@ packageLibraryMappings += "com.google.protobuf" % "protobuf-java" % ".*" -> Some
 
 #### `packageFileMappings :: TaskKey[Seq[(File, String)]]`
 
-Default: `Seq.empty`
+**Default**: `Seq.empty`
 
 Defines mappings for adding custom files to the artifact or even override files inside jars.
 Target path is considered to be relative to `packageOutputDir`.
@@ -353,7 +343,7 @@ packageFileMappings +=  "resources" / "META-INF" / "plugin.xml" ->
 
 #### `packageAdditionalProjects :: SettingKey[Seq[Project]]`
 
-Default: `Seq.empty`
+**Default**: `Seq.empty`
 
 By default the plugin builds artifact structure based on internal classpath dependencies
 of the projects in an SBT build(`dependsOn(...)`). However, sometimes one may need to package
@@ -362,7 +352,7 @@ projects to package into the artifact without a need to introduce unwanted class
 
 #### `shadePatterns :: SettingKey[Seq[ShadePattern]]`
 
-Default: `Seq.empty`
+**Default**: `Seq.empty`
 
 Class shading patterns to be applied by JarJar library. Used to resolve name clashes with 
 libraries from IntelliJ platform such as protobuf.
@@ -383,7 +373,7 @@ cover all possible cases and thereby this setting is exposed to allow manual con
 
 #### `packageOutputDir :: SettingKey[File]`
 
-Default: `target.value / "plugin" / intellijPluginName.in(ThisBuild).value.removeSpaces`
+**Default**: `target.value / "plugin" / intellijPluginName.in(ThisBuild).value.removeSpaces`
 
 Folder to place the assembled artifact into.
 
@@ -401,7 +391,7 @@ including transitive are placed in the "lib" folder as well.
 Produces ZIP file from the artifact produced by `packagePlugin` task.
 This is later used by `publishPlugin` as an artifact to upload.
 
-## Utils
+### Utils
 
 #### `findLibraryMapping :: InputKey[Seq[(String, Seq[(ModuleKey, Option[String])])]]`
 
