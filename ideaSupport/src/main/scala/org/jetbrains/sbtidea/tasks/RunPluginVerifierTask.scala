@@ -38,6 +38,7 @@ object RunPluginVerifierTask extends SbtIdeaTask[File] {
   }
 
   override def createTask: Def.Initialize[Task[File]] = sbt.Def.task {
+    import scala.collection.JavaConverters._
     PluginLogger.bind(new SbtPluginLogger(streams.value))
     packageArtifact.value
     val verifierDir   = target.value / "verifier"
@@ -45,7 +46,7 @@ object RunPluginVerifierTask extends SbtIdeaTask[File] {
     val verifierJar   = getOrDownloadVerifier(options.version, verifierDir)
     val ideaCP        = intellijMainJars.value.map(_.data.toPath)
     val runner        = new IntellijAwareRunner(ideaCP, true) {
-      var hasErrors: Boolean = false
+      private var hasErrors: Boolean = false
       override protected def buildJavaArgs: Seq[String] = Seq(
         "-jar",
         verifierJar.toAbsolutePath.toString
@@ -54,10 +55,11 @@ object RunPluginVerifierTask extends SbtIdeaTask[File] {
       //noinspection ConvertExpressionToSAM : scala 2.10
       override def run(): Int = {
         val processBuilder = new JProcessBuilder()
+        val fullCommand = buildFullCommand
         val process = processBuilder
-          .command(buildFullCommand)
+          .command(fullCommand)
           .start()
-
+        PluginLogger.info(s"Started plugin verifier $verifierJar:\n${fullCommand.asScala.mkString(" ")}")
         artifact.using(process.getInputStream) { stream =>
           val reader = new BufferedReader(new InputStreamReader(stream))
           reader
@@ -70,10 +72,10 @@ object RunPluginVerifierTask extends SbtIdeaTask[File] {
             })
         }
         process.waitFor()
+        if (hasErrors) -1 else 0
       }
     }
-    PluginLogger.info(s"running plugin verifier $verifierJar")
-    if (runner.hasErrors)
+    if (runner.run != 0)
       throw new PluginVerificationFailedException
     else
       options.reportsDir
