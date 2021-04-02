@@ -24,7 +24,7 @@ class JbrResolverTest extends FunSuite with Matchers with IdeaMock with TmpDirUt
     val resolver = new JbrBintrayResolver()
     val artifacts = resolver.resolve(JbrDependency(ideaRoot, IDEA_BUILDINFO, JBR_INFO))
     artifacts should not be empty
-    artifacts.head.dlUrl.toString should include ("https://cache-redirector.jetbrains.com/jetbrains.bintray.com/intellij-jbr/")
+    artifacts.head.dlUrl.toString should include ("https://cache-redirector.jetbrains.com/intellij-jbr/")
     artifacts.head.dlUrl.toString should include ("b1304.1")
     artifacts.head.dlUrl.toString should include ("jbr_dcevm-11_0_10")
   }
