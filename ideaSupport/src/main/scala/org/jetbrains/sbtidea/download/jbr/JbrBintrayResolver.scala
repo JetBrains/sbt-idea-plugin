@@ -68,7 +68,7 @@ class JbrBintrayResolver extends Resolver[JbrDependency] {
 }
 
 object JbrBintrayResolver {
-  val BASE_URL        = "https://cache-redirector.jetbrains.com/jetbrains.bintray.com/intellij-jbr"
+  val BASE_URL        = "https://cache-redirector.jetbrains.com/intellij-jbr"
 
   val JBR_DEFAULT_KIND      = "jbr"
   val JBR_DCEVM_KIND        = "jbr_dcevm"
