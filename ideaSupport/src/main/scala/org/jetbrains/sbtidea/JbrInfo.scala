@@ -1,6 +1,6 @@
 package org.jetbrains.sbtidea
 
-import org.jetbrains.sbtidea.download.jbr.JbrBintrayResolver
+import org.jetbrains.sbtidea.download.jbr.JbrResolver
 
 import java.util.Locale
 
@@ -33,7 +33,7 @@ trait DynamicJbrInfo {
 
 final case class JBR(major: String, minor: String, kind: String, platform: String, arch: String) extends JbrInfo
 final case class AutoJbr() extends JbrInfo with AutoJbrPlatform with DynamicJbrInfo
-final case class AutoJbrWithPlatform(major: String, minor: String, kind: String = JbrBintrayResolver.JBR_DCEVM_KIND) extends JbrInfo with AutoJbrPlatform
+final case class AutoJbrWithPlatform(major: String, minor: String, kind: String = JbrResolver.JBR_DCEVM_KIND) extends JbrInfo with AutoJbrPlatform
 final case class AutoJbrWithKind(override val kind: String) extends JbrInfo with AutoJbrPlatform with DynamicJbrInfo
 object NoJbr extends JbrInfo {
   override def major: String    = throw new IllegalStateException("unreachable")

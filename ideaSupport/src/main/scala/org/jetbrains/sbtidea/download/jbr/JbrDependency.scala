@@ -13,7 +13,7 @@ case class JbrDependency(ideaRoot: Path,
 
 override type U = JbrDependency
   override type R = JbrArtifact
-  override protected def usedResolver: JbrBintrayResolver = new JbrBintrayResolver
+  override protected def usedResolver: JbrResolver = new JbrResolver
   override def toString: String = s"JbrDependency($jbrInfo)"
 }
 

@@ -10,8 +10,8 @@ import org.jetbrains.sbtidea.download.plugin.RepoPluginInstaller.compareIdeaVers
 import org.jetbrains.sbtidea.{pathToPathExt, PluginLogger => log, _}
 import sbt._
 
-class JbrBintrayResolver extends Resolver[JbrDependency] {
-  import JbrBintrayResolver._
+class JbrResolver extends Resolver[JbrDependency] {
+  import JbrResolver._
 
   override def resolve(dep: JbrDependency): Seq[JbrArtifact] = {
     dep.jbrInfo match {
@@ -67,7 +67,7 @@ class JbrBintrayResolver extends Resolver[JbrDependency] {
 
 }
 
-object JbrBintrayResolver {
+object JbrResolver {
   val BASE_URL        = "https://cache-redirector.jetbrains.com/intellij-jbr"
 
   val JBR_DEFAULT_KIND      = "jbr"
