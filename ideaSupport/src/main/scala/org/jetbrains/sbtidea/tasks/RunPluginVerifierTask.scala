@@ -17,6 +17,8 @@ import java.nio.file.Path
 import java.util.function.Consumer
 import scala.language.postfixOps
 import scala.language.reflectiveCalls
+import scala.util.{Failure, Try}
+import scala.xml.XML
 
 object RunPluginVerifierTask extends SbtIdeaTask[File] {
   class PluginVerificationFailedException extends RuntimeException("Plugin verification failed, see verification report for details")
@@ -81,19 +83,34 @@ object RunPluginVerifierTask extends SbtIdeaTask[File] {
       options.reportsDir
   }
 
-  // TODO: migrate from bintray
   private def getOrDownloadVerifier(version: String, downloadDir: File): Path = {
     val targetFile = downloadDir / "downloads" / s"verifier-cli-$version-all.jar"
     if (targetFile.exists()) {
       targetFile.toPath
     } else {
-      val baseUrl = "https://dl.bintray.com/jetbrains/intellij-plugin-service"
-      val repoUrl = s"$baseUrl/org/jetbrains/intellij/plugins/verifier-cli"
+      val repoUrl = s"$BASE_URL/org/jetbrains/intellij/plugins/verifier-cli"
       val artifactUrl = s"$repoUrl/$version/verifier-cli-$version-all.jar"
       new FileDownloader(downloadDir.toPath).download(new URL(artifactUrl))
     }
   }
 
-  // TODO: implement after migration from bintray
-  private def fetchLatestVerifierVersion: String = "1.254"
+  private def fetchLatestVerifierVersion: String = {
+    Try(XML.load(SPACE_METADATA_URL)) match {
+      case Failure(exception) =>
+        PluginLogger.error(s"failed get latest verifier version: ${exception.getMessage}")
+        HARDCODED_VERSION
+      case scala.util.Success(value) =>
+        val v = (value \\ "metadata" \ "versioning" \ "latest").text
+        if (v.isEmpty) {
+          PluginLogger.error(s"failed get latest verifier version: falling back to $HARDCODED_VERSION")
+          HARDCODED_VERSION
+        } else {
+          v
+        }
+    }
+  }
+
+  val HARDCODED_VERSION = "1.254"
+  val BASE_URL           = "https://packages.jetbrains.team/maven/p/intellij-plugin-verifier/intellij-plugin-verifier"
+  val SPACE_METADATA_URL  = "https://packages.jetbrains.team/maven/p/intellij-plugin-verifier/intellij-plugin-verifier/org/jetbrains/intellij/plugins/verifier-cli/maven-metadata.xml"
 }
