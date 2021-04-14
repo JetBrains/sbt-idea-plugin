@@ -9,6 +9,7 @@ class LinearMappingsBuilderTest extends FeatureSpec with MappingsTestBase {
 
   private val revisionsToTest = Seq(
     "scio-idea-plugin",
+    "sttp-bundle-IJE",
     "d1950bef0ddfd50de365c45da2c0187e8e5e8cde" // intellij-scala: TASTy: don't use "compile-internal" in build.sbt (workaround to fix project import)
   )
 
