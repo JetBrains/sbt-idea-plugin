@@ -23,8 +23,6 @@ object PluginVerifierOptions {
       val buffer = new scala.collection.mutable.ListBuffer[String]()
       buffer += "-verification-reports-dir"
       buffer += reportsDir.getAbsolutePath
-      if (teamcity)         buffer += "-team-city"
-      if (teamcityGrouping) buffer += "-tc-grouping"
       if (offline)          buffer += "-offline"
       buffer ++= additionalCommonOpts
       buffer += "check-plugin"
@@ -33,6 +31,11 @@ object PluginVerifierOptions {
         buffer += ideaDir.getAbsolutePath
       else
         buffer ++= overrideIDEs
+      if (teamcity)         buffer += "-team-city"
+      if (teamcityGrouping) {
+        buffer += "-tc-grouping"
+        buffer += "plugin"
+      }
       buffer
     }
   }
