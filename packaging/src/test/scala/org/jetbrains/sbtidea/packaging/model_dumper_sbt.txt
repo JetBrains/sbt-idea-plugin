@@ -1,5 +1,7 @@
 lazy val dump = inputKey[Unit]("")
 dump    := {
+  import java.io.{FileOutputStream, ObjectOutputStream}
+  import org.jetbrains.sbtidea.SbtPluginLogger
   import org.jetbrains.sbtidea.packaging.structure.sbtImpl.{SbtPackagedProjectNodeImpl, SbtPackagingStructureExtractor}
   val revision = complete.DefaultParsers.spaceDelimited("revision").parsed.head
   val rootProject = thisProjectRef.value
