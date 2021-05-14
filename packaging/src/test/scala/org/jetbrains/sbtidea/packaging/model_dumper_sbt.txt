@@ -3,7 +3,7 @@ dump    := {
   import java.io.{FileOutputStream, ObjectOutputStream}
   import org.jetbrains.sbtidea.SbtPluginLogger
   import org.jetbrains.sbtidea.packaging.structure.sbtImpl.{SbtPackagedProjectNodeImpl, SbtPackagingStructureExtractor}
-  val revision = complete.DefaultParsers.spaceDelimited("revision").parsed.head
+  val revision = complete.DefaultParsers.spaceDelimited("revision").parsed.headOption.getOrElse(name.value)
   val rootProject = thisProjectRef.value
   val buildDeps = buildDependencies.value
   val data = dumpDependencyStructureOffline.?.all(ScopeFilter(inAnyProject)).value.flatten.filterNot(_ == null)
