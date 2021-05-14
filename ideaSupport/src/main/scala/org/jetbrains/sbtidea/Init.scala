@@ -111,6 +111,13 @@ trait Init { this: Keys.type =>
       else
         filterScalaLibrary(previousValue)
     },
+    managedClasspath in Compile := {
+      val previousValue: Classpath = managedClasspath.in(Compile).value
+      if (bundleScalaLibrary.in(ThisBuild).value)
+        previousValue
+      else
+        filterScalaLibraryCp(previousValue)
+    },
     packageArtifact := {
       doPatchPluginXml.value
       packageArtifact.value
