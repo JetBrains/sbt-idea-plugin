@@ -29,13 +29,11 @@ class LinearMappingsBuilderTest extends FeatureSpec with MappingsTestBase {
   }
 
   feature("same mappings and structure across SIP versions") {
-    if (util.Properties.versionString.contains("2.10"))
-      cancel("only for sbt 1.0+")
-    else {
-      val pairs = Seq(
-        "d1950bef0ddfd50de365c45da2c0187e8e5e8cde" -> "d1950bef0ddfd50de365c45da2c0187e8e5e8cde-GH_106")
-      for ((a, b) <- pairs) {
-        scenario(s"$a === $b") {
+    val pairs = Seq(
+      "d1950bef0ddfd50de365c45da2c0187e8e5e8cde" -> "d1950bef0ddfd50de365c45da2c0187e8e5e8cde-GH_106")
+    for ((a, b) <- pairs) {
+      scenario(s"$a === $b") {
+        if (!util.Properties.versionString.contains("2.10")) {
           val dataA = readTestData(a)
           val dataB = readTestData(b)
 
@@ -45,6 +43,8 @@ class LinearMappingsBuilderTest extends FeatureSpec with MappingsTestBase {
 
           structureDiff shouldBe empty
           mappingsDiff shouldBe empty
+        } else {
+          cancel("only for sbt 1.0+")
         }
       }
     }
