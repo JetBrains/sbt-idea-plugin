@@ -11,6 +11,7 @@ import java.io.{File, ObjectInputStream}
 trait MappingsTestBase extends Matchers with ConsoleLogger {
 
   case class Header(buildDir: File, userHome: File, outputDir: File)
+  case class TestData(header: Header, structure: Seq[SbtPackagedProjectNodeImpl], mappings: Mappings)
 
   private def loadHeader(revision: String): Header = {
     val stream = getClass.getResourceAsStream(s"$revision.dat")
@@ -38,6 +39,13 @@ trait MappingsTestBase extends Matchers with ConsoleLogger {
   private def readMappings(revision: String): Mappings =
     loadData(revision, "mappings")
 
+  protected def readTestData(revision: String): TestData = {
+    val header = loadHeader(revision)
+    val structure = readStructure(revision)
+    val mappings= readMappings(revision)
+    TestData(header, structure, mappings)
+  }
+
   def testMappings(revision: String) {
     val header = loadHeader(revision)
     val structure = readStructure(revision)
@@ -49,4 +57,5 @@ trait MappingsTestBase extends Matchers with ConsoleLogger {
       )}
     mappings should contain theSameElementsAs actualMappings
   }
+
 }
