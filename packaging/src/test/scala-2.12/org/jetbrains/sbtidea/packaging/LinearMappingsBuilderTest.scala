@@ -16,16 +16,12 @@ class LinearMappingsBuilderTest extends FeatureSpec with MappingsTestBase {
   )
 
 
-
   feature("mappings equality on various builds") {
-      revisionsToTest.foreach { rev =>
-        scenario(s"revision: $rev") {
-          if (util.Properties.versionString.contains("2.10"))
-            cancel("only for sbt 1.0+")
-          else
-            testMappings(rev)
-        }
+    revisionsToTest.foreach { rev =>
+      scenario(s"revision: $rev") {
+        testMappings(rev)
       }
+    }
   }
 
   feature("same mappings and structure across SIP versions") {
@@ -33,21 +29,18 @@ class LinearMappingsBuilderTest extends FeatureSpec with MappingsTestBase {
       "d1950bef0ddfd50de365c45da2c0187e8e5e8cde" -> "d1950bef0ddfd50de365c45da2c0187e8e5e8cde-GH_106")
     for ((a, b) <- pairs) {
       scenario(s"$a === $b") {
-        if (!util.Properties.versionString.contains("2.10")) {
-          val dataA = readTestData(a)
-          val dataB = readTestData(b)
+        val dataA = readTestData(a)
+        val dataB = readTestData(b)
 
-          val structureDiff = dataA.structure.toSet.diff(dataB.structure.toSet)
-          val mappingsDiff = dataA.mappings.toSet.diff(dataB.mappings.toSet)
-            .filterNot(_.from.toString.contains("/tmp")) // filter out temp files with random names
+        val structureDiff = dataA.structure.toSet.diff(dataB.structure.toSet)
+        val mappingsDiff = dataA.mappings.toSet.diff(dataB.mappings.toSet)
+          .filterNot(_.from.toString.contains("/tmp")) // filter out temp files with random names
 
-          structureDiff shouldBe empty
-          mappingsDiff shouldBe empty
-        } else {
-          cancel("only for sbt 1.0+")
-        }
+        structureDiff shouldBe empty
+        mappingsDiff shouldBe empty
       }
     }
   }
+
 
 }

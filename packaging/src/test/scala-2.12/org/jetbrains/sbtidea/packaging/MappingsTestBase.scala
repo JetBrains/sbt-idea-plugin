@@ -33,10 +33,10 @@ trait MappingsTestBase extends Matchers with ConsoleLogger {
     data
   }
 
-  private def readStructure(revision: String): Seq[SbtPackagedProjectNodeImpl] =
+  protected def readStructure(revision: String): Seq[SbtPackagedProjectNodeImpl] =
     loadData(revision, "structure")
 
-  private def readMappings(revision: String): Mappings =
+  protected def readMappings(revision: String): Mappings =
     loadData(revision, "mappings")
 
   protected def readTestData(revision: String): TestData = {
