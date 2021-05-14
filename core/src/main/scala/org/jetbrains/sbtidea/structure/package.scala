@@ -19,6 +19,7 @@ package object structure {
   trait ProjectNode {
     type T <: ProjectNode
     def name: String
+    def id: String
     def parents: Seq[T]
     def children: Seq[T]
     def libs: Seq[Library]

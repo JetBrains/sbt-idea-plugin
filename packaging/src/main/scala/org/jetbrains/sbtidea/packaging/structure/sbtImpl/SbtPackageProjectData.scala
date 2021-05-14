@@ -11,6 +11,7 @@ import sbt._
 import scala.language.implicitConversions
 
 case class SbtPackageProjectData(thisProject: ProjectRef,
+                                 name: String,
                                  cp: Classpath,
                                  definedDeps: Seq[ModuleID],
                                  additionalProjects: Seq[Project],

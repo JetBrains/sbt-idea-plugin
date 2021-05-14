@@ -7,6 +7,7 @@ import sbt.{ModuleID, ProjectRef, UpdateReport}
 
 trait CommonSbtProjectData {
   def thisProject: ProjectRef
+  def name: String
   def cp: Classpath
   def definedDeps: Seq[ModuleID]
   def productDirs: Seq[File]

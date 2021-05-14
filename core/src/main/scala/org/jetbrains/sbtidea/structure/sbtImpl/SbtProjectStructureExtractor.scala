@@ -14,7 +14,8 @@ class SbtProjectStructureExtractor(override val rootProject: ProjectRef,
 
   override implicit val log: PluginLogger = _log
 
-  override def buildStub(data: SbtProjectData): SbtProjectNodeImpl = SbtProjectNodeImpl(data.thisProject, null, null, null)
+  override def buildStub(data: SbtProjectData): SbtProjectNodeImpl =
+    SbtProjectNodeImpl(data.thisProject, data.name, null, null, null)
 
   override def updateNode(node: SbtProjectNodeImpl, data: SbtProjectData): SbtProjectNodeImpl = {
     val children = collectChildren(node, data)
