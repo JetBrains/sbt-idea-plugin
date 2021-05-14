@@ -1,9 +1,8 @@
 package org.jetbrains.sbtidea.structure.sbtImpl
 
 import java.io.File
-
 import org.jetbrains.sbtidea.PluginLogger
-import org.jetbrains.sbtidea.structure.{Library, ModuleKey}
+import org.jetbrains.sbtidea.structure.{Library, ModuleKey, ProjectScalaVersion}
 import sbt.Def.Classpath
 import sbt.Keys.moduleID
 

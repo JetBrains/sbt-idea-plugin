@@ -4,6 +4,11 @@ import java.io.File
 
 package object structure {
 
+  trait ProjectScalaVersion {
+    def isDefined: Boolean
+    def str: String
+  }
+
   trait ModuleKey {
     def ~==(other: ModuleKey): Boolean
     def org: String

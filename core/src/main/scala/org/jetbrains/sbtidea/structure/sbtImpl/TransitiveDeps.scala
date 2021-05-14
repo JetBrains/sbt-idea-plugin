@@ -1,6 +1,6 @@
 package org.jetbrains.sbtidea.structure.sbtImpl
 
-import org.jetbrains.sbtidea.structure.ModuleKey
+import org.jetbrains.sbtidea.structure.{ModuleKey, ProjectScalaVersion}
 import sbt.UpdateReport
 
 //noinspection MapGetOrElseBoolean : scala 2.10 has no Option.contains

@@ -4,6 +4,7 @@ import org.jetbrains.sbtidea.PluginLogger
 import org.jetbrains.sbtidea.packaging
 import org.jetbrains.sbtidea.packaging.structure
 import org.jetbrains.sbtidea.packaging.structure.ProjectPackagingOptions
+import org.jetbrains.sbtidea.structure.ProjectScalaVersion
 import org.jetbrains.sbtidea.structure.sbtImpl._
 import sbt._
 import sbt.jetbrains.ideaPlugin.apiAdapter._
@@ -34,7 +35,7 @@ class SbtPackagingStructureExtractor(override val rootProject: ProjectRef,
     data.additionalProjects.flatMap(findProjectRef).foldLeft(direct) { case (q, r) => topoSortRefs(r, q) }
 
   private def collectPackagingOptions(data: SbtPackageProjectData): ProjectPackagingOptions = {
-    implicit val scalaVersion: ProjectScalaVersion = ProjectScalaVersion(data.definedDeps.find(_.name == "scala-library"))
+    implicit val scalaVersion: ProjectScalaVersion = ProjectScalaVersionImpl(data.definedDeps.find(_.name == "scala-library"))
 
     validateProjectData(data)
 
