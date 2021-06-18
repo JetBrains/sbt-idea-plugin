@@ -5,7 +5,9 @@ import org.jetbrains.sbtidea.packaging.PackagingKeys._
 import org.jetbrains.sbtidea.searchableoptions.BuildIndex
 import org.jetbrains.sbtidea.tasks._
 import sbt.Keys._
-import sbt.{file, _}
+import sbt.{Attributed, File, file, _}
+
+import scala.collection.mutable
 
 trait Init { this: Keys.type =>
 
@@ -181,7 +183,7 @@ trait Init { this: Keys.type =>
           (packageOutputDir.value * globFilter("*.jar")) +++
           (packageOutputDir.value / "lib" * globFilter("*.jar"))
         val allExportedProducts = exportedProducts.all(ScopeFilter(inDependencies(ThisProject), inConfigurations(Compile))).value.flatten
-        pathFinder.classpath ++ (oldClasspath.toSet -- allExportedProducts.toSet).toSeq // exclude classes already in the artifact
+        pathFinder.classpath ++ (oldClasspath.to[mutable.LinkedHashSet] -- allExportedProducts.toSet).toSeq // exclude classes already in the artifact
       } else oldClasspath
     },
 
