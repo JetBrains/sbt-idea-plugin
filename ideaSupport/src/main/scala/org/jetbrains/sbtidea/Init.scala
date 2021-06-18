@@ -5,7 +5,7 @@ import org.jetbrains.sbtidea.packaging.PackagingKeys._
 import org.jetbrains.sbtidea.searchableoptions.BuildIndex
 import org.jetbrains.sbtidea.tasks._
 import sbt.Keys._
-import sbt.{Attributed, File, file, _}
+import sbt.{File, file, _}
 
 import scala.collection.mutable
 
