@@ -157,6 +157,7 @@ class IdeaConfigBuilder(moduleName: String,
        |  <configuration default="false" name="$name" type="Application" factoryName="Application">
        |    $jreSettings
        |    <log_file alias="IJ LOG" path="$dataDir/system/log/idea.log" />
+       |    <log_file alias="JPS LOG" path="$dataDir/system/log/build-log/build.log" />
        |    <option name="MAIN_CLASS_NAME" value="com.intellij.idea.Main" />
        |    <module name="$moduleName" />
        |    <option name="VM_PARAMETERS" value="-cp &quot;${intellijDir / "lib"}${File.separator}*&quot; ${vmOptions.asSeq(quoteValues = true).mkString(" ")}" />
