@@ -38,7 +38,12 @@ class SbtPackagingStructureExtractor(override val rootProject: ProjectRef,
     data.additionalProjects.flatMap(findProjectRef).foldLeft(direct) { case (q, r) => topoSortRefs(r, q) }
 
   private def collectPackagingOptions(data: SbtPackageProjectData): ProjectPackagingOptions = {
-    implicit val scalaVersion: ProjectScalaVersion = ProjectScalaVersionImpl(data.definedDeps.find(_.name == "scala-library"))
+    def isScalaLibrary(moduleId: ModuleID): Boolean = moduleId.name match {
+      case "scala-library" | "scala3-library_3" => true
+      case _ => false
+    }
+
+    implicit val scalaVersion: ProjectScalaVersion = ProjectScalaVersionImpl(data.definedDeps.find(isScalaLibrary))
 
     validateProjectData(data)
 
