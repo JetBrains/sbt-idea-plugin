@@ -12,19 +12,24 @@ trait Quirks { this: Keys.type =>
   )
 
   def makeScalaLibraryProvided(libs: Seq[ModuleID]): Seq[ModuleID] = libs.map {
-    case id if id.name.contains("scala-library") => id % "provided"
+    case id if isScalaLibrary(id) => id % "provided"
     case other => other
   }
 
   def filterScalaLibrary(mappings: Seq[(sbt.ModuleID, Option[String])]): Seq[(sbt.ModuleID, Option[String])] =
     mappings.filterNot {
-      case (module, _) if module.name.contains("scala-library") => true
+      case (module, _) if isScalaLibrary(module) => true
       case _ => false
     }
 
   def filterScalaLibraryCp(cp: Classpath): Classpath =
-    cp.filterNot(_.get(moduleID.key).exists(_.name.contains("scala-library")))
+    cp.filterNot(_.get(moduleID.key).exists(isScalaLibrary))
 
   def hasPluginsWithScala(plugins: Seq[IntellijPlugin]): Boolean =
     plugins.exists(plugin => pluginsWithScala.exists(id => plugin.toString.matches(s".*$id.*")))
+
+  private def isScalaLibrary(moduleId: ModuleID): Boolean = moduleId.name match {
+    case "scala-library" | "scala3-library_3" => true
+    case _ => false
+  }
 }

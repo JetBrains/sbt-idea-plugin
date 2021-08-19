@@ -3,7 +3,7 @@ package org.jetbrains.sbtidea.structure.sbtImpl
 import org.jetbrains.sbtidea.PluginLogger
 import org.jetbrains.sbtidea.structure.*
 import sbt.jetbrains.ideaPlugin.apiAdapter.*
-import sbt.{Project, ProjectRef}
+import sbt.{ModuleID, Project, ProjectRef}
 
 import scala.collection.mutable
 
@@ -62,12 +62,17 @@ trait SbtProjectStructureExtractorBase extends ProjectStructureExtractor {
   override def collectLibraries(data: ProjectDataType): Seq[Library] = {
     val projectData = projectMap(data.thisProject)
 
+    def isScalaLibrary(moduleId: ModuleID) = moduleId.name match {
+      case "scala-library" | "scala3-library_3" => true
+      case _ => false
+    }
+
     implicit val scalaVersion: ProjectScalaVersion =
       ProjectScalaVersionImpl(
         projectData.cp
           .flatMap(_.metadata.get(sbt.Keys.moduleID.key))
-          .find(_.name == "scala-library")
-          .orElse(projectData.definedDeps.find(_.name == "scala-library"))
+          .find(isScalaLibrary)
+          .orElse(projectData.definedDeps.find(isScalaLibrary))
       )
 
     val libraryExtractor = new IvyLibraryExtractor(projectData)
