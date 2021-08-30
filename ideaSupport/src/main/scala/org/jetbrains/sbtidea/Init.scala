@@ -8,6 +8,7 @@ import sbt.Keys._
 import sbt.{File, file, _}
 
 import scala.collection.mutable
+import scala.math.Ordering.Implicits.infixOrderingOps
 
 trait Init { this: Keys.type =>
 
@@ -178,7 +179,7 @@ trait Init { this: Keys.type =>
 
     fullClasspath.in(Test) := {
       val oldClasspath = fullClasspath.in(Test).value
-      if (VersionComparatorUtil.compare(intellijBuild.value, newClassloadingSinceVersion) >= 0) {
+      if (ClasspathStrategy.forVersion(intellijBuild.value).version >= ClasspathStrategy.Since_203_5251.version) {
         val pathFinder = PathFinder.empty +++ // the new IJ plugin loading strategy in tests requires external plugins to be prepended to the classpath
           (packageOutputDir.value * globFilter("*.jar")) +++
           (packageOutputDir.value / "lib" * globFilter("*.jar"))

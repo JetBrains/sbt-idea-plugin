@@ -1,10 +1,10 @@
 package org.jetbrains.sbtidea.tasks
 
 import org.jetbrains.sbtidea.Keys._
-import org.jetbrains.sbtidea.download.{BuildInfo, VersionComparatorUtil}
+import org.jetbrains.sbtidea.download.BuildInfo
 import org.jetbrains.sbtidea.packaging.PackagingKeys.packageOutputDir
-import org.jetbrains.sbtidea.{PluginLogger, SbtPluginLogger, tasks}
-import sbt.Keys.{baseDirectory, classDirectory, envVars, name, streams}
+import org.jetbrains.sbtidea.{ClasspathStrategy, PluginLogger, SbtPluginLogger, tasks}
+import sbt.Keys._
 import sbt.{Def, _}
 
 object GenerateIdeaRunConfigurations extends SbtIdeaTask[Unit] {
@@ -18,7 +18,8 @@ object GenerateIdeaRunConfigurations extends SbtIdeaTask[Unit] {
         intellijBuild.in(ThisBuild).value,
         intellijPlatform.in(ThisBuild).value)
       val actualIntellijBuild = buildInfo.getDeclaredOrActualNoSnapshotBuild(intellijBaseDirectory.in(ThisBuild).value.toPath)
-      val newClassLoadingStrategy = VersionComparatorUtil.compare(actualIntellijBuild, newClassloadingSinceVersion) >= 0
+      val classLoadingStrategy = ClasspathStrategy.forVersion(actualIntellijBuild)
+      PluginLogger.info(s"Class loading strategy: since ${classLoadingStrategy.version}")
       val vmOptions = intellijVMOptions.value.copy(debug = false)
       val configName = name.value
       val dotIdeaFolder = baseDirectory.in(ThisBuild).value / ".idea"
@@ -43,14 +44,14 @@ object GenerateIdeaRunConfigurations extends SbtIdeaTask[Unit] {
         configName = configName,
         intellijVMOptions = vmOptions,
         dataDir = intellijPluginDirectory.value,
-        ideaBaseDir = intellijBaseDirectory.value,
+        intellijBaseDir = intellijBaseDirectory.in(ThisBuild).value,
         dotIdeaFolder = dotIdeaFolder,
         pluginAssemblyDir = packageOutputDir.value,
         ownProductDirs = ownClassPath,
-        intellijDir = intellijBaseDirectory.in(ThisBuild).value,
         pluginRoots = pluginRoots,
         options = config,
-        newClasspathStrategy = newClassLoadingStrategy)
+        classLoadingStrategy
+      )
 
       configBuilder.build()
     } else Def.task { }

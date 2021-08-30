@@ -3,30 +3,33 @@ package org.jetbrains.sbtidea.tasks
 import java.io.File
 import java.nio.file.{Path, Paths}
 import java.util.regex.Pattern
-
 import org.jetbrains.sbtidea.Keys.IdeaConfigBuildingOptions
 import org.jetbrains.sbtidea.runIdea.{IdeaRunner, IntellijVMOptions}
 import org.jetbrains.sbtidea.tasks.IdeaConfigBuilder.{pathPattern, pluginsPattern}
-import org.jetbrains.sbtidea.{pathToPathExt, PluginLogger => log}
+import org.jetbrains.sbtidea.{ClasspathStrategy, pathToPathExt, PluginLogger => log}
 import sbt._
 
 import scala.annotation.tailrec
+import scala.math.Ordering.Implicits.infixOrderingOps
 
-
+/**
+  * @param pluginRoots contains only those plugins which are listed in the project IntelliJ plugin dependencies and their transitive dependencies
+  */
 class IdeaConfigBuilder(moduleName: String,
                         configName: String,
                         intellijVMOptions: IntellijVMOptions,
                         dataDir: File,
-                        ideaBaseDir: File,
+                        intellijBaseDir: File,
                         dotIdeaFolder: File,
                         pluginAssemblyDir: File,
                         ownProductDirs: Seq[File],
-                        intellijDir: File,
                         pluginRoots: Seq[File],
                         options: IdeaConfigBuildingOptions,
-                        newClasspathStrategy: Boolean = true) {
+                        classpathStrategy: ClasspathStrategy = ClasspathStrategy.Since_203_5251) {
 
   private val runConfigDir = dotIdeaFolder / "runConfigurations"
+
+  private val intellijPlatformJarsFolder = intellijBaseDir / "lib"
 
   private val IDEA_ROOT_KEY = "idea.installation.dir"
 
@@ -74,18 +77,19 @@ class IdeaConfigBuilder(moduleName: String,
   }
 
   /**
-    * Attempts to detect jars of *currently running* IJ instance to pass ij-junit runtime jars to the
-    * generated junit run configuration template. This is required because in order to get test progress and overall
+    * Attempts to detect jars of '''currently running''' IJ instance to pass ij-junit runtime jars to the
+    * generated junit run configuration template.<br>
+    * This is required because in order to get test progress and overall
     * communicate with the test framework IJ injects its own classes into your tests classpath and uses a custom junit
     * runner to start the tests, which is distributed with the IJ itself by adding them to the classpath dynamically
-    * when starting the tests run configuration.
+    * when starting the tests run configuration.<br>
     * And since we have to statically set the whole classpath in advance while generating the run configuration template
     * xmls, the required jars have to be found using MAGIC(heuristics). To do this we assume that during an sbt import
     * process sbt-launch.jar(which should appear on the java's cmdline) is the one we distribute with the Scala plugin
     * and thereby, resides somewhere close to the IJ core libraries.
     * @return
     */
-  private def guessIJRuntimeJars(): Seq[Path] =
+  private def guessIJRuntimeJarsForJUnitTemplate(): Seq[Path] =
     getExplicitIDEARoot
       .orElse(getCurrentLaunchPath.flatMap(scanForIDEARoot)) match {
       case Some(ijRoot) =>
@@ -121,7 +125,7 @@ class IdeaConfigBuilder(moduleName: String,
   }
 
   private lazy val jreSettings: String = {
-    val runner = new IdeaRunner((ideaBaseDir / "lib").toPath.list, intellijVMOptions,false)
+    val runner = new IdeaRunner(intellijPlatformJarsFolder.toPath.list, intellijVMOptions,false)
     runner.getBundledJRE match {
       case None       => ""
       case Some(jbr)  =>
@@ -153,6 +157,14 @@ class IdeaConfigBuilder(moduleName: String,
     val vmOptions = if (noPCE) intellijVMOptions.copy(noPCE = true) else intellijVMOptions
     val env = mkEnv(options.ideaRunEnv)
     val name = if (noPCE) s"$configName-noPCE" else configName
+
+    // since 213.2732 when IDEA is run from sources we need to provide full classpath,
+    // including classpath of all bundled plugins
+    val classpathText: String = if (classpathStrategy.version >= ClasspathStrategy.Since_213_2732.version)
+      intellijPlatformJarsClasspathPattern + File.pathSeparator + intellijAllPluginsJarsClasspathPattern
+    else
+      intellijPlatformJarsClasspathPattern
+
     s"""<component name="ProjectRunConfigurationManager">
        |  <configuration default="false" name="$name" type="Application" factoryName="Application">
        |    $jreSettings
@@ -160,7 +172,7 @@ class IdeaConfigBuilder(moduleName: String,
        |    <log_file alias="JPS LOG" path="$dataDir/system/log/build-log/build.log" />
        |    <option name="MAIN_CLASS_NAME" value="com.intellij.idea.Main" />
        |    <module name="$moduleName" />
-       |    <option name="VM_PARAMETERS" value="-cp &quot;${intellijDir / "lib"}${File.separator}*&quot; ${vmOptions.asSeq(quoteValues = true).mkString(" ")}" />
+       |    <option name="VM_PARAMETERS" value="-cp &quot;$classpathText&quot; ${vmOptions.asSeq(quoteValues = true).mkString(" ")}" />
        |    <RunnerSettings RunnerId="Debug">
        |      <option name="DEBUG_PORT" value="" />
        |      <option name="TRANSPORT" value="0" />
@@ -183,16 +195,30 @@ class IdeaConfigBuilder(moduleName: String,
 
   }
 
+  private def intellijPlatformJarsClasspathPattern: String =
+    s"$intellijPlatformJarsFolder${File.separator}*"
+
+  private def intellijAllPluginsJarsClasspathPattern: String = {
+    val patterns = (intellijBaseDir / "plugins").listFiles().filter(_.isDirectory).map(pluginClasspathPattern)
+    patterns.mkString(File.pathSeparator)
+  }
+
+  private def intellijPluginRootsJarsClasspathPattern: String =
+    pluginRoots.map(pluginClasspathPattern).mkString(File.pathSeparator)
+
+  private def pluginClasspathPattern(pluginPath: File): String =
+    if (pluginPath.isDirectory) s"${pluginPath / "lib"}${File.separator}*" else pluginPath.toString
+
   private def buildJUnitTemplate: String = {
     val testVMOptions = intellijVMOptions.copy(test = true)
     val env = mkEnv(options.ideaTestEnv)
     val vmOptionsStr =
-      if (newClasspathStrategy) {
-        val ijRuntimeJars = guessIJRuntimeJars()
+      if (classpathStrategy.version >= ClasspathStrategy.Since_203_5251.version) {
+        val ijRuntimeJars = guessIJRuntimeJarsForJUnitTemplate()
         val classpathStr =
           (pluginAssemblyDir / "lib").toString + File.separator + "*" + // plugin jars must go first when using CLASSLOADER_KEY
-            File.pathSeparator + (intellijDir / "lib").toString + File.separator + "*" +
-            File.pathSeparator + pluginRoots.map(f => if (f.isDirectory) s"${f / "lib"}${File.separator}*" else f.toString).mkString(File.pathSeparator) +
+            File.pathSeparator + intellijPlatformJarsClasspathPattern +
+            File.pathSeparator + intellijPluginRootsJarsClasspathPattern +
             File.pathSeparator + ownProductDirs.mkString(File.pathSeparator) +
             File.pathSeparator + ijRuntimeJars.mkString(File.pathSeparator) // runtime jars from the *currently running* IJ to actually start the tests
         s"-cp &quot;$classpathStr&quot; ${testVMOptions.asSeq(quoteValues = true).mkString(" ")}"

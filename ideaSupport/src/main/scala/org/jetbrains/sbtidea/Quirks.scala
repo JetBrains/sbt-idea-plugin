@@ -5,13 +5,11 @@ import sbt._
 
 trait Quirks { this: Keys.type =>
 
-  val pluginsWithScala = Seq( // TODO: add more
+  private val pluginsWithScala = Seq( // TODO: add more
     "org.intellij.scala",
     "org.jetbrains.plugins.hocon",
     "intellij.haskell"
   )
-
-  final val newClassloadingSinceVersion = "203.5251"
 
   def makeScalaLibraryProvided(libs: Seq[ModuleID]): Seq[ModuleID] = libs.map {
     case id if id.name.contains("scala-library") => id % "provided"
@@ -29,5 +27,4 @@ trait Quirks { this: Keys.type =>
 
   def hasPluginsWithScala(plugins: Seq[IntellijPlugin]): Boolean =
     plugins.exists(plugin => pluginsWithScala.exists(id => plugin.toString.matches(s".*$id.*")))
-
 }

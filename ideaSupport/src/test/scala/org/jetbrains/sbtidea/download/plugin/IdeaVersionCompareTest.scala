@@ -2,6 +2,7 @@ package org.jetbrains.sbtidea.download.plugin
 
 import org.scalatest.{FunSuite, Matchers}
 import RepoPluginInstaller.compareIdeaVersions
+import org.jetbrains.sbtidea.download.Version
 
 class IdeaVersionCompareTest extends FunSuite with Matchers {
 
@@ -50,4 +51,10 @@ class IdeaVersionCompareTest extends FunSuite with Matchers {
       }
   }
 
+  test("version case class") {
+    import scala.math.Ordering.Implicits.infixOrderingOps
+    assert(Version("203.5251") < Version("213.2732"))
+    assert(Version("213.2732") > Version("203.5251"))
+    assert(Version("213.2732") == Version("213.2732"))
+  }
 }
