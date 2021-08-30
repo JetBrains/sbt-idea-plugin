@@ -5,8 +5,6 @@ import java.nio.file.{Files, Path}
 
 import com.eclipsesource.json.Json
 import org.jetbrains.sbtidea.Keys._
-import org.jetbrains.sbtidea.pathToPathExt
-import sbt._
 
 package object download {
 
