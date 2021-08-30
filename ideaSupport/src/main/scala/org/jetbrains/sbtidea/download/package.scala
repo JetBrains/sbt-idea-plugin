@@ -40,7 +40,7 @@ package object download {
         buildInfo.buildNumber
 
     def getActualIdeaBuild(ideaRoot: Path): String = {
-      val productInfo = ideaRoot / "product-info.json"
+      val productInfo = ideaRoot.resolve("product-info.json")
       if (buildInfo.buildNumber.count(_ == '.') < 2 && productInfo.exists) { // most likely some LATEST-EAP-SNAPSHOT kind of version
         try {
           val content = new String(Files.readAllBytes(productInfo))
