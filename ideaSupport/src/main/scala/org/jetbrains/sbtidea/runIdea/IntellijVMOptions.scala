@@ -44,8 +44,10 @@ object IntellijVMOptions {
       buffer += s"-Didea.system.path=${OQ(system.toString)}"
       buffer += s"-Didea.config.path=${OQ(config.toString)}"
       buffer += s"-Dplugin.path=${OQ(pluginPath.toString)}"
-      if(test)
+      if(test) {
         buffer += "-Didea.use.core.classloader.for.plugin.path=true"
+        buffer += "-Didea.force.use.core.classloader=true"
+      }
       if (noPCE)
         buffer += "-Didea.ProcessCanceledException=disabled"
       if (!test)

@@ -157,14 +157,6 @@ class IdeaConfigBuilder(moduleName: String,
     val vmOptions = if (noPCE) intellijVMOptions.copy(noPCE = true) else intellijVMOptions
     val env = mkEnv(options.ideaRunEnv)
     val name = if (noPCE) s"$configName-noPCE" else configName
-
-    // since 213.2732 when IDEA is run from sources we need to provide full classpath,
-    // including classpath of all bundled plugins
-    val classpathText: String = if (classpathStrategy.version >= ClasspathStrategy.Since_213_2732.version)
-      intellijPlatformJarsClasspathPattern + File.pathSeparator + intellijAllPluginsJarsClasspathPattern
-    else
-      intellijPlatformJarsClasspathPattern
-
     s"""<component name="ProjectRunConfigurationManager">
        |  <configuration default="false" name="$name" type="Application" factoryName="Application">
        |    $jreSettings
@@ -172,7 +164,7 @@ class IdeaConfigBuilder(moduleName: String,
        |    <log_file alias="JPS LOG" path="$dataDir/system/log/build-log/build.log" />
        |    <option name="MAIN_CLASS_NAME" value="com.intellij.idea.Main" />
        |    <module name="$moduleName" />
-       |    <option name="VM_PARAMETERS" value="-cp &quot;$classpathText&quot; ${vmOptions.asSeq(quoteValues = true).mkString(" ")}" />
+       |    <option name="VM_PARAMETERS" value="-cp &quot;$intellijPlatformJarsFolder${File.separator}*&quot; ${vmOptions.asSeq(quoteValues = true).mkString(" ")}" />
        |    <RunnerSettings RunnerId="Debug">
        |      <option name="DEBUG_PORT" value="" />
        |      <option name="TRANSPORT" value="0" />
@@ -197,11 +189,6 @@ class IdeaConfigBuilder(moduleName: String,
 
   private def intellijPlatformJarsClasspathPattern: String =
     s"$intellijPlatformJarsFolder${File.separator}*"
-
-  private def intellijAllPluginsJarsClasspathPattern: String = {
-    val patterns = (intellijBaseDir / "plugins").listFiles().filter(_.isDirectory).map(pluginClasspathPattern)
-    patterns.mkString(File.pathSeparator)
-  }
 
   private def intellijPluginRootsJarsClasspathPattern: String =
     pluginRoots.map(pluginClasspathPattern).mkString(File.pathSeparator)
