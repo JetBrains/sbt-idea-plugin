@@ -5,9 +5,11 @@ import java.net.URL
 import java.nio.ByteBuffer
 import java.nio.channels.{Channels, ReadableByteChannel}
 import java.nio.file.{Files, Path, Paths}
-
 import org.jetbrains.sbtidea.download.FileDownloader.ProgressInfo
 import org.jetbrains.sbtidea.{PluginLogger => log, _}
+
+import scala.annotation.tailrec
+import scala.concurrent.duration.{Duration, DurationInt}
 
 class FileDownloader(private val baseDirectory: Path) {
 
@@ -33,7 +35,7 @@ class FileDownloader(private val baseDirectory: Path) {
     targetFile
   } catch {
     case e: Exception if optional =>
-      log.warn(s"Can't download optional ${url}: $e")
+      log.warn(s"Can't download optional $url: $e")
       Paths.get("")
   }
 
@@ -75,15 +77,35 @@ class FileDownloader(private val baseDirectory: Path) {
       var transferred = -1L
       inChannel = Channels.newChannel(connection.getInputStream)
       outStream = new FileOutputStream(to.toFile, to.toFile.exists())
-      val rbc   = new RBCWrapper(inChannel, remoteMetaData.length, localLength, progressCallback, to)
+      val expectedFileSize = remoteMetaData.length
+      val rbc = new RBCWrapper(inChannel, expectedFileSize, localLength, progressCallback, to)
       val fileChannel = outStream.getChannel
       var position = fileChannel.position()
+      rbc.isOpen
+
       while (transferred != 0) {
-        transferred = fileChannel.transferFrom(rbc, position, blockSize)
-        position += transferred
+        @tailrec
+        def retryTransfer(retryAttempts: Int, retrySleep: Duration): Unit = {
+          transferred = fileChannel.transferFrom(rbc, position, blockSize)
+          position += transferred
+
+          // `FileChannel.transferFrom` can sometimes return `0` even if the channel is not entirely read
+          // looks like it depends on the (quality of?) connection
+          if (transferred == 0
+            && Files.size(to) != expectedFileSize
+            && retryAttempts > 0
+          ) {
+            log.warn(s"transferred 0 bytes from input channel, retry...")
+            Thread.sleep(retrySleep.toMillis)
+            retryTransfer(retryAttempts - 1, retrySleep)
+          }
+        }
+
+        retryTransfer(retryAttempts = InputChanelReadRetries, InputChanelReadRetryTimeout)
       }
-      if (remoteMetaData.length > 0 && Files.size(to) != remoteMetaData.length) {
-        throw new DownloadException(s"Incorrect downloaded file size: expected ${remoteMetaData.length}, got ${Files.size(to)}")
+
+      if (expectedFileSize > 0 && Files.size(to) != expectedFileSize) {
+        throw new DownloadException(s"Incorrect downloaded file size: expected $expectedFileSize, got ${Files.size(to)}")
       }
       to
     } finally {
@@ -91,6 +113,10 @@ class FileDownloader(private val baseDirectory: Path) {
       try { if (outStream != null) outStream.close() } catch { case e: Exception => log.error(s"Failed to close output stream: $e") }
     }
   }
+
+
+  private val InputChanelReadRetries = Option("download.channel.read.retry.count").map(_.toInt).getOrElse(10)
+  private val InputChanelReadRetryTimeout = Option("download.channel.read.retry.timeout.ms").map(_.toInt.millis).getOrElse(1.second)
 
   private def isResumeSupported(url: URL): Boolean = withConnection(url) { connection =>
     try   { connection.getResponseCode != 206 }
