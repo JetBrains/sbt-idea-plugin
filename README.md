@@ -482,3 +482,8 @@ it is sometimes not picked up immediately and requires an explicit loading.
 
 It is recommended to explicitly invoke `Build | Build Artifacts | Rebuild` from IDEA after importing the project 
 for the first time(i.e. when xmls are first generated).
+
+### Development notes
+To publish a new version of `sbt-idea-plugin`, just add a new tag in format `vA.B.C` (e.g.`v3.13.4`) and push it to the main branch.
+TeamCity will automatically  Build/Test/Deploy it in `sbt-idea-plugin` configuration. \
+(works in internal network only)
