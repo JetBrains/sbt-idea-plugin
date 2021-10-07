@@ -4,6 +4,8 @@ import org.jetbrains.sbtidea.download.FileDownloader.ProgressInfo
 import org.scalatest.FeatureSpec
 import org.scalatest.Matchers.convertToAnyShouldWrapper
 
+import java.io.File
+
 class ProgressInfoTest extends FeatureSpec {
 
   feature("render progress bar") {
@@ -44,5 +46,9 @@ class ProgressInfoTest extends FeatureSpec {
         actual shouldBe expectedString
       }
     }
+  }
+
+  feature("health check FileDownloader creation") {
+    new FileDownloader(new File("dummy").toPath)
   }
 }

@@ -114,9 +114,8 @@ class FileDownloader(private val baseDirectory: Path) {
     }
   }
 
-
-  private val InputChanelReadRetries = Option("download.channel.read.retry.count").map(_.toInt).getOrElse(10)
-  private val InputChanelReadRetryTimeout = Option("download.channel.read.retry.timeout.ms").map(_.toInt.millis).getOrElse(1.second)
+  private val InputChanelReadRetries = Option(System.getProperty("download.channel.read.retry.count")).map(_.toInt).getOrElse(10)
+  private val InputChanelReadRetryTimeout = Option(System.getProperty("download.channel.read.retry.timeout.ms")).map(_.toInt.millis).getOrElse(1.second)
 
   private def isResumeSupported(url: URL): Boolean = withConnection(url) { connection =>
     try   { connection.getResponseCode != 206 }
