@@ -1,13 +1,13 @@
 package org.jetbrains.sbtidea.download
 
+import org.jetbrains.sbtidea.download.FileDownloader.ProgressInfo
+import org.jetbrains.sbtidea.{PluginLogger => log, _}
+
 import java.io.FileOutputStream
 import java.net.URL
 import java.nio.ByteBuffer
 import java.nio.channels.{Channels, ReadableByteChannel}
 import java.nio.file.{Files, Path, Paths}
-import org.jetbrains.sbtidea.download.FileDownloader.ProgressInfo
-import org.jetbrains.sbtidea.{PluginLogger => log, _}
-
 import scala.annotation.tailrec
 import scala.concurrent.duration.{Duration, DurationInt}
 
@@ -49,6 +49,9 @@ class FileDownloader(private val baseDirectory: Path) {
 
   private def downloadNative(url: URL)(progressCallback: ProgressCallback): Path = {
     val connection = url.openConnection()
+    connection.setConnectTimeout(5.seconds.toMillis.toInt)
+    connection.setReadTimeout(30.seconds.toMillis.toInt)
+
     val remoteMetaData = getRemoteMetaData(url)
     val to =
       if (remoteMetaData.fileName.nonEmpty)

@@ -2,9 +2,10 @@ package org.jetbrains.sbtidea
 
 import java.net.{HttpURLConnection, URL}
 import java.nio.file.{Files, Path}
-
 import com.eclipsesource.json.Json
 import org.jetbrains.sbtidea.Keys._
+
+import scala.concurrent.duration.DurationInt
 
 package object download {
 
@@ -20,6 +21,8 @@ package object download {
     var connection: HttpURLConnection = null
     try {
       connection = url.openConnection().asInstanceOf[HttpURLConnection]
+      connection.setConnectTimeout(5.seconds.toMillis.toInt)
+      connection.setReadTimeout(30.seconds.toMillis.toInt)
       f(connection)
     } finally {
       try {
