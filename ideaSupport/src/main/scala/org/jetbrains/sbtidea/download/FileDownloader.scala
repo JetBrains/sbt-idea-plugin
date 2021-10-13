@@ -103,27 +103,10 @@ class FileDownloader(private val baseDirectory: Path) {
       val rbc = new RBCWrapper(inChannel, expectedFileSize, localLength, progressCallback, to)
       val fileChannel = outStream.getChannel
       var position = fileChannel.position()
-      rbc.isOpen
 
       while (transferred != 0) {
-        @tailrec
-        def retryTransfer(retryAttempts: Int, retrySleep: Duration): Unit = {
-          transferred = fileChannel.transferFrom(rbc, position, blockSize)
-          position += transferred
-
-          // `FileChannel.transferFrom` can sometimes return `0` even if the channel is not entirely read
-          // looks like it depends on the (quality of?) connection
-          if (transferred == 0
-            && Files.size(to) != expectedFileSize
-            && retryAttempts > 0
-          ) {
-            log.warn(s"transferred 0 bytes from input channel, retry in $retrySleep ...")
-            Thread.sleep(retrySleep.toMillis)
-            retryTransfer(retryAttempts - 1, retrySleep)
-          }
-        }
-
-        retryTransfer(retryAttempts = InputChanelReadRetries, InputChanelReadRetryTimeout)
+        transferred = fileChannel.transferFrom(rbc, position, blockSize)
+        position += transferred
       }
 
       if (expectedFileSize > 0 && Files.size(to) != expectedFileSize) {
@@ -138,9 +121,6 @@ class FileDownloader(private val baseDirectory: Path) {
 
   private val DownloadRetries = Option(System.getProperty("download.retry.count")).map(_.toInt).getOrElse(5)
   private val DownloadRetryTimeout = Option(System.getProperty("download.retry.timeout.ms")).map(_.toInt.millis).getOrElse(1.minute)
-
-  private val InputChanelReadRetries = Option(System.getProperty("download.channel.read.retry.count")).map(_.toInt).getOrElse(10)
-  private val InputChanelReadRetryTimeout = Option(System.getProperty("download.channel.read.retry.timeout.ms")).map(_.toInt.millis).getOrElse(1.second)
 
   private def isResumeSupported(url: URL): Boolean = withConnection(url) { connection =>
     try   { connection.getResponseCode != 206 }
