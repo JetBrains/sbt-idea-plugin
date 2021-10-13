@@ -4,7 +4,7 @@ import org.jetbrains.sbtidea.download.FileDownloader.ProgressInfo
 import org.jetbrains.sbtidea.{PluginLogger => log, _}
 
 import java.io.FileOutputStream
-import java.net.URL
+import java.net.{SocketTimeoutException, URL}
 import java.nio.ByteBuffer
 import java.nio.channels.{Channels, ReadableByteChannel}
 import java.nio.file.{Files, Path, Paths}
@@ -22,9 +22,9 @@ class FileDownloader(private val baseDirectory: Path) {
 
   @throws(classOf[DownloadException])
   def download(url: URL, optional: Boolean = false): Path = try {
-    val partFile = downloadNative(url) { case (progressInfo, to) =>
-        val text = s"\r${progressInfo.renderAll} -> $to"
-        if (!progressInfo.done) print(text) else println(text)
+    val partFile = downloadNativeWithConnectionRetry(url) { case (progressInfo, to) =>
+      val text = s"\r${progressInfo.renderAll} -> $to"
+      if (!progressInfo.done) print(text) else println(text)
     }
     val targetFile = partFile.getParent.resolve(partFile.getFileName.toString.replace(".part", ""))
     if (targetFile.toFile.exists()) {
@@ -35,7 +35,7 @@ class FileDownloader(private val baseDirectory: Path) {
     targetFile
   } catch {
     case e: Exception if optional =>
-      log.warn(s"Can't download optional $url: $e")
+      log.warn(s"Can't download${if (optional) " optional" else ""} $url: $e")
       Paths.get("")
   }
 
@@ -47,6 +47,25 @@ class FileDownloader(private val baseDirectory: Path) {
     dir
   }
 
+  private def downloadNativeWithConnectionRetry(url: URL)(progressCallback: ProgressCallback): Path = {
+    @tailrec
+    def inner(retryAttempts: Int, retrySleep: Duration): Path = {
+      try downloadNative(url)(progressCallback) catch {
+        //this can happen when server is restarted
+        case timeout: SocketTimeoutException =>
+          if (retryAttempts > 0) {
+            log.warn(s"Error occurred during download: ${timeout.getMessage}, retry in $retrySleep ...")
+            Thread.sleep(retrySleep.toMillis)
+            inner(retryAttempts - 1, retrySleep)
+          }
+          else throw timeout
+      }
+    }
+
+    inner(DownloadRetries, DownloadRetryTimeout)
+  }
+
+  @throws[SocketTimeoutException]
   private def downloadNative(url: URL)(progressCallback: ProgressCallback): Path = {
     val connection = url.openConnection()
     connection.setConnectTimeout(5.seconds.toMillis.toInt)
@@ -98,7 +117,7 @@ class FileDownloader(private val baseDirectory: Path) {
             && Files.size(to) != expectedFileSize
             && retryAttempts > 0
           ) {
-            log.warn(s"transferred 0 bytes from input channel, retry...")
+            log.warn(s"transferred 0 bytes from input channel, retry in $retrySleep ...")
             Thread.sleep(retrySleep.toMillis)
             retryTransfer(retryAttempts - 1, retrySleep)
           }
@@ -116,6 +135,9 @@ class FileDownloader(private val baseDirectory: Path) {
       try { if (outStream != null) outStream.close() } catch { case e: Exception => log.error(s"Failed to close output stream: $e") }
     }
   }
+
+  private val DownloadRetries = Option(System.getProperty("download.retry.count")).map(_.toInt).getOrElse(5)
+  private val DownloadRetryTimeout = Option(System.getProperty("download.retry.timeout.ms")).map(_.toInt.millis).getOrElse(1.minute)
 
   private val InputChanelReadRetries = Option(System.getProperty("download.channel.read.retry.count")).map(_.toInt).getOrElse(10)
   private val InputChanelReadRetryTimeout = Option(System.getProperty("download.channel.read.retry.timeout.ms")).map(_.toInt.millis).getOrElse(1.second)
