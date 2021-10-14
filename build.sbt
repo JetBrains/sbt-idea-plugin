@@ -70,5 +70,5 @@ lazy val ideaSupport = (project in file(".") / "ideaSupport")
 
 lazy val sbtIdeaPlugin = (project in file("."))
   .settings(commonSettings)
-  .settings(skip in publish := true)
+  .settings(publish / skip := true)
   .aggregate(core, packaging, ideaSupport, visualizer)
