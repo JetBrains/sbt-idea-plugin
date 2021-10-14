@@ -3,7 +3,7 @@ import xerial.sbt.Sonatype.GitHubHosting
 val scala210 = "2.10.7"
 val scala212 = "2.12.9"
 
-ThisBuild / scalaVersion := scala210
+ThisBuild / scalaVersion := scala212
 
 Global / concurrentRestrictions := Seq(Tags.limit(Tags.Test, 1))
 
