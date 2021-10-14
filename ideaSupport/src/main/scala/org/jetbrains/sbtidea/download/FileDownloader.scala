@@ -8,7 +8,6 @@ import java.net.{SocketTimeoutException, URL}
 import java.nio.ByteBuffer
 import java.nio.channels.{Channels, ReadableByteChannel}
 import java.nio.file.{Files, Path, Paths}
-import scala.annotation.tailrec
 import scala.concurrent.duration.{Duration, DurationInt}
 
 class FileDownloader(private val baseDirectory: Path) {
@@ -47,22 +46,41 @@ class FileDownloader(private val baseDirectory: Path) {
     dir
   }
 
+  // This retry is required e.g. when build server (which contain IDEA artifact) is down for some reason (e.g. it's beinig restarted)
+  // we need a longer timeout in order server has time to restart (FileDownloader supports resuming previous donwload)
+  private def DownloadRetryConnectionTimeoutCount = Option(System.getProperty("download.retry.connection.timeout.count")).map(_.toInt).getOrElse(5).ensuring(_ >= 0, "retry must be a non-negative value")
+  private def DownloadRetryConnectionTimeoutWait = Option(System.getProperty("download.retry.connection.timeout.wait.ms")).map(_.toInt.millis).getOrElse(1.minute)
+
+  // This retry is required when there are some connection issues, e.g recently we observe some SSL issues, when connection is closed by the server
+  // Ideally the connection should be stable and the SSL server should be fixed on the server side.
+  // But since FileDownloader supports resuming previous download, this retry will not hurt
+  private def DownloadRetryConnectionIssueCount = Option(System.getProperty("download.retry.connection.issue.count")).map(_.toInt).getOrElse(5).ensuring(_ >= 0, "retry must be a non-negative value")
+  private def DownloadRetryConnectionIssueWait = Option(System.getProperty("download.retry.connection.issue.timeout.ms")).map(_.toInt.millis).getOrElse(5.seconds)
+
   private def downloadNativeWithConnectionRetry(url: URL)(progressCallback: ProgressCallback): Path = {
-    @tailrec
-    def inner(retryAttempts: Int, retrySleep: Duration): Path = {
+    val retry1Timeout: Duration = DownloadRetryConnectionTimeoutWait
+    val retry2Timeout: Duration = DownloadRetryConnectionIssueWait
+
+    //noinspection NoTailRecursionAnnotation
+    def inner(retries1: Int, retries2: Int): Path = {
       try downloadNative(url)(progressCallback) catch {
         //this can happen when server is restarted
-        case timeout: SocketTimeoutException =>
-          if (retryAttempts > 0) {
-            log.warn(s"Error occurred during download: ${timeout.getMessage}, retry in $retrySleep ...")
-            Thread.sleep(retrySleep.toMillis)
-            inner(retryAttempts - 1, retrySleep)
-          }
-          else throw timeout
+        case timeoutException: SocketTimeoutException if retries1 > 0 =>
+          log.warn(s"Error occurred during download: ${timeoutException.getMessage}, retry in $retry1Timeout ...")
+          Thread.sleep(retry1Timeout.toMillis)
+          inner(retries1 - 1, retries2)
+
+        case downloadException: DownloadException if retries2 > 0 =>
+          log.warn(s"Error occurred during download: ${downloadException.getMessage}, retry in $retry2Timeout ...")
+          Thread.sleep(retry2Timeout.toMillis)
+          inner(retries1, retries2 - 1)
       }
     }
 
-    inner(DownloadRetries, DownloadRetryTimeout)
+    inner(
+      DownloadRetryConnectionTimeoutCount,
+      DownloadRetryConnectionIssueCount
+    )
   }
 
   @throws[SocketTimeoutException]
@@ -118,9 +136,6 @@ class FileDownloader(private val baseDirectory: Path) {
       try { if (outStream != null) outStream.close() } catch { case e: Exception => log.error(s"Failed to close output stream: $e") }
     }
   }
-
-  private val DownloadRetries = Option(System.getProperty("download.retry.count")).map(_.toInt).getOrElse(5)
-  private val DownloadRetryTimeout = Option(System.getProperty("download.retry.timeout.ms")).map(_.toInt.millis).getOrElse(1.minute)
 
   private def isResumeSupported(url: URL): Boolean = withConnection(url) { connection =>
     try   { connection.getResponseCode != 206 }
