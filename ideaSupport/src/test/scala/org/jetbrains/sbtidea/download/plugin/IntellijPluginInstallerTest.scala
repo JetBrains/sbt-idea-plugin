@@ -38,9 +38,7 @@ final class IntellijPluginInstallerTest extends IntellijPluginInstallerTestBase 
     val installer = createInstaller
     installer.installIdeaPlugin(pluginMetadata.toPluginId, mockPluginDist)
     val messages = captureLog(installer.isInstalled(pluginMetadata.toPluginId) shouldBe false)
-    messages should contain (
-      "Plugin org.intellij.scala is incompatible with current ideaVersion(211.5538.2): PluginDescriptor(org.intellij.scala,JetBrains,Scala,2019.2.423,193.123,193.4,List())"
-    )
+    messages should contain ("[warn] Plugin org.intellij.scala is incompatible with current ideaVersion(211.5538.2): PluginDescriptor(org.intellij.scala,JetBrains,Scala,2019.2.423,193.123,193.4,List())")
   }
 
   test("Plugin installer checks IDEA compatibility using wildcards") {
@@ -64,7 +62,7 @@ final class IntellijPluginInstallerTest extends IntellijPluginInstallerTestBase 
 
     val messages = captureLog(installer.isInstalled(pluginId) shouldBe false)
 
-    messages.exists(_.startsWith("Newer version of plugin org.intellij.scala is available:")) shouldBe true
+    messages.exists(_.startsWith("[warn] Newer version of plugin org.intellij.scala is available:")) shouldBe true
   }
 
 }

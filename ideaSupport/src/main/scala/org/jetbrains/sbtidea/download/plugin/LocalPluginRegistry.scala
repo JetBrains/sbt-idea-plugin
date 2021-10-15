@@ -66,6 +66,8 @@ class LocalPluginRegistry (ideaRoot: Path) extends LocalPluginRegistryApi {
       val key = ideaPlugin match {
         case IntellijPlugin.Url(url) => url.toString
         case IntellijPlugin.Id(id, _, _) => id
+        case unsupported =>
+          throw new RuntimeException(s"Unsupported plugin: $unsupported")
       }
       if (!index.contains(key))
         throw new MissingPluginRootException(ideaPlugin.toString)
@@ -131,17 +133,20 @@ object LocalPluginRegistry {
           return Right(detector.result)
       }
     } catch {
-      case e: Exception => return Left(s"Error during detecting plugin.xml: $e")
+      case e: Exception =>
+        return Left(s"Error during detecting plugin.xml: $e")
     }
     Left(s"Couldn't find plugin.xml in $pluginRoot")
   }
 
-  def extractPluginMetaData(pluginRoot: Path): Either[String, PluginDescriptor] =
-    extractInstalledPluginDescriptor(pluginRoot)
+  def extractPluginMetaData(pluginRoot: Path): Either[String, PluginDescriptor] = {
+    val descriptor = extractInstalledPluginDescriptor(pluginRoot)
+    descriptor
       .fold(
         err => Left(err),
         data => Right(PluginDescriptor.load(data))
       )
+  }
 
   def instanceFor(ideaRoot: Path): LocalPluginRegistry = instances(ideaRoot)
 }

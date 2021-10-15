@@ -18,7 +18,7 @@ final class LocalPluginRegistryTest extends FunSuite with Matchers with Inspecto
   private val ideaRoot = installIdeaMock
 
   private val pluginsFolder = ideaRoot / "plugins"
-  private val pluginsIndex  = ideaRoot / PluginIndexImpl.INDEX_FILENAME
+  private val pluginsIndex = ideaRoot / PluginIndexImpl.INDEX_FILENAME
 
   private val hoconXML =
     """
@@ -40,7 +40,8 @@ final class LocalPluginRegistryTest extends FunSuite with Matchers with Inspecto
     val options = Map("create" -> "true").asJava
     val pluginJar = pluginsFolder / pluginName / "lib" / s"$pluginName.jar"
     Files.createDirectories(pluginJar.getParent)
-    val jarUri = new URI("jar:file:" + pluginJar.toString)
+    val isWindows = System.getProperty("os.name").toLowerCase.contains("win")
+    val jarUri = new URI(s"jar:file:${if (isWindows) "/" else ""}" + pluginJar.toString.replace("\\", "/"))
     packaging.artifact.using(FileSystems.newFileSystem(jarUri, options)) {fs =>
       val jarXml = fs.getPath("META-INF", "plugin.xml")
       Files.createDirectories(jarXml.getParent)
@@ -52,7 +53,10 @@ final class LocalPluginRegistryTest extends FunSuite with Matchers with Inspecto
   }
 
   before {
-    pluginsIndex.toFile.delete()
+    val pluginIndexFile = pluginsIndex.toFile
+    if (pluginIndexFile.exists() && !pluginIndexFile.delete()) {
+      System.err.println(s"Can't delete plugin index file before test: $pluginIndexFile")
+    }
   }
 
   test("LocalPluginRegistry builds bundled plugin index") {
@@ -92,7 +96,7 @@ final class LocalPluginRegistryTest extends FunSuite with Matchers with Inspecto
   }
 
   test("LocalPluginRegistry reports error when plugin is not in the index") {
-    val registry  = new LocalPluginRegistry(ideaRoot)
+    val registry = new LocalPluginRegistry(ideaRoot)
     val newPlugin = "org.jetbrains.hocon".toPlugin
     assertThrows[RuntimeException](registry.getInstalledPluginRoot(newPlugin))
   }
@@ -135,21 +139,31 @@ final class LocalPluginRegistryTest extends FunSuite with Matchers with Inspecto
       newRegistry.isPluginInstalled(newPlugin) shouldBe false // deleted plugin is not re-indexed
       forAll (bundledPlugins) { newRegistry.isPluginInstalled(_) shouldBe true }
     }
-    messages should contain("Failed to load plugin index from disk: java.io.EOFException")
+    messages should contain("[warn] Failed to load plugin index from disk: java.io.EOFException")
   }
 
   test("irrelevant files and folders are ignored when building index") {
     Files.createDirectory(pluginsFolder / "NON-PLUGIN")
-    Files.createFile( pluginsFolder / ".DS_Store")
+    Files.createFile(pluginsFolder / ".DS_Store")
 
-    val registry  = new LocalPluginRegistry(ideaRoot)
+    val registry = new LocalPluginRegistry(ideaRoot)
 
     val messages = captureLog {
       registry.isPluginInstalled(bundledPlugins.head) shouldBe true
     }
 
-    messages.exists(_.matches("Failed to add plugin to index: Couldn't find plugin.xml in .+\\.DS_Store")) shouldBe true
-    messages.exists(_.matches("Failed to add plugin to index: Plugin root .+NON-PLUGIN has no lib directory")) shouldBe true
+    def assertHasMatchingMessage(regex: String): Unit = {
+      if (!messages.exists(_.matches(regex))) {
+        fail(
+          s"""No matching message for regex: $regex
+             |Available messages:
+             |${messages.mkString("\n")}""".stripMargin
+        )
+      }
+    }
+
+    assertHasMatchingMessage("""\[warn\] Failed to add plugin to index: Couldn't find plugin.xml in .+\.DS_Store""")
+    assertHasMatchingMessage("""\[warn\] Failed to add plugin to index: Plugin root .+NON-PLUGIN has no lib directory""")
   }
 
 }

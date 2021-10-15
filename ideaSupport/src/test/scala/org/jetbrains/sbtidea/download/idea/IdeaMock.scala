@@ -40,6 +40,7 @@ trait IdeaMock extends TmpDirUtils {
         entry = zip.getNextEntry
       }
     }
+    println(s"installed IDEA mock to $installDir")
     installDir
   }
 

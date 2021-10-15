@@ -13,7 +13,7 @@ class IntellijPluginResolverTest extends IntellijPluginResolverTestBase {
   test("plugin resolver doesn't resolve fake plugin") {
     val fakePlugin = "org.myFake.plugin:0.999:trunk".toPlugin
     val messages = captureLog(new PluginResolver(resolveSettings = fakePlugin.resolveSettings).resolve(fakePlugin) shouldBe empty)
-    messages should contain ("Failed to resolve PluginDependency(org.myFake.plugin): null")
+    messages should contain ("[error] Failed to resolve PluginDependency(org.myFake.plugin): null")
   }
 
   test("transitive plugin dependencies are resolved") {
@@ -29,7 +29,7 @@ class IntellijPluginResolverTest extends IntellijPluginResolverTestBase {
   test("cyclic dependencies are detected") {
     val resolver = new PluginResolver(resolveSettings = pluginE.plugin.resolveSettings)
     val (messages, result) = captureLogAndValue(resolver.resolve(pluginE))
-    messages shouldBe Seq("Circular plugin dependency detected: PluginDependency(org.E) already processed")
+    messages shouldBe Seq("[warn] Circular plugin dependency detected: PluginDependency(org.E) already processed")
     result.size shouldBe 3
   }
 

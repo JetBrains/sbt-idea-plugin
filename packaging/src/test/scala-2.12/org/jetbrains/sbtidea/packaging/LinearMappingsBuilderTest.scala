@@ -34,7 +34,7 @@ class LinearMappingsBuilderTest extends FeatureSpec with MappingsTestBase {
 
         val structureDiff = dataA.structure.toSet.diff(dataB.structure.toSet)
         val mappingsDiff = dataA.mappings.toSet.diff(dataB.mappings.toSet)
-          .filterNot(_.from.toString.contains("/tmp")) // filter out temp files with random names
+          .filterNot(_.from.toString.replace("\\", "/").contains("/tmp")) // filter out temp files with random names
 
         structureDiff shouldBe empty
         mappingsDiff shouldBe empty
