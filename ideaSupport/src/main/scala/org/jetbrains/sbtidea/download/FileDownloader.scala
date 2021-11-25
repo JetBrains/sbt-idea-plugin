@@ -8,7 +8,7 @@ import java.net.{SocketTimeoutException, URL}
 import java.nio.ByteBuffer
 import java.nio.channels.{Channels, ReadableByteChannel}
 import java.nio.file.{Files, Path, Paths}
-import scala.concurrent.duration.{Duration, DurationInt}
+import scala.concurrent.duration.{Duration, DurationInt, DurationLong}
 
 class FileDownloader(private val baseDirectory: Path) {
 
@@ -46,23 +46,29 @@ class FileDownloader(private val baseDirectory: Path) {
     dir
   }
 
-  // This retry is required e.g. when build server (which contain IDEA artifact) is down for some reason (e.g. it's beinig restarted)
-  // we need a longer timeout in order server has time to restart (FileDownloader supports resuming previous donwload)
-  private def DownloadRetryConnectionTimeoutCount = Option(System.getProperty("download.retry.connection.timeout.count")).map(_.toInt).getOrElse(5).ensuring(_ >= 0, "retry must be a non-negative value")
-  private def DownloadRetryConnectionTimeoutWait = Option(System.getProperty("download.retry.connection.timeout.wait.ms")).map(_.toInt.millis).getOrElse(1.minute)
+  private def SocketConnectionTimeoutMs = getPositiveLongProperty("download.socket.connection.timeout.ms", 5.seconds.toMillis).ensuring(_ <= Int.MaxValue).toInt
+  private def SocketReadTimeoutMs = getPositiveLongProperty("download.socket.read.timeout.ms", 15.seconds.toMillis).ensuring(_ <= Int.MaxValue).toInt
+
+  // This retry is required e.g. when build server (which contain IDEA artifact) is down for some reason (e.g. it's being restarted)
+  // we need a longer timeout in order server has time to restart (FileDownloader supports resuming previous download)
+  private def DownloadRetryConnectionTimeoutCount = getPositiveLongProperty("download.retry.connection.timeout.count", 3)
+  private def DownloadRetryConnectionTimeoutWait = getPositiveLongProperty("download.retry.connection.timeout.wait.ms", 1.minute.toMillis).millis
 
   // This retry is required when there are some connection issues, e.g recently we observe some SSL issues, when connection is closed by the server
   // Ideally the connection should be stable and the SSL server should be fixed on the server side.
   // But since FileDownloader supports resuming previous download, this retry will not hurt
-  private def DownloadRetryConnectionIssueCount = Option(System.getProperty("download.retry.connection.issue.count")).map(_.toInt).getOrElse(5).ensuring(_ >= 0, "retry must be a non-negative value")
-  private def DownloadRetryConnectionIssueWait = Option(System.getProperty("download.retry.connection.issue.timeout.ms")).map(_.toInt.millis).getOrElse(5.seconds)
+  private def DownloadRetryConnectionIssueCount = getPositiveLongProperty("download.retry.connection.issue.count", 5)
+  private def DownloadRetryConnectionIssueWait = getPositiveLongProperty("download.retry.connection.issue.timeout.ms", 5.seconds.toMillis).millis
+
+  private def getPositiveLongProperty(key: String, default: Long): Long =
+    Option(System.getProperty(key)).map(_.toLong).getOrElse(default).ensuring(_ >= 0, s"key '$key' must be a non-negative value")
 
   private def downloadNativeWithConnectionRetry(url: URL)(progressCallback: ProgressCallback): Path = {
     val retry1Timeout: Duration = DownloadRetryConnectionTimeoutWait
     val retry2Timeout: Duration = DownloadRetryConnectionIssueWait
 
     //noinspection NoTailRecursionAnnotation
-    def inner(retries1: Int, retries2: Int): Path = {
+    def inner(retries1: Long, retries2: Long): Path = {
       try downloadNative(url)(progressCallback) catch {
         //this can happen when server is restarted
         case timeoutException: SocketTimeoutException if retries1 > 0 =>
@@ -86,8 +92,8 @@ class FileDownloader(private val baseDirectory: Path) {
   @throws[SocketTimeoutException]
   private def downloadNative(url: URL)(progressCallback: ProgressCallback): Path = {
     val connection = url.openConnection()
-    connection.setConnectTimeout(5.seconds.toMillis.toInt)
-    connection.setReadTimeout(30.seconds.toMillis.toInt)
+    connection.setConnectTimeout(SocketConnectionTimeoutMs)
+    connection.setReadTimeout(SocketReadTimeoutMs)
 
     val remoteMetaData = getRemoteMetaData(url)
     val to =
