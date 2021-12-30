@@ -8,6 +8,7 @@ import java.net.{SocketTimeoutException, URL}
 import java.nio.ByteBuffer
 import java.nio.channels.{Channels, ReadableByteChannel}
 import java.nio.file.{Files, Path, Paths}
+import javax.net.ssl.SSLException
 import scala.concurrent.duration.{Duration, DurationInt, DurationLong}
 
 class FileDownloader(private val baseDirectory: Path) {
@@ -71,8 +72,8 @@ class FileDownloader(private val baseDirectory: Path) {
     def inner(retries1: Long, retries2: Long): Path = {
       try downloadNative(url)(progressCallback) catch {
         //this can happen when server is restarted
-        case timeoutException: SocketTimeoutException if retries1 > 0 =>
-          log.warn(s"Error occurred during download: ${timeoutException.getMessage}, retry in $retry1Timeout ...")
+        case exception @ (_: SocketTimeoutException | _: SSLException) if retries1 > 0 =>
+          log.warn(s"Error occurred during download: ${exception.getMessage}, retry in $retry1Timeout ...")
           Thread.sleep(retry1Timeout.toMillis)
           inner(retries1 - 1, retries2)
 
