@@ -1,14 +1,14 @@
 package org.jetbrains.sbtidea.tasks
 
-import java.io.File
-import java.nio.file.{Path, Paths}
-import java.util.regex.Pattern
 import org.jetbrains.sbtidea.Keys.IdeaConfigBuildingOptions
 import org.jetbrains.sbtidea.runIdea.{IdeaRunner, IntellijVMOptions}
 import org.jetbrains.sbtidea.tasks.IdeaConfigBuilder.{pathPattern, pluginsPattern}
-import org.jetbrains.sbtidea.{ClasspathStrategy, pathToPathExt, PluginLogger => log}
+import org.jetbrains.sbtidea.{ClasspathStrategy, PluginLogger => log, pathToPathExt}
 import sbt._
 
+import java.io.File
+import java.nio.file.{Path, Paths}
+import java.util.regex.Pattern
 import scala.annotation.tailrec
 import scala.math.Ordering.Implicits.infixOrderingOps
 
@@ -26,7 +26,6 @@ class IdeaConfigBuilder(moduleName: String,
                         pluginRoots: Seq[File],
                         options: IdeaConfigBuildingOptions,
                         classpathStrategy: ClasspathStrategy = ClasspathStrategy.Since_203_5251) {
-
   private val runConfigDir = dotIdeaFolder / "runConfigurations"
 
   private val intellijPlatformJarsFolder = intellijBaseDir / "lib"
@@ -43,8 +42,14 @@ class IdeaConfigBuilder(moduleName: String,
   }
 
   private def writeToFile(file: File, content: =>String): Unit = {
-    try   { IO.write(file, content) }
-    catch { case e: Throwable => log.error(s"can't generate $file: $e")}
+    try {
+      IO.write(file, content)
+    }
+    catch {
+      case e: Throwable =>
+        val message = s"can't generate $file: ${e.getMessage}"
+        throw new RuntimeException(message, e)
+    }
   }
 
   private def getExplicitIDEARoot:Option[Path] = sys.props.get(IDEA_ROOT_KEY).map(Paths.get(_))
