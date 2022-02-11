@@ -30,18 +30,20 @@ abstract class IntellijAwareRunner(ideaClasspath: Seq[Path], blocking: Boolean) 
   }
   
   def getBundledJRE: Option[JRE] = {
-    val validJars = Set("idea.jar", "platform-api.jar", "platform-impl.jar", "openapi.jar")
+    val validJars = Set("app.jar", "idea.jar", "platform-api.jar", "platform-impl.jar", "openapi.jar")
 
-    val ideaJar =
+    //e.g. ~/.ScalaPluginIU/sdk/221.4165.146/lib/app.jar
+    val someJarInIdeaInstallationLibFolder: Path =
       ideaClasspath
-        .find(validJars contains _.getFileName.toString)
-        .getOrElse(throw new RuntimeException(s"Can't find any of the $validJars in classpath"))
+        .find(p => validJars.contains(p.getFileName.toString))
+        .getOrElse(throw new RuntimeException(s"Can't find any of the $validJars in idea classpath:\n${ideaClasspath.mkString("\n")}"))
 
+    val libFolder = someJarInIdeaInstallationLibFolder.getParent
     val maybeJre = sys.props.get("os.name").map {
       case name if name.toLowerCase(Locale.ENGLISH).startsWith("mac") =>
-        ideaJar.getParent.getParent / JbrInstaller.JBR_DIR_NAME / "Contents" / "Home"
+        libFolder.getParent / JbrInstaller.JBR_DIR_NAME / "Contents" / "Home"
       case _ =>
-        ideaJar.getParent.getParent / "jbr"
+        libFolder.getParent / "jbr"
     }
 
     maybeJre.flatMap { root =>
