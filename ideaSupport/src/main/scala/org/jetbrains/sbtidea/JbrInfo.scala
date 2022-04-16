@@ -35,6 +35,7 @@ final case class JBR(major: String, minor: String, kind: String, platform: Strin
 final case class AutoJbr() extends JbrInfo with AutoJbrPlatform with DynamicJbrInfo
 final case class AutoJbrWithPlatform(major: String, minor: String, kind: String = JbrResolver.JBR_DCEVM_KIND) extends JbrInfo with AutoJbrPlatform
 final case class AutoJbrWithKind(override val kind: String) extends JbrInfo with AutoJbrPlatform with DynamicJbrInfo
+final case class AutoJbrWithArch(override val arch: String) extends JbrInfo with AutoJbrPlatform with DynamicJbrInfo
 object NoJbr extends JbrInfo {
   override def major: String    = throw new IllegalStateException("unreachable")
   override def minor: String    = throw new IllegalStateException("unreachable")
