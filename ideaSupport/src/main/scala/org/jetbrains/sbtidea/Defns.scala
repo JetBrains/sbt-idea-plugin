@@ -30,12 +30,6 @@ trait Defns {
   type AutoJbr = org.jetbrains.sbtidea.AutoJbr
   final val AutoJbr: org.jetbrains.sbtidea.AutoJbr.type = org.jetbrains.sbtidea.AutoJbr
 
-  type AutoJbrWithPlatform = org.jetbrains.sbtidea.AutoJbrWithPlatform
-  final val AutoJbrWithPlatform: org.jetbrains.sbtidea.AutoJbrWithPlatform.type = org.jetbrains.sbtidea.AutoJbrWithPlatform
-
-  type AutoJbrWithKind = org.jetbrains.sbtidea.AutoJbrWithKind
-  final val AutoJbrWithKind: org.jetbrains.sbtidea.AutoJbrWithKind.type = org.jetbrains.sbtidea.AutoJbrWithKind
-
   type NoJbr = org.jetbrains.sbtidea.NoJbr.type
   final val NoJbr = org.jetbrains.sbtidea.NoJbr
 

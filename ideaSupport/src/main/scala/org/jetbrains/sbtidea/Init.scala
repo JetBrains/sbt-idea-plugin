@@ -27,7 +27,6 @@ trait Init { this: Keys.type =>
     intellijBuild             := BuildInfo.LATEST_EAP_SNAPSHOT,
     intellijPlatform          := IntelliJPlatform.IdeaCommunity,
     intellijDownloadSources   := true,
-    jbrVersion                := Some("__auto__"),
     jbrInfo                   := AutoJbr(),
     intellijPluginDirectory   := homePrefix / s".${intellijPluginName.value.removeSpaces}Plugin${intellijPlatform.value.edition}",
     intellijBaseDirectory     := intellijDownloadDirectory.value / intellijBuild.value,
@@ -178,14 +177,12 @@ trait Init { this: Keys.type =>
     test.in(Test)     := { test.in(Test).dependsOn(packageArtifact).value },
 
     fullClasspath.in(Test) := {
-      val oldClasspath = fullClasspath.in(Test).value
-      if (ClasspathStrategy.forVersion(intellijBuild.value).version >= ClasspathStrategy.Since_203_5251.version) {
-        val pathFinder = PathFinder.empty +++ // the new IJ plugin loading strategy in tests requires external plugins to be prepended to the classpath
-          (packageOutputDir.value * globFilter("*.jar")) +++
-          (packageOutputDir.value / "lib" * globFilter("*.jar"))
-        val allExportedProducts = exportedProducts.all(ScopeFilter(inDependencies(ThisProject), inConfigurations(Compile))).value.flatten
-        pathFinder.classpath ++ (oldClasspath.to[mutable.LinkedHashSet] -- allExportedProducts.toSet).toSeq // exclude classes already in the artifact
-      } else oldClasspath
+      val fullClasspathValue = fullClasspath.in(Test).value
+      val pathFinder = PathFinder.empty +++ // the new IJ plugin loading strategy in tests requires external plugins to be prepended to the classpath
+        (packageOutputDir.value * globFilter("*.jar")) +++
+        (packageOutputDir.value / "lib" * globFilter("*.jar"))
+      val allExportedProducts = exportedProducts.all(ScopeFilter(inDependencies(ThisProject), inConfigurations(Compile))).value.flatten
+      pathFinder.classpath ++ (fullClasspathValue.to[mutable.LinkedHashSet] -- allExportedProducts.toSet).toSeq // exclude classes already in the artifact
     },
 
     javaOptions.in(Test) ++= { intellijVMOptions.in(Test).value.asSeq() :+ s"-Dsbt.ivy.home=$ivyHomeDir" }

@@ -72,6 +72,8 @@ incomplete, so it is strongly recommended to verify it against
 [available releases](https://www.jetbrains.com/intellij-repository/releases) and
 [available snapshots](https://www.jetbrains.com/intellij-repository/snapshots).
 
+**Note**: minimum supported major IDEA version: `211.x` (~`2021.1.x`)
+
 #### `intellijPlatform in ThisBuild :: SettingKey[IntelliJPlatform]`
 
 **Default**: `IntelliJPlatform.IdeaCommunity`
@@ -140,7 +142,7 @@ Use provided flags to limit search scope to only bundled or marketplace plugins.
 **Default**: `AutoJbr()`
 
 JetBrains Java runtime version to use when running the IDE with the plugin. By default JBR version is extracted from
-IDE installation metadata. Only jbr 11 is supported. Available versions can be found on [jbr bintray](https://bintray.com/jetbrains/intellij-jbr/).
+IDE installation metadata. Only jbr 11 is supported. Available versions can be found on [jbr bintray](https://github.com/JetBrains/JetBrainsRuntime/releases).
 To disable, set to `NoJbr`
 
 #### `patchPluginXml :: SettingKey[pluginXmlOptions]`

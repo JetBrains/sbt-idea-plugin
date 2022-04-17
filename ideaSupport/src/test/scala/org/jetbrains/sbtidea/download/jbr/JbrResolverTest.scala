@@ -1,10 +1,8 @@
 package org.jetbrains.sbtidea.download.jbr
 
 import org.jetbrains.sbtidea.download.idea.IdeaMock
-import org.jetbrains.sbtidea.{ConsoleLogger, NoJbr, TmpDirUtils, pathToPathExt}
+import org.jetbrains.sbtidea.{ConsoleLogger, JbrVersion, NoJbr, TmpDirUtils}
 import org.scalatest.{FunSuite, Matchers}
-import sbt._
-
 
 class JbrResolverTest extends FunSuite with Matchers with IdeaMock with TmpDirUtils with ConsoleLogger {
 
@@ -15,7 +13,7 @@ class JbrResolverTest extends FunSuite with Matchers with IdeaMock with TmpDirUt
   }
 
   test("jbr version major/minor split") {
-    JbrResolver.splitVersion("11_0_5b520.38") shouldBe Some(("11_0_5", "520.38"))
+    JbrVersion.parse("11_0_5b520.38") shouldBe JbrVersion("11_0_5", "520.38")
   }
 
   // cannot compare entire url because it's platform-dependent

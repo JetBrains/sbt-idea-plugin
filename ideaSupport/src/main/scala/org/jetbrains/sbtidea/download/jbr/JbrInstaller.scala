@@ -32,9 +32,9 @@ class JbrInstaller extends Installer[JbrArtifact] {
         .lift2Option
         .exists(value => {
           val sameJbr =
-             value.contains(jbrInfo.major.replace('_', '.')) && // release file has dot major version separators
-             value.contains(jbrInfo.minor) &&
-             value.contains(jbrInfo.kind.replace("jbr_", "")) // release file has no "jbr_" prefix
+             value.contains(jbrInfo.version.major.replace('_', '.')) && // release file has dot major version separators
+             value.contains(jbrInfo.version.minor) &&
+             value.contains(jbrInfo.kind.value.replace("jbr_", "")) // release file has no "jbr_" prefix
           if (!sameJbr) log.info(s"New JBR is different from installed: $jbrInfo != $value")
           sameJbr
         })
