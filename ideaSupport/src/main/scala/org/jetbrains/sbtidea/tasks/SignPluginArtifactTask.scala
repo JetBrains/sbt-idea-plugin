@@ -46,6 +46,8 @@ object SignPluginArtifactTask extends SbtIdeaTask[File] {
         throw new IllegalArgumentException("Private key file doesn't exist")
       case PluginSigningOptions(false, _, _, _) =>
         throw new IllegalStateException("Plugin signing disabled in options")
+      case other =>
+        throw new IllegalStateException(s"Unsupported plugin signing: $other")
     }
 
   }

@@ -10,7 +10,10 @@ Global / concurrentRestrictions := Seq(Tags.limit(Tags.Test, 1))
 lazy val commonSettings: Seq[Def.Setting[_]] = Seq(
   organization          := "org.jetbrains",
   licenses              += ("MIT", url("https://opensource.org/licenses/MIT")),
-  scalacOptions        ++= Seq("-deprecation", "-feature", "-target:jvm-1.8"),
+  scalacOptions        ++= Seq("-deprecation", "-feature", "-target:jvm-1.8") ++ (scalaBinaryVersion.value match {
+    case "2.10" => Nil
+    case "2.12" => Seq("-Xfatal-warnings")
+  }),
   javacOptions         ++= Seq("--release", "8"),
   crossScalaVersions    := Seq(scala212, scala210),
   // emulate sbt cross building by Scala cross building
