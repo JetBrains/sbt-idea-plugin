@@ -25,8 +25,13 @@ object GenerateIdeaRunConfigurations extends SbtIdeaTask[Unit] {
       val dotIdeaFolder = baseDirectory.in(ThisBuild).value / ".idea"
       val sbtRunEnv = envVars.value
       val sbtTestEnv = envVars.in(Test).value
-      val ownClassPath =
+      val ownClassPath: Seq[File] =
         classDirectory.all(ScopeFilter(inDependencies(ThisProject), inConfigurations(Test))).value
+      val managedTestClasspath: Seq[File] =
+        managedClasspath.all(ScopeFilter(inDependencies(ThisProject), inConfigurations(Test))).value
+          .flatMap(_.map(_.data))
+          .distinct
+
       val allPlugins = intellijPlugins.all(ScopeFilter(inDependencies(ThisProject))).value.flatten.distinct
       val pluginRoots =
         tasks.CreatePluginsClasspath.collectPluginRoots(
@@ -49,8 +54,9 @@ object GenerateIdeaRunConfigurations extends SbtIdeaTask[Unit] {
         pluginAssemblyDir = packageOutputDir.value,
         ownProductDirs = ownClassPath,
         pluginRoots = pluginRoots,
+        extraJUnitTemplateClasspath = managedTestClasspath,
         options = config,
-        classLoadingStrategy
+        classpathStrategy = classLoadingStrategy
       )
 
       configBuilder.build()

@@ -3,13 +3,14 @@ package org.jetbrains.sbtidea.tasks
 import org.jetbrains.sbtidea.Keys.IdeaConfigBuildingOptions
 import org.jetbrains.sbtidea.runIdea.{IdeaRunner, IntellijVMOptions}
 import org.jetbrains.sbtidea.tasks.IdeaConfigBuilder.{pathPattern, pluginsPattern}
-import org.jetbrains.sbtidea.{ClasspathStrategy, PluginLogger => log, pathToPathExt}
+import org.jetbrains.sbtidea.{ClasspathStrategy, pathToPathExt, PluginLogger => log}
 import sbt._
 
 import java.io.File
 import java.nio.file.{Path, Paths}
 import java.util.regex.Pattern
 import scala.annotation.tailrec
+import scala.collection.mutable
 import scala.math.Ordering.Implicits.infixOrderingOps
 
 /**
@@ -24,6 +25,7 @@ class IdeaConfigBuilder(moduleName: String,
                         pluginAssemblyDir: File,
                         ownProductDirs: Seq[File],
                         pluginRoots: Seq[File],
+                        extraJUnitTemplateClasspath: Seq[File],
                         options: IdeaConfigBuildingOptions,
                         classpathStrategy: ClasspathStrategy = ClasspathStrategy.Since_203_5251) {
   private val runConfigDir = dotIdeaFolder / "runConfigurations"
@@ -207,12 +209,22 @@ class IdeaConfigBuilder(moduleName: String,
     val vmOptionsStr =
       if (classpathStrategy.version >= ClasspathStrategy.Since_203_5251.version) {
         val ijRuntimeJars = guessIJRuntimeJarsForJUnitTemplate()
-        val classpathStr =
-          (pluginAssemblyDir / "lib").toString + File.separator + "*" + // plugin jars must go first when using CLASSLOADER_KEY
-            File.pathSeparator + intellijPlatformJarsClasspathPattern +
-            File.pathSeparator + intellijPluginRootsJarsClasspathPattern +
-            File.pathSeparator + ownProductDirs.mkString(File.pathSeparator) +
-            File.pathSeparator + ijRuntimeJars.mkString(File.pathSeparator) // runtime jars from the *currently running* IJ to actually start the tests
+        val classPathEntries: mutable.Buffer[String] = new mutable.ArrayBuffer()
+
+        //plugin jars must go first when using CLASSLOADER_KEY
+        //example: ./target/plugin/Scala/lib/*
+        classPathEntries += (pluginAssemblyDir / "lib").toString + File.separator + "*"
+        classPathEntries += intellijPlatformJarsClasspathPattern
+        classPathEntries += intellijPluginRootsJarsClasspathPattern
+        classPathEntries ++= ownProductDirs.map(_.toString)
+        //runtime jars from the *currently running* IJ to actually start the tests:
+        //<sdkRoot>/lib/idea_rt.jar;
+        //<sdkRoot>/plugins/junit/lib/junit5-rt.jar;
+        //<sdkRoot>/plugins/junit/lib/junit-rt.jar
+        classPathEntries ++= ijRuntimeJars.map(_.toString)
+        classPathEntries ++= extraJUnitTemplateClasspath.map(_.toString)
+
+        val classpathStr = classPathEntries.mkString(File.pathSeparator)
         s"-cp &quot;$classpathStr&quot; ${testVMOptions.asSeq(quoteValues = true).mkString(" ")}"
       } else {
         testVMOptions.asSeq(quoteValues = true).mkString(" ")
