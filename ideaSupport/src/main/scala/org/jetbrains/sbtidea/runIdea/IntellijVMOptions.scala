@@ -1,15 +1,20 @@
 package org.jetbrains.sbtidea.runIdea
 
-import java.nio.file.Path
+import org.jetbrains.sbtidea._
 
+import java.nio.file.Path
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
-import org.jetbrains.sbtidea._
-
+/**
+  * @param intellijHomePath      see [[org.jetbrains.sbtidea.Keys.intellijPluginDirectory]]<br>
+  *                              example: `~/.ScalaPluginIU`
+  * @param intellijBaseDirectory example: `~/.ScalaPluginIU/sdk/222.1796`
+  */
 case class IntellijVMOptions(platform: IntelliJPlatform,
                              pluginPath: Path,
-                             ideaHome: Path,
+                             intellijHomePath: Path,
+                             intellijBaseDirectory: Path,
                              xmx: Int = 1536,
                              xms: Int = 128,
                              reservedCodeCacheSize: Int = 512,
@@ -38,11 +43,15 @@ object IntellijVMOptions {
       buffer +=  s"-XX:SoftRefLRUPolicyMSPerMB=$softRefLRUPolicyMSPerMB"
       buffer +=  gc
       buffer +=  gcOpt
-      val (system, config) =
-        if (test) (ideaHome.resolve("test-system"), ideaHome.resolve("test-config"))
-        else      (ideaHome.resolve("system"), ideaHome.resolve("config"))
-      buffer += s"-Didea.system.path=${OQ(system.toString)}"
-      buffer += s"-Didea.config.path=${OQ(config.toString)}"
+      val (systemFolder, configFolder) =
+        if (test) (intellijHomePath.resolve("test-system"), intellijHomePath.resolve("test-config"))
+        else      (intellijHomePath.resolve("system"), intellijHomePath.resolve("config"))
+      val logFolder = systemFolder.resolve("log")
+      val pluginsFolder = intellijBaseDirectory.resolve("plugins")
+      buffer += s"-Didea.system.path=${OQ(systemFolder.toString)}"
+      buffer += s"-Didea.config.path=${OQ(configFolder.toString)}"
+      buffer += s"-Didea.log.path=${OQ(logFolder.toString)}"
+      buffer += s"-Didea.plugins.path=${OQ(pluginsFolder.toString)}"
       buffer += s"-Dplugin.path=${OQ(pluginPath.toString)}"
       if(test) {
         buffer += "-Didea.use.core.classloader.for.plugin.path=true"

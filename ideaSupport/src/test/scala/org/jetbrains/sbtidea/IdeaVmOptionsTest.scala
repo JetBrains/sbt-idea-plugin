@@ -8,7 +8,12 @@ import java.nio.file.Paths
 
 class IdeaVmOptionsTest extends FunSuite with Matchers {
 
-  private val vmOpts = IntellijVMOptions(IdeaCommunity, Paths.get("foo bar"), Paths.get("bar baz"))
+  private val vmOpts = IntellijVMOptions(
+    platform = IdeaCommunity,
+    pluginPath = Paths.get("pluginPath value"),
+    intellijHomePath = Paths.get("intellijHomePath value"),
+    intellijBaseDirectory = Paths.get("intellijBaseDirectory value")
+  )
   private val Q = "&quot;"
 
   private val mustBeQuoted = Seq(
