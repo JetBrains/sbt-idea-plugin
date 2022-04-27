@@ -3,7 +3,7 @@ package org.jetbrains.sbtidea.download.jbr
 import org.jetbrains.sbtidea.Keys.JBR
 import org.jetbrains.sbtidea.download.api.Resolver
 import org.jetbrains.sbtidea.packaging.artifact.using
-import org.jetbrains.sbtidea.{JbrPlatform, pathToPathExt, _}
+import org.jetbrains.sbtidea.{JbrPlatform, Keys, pathToPathExt, _}
 import sbt._
 
 import java.net.URL
@@ -21,8 +21,10 @@ class JbrResolver extends Resolver[JbrDependency] {
           for {
             version <- getJbrVersion(dep)
           } yield {
-            val url = buildJbrDlUrl(version, jbrInfo.kind, jbrInfo.platform)
-            val resolvedJbrInfo = JBR(version, jbrInfo.kind, jbrInfo.platform)
+            val kind = getJbrKind(jbrInfo, version)
+            val platform = jbrInfo.platform
+            val url = buildJbrDlUrl(version, kind, platform)
+            val resolvedJbrInfo = JBR(version, kind, platform)
             JbrArtifact(dep.copy(jbrInfo = resolvedJbrInfo), url)
           }
         maybeArtifact.toSeq
@@ -43,11 +45,27 @@ class JbrResolver extends Resolver[JbrDependency] {
       Some(jbr.version)
   }
 
+  private def getJbrKind(jbrInfo: JbrInfo, version: JbrVersion): JbrKind =
+    jbrInfo match {
+      case AutoJbr(_, explicitKind, _) =>
+        explicitKind.getOrElse(defaultJbrFor(version))
+      case jbr =>
+        jbr.kind
+    }
+
+  private def defaultJbrFor(version: JbrVersion) =
+    if (version.major.startsWith("11"))
+      JbrKind.JBR_DCEVM
+    else
+      JbrKind.JBR_JCEF // jbr 17
+
   private[jbr] def extractVersionFromIdea(ideaInstallationDir: Path): Option[String] = {
     val dependenciesFile = ideaInstallationDir / "dependencies.txt"
     val props = new Properties()
     using(dependenciesFile.inputStream)(props.load)
-    props.getProperty("jdkBuild").lift2Option
+    val value1 = Option(props.getProperty("jdkBuild"))
+    val value2 = value1.orElse(Option(props.getProperty("runtimeBuild"))) //since 2022.2
+    value2
   }
 }
 

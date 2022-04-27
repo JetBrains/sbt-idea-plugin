@@ -26,8 +26,9 @@ final case class AutoJbr(
   override def version: JbrVersion =
     throw new IllegalStateException("Static evaluation of JBR version is unsupported in AutoJbr")
 
+  /** kind will be calculated in [[org.jetbrains.sbtidea.download.jbr.JbrResolver getJbrKind]] */
   override def kind: JbrKind =
-    explicitKind.getOrElse(JbrKind.JBR_WITH_JCEF_DCEVM)
+    throw new IllegalStateException("Static evaluation of JBR kind is unsupported in AutoJbr")
 
   override def platform: JbrPlatform =
     explicitPlatform.getOrElse(JbrPlatform.auto)
@@ -69,11 +70,18 @@ object JbrVersion {
 final case class JbrKind(value: String)
 
 object JbrKind {
-  val JBR_VANILLA: JbrKind = JbrKind("jbr")
-  val JBR_WITH_JCEF: JbrKind = JbrKind("jbr_jcef")
-  val JBR_WITH_JCEF_DCEVM: JbrKind = JbrKind("jbr_dcevm")
-  val JBR_WITH_JCEF_FAST_DEBUG: JbrKind = JbrKind("jbr_fd")
-  val JBR_SDK: JbrKind = JbrKind("jbrsdk")
+  val JBR_VANILLA: JbrKind    = JbrKind("jbr")
+  val JBR_JCEF: JbrKind       = JbrKind("jbr_jcef")
+  val JBR_DCEVM: JbrKind      = JbrKind("jbr_dcevm")
+  val JBR_FAST_DEBUG: JbrKind = JbrKind("jbr_fd")
+  val JBR_SDK: JbrKind        = JbrKind("jbrsdk")
+
+  @deprecated("use JBR_JCEF", since = "3.14.2")
+  def JBR_WITH_JCEF: JbrKind = JBR_JCEF
+  @deprecated("use JBR_DCEVM", since = "3.14.2")
+  def JBR_WITH_JCEF_DCEVM: JbrKind = JBR_DCEVM
+  @deprecated("use JBR_FAST_DEBUG", since = "3.14.2")
+  def JBR_WITH_JCEF_FAST_DEBUG: JbrKind = JBR_FAST_DEBUG
 }
 
 /**
