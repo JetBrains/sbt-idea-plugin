@@ -96,11 +96,14 @@ object IntellijVMOptions {
       |-Dide.no.platform.update=true
       |-Dkotlinx.coroutines.debug=off
       |-Djdk.attach.allowAttachSelf=true
-      |-Djdk.module.illegalAccess.silent=true
       |-XX:MaxJavaStackTraceDepth=10000
       |-Didea.debug.mode=true
       |-Dapple.laf.useScreenMenuBar=true
       |-Duse.linux.keychain=false
       |-Didea.initially.ask.config=true
-      |""".stripMargin.split("\n").toSeq
+      |
+      |-Djdk.module.illegalAccess.silent=true
+      |-XX:+IgnoreUnrecognizedVMOptions
+      |--jbr-illegal-access
+      |""".stripMargin.split("\n").filter(_.nonEmpty).toSeq
 }
