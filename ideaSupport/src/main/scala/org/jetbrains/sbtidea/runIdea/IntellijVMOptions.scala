@@ -70,8 +70,13 @@ object IntellijVMOptions {
 
   val IDEA_MAIN = "com.intellij.idea.Main"
 
+  /**
+    * @note -Dsun.io.useCanonCaches & -Dsun.io.useCanonPrefixCache are disabled by default in JDK 17,
+    *       but we still explicitly pass `false` just in case (e.g. if JBR 11 is used)
+    */
   val DEFAULT_STATIC_OPTS: Seq[String] =
-    """-Dsun.io.useCanonPrefixCache=false
+    """-Dsun.io.useCanonCaches=false
+      |-Dsun.io.useCanonPrefixCache=false
       |-ea
       |-Djava.net.preferIPv4Stack=true
       |-XX:+HeapDumpOnOutOfMemoryError
