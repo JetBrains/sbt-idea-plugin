@@ -1,20 +1,15 @@
 package org.jetbrains.sbtidea.runIdea
 
-import org.jetbrains.sbtidea._
-
 import java.nio.file.Path
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
-/**
-  * @param intellijHomePath      see [[org.jetbrains.sbtidea.Keys.intellijPluginDirectory]]<br>
-  *                              example: `~/.ScalaPluginIU`
-  * @param intellijBaseDirectory example: `~/.ScalaPluginIU/sdk/222.1796`
-  */
+import org.jetbrains.sbtidea._
+
 case class IntellijVMOptions(platform: IntelliJPlatform,
                              pluginPath: Path,
-                             intellijHomePath: Path,
-                             intellijBaseDirectory: Path,
+                             ideaHome: Path,
                              xmx: Int = 1536,
                              xms: Int = 128,
                              reservedCodeCacheSize: Int = 512,
@@ -43,15 +38,11 @@ object IntellijVMOptions {
       buffer +=  s"-XX:SoftRefLRUPolicyMSPerMB=$softRefLRUPolicyMSPerMB"
       buffer +=  gc
       buffer +=  gcOpt
-      val (systemFolder, configFolder) =
-        if (test) (intellijHomePath.resolve("test-system"), intellijHomePath.resolve("test-config"))
-        else      (intellijHomePath.resolve("system"), intellijHomePath.resolve("config"))
-      val logFolder = systemFolder.resolve("log")
-      val pluginsFolder = intellijBaseDirectory.resolve("plugins")
-      buffer += s"-Didea.system.path=${OQ(systemFolder.toString)}"
-      buffer += s"-Didea.config.path=${OQ(configFolder.toString)}"
-      buffer += s"-Didea.log.path=${OQ(logFolder.toString)}"
-      buffer += s"-Didea.plugins.path=${OQ(pluginsFolder.toString)}"
+      val (system, config) =
+        if (test) (ideaHome.resolve("test-system"), ideaHome.resolve("test-config"))
+        else      (ideaHome.resolve("system"), ideaHome.resolve("config"))
+      buffer += s"-Didea.system.path=${OQ(system.toString)}"
+      buffer += s"-Didea.config.path=${OQ(config.toString)}"
       buffer += s"-Dplugin.path=${OQ(pluginPath.toString)}"
       if(test) {
         buffer += "-Didea.use.core.classloader.for.plugin.path=true"
