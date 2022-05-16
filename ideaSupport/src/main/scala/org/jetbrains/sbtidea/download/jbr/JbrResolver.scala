@@ -63,8 +63,8 @@ class JbrResolver extends Resolver[JbrDependency] {
     val dependenciesFile = ideaInstallationDir / "dependencies.txt"
     val props = new Properties()
     using(dependenciesFile.inputStream)(props.load)
-    val value1 = Option(props.getProperty("jdkBuild"))
-    val value2 = value1.orElse(Option(props.getProperty("runtimeBuild"))) //since 2022.2
+    val value1 = Option(props.getProperty("runtimeBuild")) //since 2022.2
+    val value2 = value1.orElse(Option(props.getProperty("jdkBuild")))
     value2
   }
 }
