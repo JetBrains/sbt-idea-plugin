@@ -50,6 +50,9 @@ object BuildIndex {
 
 
   private def getIndexFiles(pluginOutputDir: Path, indexOutputDir: Path): Seq[IndexElement] = {
+    if (!indexOutputDir.exists)
+      return Nil
+
     val predicate = new Predicate[Path] { override def test(p: Path): Boolean = p.toString.endsWith("jar") }
 
     val allArtifactJars = Files.walk(pluginOutputDir)
