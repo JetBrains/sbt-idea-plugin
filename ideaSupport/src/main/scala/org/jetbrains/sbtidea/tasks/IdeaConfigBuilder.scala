@@ -136,14 +136,9 @@ class IdeaConfigBuilder(moduleName: String,
     runner.getBundledJRE match {
       case None       => ""
       case Some(jbr)  =>
-        val shortenClasspath =
-          if (jbr.version >= 9)
-            "    <shortenClasspath name=\"ARGS_FILE\" />"
-          else
-            "    <shortenClasspath name=\"NONE\" />"
-        s"""<option name="ALTERNATIVE_JRE_PATH" value="${jbr.root}" />
+        s"""    <option name="ALTERNATIVE_JRE_PATH" value="${jbr.root}" />
            |    <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
-           |$shortenClasspath""".stripMargin
+           |    <shortenClasspath name="ARGS_FILE" />""".stripMargin
     }
   }
 
