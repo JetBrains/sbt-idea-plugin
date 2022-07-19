@@ -2,6 +2,7 @@ package org.jetbrains.sbtidea.runIdea
 
 import org.jetbrains.sbtidea.download.jbr.JbrInstaller
 import org.jetbrains.sbtidea.packaging.artifact
+import org.jetbrains.sbtidea.runIdea.IntellijAwareRunner.getBundledJRE
 import org.jetbrains.sbtidea.{pathToPathExt, PluginLogger => log}
 import sbt._
 
@@ -11,46 +12,9 @@ import java.nio.file.{Path, Paths}
 import java.util.{Locale, Properties}
 import scala.collection.JavaConverters._
 
-abstract class IntellijAwareRunner(ideaClasspath: Seq[Path], blocking: Boolean) {
+abstract class IntellijAwareRunner(intellijBaseDirectory: Path, blocking: Boolean) {
 
-  private def extractJBRVersion(home: Path): Option[Int] = try {
-    artifact.using(newInputStream(home / "release")) { stream =>
-      val props = new Properties()
-      props.load(stream)
-      val versionValue = props.get("JAVA_VERSION").toString
-      if (versionValue.startsWith("\"1."))
-        Some(versionValue.substring(3, 4).toInt)
-      else
-        Some(versionValue.substring(1, versionValue.indexOf('.')).toInt)
-    }
-  } catch {
-    case e: Exception =>
-      log.warn(s"Failed to get JBR version: $e")
-      None
-  }
-  
-  def getBundledJRE: Option[JRE] = {
-    val validJars = Set("app.jar", "idea.jar", "platform-api.jar", "platform-impl.jar", "openapi.jar")
-
-    //e.g. ~/.ScalaPluginIU/sdk/221.4165.146/lib/app.jar
-    val someJarInIdeaInstallationLibFolder: Path =
-      ideaClasspath
-        .find(p => validJars.contains(p.getFileName.toString))
-        .getOrElse(throw new RuntimeException(s"Can't find any of the $validJars in idea classpath:\n${ideaClasspath.mkString("\n")}"))
-
-    val libFolder = someJarInIdeaInstallationLibFolder.getParent
-    val maybeJre = sys.props.get("os.name").map {
-      case name if name.toLowerCase(Locale.ENGLISH).startsWith("mac") =>
-        libFolder.getParent / JbrInstaller.JBR_DIR_NAME / "Contents" / "Home"
-      case _ =>
-        libFolder.getParent / "jbr"
-    }
-
-    maybeJre.flatMap { root =>
-      extractJBRVersion(root)
-        .map(JRE(root, _))
-    }
-  }
+  //NOTE: most of these methods could be extracted to companion object
 
   protected def detectLocalJRE: JRE = {
     val localHome = Paths.get(System.getProperties.getProperty("java.home"))
@@ -64,7 +28,7 @@ abstract class IntellijAwareRunner(ideaClasspath: Seq[Path], blocking: Boolean) 
     val version_major = runtime_version.getReturnType.getMethod("feature")
     version_major.invoke(version).asInstanceOf[Int]
   } catch {
-    case ex: Exception =>
+    case _: Exception =>
       // before Java 9 system property 'java.specification.version'
       // is of the form '1.major', so return the int after '1.'
       val versionString = System.getProperty("java.specification.version")
@@ -84,7 +48,8 @@ abstract class IntellijAwareRunner(ideaClasspath: Seq[Path], blocking: Boolean) 
   }
 
   protected def buildFullCommand: java.util.List[String] = {
-    implicit val jre: JRE = getBundledJRE.getOrElse(detectLocalJRE)
+    val bundledJre = getBundledJRE(intellijBaseDirectory)
+    implicit val jre: JRE = bundledJre.getOrElse(detectLocalJRE)
     val javaExe = getJavaExecutable(jre)
     val args = buildJavaArgs
     (javaExe.toAbsolutePath.toString +: args).asJava
@@ -103,4 +68,36 @@ abstract class IntellijAwareRunner(ideaClasspath: Seq[Path], blocking: Boolean) 
     else 0
   }
 
+}
+
+object IntellijAwareRunner {
+  def getBundledJRE(intellijBaseDirectory: Path): Option[JRE] = {
+    val maybeJre: Option[Path] = sys.props.get("os.name").map { osName =>
+      if (osName.toLowerCase(Locale.ENGLISH).startsWith("mac"))
+        intellijBaseDirectory / JbrInstaller.JBR_DIR_NAME / "Contents" / "Home"
+      else
+        intellijBaseDirectory / "jbr"
+    }
+
+    maybeJre.flatMap { root =>
+      extractJBRVersion(root)
+        .map(JRE(root, _))
+    }
+  }
+
+  private def extractJBRVersion(home: Path): Option[Int] = try {
+    artifact.using(newInputStream(home / "release")) { stream =>
+      val props = new Properties()
+      props.load(stream)
+      val versionValue = props.get("JAVA_VERSION").toString
+      if (versionValue.startsWith("\"1."))
+        Some(versionValue.substring(3, 4).toInt)
+      else
+        Some(versionValue.substring(1, versionValue.indexOf('.')).toInt)
+    }
+  } catch {
+    case e: Exception =>
+      log.warn(s"Failed to get JBR version: $e")
+      None
+  }
 }

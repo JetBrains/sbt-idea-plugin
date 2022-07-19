@@ -1,21 +1,17 @@
 package org.jetbrains.sbtidea.runIdea
 
-import org.jetbrains.sbtidea.pathToPathExt
-
 import java.io.File
 import java.nio.file.Path
 
-class IdeaRunner(ideaClasspath: Seq[Path],
+class IdeaRunner(intellijBaseDirectory: Path,
                  vmOptions: IntellijVMOptions,
                  blocking: Boolean,
-                 programArguments: Seq[String] = Seq.empty) extends IntellijAwareRunner(ideaClasspath, blocking) {
+                 programArguments: Seq[String] = Seq.empty) extends IntellijAwareRunner(intellijBaseDirectory, blocking) {
 
   override protected def buildJavaArgs: Seq[String] = {
-    val classPath = buildCPString
-    List("-cp", classPath) ++
+    val intellijPlatformJarsFolder = intellijBaseDirectory.resolve("lib")
+    List("-cp", s"$intellijPlatformJarsFolder${File.separator}*") ++
       (vmOptions.asSeq().filter(_.nonEmpty) :+ IntellijVMOptions.IDEA_MAIN) ++
       programArguments
   }
-
-  private def buildCPString: String = ideaClasspath.mkString(File.pathSeparator)
 }

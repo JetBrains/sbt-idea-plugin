@@ -1,6 +1,6 @@
 package org.jetbrains.sbtidea.tasks
 
-import org.jetbrains.sbtidea.Keys.{intellijMainJars, intellijVMOptions}
+import org.jetbrains.sbtidea.Keys.{intellijBaseDirectory, intellijMainJars, intellijVMOptions}
 import org.jetbrains.sbtidea.{PluginLogger, SbtPluginLogger}
 import org.jetbrains.sbtidea.packaging.PackagingKeys.packageArtifact
 import org.jetbrains.sbtidea.runIdea.IdeaRunner
@@ -18,9 +18,7 @@ object RunIDETask extends SbtIdeaInputTask[Unit] {
       debug = !opts.contains("noDebug"),
       suspend = opts.contains("suspend")
     )
-    val ideaCP = intellijMainJars.value.map(_.data.toPath)
-    val runner = new IdeaRunner(ideaCP, vmOptions, opts.contains("blocking"))
+    val runner = new IdeaRunner(intellijBaseDirectory.value.toPath, vmOptions, opts.contains("blocking"))
     runner.run()
   }
-
 }

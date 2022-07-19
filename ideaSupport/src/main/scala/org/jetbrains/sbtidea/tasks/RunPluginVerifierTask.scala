@@ -46,8 +46,7 @@ object RunPluginVerifierTask extends SbtIdeaTask[File] {
     val verifierDir   = target.value / "verifier"
     val options       = pluginVerifierOptions.value
     val verifierJar   = getOrDownloadVerifier(options.version, verifierDir)
-    val ideaCP        = intellijMainJars.value.map(_.data.toPath)
-    val runner        = new IntellijAwareRunner(ideaCP, true) {
+    val runner        = new IntellijAwareRunner(intellijBaseDirectory.value.toPath, true) {
       private var hasErrors: Boolean = false
       override protected def buildJavaArgs: Seq[String] = Seq(
         "-jar",

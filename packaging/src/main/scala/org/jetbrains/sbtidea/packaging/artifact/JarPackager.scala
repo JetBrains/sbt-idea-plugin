@@ -10,8 +10,8 @@ import org.jetbrains.sbtidea.packaging.ExcludeFilter
 import sbt.Keys.TaskStreams
 
 trait JarPackager {
-  def copySingleJar(from: Path)
-  def mergeIntoOne(source: Seq[Path])
+  def copySingleJar(from: Path): Unit
+  def mergeIntoOne(source: Seq[Path]): Unit
 }
 
 class SimplePackager(protected val myOutput: Path,

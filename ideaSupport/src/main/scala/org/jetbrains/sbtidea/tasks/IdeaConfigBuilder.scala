@@ -1,7 +1,7 @@
 package org.jetbrains.sbtidea.tasks
 
 import org.jetbrains.sbtidea.Keys.IdeaConfigBuildingOptions
-import org.jetbrains.sbtidea.runIdea.{IdeaRunner, IntellijVMOptions}
+import org.jetbrains.sbtidea.runIdea.{IntellijAwareRunner, IntellijVMOptions}
 import org.jetbrains.sbtidea.tasks.IdeaConfigBuilder.{pathPattern, pluginsPattern}
 import org.jetbrains.sbtidea.{ClasspathStrategy, pathToPathExt, PluginLogger => log}
 import sbt._
@@ -132,8 +132,8 @@ class IdeaConfigBuilder(moduleName: String,
   }
 
   private lazy val jreSettings: String = {
-    val runner = new IdeaRunner(intellijPlatformJarsFolder.toPath.list, intellijVMOptions,false)
-    runner.getBundledJRE match {
+    val bundledJre = IntellijAwareRunner.getBundledJRE(intellijPlatformJarsFolder.toPath)
+    bundledJre match {
       case None       => ""
       case Some(jbr)  =>
         s"""    <option name="ALTERNATIVE_JRE_PATH" value="${jbr.root}" />

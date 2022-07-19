@@ -1,17 +1,16 @@
 package org.jetbrains.sbtidea.searchableoptions
 
-import java.nio.file.{Files, Path}
-import java.util.function.Predicate
-
-import org.jetbrains.sbtidea.Keys.{intellijMainJars, intellijVMOptions}
+import org.jetbrains.sbtidea.Keys.{intellijBaseDirectory, intellijVMOptions}
 import org.jetbrains.sbtidea.packaging.PackagingKeys.packageArtifact
 import org.jetbrains.sbtidea.packaging._
 import org.jetbrains.sbtidea.packaging.artifact.DistBuilder
 import org.jetbrains.sbtidea.runIdea.IdeaRunner
-import org.jetbrains.sbtidea.{pathToPathExt, PluginLogger, SbtPluginLogger}
+import org.jetbrains.sbtidea.{PluginLogger, SbtPluginLogger, pathToPathExt}
 import sbt.Keys.{streams, target}
 import sbt._
 
+import java.nio.file.{Files, Path}
+import java.util.function.Predicate
 import scala.collection.JavaConverters._
 
 object BuildIndex {
@@ -22,14 +21,14 @@ object BuildIndex {
   def createTask: Def.Initialize[Task[Unit]] = Def.task {
     implicit val log: PluginLogger = new SbtPluginLogger(streams.value)
 
-    val ideaCP          = intellijMainJars.value.map(_.data.toPath)
+    val intellijBaseDir = intellijBaseDirectory.value
     val pluginRoot      = packageArtifact.value.toPath
     val indexOutputPath = target.value / "searchableOptions"
     val indexerCMD      = "traverseUI" :: indexOutputPath.getCanonicalPath :: "true" :: Nil
     val vmOptions       = intellijVMOptions.value
 
     log.info("Building searchable plugin options index...")
-    val runner = new IdeaRunner(ideaCP, vmOptions, blocking = true, programArguments = indexerCMD)
+    val runner = new IdeaRunner(intellijBaseDir.toPath, vmOptions, blocking = true, programArguments = indexerCMD)
     runner.run()
 
     val indexRoots          = getIndexFiles(pluginRoot, indexOutputPath.toPath)
@@ -66,7 +65,7 @@ object BuildIndex {
       .filter(idx => allArtifactJars.contains(idx.getFileName.toString))
       .filter(idx => (idx / IDX_DIR).exists && (idx / IDX_DIR).isDir && (idx / IDX_DIR).list.nonEmpty)
       .foldLeft(Seq.empty[IndexElement]) { (acc, idx) =>
-        acc :+ (allArtifactJars(idx.getFileName.toString) -> (idx / IDX_DIR).list.head)
+        acc :+ allArtifactJars(idx.getFileName.toString) -> (idx / IDX_DIR).list.head
       }
 
     indexesForPlugin
