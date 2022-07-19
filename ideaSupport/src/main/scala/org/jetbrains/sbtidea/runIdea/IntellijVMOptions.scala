@@ -75,7 +75,8 @@ object IntellijVMOptions {
     *       but we still explicitly pass `false` just in case (e.g. if JBR 11 is used)
     */
   val DEFAULT_STATIC_OPTS: Seq[String] =
-    """-Dsun.io.useCanonCaches=false
+    """-Djava.system.class.loader=com.intellij.util.lang.PathClassLoader
+      |-Dsun.io.useCanonCaches=false
       |-Dsun.io.useCanonPrefixCache=false
       |-ea
       |-Djava.net.preferIPv4Stack=true
@@ -137,5 +138,10 @@ object IntellijVMOptions {
       |--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED
       |--add-opens=jdk.internal.jvmstat/sun.jvmstat.monitor=ALL-UNNAMED
       |--add-opens=jdk.jdi/com.sun.tools.jdi=ALL-UNNAMED
-      |""".stripMargin.split("\n").filter(_.nonEmpty).toSeq
+      |""".stripMargin
+      .replace("\r", "") //needed in case sbt-idea-plugin is build locally on windows
+      .split("\n")
+      .map(_.trim) // trimming just in case of accidental trailing spaces in sources
+      .filter(_.nonEmpty)
+      .toSeq
 }

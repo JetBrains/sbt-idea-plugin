@@ -171,7 +171,7 @@ class IdeaConfigBuilder(moduleName: String,
        |    <log_file alias="JPS LOG" path="$dataDir/system/log/build-log/build.log" />
        |    <option name="MAIN_CLASS_NAME" value="com.intellij.idea.Main" />
        |    <module name="$moduleName" />
-       |    <option name="VM_PARAMETERS" value="-Djava.system.class.loader=com.intellij.util.lang.PathClassLoader -cp &quot;$intellijPlatformJarsFolder${File.separator}*&quot; ${vmOptions.asSeq(quoteValues = true).mkString(" ")}" />
+       |    <option name="VM_PARAMETERS" value="-cp &quot;$intellijPlatformJarsFolder${File.separator}*&quot; ${vmOptions.asSeq(quoteValues = true).mkString(" ")}" />
        |    <RunnerSettings RunnerId="Debug">
        |      <option name="DEBUG_PORT" value="" />
        |      <option name="TRANSPORT" value="0" />
