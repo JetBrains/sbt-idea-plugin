@@ -132,7 +132,7 @@ class IdeaConfigBuilder(moduleName: String,
   }
 
   private lazy val jreSettings: String = {
-    val bundledJre = IntellijAwareRunner.getBundledJRE(intellijPlatformJarsFolder.toPath)
+    val bundledJre = IntellijAwareRunner.getBundledJRE(intellijBaseDir.toPath)
     bundledJre match {
       case None       => ""
       case Some(jbr)  =>
