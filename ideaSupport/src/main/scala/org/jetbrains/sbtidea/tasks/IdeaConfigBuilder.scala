@@ -203,20 +203,28 @@ class IdeaConfigBuilder(moduleName: String,
     val env = mkEnv(options.ideaTestEnv)
     val vmOptionsStr =
       if (classpathStrategy.version >= ClasspathStrategy.Since_203_5251.version) {
-        val ijRuntimeJars = guessIJRuntimeJarsForJUnitTemplate()
         val classPathEntries: mutable.Buffer[String] = new mutable.ArrayBuffer()
 
         //plugin jars must go first when using CLASSLOADER_KEY
         //example: ./target/plugin/Scala/lib/*
         classPathEntries += (pluginAssemblyDir / "lib").toString + File.separator + "*"
+
+        //IDEA lib folder contains junit.jar & junit4.jar. JUnit 4 is actually used by platform tests
+        //So we need to put it before other classpath to ensure that it has a higher priority in class loader
+        val prioritizedJUnitJar = intellijPlatformJarsFolder.listFiles().find(_.getName == "junit4.jar").map(_.getCanonicalPath)
+        prioritizedJUnitJar.foreach(classPathEntries += _)
+
         classPathEntries += intellijPlatformJarsClasspathPattern
         classPathEntries += intellijPluginRootsJarsClasspathPattern
         classPathEntries ++= ownProductDirs.map(_.toString)
+
         //runtime jars from the *currently running* IJ to actually start the tests:
         //<sdkRoot>/lib/idea_rt.jar;
         //<sdkRoot>/plugins/junit/lib/junit5-rt.jar;
         //<sdkRoot>/plugins/junit/lib/junit-rt.jar
+        val ijRuntimeJars = guessIJRuntimeJarsForJUnitTemplate()
         classPathEntries ++= ijRuntimeJars.map(_.toString)
+
         classPathEntries ++= extraJUnitTemplateClasspath.map(_.toString)
 
         val classpathStr = classPathEntries.mkString(File.pathSeparator)
