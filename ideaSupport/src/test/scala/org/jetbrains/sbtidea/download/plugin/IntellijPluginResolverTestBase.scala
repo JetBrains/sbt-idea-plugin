@@ -26,7 +26,7 @@ abstract class IntellijPluginResolverTestBase extends IntellijPluginInstallerTes
     Seq(pluginA, pluginB, pluginC, pluginD, pluginE).map(p => p.id -> p).toMap
 
   protected implicit def descriptor2Plugin(descriptor: PluginDescriptor): PluginDependency =
-      PluginDependency(IntellijPlugin.Id(descriptor.id, None, None),
+      PluginDependency(IntellijPlugin.Id(descriptor.id, None, None)(),
         IDEA_BUILDINFO,
         descriptor.dependsOn.map(p => plugin2PluginDep(p.id.toPlugin)))
 

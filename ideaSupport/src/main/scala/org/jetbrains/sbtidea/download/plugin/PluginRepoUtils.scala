@@ -22,17 +22,18 @@ class PluginRepoUtils(implicit ctx: InstallContext) extends PluginRepoApi {
   }
 
   def getPluginDownloadURL(idea: BuildInfo, pluginInfo: IntellijPlugin.Id): URL = {
-    val urlStr = pluginInfo match {
+    pluginInfo match {
       case IntellijPlugin.Id(id, Some(version), Some(channel)) =>
-        s"$baseUrl/plugin/download?pluginId=$id&version=$version&channel=$channel"
+        assert(pluginInfo.url.isEmpty, "Can't specify both channel and download URL.")
+        new URL(s"$baseUrl/plugin/download?pluginId=$id&version=$version&channel=$channel")
       case IntellijPlugin.Id(id, Some(version), None) =>
-        s"$baseUrl/plugin/download?pluginId=$id&version=$version"
+        pluginInfo.url.getOrElse(new URL(s"$baseUrl/plugin/download?pluginId=$id&version=$version"))
       case IntellijPlugin.Id(id, None, Some(channel)) =>
-        s"$baseUrl/pluginManager?action=download&id=$id&channel=$channel&build=${idea.edition.edition}-${idea.getActualIdeaBuild(ctx.baseDirectory)}"
+        assert(pluginInfo.url.isEmpty, "Can't specify both channel and download URL.")
+        new URL(s"$baseUrl/pluginManager?action=download&id=$id&channel=$channel&build=${idea.edition.edition}-${idea.getActualIdeaBuild(ctx.baseDirectory)}")
       case IntellijPlugin.Id(id, None, None) =>
-        s"$baseUrl/pluginManager?action=download&id=$id&build=${idea.edition.edition}-${idea.getActualIdeaBuild(ctx.baseDirectory)}"
+        pluginInfo.url.getOrElse(new URL(s"$baseUrl/pluginManager?action=download&id=$id&build=${idea.edition.edition}-${idea.getActualIdeaBuild(ctx.baseDirectory)}"))
     }
-    new URL(urlStr)
   }
 
   def getLatestPluginVersion(idea: BuildInfo, pluginId: String, channel: Option[String]): Either[Throwable, String] =
