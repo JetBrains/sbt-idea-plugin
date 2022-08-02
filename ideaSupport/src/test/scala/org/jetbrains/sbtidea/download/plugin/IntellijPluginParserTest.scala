@@ -4,6 +4,7 @@ import org.jetbrains.sbtidea.IntellijPlugin._
 import org.jetbrains.sbtidea.Keys.String2Plugin
 import org.scalatest.{FunSuite, Matchers}
 
+import java.net.URL
 import scala.language.postfixOps
 
 final class IntellijPluginParserTest extends FunSuite with Matchers {
@@ -17,7 +18,17 @@ final class IntellijPluginParserTest extends FunSuite with Matchers {
   test("plugin url should parse as Url") {
     "https://foo.bar/a.zip".toPlugin shouldBe an [Url]
     "http://foo.bar/a.zip".toPlugin shouldBe an [Url]
-    "plugin:http://foo.bar/a.zip".toPlugin shouldBe an [Url]
+  }
+
+  test("plugin with url should parse as Id with optional URL set") {
+    val p = "org.example.plugin:http://foo.bar/a.zip".toPlugin
+    p shouldBe an [Id]
+    p.asInstanceOf[Id].url shouldEqual Some(new URL("http://foo.bar/a.zip"))
+
+    val p1 = "org.example.plugin:1.0-api-212:https://foo.bar/a.zip".toPlugin
+    p1 shouldBe an [Id]
+    p1.asInstanceOf[Id].url shouldEqual Some(new URL("https://foo.bar/a.zip"))
+    p1.asInstanceOf[Id].version shouldEqual Some("1.0-api-212")
   }
 
   test("id should parse with with mixed segments") {
