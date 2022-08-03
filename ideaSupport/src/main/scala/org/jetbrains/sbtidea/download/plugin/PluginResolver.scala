@@ -1,7 +1,10 @@
 package org.jetbrains.sbtidea.download.plugin
 import org.jetbrains.sbtidea.Keys.String2Plugin
 import org.jetbrains.sbtidea._
+import org.jetbrains.sbtidea.download.FileDownloader
 import org.jetbrains.sbtidea.download.api._
+
+import java.nio.file.Files
 
 
 class PluginResolver(private val processedPlugins: Set[IntellijPlugin] = Set.empty, private val resolveSettings: IntellijPlugin.Settings)
@@ -44,8 +47,14 @@ class PluginResolver(private val processedPlugins: Set[IntellijPlugin] = Set.emp
     val descriptor =
       if (alreadyInstalled)
         localRegistry.getPluginDescriptor(key)
-      else
-        repo.getRemotePluginXmlDescriptor(plugin.buildInfo, key.id, key.channel)
+      else if (key.url.isDefined) {
+        val downloadedFile = FileDownloader(ctx.downloadDirectory).download(key.url.get)
+        val extractDir = Files.createTempDirectory(ctx.downloadDirectory, s"tmp-resolve-downloads")
+        sbt.IO.unzip(downloadedFile.toFile, extractDir.toFile)
+        assert(Files.list(extractDir).count() == 1, s"Expected only single plugin folder in extracted archive, got: ${extractDir.toFile.list().mkString}")
+        val tmpPluginDir = Files.list(extractDir).findFirst().get()
+        LocalPluginRegistry.extractInstalledPluginDescriptor(tmpPluginDir).right.map(PluginDescriptor.load)
+      } else repo.getRemotePluginXmlDescriptor(plugin.buildInfo, key.id, key.channel)
 
     descriptor match {
       case Right(descriptor) =>
@@ -53,8 +62,10 @@ class PluginResolver(private val processedPlugins: Set[IntellijPlugin] = Set.emp
         val thisPluginArtifact =
           if (alreadyInstalled)
             LocalPlugin(plugin, descriptor, localRegistry.getInstalledPluginRoot(key))
-          else
-            RemotePluginArtifact(plugin, repo.getPluginDownloadURL(plugin.buildInfo, key))
+          else {
+            val url = key.url.getOrElse(repo.getPluginDownloadURL(plugin.buildInfo, key))
+            RemotePluginArtifact(plugin, url)
+          }
 
         val resolvedDeps =
           if (resolveSettings.transitive)
@@ -89,5 +100,4 @@ class PluginResolver(private val processedPlugins: Set[IntellijPlugin] = Set.emp
       Seq.empty
     }
   }
-
 }
