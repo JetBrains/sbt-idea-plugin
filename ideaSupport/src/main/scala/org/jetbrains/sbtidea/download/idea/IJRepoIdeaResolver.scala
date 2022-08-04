@@ -34,7 +34,8 @@ class IJRepoIdeaResolver extends Resolver[IdeaDependency] {
   //noinspection NoTailRecursionAnnotation
   protected def getUrl(platform: BuildInfo, artifactSuffix: String, trySnapshot: Boolean = false): URL = {
     val (repo, buildNumberSuffix)  =
-      if      (trySnapshot)                               "snapshots" -> "-EAP-SNAPSHOT"
+      if      (platform.buildNumber.count(_ == '.') == 1) "nightly"   -> "-SNAPSHOT"
+      else if (trySnapshot)                               "snapshots" -> "-EAP-SNAPSHOT"
       else if (platform.buildNumber.contains("SNAPSHOT")) "snapshots" -> ""
       else                                                "releases"  -> ""
     val (groupId, artifactId) = getCoordinates(platform.edition)
@@ -44,7 +45,8 @@ class IJRepoIdeaResolver extends Resolver[IdeaDependency] {
       urlFormEnv
     } else defaultBaseURL
     val repoURL         = s"$baseURL/$repo/$groupId"
-    val build           = platform.buildNumber + buildNumberSuffix
+    def withoutTail(version: String) = version.substring(0, version.lastIndexOf('.'))
+    val build           = (if (repo == "nightly" ) withoutTail(platform.buildNumber) else platform.buildNumber) + buildNumberSuffix
     var stream: Option[InputStream] = None
     try {
       val result  = url(s"$repoURL/$artifactId/$build/$artifactId-$build$artifactSuffix")
