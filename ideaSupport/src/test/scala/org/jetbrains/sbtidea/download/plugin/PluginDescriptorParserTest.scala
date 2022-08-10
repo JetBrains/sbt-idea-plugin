@@ -38,4 +38,9 @@ class PluginDescriptorParserTest extends FunSuite with Matchers with IdeaMock wi
     load(descriptor.toXMLStr) shouldBe descriptor
   }
 
+  test("parses simple plugin with '&' in name") {
+    val descriptor = pluginDescriptor.copy(dependsOn = Nil, name = "This & That")
+    load(descriptor.toXMLStr) shouldBe descriptor
+  }
+
 }

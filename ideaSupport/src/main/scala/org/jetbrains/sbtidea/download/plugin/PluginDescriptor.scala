@@ -3,7 +3,7 @@ package org.jetbrains.sbtidea.download.plugin
 import java.io.InputStream
 import java.net.URL
 import java.nio.file.{Files, Path}
-
+import scala.xml.Utility.escape
 import scala.xml._
 
 case class PluginDescriptor(id: String,
@@ -29,12 +29,12 @@ case class PluginDescriptor(id: String,
   def toXMLStr: String = {
     s"""
        |<idea-plugin>
-       |  <name>$name</name>
-       |  <vendor>$vendor</vendor>
-       |  <id>$id</id>
+       |  <name>${escape(name)}</name>
+       |  <vendor>${escape(vendor)}</vendor>
+       |  <id>${escape(id)}</id>
        |  <version>$version</version>
        |  $ideaVersion
-       |  ${dependsOn.map(dep => s"""<depends optional="${dep.optional}">${dep.id}</depends>""").mkString("\n")}
+       |  ${dependsOn.map(dep => s"""<depends optional="${dep.optional}">${escape(dep.id)}</depends>""").mkString("\n")}
        |</idea-plugin>
        |""".stripMargin
   }
