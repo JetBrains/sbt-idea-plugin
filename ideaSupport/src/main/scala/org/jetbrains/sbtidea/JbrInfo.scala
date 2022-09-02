@@ -109,6 +109,7 @@ object JbrPlatform {
     }
     val osArch = System.getProperty("os.arch") match {
       case "x86" => "x86"
+      case "aarch64" => "aarch64"
       case _ => "x64"
     }
     JbrPlatform(osName, osArch)
