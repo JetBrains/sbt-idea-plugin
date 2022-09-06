@@ -176,7 +176,7 @@ class FileDownloader(private val baseDirectory: Path) {
 
   class RBCWrapper(rbc: ReadableByteChannel, expectedSize: Long, alreadyDownloaded: Long, progressCallback: ProgressCallback, target: Path) extends ReadableByteChannel {
     private var readSoFar       = alreadyDownloaded
-    private var lastTimeStamp   = System.currentTimeMillis()
+    private var lastTimeStamp   = System.nanoTime()
     private var readLastSecond  = 0L
     override def isOpen: Boolean  = rbc.isOpen
     override def close(): Unit    = rbc.close()
@@ -185,8 +185,9 @@ class FileDownloader(private val baseDirectory: Path) {
       if (numRead > 0) {
         readSoFar       += numRead
         readLastSecond  += numRead
-        val newTimeStamp = System.currentTimeMillis()
-        if (newTimeStamp - lastTimeStamp >= 1000 || readSoFar == expectedSize) { // update every second or on finish
+        val newTimeStamp = System.nanoTime()
+        val duration = Duration.fromNanos(newTimeStamp) - Duration.fromNanos(lastTimeStamp)
+        if (duration >= 1.second || readSoFar == expectedSize) { // update every second or on finish
           val percent = if (expectedSize > 0)
             readSoFar.toDouble / expectedSize.toDouble * 100.0
           else

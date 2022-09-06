@@ -1,17 +1,19 @@
 package org.jetbrains.sbtidea.packaging
 
-import java.nio.file.FileSystems
-
 import sbt.Keys.TaskStreams
 
+import java.nio.file.FileSystems
+import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
 
 package object artifact {
 
   def timed[T](msg: String, f: => T)(implicit streams: TaskStreams): T = {
-    val start = System.currentTimeMillis()
+    val start = System.nanoTime()
     val res = f
-    streams.log.info(s"(${System.currentTimeMillis() - start}ms) $msg")
+    val end = System.nanoTime()
+    val duration = Duration.fromNanos(end) - Duration.fromNanos(start)
+    streams.log.info(s"(${duration.toMillis}ms) $msg")
     res
   }
 
