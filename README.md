@@ -387,7 +387,7 @@ including transitive are placed in the "lib" folder as well.
  
 #### `packageArtifactZip :: TaskKey[File]`
 
-Produces ZIP file from the artifact produced by `packagePlugin` task.
+Produces ZIP file from the artifact produced by `packageArtifact` task.
 This is later used by `publishPlugin` as an artifact to upload.
 
 ### Utils
