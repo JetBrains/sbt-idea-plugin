@@ -8,7 +8,6 @@ import sbt.Keys._
 import sbt.{File, file, _}
 
 import scala.collection.mutable
-import scala.math.Ordering.Implicits.infixOrderingOps
 
 trait Init { this: Keys.type =>
 
@@ -151,18 +150,6 @@ trait Init { this: Keys.type =>
     aggregate.in(updateIntellij) := false,
     aggregate.in(Test) := false,
     // Deprecated task aliases
-    packagePlugin := {
-      streams.value.log.warn("this task is deprecated, please use packageArtifact")
-      packageArtifact.value
-    },
-    packagePluginDynamic := {
-      streams.value.log.warn("this task is deprecated, please use packageArtifactDynamic")
-      packageArtifactDynamic.value
-    },
-    packagePluginZip := {
-      streams.value.log.warn("this task is deprecated, please use packageArtifactZip")
-      packageArtifactZip.value
-    },
     buildIntellijOptionsIndex := BuildIndex.createTask.value,
 
     // Test-related settings
