@@ -12,8 +12,6 @@ import sbt.jetbrains.ideaPlugin.apiAdapter._
 trait PackagingKeysInit {
   this: PackagingKeys.type =>
 
-  private var compilationTimeStamp = -1L
-
   lazy val projectSettings: Seq[Setting[_]] = Seq(
     packageMethod := { // top level project should be packaged as a jar by default
       val workingDir = new File(sys.props("user.dir"))
@@ -40,35 +38,30 @@ trait PackagingKeysInit {
     pathExcludeFilter := ExcludeFilter.AllPass,
     packageOutputDir := target.value / "dist",
 
-    createCompilationTimeStamp := Def.task { compilationTimeStamp = System.currentTimeMillis() }.value,
-    packageMappings := Def.taskDyn {
+    packageMappings := {
       streams.value.log.info("started dumping structure")
       val rootProject = thisProjectRef.value
       val buildDeps = buildDependencies.value
       val data = dumpDependencyStructure.?.all(ScopeFilter(inAnyProject)).value.flatten.filterNot(_ == null)
       val outputDir = packageOutputDir.value
       val logger: SbtPluginLogger = new SbtPluginLogger(streams.value)
-      Def.task {
-        val structure = new SbtPackagingStructureExtractor(rootProject, data, buildDeps, logger).extract
-        val res = new LinearMappingsBuilder(outputDir, logger).buildMappings(structure)
-        logger.throwFatalErrors()
-        res
-      }
-    }.value,
-    packageMappingsOffline := Def.taskDyn {
+      val structure = new SbtPackagingStructureExtractor(rootProject, data, buildDeps, logger).extract
+      val res = new LinearMappingsBuilder(outputDir, logger).buildMappings(structure)
+      logger.throwFatalErrors()
+      res
+    },
+    packageMappingsOffline := {
       streams.value.log.info("started dumping offline structure")
       val rootProject = thisProjectRef.value
       val buildDeps = buildDependencies.value
       val data = dumpDependencyStructureOffline.?.all(ScopeFilter(inAnyProject)).value.flatten.filterNot(_ == null)
       val outputDir = packageOutputDir.value
       val logger: SbtPluginLogger = new SbtPluginLogger(streams.value)
-      Def.task {
-        val structure = new SbtPackagingStructureExtractor(rootProject, data, buildDeps, logger).extract
-        val res = new LinearMappingsBuilder(outputDir, logger).buildMappings(structure)
-        logger.throwFatalErrors()
-        res
-      }
-    }.value,
+      val structure = new SbtPackagingStructureExtractor(rootProject, data, buildDeps, logger).extract
+      val res = new LinearMappingsBuilder(outputDir, logger).buildMappings(structure)
+      logger.throwFatalErrors()
+      res
+    },
     findLibraryMapping := {
       val args        = spaceDelimited("<arg>").parsed
       val rootProject = thisProjectRef.value
@@ -89,23 +82,25 @@ trait PackagingKeysInit {
     },
     dumpDependencyStructure         := apiAdapter.dumpDependencyStructure.value,
     dumpDependencyStructureOffline  := apiAdapter.dumpDependencyStructureOffline.value,
-    packageArtifact := Def.taskDyn {
+    packageArtifact := {
       val outputDir = packageOutputDir.value
       val mappings  = packageMappings.value
       val stream    = streams.value
       val myTarget  = target.value
-      Def.task { new DistBuilder(stream, myTarget).produceArtifact(mappings); outputDir }
-    }.value,
-    packageArtifactDynamic := Def.sequential(createCompilationTimeStamp, Def.task {
+      new DistBuilder(stream, myTarget).produceArtifact(mappings)
+      outputDir
+    },
+    packageArtifactDynamic := {
+      val compilationTimeStamp = System.currentTimeMillis()
       val outputDir = packageOutputDir.value
-      val mappings  = packageMappings.value
-      val stream    = streams.value
-      val myTarget  = target.value
+      val mappings = packageMappings.value
+      val stream = streams.value
+      val myTarget = target.value
       val hints = extractAffectedFiles(compilationTimeStamp, compile.all(ScopeFilter(inAnyProject, inConfigurations(Compile))).value)
       new DynamicDistBuilder(stream, myTarget, outputDir, hints).produceArtifact(mappings)
       outputDir
-    }).value,
-    packageArtifactZip := Def.task {
+    },
+    packageArtifactZip := {
       implicit val stream: TaskStreams = streams.value
       val outputDir = packageArtifact.value.getParentFile
       packageArtifactZipFile.?.value match {
@@ -117,6 +112,6 @@ trait PackagingKeysInit {
           new ZipDistBuilder(file).produceArtifact(outputDir)
           file
       }
-    }.value
+    }
   )
 }
