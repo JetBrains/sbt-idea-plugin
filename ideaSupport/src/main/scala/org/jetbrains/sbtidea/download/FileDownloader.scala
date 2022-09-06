@@ -192,7 +192,7 @@ class FileDownloader(private val baseDirectory: Path) {
             readSoFar.toDouble / expectedSize.toDouble * 100.0
           else
             -1.0
-          val speed = readLastSecond.toDouble / ((newTimeStamp - lastTimeStamp + 1) / 1000.0)
+          val speed = readLastSecond.toDouble / (duration + 1.millisecond).toSeconds
           progressCallback(ProgressInfo(percent.toInt, speed, readSoFar, expectedSize), target)
           lastTimeStamp  = newTimeStamp
           readLastSecond = 0
