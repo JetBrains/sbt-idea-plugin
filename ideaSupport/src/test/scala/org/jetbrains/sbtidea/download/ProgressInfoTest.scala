@@ -1,14 +1,14 @@
 package org.jetbrains.sbtidea.download
 
 import org.jetbrains.sbtidea.download.FileDownloader.ProgressInfo
-import org.scalatest.FeatureSpec
-import org.scalatest.Matchers.convertToAnyShouldWrapper
+import org.scalatest.featurespec.AnyFeatureSpec
+import org.scalatest.matchers.should.Matchers
 
 import java.io.File
 
-class ProgressInfoTest extends FeatureSpec {
+class ProgressInfoTest extends AnyFeatureSpec with Matchers {
 
-  feature("render progress bar") {
+  Feature("render progress bar") {
     val Width = 20
     // using `_` cause test failure diff uses `...` to represent long suffixes
     // and it can be easily confused with '.' in progress bar
@@ -41,14 +41,14 @@ class ProgressInfoTest extends FeatureSpec {
     )
 
     data.foreach { case (percent, expectedString) =>
-      scenario(s"percent: $percent") {
+      Scenario(s"percent: $percent") {
         val actual = bar(percent)
         actual shouldBe expectedString
       }
     }
   }
 
-  feature("health check FileDownloader creation") {
+  Feature("health check FileDownloader creation") {
     new FileDownloader(new File("dummy").toPath)
   }
 }

@@ -1,13 +1,13 @@
 package org.jetbrains.sbtidea.download.idea
 
-import org.jetbrains.sbtidea.ConsoleLogger
-import org.jetbrains.sbtidea._
+import org.jetbrains.sbtidea.{ConsoleLogger, _}
 import org.jetbrains.sbtidea.download.BuildInfo
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 import scala.language.implicitConversions
 
-class JbIdeaRepoArtifactResolverTest extends FunSuite with Matchers with IdeaMock with ConsoleLogger {
+class JbIdeaRepoArtifactResolverTest extends AnyFunSuite with Matchers with IdeaMock with ConsoleLogger {
 
   private def createResolver: IJRepoIdeaResolver = new IJRepoIdeaResolver
 

@@ -4,13 +4,14 @@ import org.bouncycastle.openssl.EncryptionException
 import org.jetbrains.sbtidea.PluginSigningOptions
 import org.jetbrains.sbtidea.download.plugin.{PluginDescriptor, PluginMock}
 import org.jetbrains.zip.signer.verifier.{SuccessfulVerificationResult, ZipVerificationResult, ZipVerifier}
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import org.jetbrains.sbtidea.pathToPathExt
 import sbt._
 
 import java.nio.file.Files
 
-class PluginSigningTest extends FunSuite with Matchers with PluginMock {
+class PluginSigningTest extends AnyFunSuite with Matchers with PluginMock {
 
   test("sign with cert and key without password") {
     signAndVerify("sub_cert.key", "chain.pem") shouldBe a [SuccessfulVerificationResult]

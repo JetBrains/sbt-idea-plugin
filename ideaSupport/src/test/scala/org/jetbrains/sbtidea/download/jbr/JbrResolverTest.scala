@@ -2,9 +2,10 @@ package org.jetbrains.sbtidea.download.jbr
 
 import org.jetbrains.sbtidea.download.idea.IdeaMock
 import org.jetbrains.sbtidea.{ConsoleLogger, JbrVersion, NoJbr, TmpDirUtils}
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-class JbrResolverTest extends FunSuite with Matchers with IdeaMock with TmpDirUtils with ConsoleLogger {
+class JbrResolverTest extends AnyFunSuite with Matchers with IdeaMock with TmpDirUtils with ConsoleLogger {
 
   test("extract jbr version from dependencies.txt") {
     val ideaRoot = installIdeaMock

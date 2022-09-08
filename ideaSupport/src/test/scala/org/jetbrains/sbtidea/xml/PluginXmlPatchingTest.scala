@@ -6,11 +6,12 @@ import org.jetbrains.sbtidea.ConsoleLogger
 import org.jetbrains.sbtidea.pluginXmlOptions
 import org.jetbrains.sbtidea.download.idea.IdeaMock
 import org.jetbrains.sbtidea.packaging.artifact
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 import scala.collection.JavaConverters.collectionAsScalaIterableConverter
 
-private class PluginXmlPatchingTest extends FunSuite with Matchers with IdeaMock with ConsoleLogger {
+private class PluginXmlPatchingTest extends AnyFunSuite with Matchers with IdeaMock with ConsoleLogger {
 
   private def getPluginXml = {
     val tmpFile = createTempFile("", "plugin.xml")

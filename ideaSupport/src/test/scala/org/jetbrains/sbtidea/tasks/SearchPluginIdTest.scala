@@ -1,9 +1,10 @@
 package org.jetbrains.sbtidea.tasks
 
 import org.jetbrains.sbtidea.download.idea.IdeaMock
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-class SearchPluginIdTest extends FunSuite with IdeaMock with Matchers {
+class SearchPluginIdTest extends AnyFunSuite with IdeaMock with Matchers {
 
   test("testApply") {
     val searcher = new SearchPluginId(installIdeaMock, IDEA_BUILDINFO, useRemote = false)

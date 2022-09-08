@@ -1,10 +1,11 @@
 package org.jetbrains.sbtidea.download.plugin
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import RepoPluginInstaller.compareIdeaVersions
 import org.jetbrains.sbtidea.download.Version
 
-class IdeaVersionCompareTest extends FunSuite with Matchers {
+class IdeaVersionCompareTest extends AnyFunSuite with Matchers {
 
   test("versions greater") {
     val validCombos = Seq(

@@ -1,18 +1,20 @@
 package org.jetbrains.sbtidea.download.plugin
 
+import org.jetbrains.sbtidea.ConsoleLogger
 import org.jetbrains.sbtidea.Keys._
 import org.jetbrains.sbtidea.download.api.InstallContext
 import org.jetbrains.sbtidea.download.idea.IdeaMock
 import org.jetbrains.sbtidea.download.{BuildInfo, NioUtils}
-import org.jetbrains.sbtidea.{ConsoleLogger, pathToPathExt}
-import org.scalatest.{BeforeAndAfter, FunSuite, Matchers}
+import org.scalatest.BeforeAndAfter
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import sbt._
 
 import java.nio.file.Path
 import scala.language.implicitConversions
 
 
-trait IntellijPluginInstallerTestBase extends FunSuite with Matchers with IdeaMock with PluginMock with ConsoleLogger with BeforeAndAfter {
+trait IntellijPluginInstallerTestBase extends AnyFunSuite with Matchers with IdeaMock with PluginMock with ConsoleLogger with BeforeAndAfter {
   protected var ideaRoot: Path        = _
   protected var pluginsRoot: Path     = _
   protected val ideaBuild: BuildInfo  = BuildInfo(IDEA_VERSION, IntelliJPlatform.IdeaUltimate)

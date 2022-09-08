@@ -1,11 +1,11 @@
 package org.jetbrains.sbtidea.packaging
 
-import org.scalatest.FeatureSpec
+import org.scalatest.featurespec.AnyFeatureSpec
 
 /**
   * dump the model from build with model_dumper_sbt.txt
   */
-class LinearMappingsBuilderTest extends FeatureSpec with MappingsTestBase {
+class LinearMappingsBuilderTest extends AnyFeatureSpec with MappingsTestBase {
 
   private val revisionsToTest = Seq(
     "scio-idea-plugin",
@@ -16,19 +16,19 @@ class LinearMappingsBuilderTest extends FeatureSpec with MappingsTestBase {
   )
 
 
-  feature("mappings equality on various builds") {
+  Feature("mappings equality on various builds") {
     revisionsToTest.foreach { rev =>
-      scenario(s"revision: $rev") {
+      Scenario(s"revision: $rev") {
         testMappings(rev)
       }
     }
   }
 
-  feature("same mappings and structure across SIP versions") {
+  Feature("same mappings and structure across SIP versions") {
     val pairs = Seq(
       "d1950bef0ddfd50de365c45da2c0187e8e5e8cde" -> "d1950bef0ddfd50de365c45da2c0187e8e5e8cde-GH_106")
     for ((a, b) <- pairs) {
-      scenario(s"$a === $b") {
+      Scenario(s"$a === $b") {
         val dataA = readTestData(a)
         val dataB = readTestData(b)
 

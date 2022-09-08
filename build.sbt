@@ -8,16 +8,13 @@ lazy val commonSettings: Seq[Def.Setting[_]] = Seq(
   scalacOptions        ++= Seq("-deprecation", "-feature", "-target:jvm-1.8", "-Xfatal-warnings"),
   javacOptions         ++= Seq("--release", "8"),
   scalaVersion := "2.12.9",
-  // emulate sbt cross building by Scala cross building
-  // since we can assume Scala 2.12.x to be sbt 1.x
-  // https://github.com/sbt/sbt-pgp/pull/115
   pluginCrossBuild / sbtVersion := "1.4.5",
   Test / classLoaderLayeringStrategy := ClassLoaderLayeringStrategy.Flat,
   sonatypeProfileName := "org.jetbrains",
   homepage := Some(url("https://github.com/JetBrains/sbt-idea-plugin")),
   sonatypeProjectHosting := Some(GitHubHosting("JetBrains", "sbt-idea-plugin", "scala-developers@jetbrains.com")),
   licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0")),
-  libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.8" % "test"
+  libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.13" % Test
 )
 
 lazy val core = (project in file("core"))

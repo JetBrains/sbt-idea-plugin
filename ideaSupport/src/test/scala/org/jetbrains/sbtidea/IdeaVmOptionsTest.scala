@@ -2,11 +2,12 @@ package org.jetbrains.sbtidea
 
 import org.jetbrains.sbtidea.IntelliJPlatform.IdeaCommunity
 import org.jetbrains.sbtidea.runIdea.IntellijVMOptions
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 import java.nio.file.Paths
 
-class IdeaVmOptionsTest extends FunSuite with Matchers {
+class IdeaVmOptionsTest extends AnyFunSuite with Matchers {
 
   private val vmOpts = IntellijVMOptions(IdeaCommunity, Paths.get("foo bar"), Paths.get("bar baz"))
   private val Q = "&quot;"

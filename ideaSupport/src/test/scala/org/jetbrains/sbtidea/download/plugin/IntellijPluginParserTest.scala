@@ -2,12 +2,13 @@ package org.jetbrains.sbtidea.download.plugin
 
 import org.jetbrains.sbtidea.IntellijPlugin._
 import org.jetbrains.sbtidea.Keys.String2Plugin
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 import java.net.URL
 import scala.language.postfixOps
 
-final class IntellijPluginParserTest extends FunSuite with Matchers {
+final class IntellijPluginParserTest extends AnyFunSuite with Matchers {
 
   private def id(str: String) = str.toPlugin.asInstanceOf[Id]
 
