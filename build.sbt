@@ -39,7 +39,7 @@ lazy val packaging = (project in file("packaging"))
   .dependsOn(core)
   .settings(
     name := "sbt-declarative-packaging",
-    libraryDependencies += "org.pantsbuild" % "jarjar" % "1.6.6"
+    libraryDependencies += "org.pantsbuild" % "jarjar" % "1.7.2"
   )
 
 lazy val ideaSupport = (project in file("ideaSupport"))
