@@ -45,6 +45,6 @@ class PluginSigningTest extends AnyFunSuite with Matchers with PluginMock {
         Some(keyPath.toFile),
         keyPassword)
     val signedFile = SignPluginArtifactTask.doSignPlugin(opts, pluginZip.toFile, targetZip.toFile)
-    ZipVerifier.INSTANCE.verify(signedFile)
+    ZipVerifier.verify(signedFile)
   }
 }

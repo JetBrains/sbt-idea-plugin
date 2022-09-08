@@ -2,7 +2,7 @@ import xerial.sbt.Sonatype.GitHubHosting
 
 Global / concurrentRestrictions := Seq(Tags.limit(Tags.Test, 1))
 
-lazy val commonSettings: Seq[Def.Setting[_]] = Seq(
+lazy val commonSettings: Seq[Setting[_]] = Seq(
   organization          := "org.jetbrains",
   licenses              += ("MIT", url("https://opensource.org/licenses/MIT")),
   scalacOptions        ++= Seq("-deprecation", "-feature", "-target:jvm-1.8", "-Xfatal-warnings"),
@@ -48,11 +48,12 @@ lazy val ideaSupport = (project in file("ideaSupport"))
   .dependsOn(core, packaging, visualizer)
   .settings(
     name := "sbt-idea-plugin",
-    libraryDependencies ++=
-        "org.scalaj" %% "scalaj-http" % "2.3.0"                       ::
-          "org.jetbrains" % "marketplace-zip-signer" % "0.1.0"        ::
-          "com.eclipsesource.minimal-json" % "minimal-json" % "0.9.5" ::
-          "org.rauschig" % "jarchivelib" % "1.0.0"                    :: Nil
+    libraryDependencies ++= Seq(
+      "org.scalaj" %% "scalaj-http" % "2.4.2",
+      "org.jetbrains" % "marketplace-zip-signer" % "0.1.8",
+      "com.eclipsesource.minimal-json" % "minimal-json" % "0.9.5",
+      "org.rauschig" % "jarchivelib" % "1.2.0"
+    )
   )
 
 lazy val sbtIdeaPlugin = (project in file("."))
