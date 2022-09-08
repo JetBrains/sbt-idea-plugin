@@ -35,7 +35,8 @@ To quickly create a Scala based IJ Plugin we provide a template project. Create 
 
 ## Manual Installation (adding to an already existing sbt build)
 
-From version 1.0.0, this plugin is published for sbt 0.13 and 1.0
+From version 1.0.0, this plugin is published for sbt 0.13 and 1.0.
+From version 3.17.0, this plugin is published for sbt 1.0 only.
 
 * Insert into `project/plugins.sbt`:
 
