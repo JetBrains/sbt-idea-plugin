@@ -45,7 +45,7 @@ object CreatePluginsClasspath {
     roots.map { case (descriptor, pluginRoot) =>
       val pluginsFinder =
         if (pluginRoot.toFile.isDirectory)
-          PathFinder.empty +++ ((pluginRoot.toFile / "lib") * (globFilter("*.jar") -- "asm*.jar"))
+          PathFinder.empty +++ pluginRoot.toFile / "lib" * (globFilter("*.jar") -- "asm*.jar")
         else
           PathFinder.empty +++ pluginRoot.toFile
 

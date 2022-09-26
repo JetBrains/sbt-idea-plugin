@@ -30,7 +30,7 @@ class IdeaConfigBuilder(moduleName: String,
                         classpathStrategy: ClasspathStrategy = ClasspathStrategy.Since_203_5251) {
   private val runConfigDir = dotIdeaFolder / "runConfigurations"
 
-  private val intellijPlatformJarsFolder = intellijBaseDir / "lib"
+  private val intellijPlatformJarsFolder: File = intellijBaseDir / "lib"
 
   private val IDEA_ROOT_KEY = "idea.installation.dir"
 
@@ -166,7 +166,7 @@ class IdeaConfigBuilder(moduleName: String,
        |    <log_file alias="JPS LOG" path="$dataDir/system/log/build-log/build.log" />
        |    <option name="MAIN_CLASS_NAME" value="com.intellij.idea.Main" />
        |    <module name="$moduleName" />
-       |    <option name="VM_PARAMETERS" value="${IntellijVMOptions.USE_PATH_CLASS_LOADER} -cp &quot;$intellijPlatformJarsClasspathPattern&quot; ${vmOptions.asSeq(quoteValues = true).mkString(" ")}" />
+       |    <option name="VM_PARAMETERS" value="${IntellijVMOptions.USE_PATH_CLASS_LOADER} -cp &quot;$intellijPlatformJarsClasspathConcatenated&quot; ${vmOptions.asSeq(quoteValues = true).mkString(" ")}" />
        |    <RunnerSettings RunnerId="Debug">
        |      <option name="DEBUG_PORT" value="" />
        |      <option name="TRANSPORT" value="0" />
@@ -189,8 +189,20 @@ class IdeaConfigBuilder(moduleName: String,
 
   }
 
-  private def intellijPlatformJarsClasspathPattern: String =
-    s"$intellijPlatformJarsFolder${File.separator}*"
+  private def intellijPlatformJarsClasspath: Seq[String] = {
+    //NOTE: see also filtering in org.jetbrains.sbtidea.Init.projectSettings
+    intellijPlatformJarsFolder
+      .listFiles((_, fileName: String) => {
+        fileName.endsWith(".jar") && fileName != "junit.jar" && fileName != "junit4.jar"
+      })
+      .map(_.getPath)
+      .toSeq
+  }
+
+  private def intellijPlatformJarsClasspathConcatenated: String = {
+    val classpath = intellijPlatformJarsClasspath
+    classpath.mkString(";")
+  }
 
   private def intellijPluginRootsJarsClasspathPattern: String =
     pluginRoots.map(pluginClasspathPattern).mkString(File.pathSeparator)
@@ -214,7 +226,7 @@ class IdeaConfigBuilder(moduleName: String,
         val prioritizedJUnitJar = intellijPlatformJarsFolder.listFiles().find(_.getName == "junit4.jar").map(_.getCanonicalPath)
         prioritizedJUnitJar.foreach(classPathEntries += _)
 
-        classPathEntries += intellijPlatformJarsClasspathPattern
+        classPathEntries ++= intellijPlatformJarsClasspath
         classPathEntries += intellijPluginRootsJarsClasspathPattern
         classPathEntries ++= ownProductDirs.map(_.toString)
 

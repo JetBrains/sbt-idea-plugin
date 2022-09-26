@@ -72,9 +72,14 @@ trait Init { this: Keys.type =>
   )
 
   lazy val projectSettings: Seq[Setting[_]] = Seq(
-    intellijPlugins     := Seq.empty,
-    intellijMainJars    := (intellijBaseDirectory.in(ThisBuild).value / "lib" * "*.jar").classpath,
-    intellijPluginJars  :=
+    intellijMainJars := {
+      //NOTE: see also filtering in org.jetbrains.sbtidea.tasks.IdeaConfigBuilder.intellijPlatformJarsClasspath
+      val globFilter: FileFilter = GlobFilter("*.jar") -- GlobFilter("junit.jar") -- GlobFilter("junit4.jar")
+      val finder = intellijBaseDirectory.in(ThisBuild).value / "lib" * globFilter
+      finder.classpath
+    },
+    intellijPlugins := Seq.empty,
+    intellijPluginJars :=
       tasks.CreatePluginsClasspath.buildPluginClassPaths(
         intellijBaseDirectory.in(ThisBuild).value.toPath,
         BuildInfo(
@@ -166,8 +171,8 @@ trait Init { this: Keys.type =>
     fullClasspath.in(Test) := {
       val fullClasspathValue = fullClasspath.in(Test).value
       val pathFinder = PathFinder.empty +++ // the new IJ plugin loading strategy in tests requires external plugins to be prepended to the classpath
-        (packageOutputDir.value * globFilter("*.jar")) +++
-        (packageOutputDir.value / "lib" * globFilter("*.jar"))
+        packageOutputDir.value * globFilter("*.jar") +++
+        packageOutputDir.value / "lib" * globFilter("*.jar")
       val allExportedProducts = exportedProducts.all(ScopeFilter(inDependencies(ThisProject), inConfigurations(Compile))).value.flatten
       pathFinder.classpath ++ (fullClasspathValue.to[mutable.LinkedHashSet] -- allExportedProducts.toSet).toSeq // exclude classes already in the artifact
     },
