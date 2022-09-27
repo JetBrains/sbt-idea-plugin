@@ -159,6 +159,10 @@ class IdeaConfigBuilder(moduleName: String,
     val vmOptions = if (noPCE) intellijVMOptions.copy(noPCE = true) else intellijVMOptions
     val env = mkEnv(options.ideaRunEnv)
     val name = if (noPCE) s"$configName-noPCE" else configName
+
+    val classpathEntries = intellijPlatformJarsClasspath
+    val classpathString = classpathEntries.mkString(File.pathSeparator)
+
     s"""<component name="ProjectRunConfigurationManager">
        |  <configuration default="false" name="$name" type="Application" factoryName="Application">
        |    $jreSettings
@@ -166,7 +170,7 @@ class IdeaConfigBuilder(moduleName: String,
        |    <log_file alias="JPS LOG" path="$dataDir/system/log/build-log/build.log" />
        |    <option name="MAIN_CLASS_NAME" value="com.intellij.idea.Main" />
        |    <module name="$moduleName" />
-       |    <option name="VM_PARAMETERS" value="${IntellijVMOptions.USE_PATH_CLASS_LOADER} -cp &quot;$intellijPlatformJarsClasspathConcatenated&quot; ${vmOptions.asSeq(quoteValues = true).mkString(" ")}" />
+       |    <option name="VM_PARAMETERS" value="${IntellijVMOptions.USE_PATH_CLASS_LOADER} -cp &quot;$classpathString&quot; ${vmOptions.asSeq(quoteValues = true).mkString(" ")}" />
        |    <RunnerSettings RunnerId="Debug">
        |      <option name="DEBUG_PORT" value="" />
        |      <option name="TRANSPORT" value="0" />
@@ -199,16 +203,11 @@ class IdeaConfigBuilder(moduleName: String,
       .toSeq
   }
 
-  private def intellijPlatformJarsClasspathConcatenated: String = {
-    val classpath = intellijPlatformJarsClasspath
-    classpath.mkString(";")
-  }
-
-  private def intellijPluginRootsJarsClasspathPattern: String =
-    pluginRoots.map(pluginClasspathPattern).mkString(File.pathSeparator)
-
   private def pluginClasspathPattern(pluginPath: File): String =
-    if (pluginPath.isDirectory) s"${pluginPath / "lib"}${File.separator}*" else pluginPath.toString
+    if (pluginPath.isDirectory)
+      s"${pluginPath / "lib"}${File.separator}*"
+    else
+      pluginPath.toString
 
   private def buildJUnitTemplate: String = {
     val testVMOptions = intellijVMOptions.copy(test = true)
@@ -227,7 +226,7 @@ class IdeaConfigBuilder(moduleName: String,
         prioritizedJUnitJar.foreach(classPathEntries += _)
 
         classPathEntries ++= intellijPlatformJarsClasspath
-        classPathEntries += intellijPluginRootsJarsClasspathPattern
+        classPathEntries ++= pluginRoots.map(pluginClasspathPattern)
         classPathEntries ++= ownProductDirs.map(_.toString)
 
         //runtime jars from the *currently running* IJ to actually start the tests:
