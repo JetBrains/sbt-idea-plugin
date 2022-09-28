@@ -200,7 +200,8 @@ class IdeaConfigBuilder(moduleName: String,
         fileName.endsWith(".jar") && fileName != "junit.jar" && fileName != "junit4.jar"
       })
       .map(_.getPath)
-      .toSeq
+      .toSeq :+
+      (intellijPlatformJarsFolder / "ant" / "lib" / "ant.jar").getPath
   }
 
   private def pluginClasspathPattern(pluginPath: File): String =
