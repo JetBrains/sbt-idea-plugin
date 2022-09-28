@@ -7,10 +7,12 @@ import org.jetbrains.sbtidea.{ClasspathStrategy, pathToPathExt, PluginLogger => 
 import sbt._
 
 import java.io.File
-import java.nio.file.{Path, Paths}
+import java.nio.file.{Files, Path, Paths}
 import java.util.regex.Pattern
+import java.util.stream.Collectors
 import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.jdk.CollectionConverters._
 import scala.math.Ordering.Implicits.infixOrderingOps
 
 /**
@@ -193,15 +195,16 @@ class IdeaConfigBuilder(moduleName: String,
 
   }
 
-  private def intellijPlatformJarsClasspath: Seq[String] = {
+  private def intellijPlatformJarsClasspath: Seq[String] =
     //NOTE: see also filtering in org.jetbrains.sbtidea.Init.projectSettings
-    intellijPlatformJarsFolder
-      .listFiles((_, fileName: String) => {
+    Files.walk(intellijPlatformJarsFolder.toPath)
+      .filter { p =>
+        val fileName = p.getFileName.toString
         fileName.endsWith(".jar") && fileName != "junit.jar" && fileName != "junit4.jar"
-      })
-      .map(_.getPath)
-      .toSeq
-  }
+      }
+      .map[String](_.toString)
+      .collect(Collectors.toList[String])
+      .asScala
 
   private def pluginClasspathPattern(pluginPath: File): String =
     if (pluginPath.isDirectory)
