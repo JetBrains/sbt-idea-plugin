@@ -2,7 +2,7 @@ package org.jetbrains.sbtidea.tasks
 
 import org.jetbrains.sbtidea.Keys.IdeaConfigBuildingOptions
 import org.jetbrains.sbtidea.runIdea.{IntellijAwareRunner, IntellijVMOptions}
-import org.jetbrains.sbtidea.tasks.IdeaConfigBuilder.{pathPattern, pluginsPattern}
+import org.jetbrains.sbtidea.tasks.IdeaConfigBuilder.{JUnit3JarName, pathPattern, pluginsPattern}
 import org.jetbrains.sbtidea.{ClasspathStrategy, pathToPathExt, PluginLogger => log}
 import sbt._
 
@@ -197,7 +197,7 @@ class IdeaConfigBuilder(moduleName: String,
     //NOTE: see also filtering in org.jetbrains.sbtidea.Init.projectSettings
     intellijPlatformJarsFolder
       .listFiles((_, fileName: String) => {
-        fileName.endsWith(".jar") && fileName != "junit.jar" && fileName != "junit4.jar"
+        fileName.endsWith(".jar") && fileName != JUnit3JarName
       })
       .map(_.getPath)
       .toSeq :+
@@ -220,11 +220,6 @@ class IdeaConfigBuilder(moduleName: String,
         //plugin jars must go first when using CLASSLOADER_KEY
         //example: ./target/plugin/Scala/lib/*
         classPathEntries += (pluginAssemblyDir / "lib").toString + File.separator + "*"
-
-        //IDEA lib folder contains junit.jar & junit4.jar. JUnit 4 is actually used by platform tests
-        //So we need to put it before other classpath to ensure that it has a higher priority in class loader
-        val prioritizedJUnitJar = intellijPlatformJarsFolder.listFiles().find(_.getName == "junit4.jar").map(_.getCanonicalPath)
-        prioritizedJUnitJar.foreach(classPathEntries += _)
 
         classPathEntries ++= intellijPlatformJarsClasspath
         classPathEntries ++= pluginRoots.map(pluginClasspathPattern)
@@ -278,4 +273,6 @@ class IdeaConfigBuilder(moduleName: String,
 object IdeaConfigBuilder {
   private val pathPattern = Pattern.compile("(^.+sbt-launch\\.jar).*$")
   private val pluginsPattern = Pattern.compile("^.+\\.plugins$")
+
+  val JUnit3JarName = "junit.jar"
 }
