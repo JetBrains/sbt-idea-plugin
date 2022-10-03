@@ -2,18 +2,44 @@ package org.jetbrains.sbtidea.tasks
 
 import org.jetbrains.sbtidea.Keys.{intellijAttachSources, intellijBaseDirectory, intellijBuild, intellijMainJars, intellijPluginJars}
 import org.jetbrains.sbtidea.download.idea.IdeaSourcesImpl
-import sbt.Keys.{artifact, configuration, moduleID, update}
-import sbt._
+import sbt.Keys.{Classpath, artifact, configuration, moduleID, update}
+import sbt.{Def, _}
+
+import scala.collection.mutable
 
 object UpdateWithIDEAInjectionTask extends SbtIdeaTask[UpdateReport] {
 
-  private val ideaJarsArtifact    = Artifact("INTELLIJ-SDK", "IJ-SDK")
-  private val ideaSourcesArtifact = Artifact("INTELLIJ-SDK", Artifact.SourceType, "zip", "IJ-SDK")
+  private val intellijMainJarsHashToArtifactSuffix = new mutable.ListMap[Int, String]
+
+  private def getIdeaJarsArtifact(intellijMainJarsValue: Classpath): Artifact = intellijMainJarsHashToArtifactSuffix.synchronized {
+    val hashCode = intellijMainJarsValue.hashCode() //includes hash codes of all files
+
+    //Sometimes different modules might contain different set of intellijMainJars
+    //(it better shouldn't be so, but it might occur accidentally, e.g. due to misconfiguration)
+    //In this case we want to create different libraries.
+    //For this we need unique names
+    if (!intellijMainJarsHashToArtifactSuffix.contains(hashCode)) {
+      val alreadyExistingArtifactsWithSameName = intellijMainJarsHashToArtifactSuffix.size
+      val newSuffix =
+        if (alreadyExistingArtifactsWithSameName == 0) ""
+        else s"-$alreadyExistingArtifactsWithSameName"
+      intellijMainJarsHashToArtifactSuffix.put(hashCode, newSuffix)
+    }
+
+    val artifactSuffix = intellijMainJarsHashToArtifactSuffix(hashCode)
+    Artifact("INTELLIJ-SDK", s"IJ-SDK$artifactSuffix")
+  }
+
+  private val ideaSourcesArtifact: Artifact =
+    Artifact("INTELLIJ-SDK", Artifact.SourceType, "zip", s"IJ-SDK")
+
   private def buildIdeaModule(build: String): ModuleID =
     "org.jetbrains" % "INTELLIJ-SDK" % build withSources()
 
-  override def createTask = Def.task {
+  override def createTask: Def.Initialize[Task[sbt.UpdateReport]] = Def.task {
     import org.jetbrains.sbtidea.ApiAdapter._
+    val intellijMainJarsValue = intellijMainJars.value
+
     val targetConfiguration     = Configurations.Compile
     val attachSources           = intellijAttachSources.in(Global).value
     val ijBuild                 = intellijBuild.in(ThisBuild).value
@@ -21,7 +47,7 @@ object UpdateWithIDEAInjectionTask extends SbtIdeaTask[UpdateReport] {
     val originalReport          = update.value
     val intelliJSourcesArchive  = intellijBaseDirectory.value / IdeaSourcesImpl.SOURCES_ZIP
     val ideaArtifacts           =
-      intellijMainJars.value.map(ideaJarsArtifact -> _.data) ++
+      intellijMainJarsValue.map(getIdeaJarsArtifact(intellijMainJarsValue) -> _.data) ++
         (if (attachSources)  Seq(ideaSourcesArtifact -> intelliJSourcesArchive)
         else                Seq.empty)
     val reportWithIdeaMainJars  = injectIntoUpdateReport(originalReport, targetConfiguration, ideaArtifacts, ideaModule)
@@ -33,7 +59,7 @@ object UpdateWithIDEAInjectionTask extends SbtIdeaTask[UpdateReport] {
         val pluginArtifact = f.get(artifact.key).get
         if (attachSources && pluginModule.revision == ijBuild) { // bundled plugin has the same version as platform, add sources
           val pluginArtifacts = classpath.map(pluginArtifact -> _.data) :+
-            (Artifact(pluginArtifact.name, Artifact.SourceType, "zip", Artifact.SourceClassifier) -> intelliJSourcesArchive)
+            Artifact(pluginArtifact.name, Artifact.SourceType, "zip", Artifact.SourceClassifier) -> intelliJSourcesArchive
           injectIntoUpdateReport(report, targetConfiguration, pluginArtifacts, pluginModule)
         } else {
           val pluginArtifacts = classpath.map(pluginArtifact -> _.data)
@@ -43,15 +69,17 @@ object UpdateWithIDEAInjectionTask extends SbtIdeaTask[UpdateReport] {
     }
   }
 
-  def buildExternalDependencyClassPath = Def.task {
+  def buildExternalDependencyClassPath: Def.Initialize[Task[Seq[Attributed[File]]]] = Def.task {
+    val intellijMainJarsValue = intellijMainJars.value
+
     val ideaModule: ModuleID = buildIdeaModule(intellijBuild.in(ThisBuild).value)
     val sdkAttrs: AttributeMap = AttributeMap.empty
-      .put(artifact.key, ideaJarsArtifact)
+      .put(artifact.key, getIdeaJarsArtifact(intellijMainJarsValue))
       .put(moduleID.key, ideaModule)
       .put(configuration.key, Compile)
 
     val pluginClassPaths = intellijPluginJars.value.flatMap(_._2)
 
-    intellijMainJars.value.map(_.data).map{ i=>Attributed(i)(sdkAttrs)} ++ pluginClassPaths
+    intellijMainJarsValue.map(_.data).map { file => Attributed(file)(sdkAttrs)} ++ pluginClassPaths
   }
 }
