@@ -95,6 +95,9 @@ object IntellijVMOptions {
       |-Duse.linux.keychain=false
       |-Didea.initially.ask.config=true
       |
+      |-Didea.jna.unpacked=true
+      |-Djna.nounpack=true
+      |
       |-Djdk.module.illegalAccess.silent=true
       |-XX:+IgnoreUnrecognizedVMOptions
       |
