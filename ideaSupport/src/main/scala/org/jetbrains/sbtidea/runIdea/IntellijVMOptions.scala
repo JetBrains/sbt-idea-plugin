@@ -1,15 +1,21 @@
 package org.jetbrains.sbtidea.runIdea
 
-import java.nio.file.Path
+import org.jetbrains.sbtidea._
+import sbt.pathToPathOps
 
+import java.nio.file.Path
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
-import org.jetbrains.sbtidea._
-
+/**
+  * @param ideaHome          this path will be used as idea home when you run IDEA or unit tests<br>
+  *                          example: {{{ <userHome>/.ScalaPluginIU }}}
+  * @param intellijDirectory example: {{{ <userHome>/.ScalaPluginIU/sdk/223.6160 }}}
+  */
 case class IntellijVMOptions(platform: IntelliJPlatform,
                              pluginPath: Path,
                              ideaHome: Path,
+                             intellijDirectory: Path,
                              xmx: Int = 1536,
                              xms: Int = 128,
                              reservedCodeCacheSize: Int = 512,
@@ -32,6 +38,18 @@ object IntellijVMOptions {
       def OQ(str: String): String = if (quoteValues) str.xmlQuote else str
       val buffer = new mutable.ArrayBuffer[String]()
       buffer ++= defaultOptions
+
+      val jnaFolderName = System.getProperty("os.arch") match {
+        case "aarch64" => "aarch64"
+        case _         => "amd64" //currently there are only two possible folders in `lib/jna`
+      }
+      val pty4jFolderPath = (intellijDirectory / "lib/pty4j").toString.replace("\\", "/")
+      val jnaFolderPath = (intellijDirectory / "lib/jna" / jnaFolderName).toString.replace("\\", "/")
+      buffer += s"-Dpty4j.preferred.native.folder=$pty4jFolderPath"
+      buffer += s"-Djna.boot.library.path=$jnaFolderPath"
+      buffer += s"-Djna.nounpack=true"
+      buffer += s"-Djna.nosys=true"
+
       buffer +=  s"-Xms${xms}m"
       buffer +=  s"-Xmx${xmx}m"
       buffer +=  s"-XX:ReservedCodeCacheSize=${reservedCodeCacheSize}m"
@@ -94,9 +112,6 @@ object IntellijVMOptions {
       |-Dapple.laf.useScreenMenuBar=true
       |-Duse.linux.keychain=false
       |-Didea.initially.ask.config=true
-      |
-      |-Didea.jna.unpacked=true
-      |-Djna.nounpack=true
       |
       |-Djdk.module.illegalAccess.silent=true
       |-XX:+IgnoreUnrecognizedVMOptions

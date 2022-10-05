@@ -142,7 +142,12 @@ trait Init { this: Keys.type =>
     ideaConfigOptions := IdeaConfigBuildingOptions(),
 
     intellijVMOptions :=
-      IntellijVMOptions(intellijPlatform.in(ThisBuild).value, packageOutputDir.value.toPath, intellijPluginDirectory.in(ThisBuild).value.toPath),
+      IntellijVMOptions(
+        intellijPlatform.in(ThisBuild).value,
+        packageOutputDir.value.toPath,
+        intellijPluginDirectory.in(ThisBuild).value.toPath,
+        intellijBaseDirectory.in(ThisBuild).value.toPath
+      ),
 
     runIDE := RunIDETask.createTask.evaluated,
 
