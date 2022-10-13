@@ -65,6 +65,10 @@ object IntellijVMOptions {
       if(test) {
         buffer += "-Didea.use.core.classloader.for.plugin.path=true"
         buffer += "-Didea.force.use.core.classloader=true"
+
+        // Workaround for the platform changes to light project tests scanning for indexable files before each test,
+        // which significantly slows down test set up time and increases overall test run time.
+        buffer += "-Ddisable.virtual.file.system.entry.is.file.indexed=false"
       }
       if (noPCE)
         buffer += "-Didea.ProcessCanceledException=disabled"
