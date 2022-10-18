@@ -133,6 +133,7 @@ object IntellijVMOptions {
       |--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED
       |--add-opens=java.base/jdk.internal.vm=ALL-UNNAMED
       |--add-opens=java.base/sun.nio.ch=ALL-UNNAMED
+      |--add-opens=java.base/sun.nio.fs=ALL-UNNAMED
       |--add-opens=java.base/sun.security.ssl=ALL-UNNAMED
       |--add-opens=java.base/sun.security.util=ALL-UNNAMED
       |--add-opens=java.desktop/com.apple.eawt=ALL-UNNAMED
