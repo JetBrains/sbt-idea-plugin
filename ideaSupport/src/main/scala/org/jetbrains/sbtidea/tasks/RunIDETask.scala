@@ -7,7 +7,10 @@ import org.jetbrains.sbtidea.runIdea.IdeaRunner
 import sbt.{Def, _}
 import sbt.Keys.streams
 
+import scala.annotation.nowarn
+
 object RunIDETask extends SbtIdeaInputTask[Unit] {
+  @nowarn("msg=a pure expression does nothing in statement position")
   override def createTask: Def.Initialize[InputTask[Unit]] = Def.inputTask {
     import complete.DefaultParsers._
     packageArtifact.value // build the plugin before running

@@ -15,6 +15,7 @@ import java.lang.{ProcessBuilder => JProcessBuilder}
 import java.net.URL
 import java.nio.file.Path
 import java.util.function.Consumer
+import scala.annotation.nowarn
 import scala.language.postfixOps
 import scala.language.reflectiveCalls
 import scala.util.{Failure, Try}
@@ -39,6 +40,7 @@ object RunPluginVerifierTask extends SbtIdeaTask[File] {
     )
   }
 
+  @nowarn("msg=a pure expression does nothing in statement position")
   override def createTask: Def.Initialize[Task[File]] = sbt.Def.task {
     import scala.collection.JavaConverters._
     PluginLogger.bind(new SbtPluginLogger(streams.value))

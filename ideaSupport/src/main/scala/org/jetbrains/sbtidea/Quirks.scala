@@ -1,7 +1,7 @@
 package org.jetbrains.sbtidea
 
-import sbt.Keys.{Classpath, moduleID}
-import sbt._
+import sbt.{Keys => SbtKeys, _}
+import SbtKeys.{Classpath, moduleID}
 
 trait Quirks { this: Keys.type =>
 

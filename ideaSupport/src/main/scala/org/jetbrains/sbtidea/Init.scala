@@ -4,11 +4,13 @@ import org.jetbrains.sbtidea.download._
 import org.jetbrains.sbtidea.packaging.PackagingKeys._
 import org.jetbrains.sbtidea.searchableoptions.BuildIndex
 import org.jetbrains.sbtidea.tasks._
-import sbt.Keys._
-import sbt.{File, file, _}
+import sbt.{File, file, Keys => SbtKeys, _}
+import SbtKeys._
 
+import scala.annotation.nowarn
 import scala.collection.mutable
 
+@nowarn("msg=a pure expression does nothing in statement position")
 trait Init { this: Keys.type =>
 
   protected lazy val homePrefix: File = sys.props.get("tc.idea.prefix").map(new File(_)).getOrElse(Path.userHome)

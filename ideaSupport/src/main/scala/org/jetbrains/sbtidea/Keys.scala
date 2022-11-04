@@ -2,7 +2,7 @@ package org.jetbrains.sbtidea
 
 import org.jetbrains.sbtidea.download.plugin.PluginDescriptor
 import sbt.Keys._
-import sbt._
+import sbt.{Init => _, _}
 import sbt.jetbrains.ideaPlugin.apiAdapter.{SbtTaskKeyExt, SbtInputKeyExt}
 
 object Keys extends Defns with Init with Utils with Quirks {

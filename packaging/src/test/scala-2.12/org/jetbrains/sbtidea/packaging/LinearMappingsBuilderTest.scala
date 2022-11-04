@@ -10,9 +10,7 @@ class LinearMappingsBuilderTest extends AnyFeatureSpec with MappingsTestBase {
   private val revisionsToTest = Seq(
     "scio-idea-plugin",
     "sttp-bundle-IJE",
-    "GH-106_scala-library-not-excluded",
-    "d1950bef0ddfd50de365c45da2c0187e8e5e8cde",       // intellij-scala: TASTy: don't use "compile-internal" in build.sbt (workaround to fix project import)
-    "d1950bef0ddfd50de365c45da2c0187e8e5e8cde-GH_106" // with a fix for #106 applied
+    "GH-106_scala-library-not-excluded"
   )
 
 
