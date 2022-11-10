@@ -30,9 +30,11 @@ class PluginRepoUtils(implicit ctx: InstallContext) extends PluginRepoApi {
         pluginInfo.url.getOrElse(new URL(s"$baseUrl/plugin/download?pluginId=$id&version=$version"))
       case IntellijPlugin.Id(id, None, Some(channel)) =>
         assert(pluginInfo.url.isEmpty, "Can't specify both channel and download URL.")
-        new URL(s"$baseUrl/pluginManager?action=download&id=$id&channel=$channel&build=${idea.edition.edition}-${idea.getActualIdeaBuild(ctx.baseDirectory)}")
+        val url = s"$baseUrl/pluginManager?action=download&noStatistic=true&id=$id&channel=$channel&build=${idea.edition.edition}-${idea.getActualIdeaBuild(ctx.baseDirectory)}"
+        new URL(url)
       case IntellijPlugin.Id(id, None, None) =>
-        pluginInfo.url.getOrElse(new URL(s"$baseUrl/pluginManager?action=download&id=$id&build=${idea.edition.edition}-${idea.getActualIdeaBuild(ctx.baseDirectory)}"))
+        val url = s"$baseUrl/pluginManager?action=download&noStatistic=true&&id=$id&build=${idea.edition.edition}-${idea.getActualIdeaBuild(ctx.baseDirectory)}"
+        pluginInfo.url.getOrElse(new URL(url))
     }
   }
 
