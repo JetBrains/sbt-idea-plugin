@@ -1,11 +1,13 @@
 package org.jetbrains.sbtidea.runIdea
 
 import org.jetbrains.sbtidea.*
+import org.jetbrains.sbtidea.download.{IntelliJVersionDetector, Version}
 import sbt.pathToPathOps
 
 import java.nio.file.Path
 import scala.collection.JavaConverters.*
 import scala.collection.mutable
+import scala.math.Ordered.orderingToOrdered
 
 /**
   * @param ideaHome          this path will be used as idea home when you run IDEA or unit tests<br>
@@ -35,6 +37,8 @@ object IntellijVMOptions {
     import options.*
 
     private def build(quoteValues: Boolean): Seq[String] = {
+      val intellijVersion = IntelliJVersionDetector.detectIntellijVersion(intellijDirectory.toFile)
+
       def OQ(str: String): String = if (quoteValues) str.xmlQuote else str
       val buffer = new mutable.ArrayBuffer[String]()
       buffer ++= defaultOptions
@@ -43,12 +47,16 @@ object IntellijVMOptions {
         case "aarch64" => "aarch64"
         case _         => "amd64" //currently there are only two possible folders in `lib/jna`
       }
-      val pty4jFolderPath = (intellijDirectory / "lib/pty4j").toString.replace("\\", "/")
-      val jnaFolderPath = (intellijDirectory / "lib/jna" / jnaFolderName).toString.replace("\\", "/")
-      buffer += s"-Dpty4j.preferred.native.folder=$pty4jFolderPath"
-      buffer += s"-Djna.boot.library.path=$jnaFolderPath"
-      buffer += s"-Djna.nounpack=true"
-      buffer += s"-Djna.nosys=true"
+
+      //if the version is not detected, assume as if it's the latest
+      if (intellijVersion.forall(_ > Version("223.6160"))) {
+        val pty4jFolderPath = (intellijDirectory / "lib/pty4j").toString.replace("\\", "/")
+        val jnaFolderPath = (intellijDirectory / "lib/jna" / jnaFolderName).toString.replace("\\", "/")
+        buffer += s"-Dpty4j.preferred.native.folder=$pty4jFolderPath"
+        buffer += s"-Djna.boot.library.path=$jnaFolderPath"
+        buffer += s"-Djna.nounpack=true"
+        buffer += s"-Djna.nosys=true"
+      }
 
       buffer +=  s"-Xms${xms}m"
       buffer +=  s"-Xmx${xmx}m"

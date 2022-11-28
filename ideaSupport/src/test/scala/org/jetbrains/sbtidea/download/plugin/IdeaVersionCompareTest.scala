@@ -13,6 +13,7 @@ class IdeaVersionCompareTest extends AnyFunSuite with Matchers {
       "1.0" -> "1",
       "1.1" -> "0",
       "1.1" -> "1.0",
+      "1.11" -> "1.2",
       "1.2.3" -> "1.1.9999"
     )
 
@@ -57,5 +58,6 @@ class IdeaVersionCompareTest extends AnyFunSuite with Matchers {
     assert(Version("203.5251") < Version("213.2732"))
     assert(Version("213.2732") > Version("203.5251"))
     assert(Version("213.2732") == Version("213.2732"))
+    assert(Version("223.2") > Version("203.11"))
   }
 }
