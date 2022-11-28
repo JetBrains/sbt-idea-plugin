@@ -3,8 +3,8 @@ package org.jetbrains.sbtidea.tasks
 import org.jetbrains.sbtidea.Keys.IdeaConfigBuildingOptions
 import org.jetbrains.sbtidea.runIdea.{IntellijAwareRunner, IntellijVMOptions}
 import org.jetbrains.sbtidea.tasks.IdeaConfigBuilder.{JUnit3JarName, pathPattern, pluginsPattern}
-import org.jetbrains.sbtidea.{ClasspathStrategy, pathToPathExt, PluginLogger => log}
-import sbt._
+import org.jetbrains.sbtidea.{ClasspathStrategy, pathToPathExt, PluginLogger as log}
+import sbt.*
 
 import java.io.File
 import java.nio.file.{Path, Paths}

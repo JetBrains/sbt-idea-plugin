@@ -1,6 +1,6 @@
 package org.jetbrains.sbtidea.download.plugin
 
-import org.jetbrains.sbtidea.IntellijPlugin._
+import org.jetbrains.sbtidea.IntellijPlugin.*
 import org.jetbrains.sbtidea.Keys.String2Plugin
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers

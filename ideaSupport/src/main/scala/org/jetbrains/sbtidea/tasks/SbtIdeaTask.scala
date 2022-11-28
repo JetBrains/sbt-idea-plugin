@@ -1,6 +1,6 @@
 package org.jetbrains.sbtidea.tasks
 
-import sbt._
+import sbt.*
 
 import scala.language.higherKinds
 

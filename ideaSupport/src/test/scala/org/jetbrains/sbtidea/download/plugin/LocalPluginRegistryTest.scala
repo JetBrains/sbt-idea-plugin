@@ -1,18 +1,18 @@
 package org.jetbrains.sbtidea.download.plugin
 
-import java.io.OutputStreamWriter
-import java.nio.file.{FileSystems, Files}
 import org.jetbrains.sbtidea.CapturingLogger.captureLog
 import org.jetbrains.sbtidea.Keys.String2Plugin
 import org.jetbrains.sbtidea.download.NioUtils
 import org.jetbrains.sbtidea.download.idea.IdeaMock
 import org.jetbrains.sbtidea.packaging.artifact
 import org.jetbrains.sbtidea.{ConsoleLogger, packaging, pathToPathExt}
-import org.scalatest.{BeforeAndAfter, Inspectors}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import sbt._
+import org.scalatest.{BeforeAndAfter, Inspectors}
+import sbt.*
 
+import java.io.OutputStreamWriter
+import java.nio.file.{FileSystems, Files}
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 
 final class LocalPluginRegistryTest extends AnyFunSuite with Matchers with Inspectors with IdeaMock with PluginMock with ConsoleLogger with BeforeAndAfter {

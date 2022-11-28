@@ -1,10 +1,10 @@
 package org.jetbrains.sbtidea.runIdea
 
-import org.jetbrains.sbtidea._
+import org.jetbrains.sbtidea.*
 import sbt.pathToPathOps
 
 import java.nio.file.Path
-import scala.collection.JavaConverters._
+import scala.collection.JavaConverters.*
 import scala.collection.mutable
 
 /**
@@ -32,7 +32,7 @@ case class IntellijVMOptions(platform: IntelliJPlatform,
 object IntellijVMOptions {
 
   implicit class VMOptionOps(val options: IntellijVMOptions) extends AnyVal {
-    import options._
+    import options.*
 
     private def build(quoteValues: Boolean): Seq[String] = {
       def OQ(str: String): String = if (quoteValues) str.xmlQuote else str

@@ -1,10 +1,9 @@
 package org.jetbrains.sbtidea.xml
 
-import java.nio.file.{Files, Path}
-
-import org.jetbrains.sbtidea.PluginLogger
-import org.jetbrains.sbtidea.{PluginLogger => log}
 import org.jetbrains.sbtidea.Keys.pluginXmlOptions
+import org.jetbrains.sbtidea.PluginLogger as log
+
+import java.nio.file.{Files, Path}
 
 class PluginXmlPatcher(input: Path, createCopy: Boolean = false) {
 

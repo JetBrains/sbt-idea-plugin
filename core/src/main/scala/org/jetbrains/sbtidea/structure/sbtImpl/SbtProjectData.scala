@@ -1,10 +1,9 @@
 package org.jetbrains.sbtidea.structure.sbtImpl
 
-import java.io.File
-
+import sbt.*
 import sbt.Def.Classpath
-import sbt._
 
+import java.io.File
 import scala.language.implicitConversions
 
 

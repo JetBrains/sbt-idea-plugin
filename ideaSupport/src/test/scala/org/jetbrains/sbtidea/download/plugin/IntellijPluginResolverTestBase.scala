@@ -1,14 +1,12 @@
 package org.jetbrains.sbtidea.download.plugin
 
-import java.nio.file.{Path, Paths}
-
-import org.jetbrains.sbtidea._
+import org.jetbrains.sbtidea.Keys.String2Plugin
+import org.jetbrains.sbtidea.{download, *}
 import org.jetbrains.sbtidea.download.plugin.PluginDescriptor.Dependency
-import org.jetbrains.sbtidea.{download, pathToPathExt}
-import Keys.String2Plugin
 import org.scalatest.Inside
-import sbt._
+import sbt.*
 
+import java.nio.file.{Path, Paths}
 import scala.language.implicitConversions
 
 abstract class IntellijPluginResolverTestBase extends IntellijPluginInstallerTestBase with Inside {

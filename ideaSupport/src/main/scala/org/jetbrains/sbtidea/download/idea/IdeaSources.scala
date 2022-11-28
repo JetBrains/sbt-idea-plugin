@@ -1,13 +1,13 @@
 package org.jetbrains.sbtidea.download.idea
 
-import java.net.URL
-import java.nio.file.{Files, Path}
 import org.jetbrains.sbtidea.download.FileDownloader
-import org.jetbrains.sbtidea.{PluginLogger, pathToPathExt}
-import sbt._
-import org.jetbrains.sbtidea.download.api._
+import org.jetbrains.sbtidea.download.api.*
 import org.jetbrains.sbtidea.download.idea.IdeaSourcesImpl.SOURCES_ZIP
+import org.jetbrains.sbtidea.{PluginLogger, pathToPathExt}
+import sbt.*
 
+import java.net.URL
+import java.nio.file.Files
 import scala.language.postfixOps
 
 abstract class IdeaSources extends IdeaArtifact {

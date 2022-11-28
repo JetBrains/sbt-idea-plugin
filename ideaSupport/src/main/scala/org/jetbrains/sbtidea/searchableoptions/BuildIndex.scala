@@ -1,17 +1,17 @@
 package org.jetbrains.sbtidea.searchableoptions
 
 import org.jetbrains.sbtidea.Keys.{intellijBaseDirectory, intellijVMOptions}
+import org.jetbrains.sbtidea.packaging.*
 import org.jetbrains.sbtidea.packaging.PackagingKeys.packageArtifact
-import org.jetbrains.sbtidea.packaging._
 import org.jetbrains.sbtidea.packaging.artifact.DistBuilder
 import org.jetbrains.sbtidea.runIdea.IdeaRunner
 import org.jetbrains.sbtidea.{PluginLogger, SbtPluginLogger, pathToPathExt}
+import sbt.*
 import sbt.Keys.{streams, target}
-import sbt._
 
 import java.nio.file.{Files, Path}
 import java.util.function.Predicate
-import scala.collection.JavaConverters._
+import scala.collection.JavaConverters.*
 
 object BuildIndex {
 

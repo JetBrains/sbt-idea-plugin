@@ -1,13 +1,11 @@
 package org.jetbrains.sbtidea.packaging.structure.sbtImpl
 
-import java.io.File
-
-import org.jetbrains.sbtidea.packaging.ExcludeFilter
-import org.jetbrains.sbtidea.packaging.{PackagingMethod, ShadePattern}
+import org.jetbrains.sbtidea.packaging.{ExcludeFilter, PackagingMethod, ShadePattern}
 import org.jetbrains.sbtidea.structure.sbtImpl.CommonSbtProjectData
+import sbt.*
 import sbt.Def.Classpath
-import sbt._
 
+import java.io.File
 import scala.language.implicitConversions
 
 case class SbtPackageProjectData(thisProject: ProjectRef,

@@ -1,13 +1,12 @@
 package org.jetbrains.sbtidea.packaging.structure.sbtImpl
 
-import org.jetbrains.sbtidea.PluginLogger
-import org.jetbrains.sbtidea.packaging
+import org.jetbrains.sbtidea.{PluginLogger, packaging}
 import org.jetbrains.sbtidea.packaging.structure
 import org.jetbrains.sbtidea.packaging.structure.ProjectPackagingOptions
 import org.jetbrains.sbtidea.structure.ProjectScalaVersion
-import org.jetbrains.sbtidea.structure.sbtImpl._
-import sbt._
-import sbt.jetbrains.ideaPlugin.apiAdapter._
+import org.jetbrains.sbtidea.structure.sbtImpl.*
+import sbt.*
+import sbt.jetbrains.ideaPlugin.apiAdapter.*
 
 import scala.language.implicitConversions
 

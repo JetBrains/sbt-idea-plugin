@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 
 class IJRepoResolverTest extends AnyFunSuite with Matchers with IdeaMock with TmpDirUtils with ConsoleLogger {
 
-  import org.jetbrains.sbtidea.download.IdeaUpdater._
+  import org.jetbrains.sbtidea.download.IdeaUpdater.*
 
   test("IJ repo overriding property") {
     try {

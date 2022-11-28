@@ -1,10 +1,11 @@
 package org.jetbrains.sbtidea.download.jbr
 
-import java.net.URL
-import java.nio.file.Path
 import org.jetbrains.sbtidea.Keys.JbrInfo
 import org.jetbrains.sbtidea.download.BuildInfo
-import org.jetbrains.sbtidea.download.api._
+import org.jetbrains.sbtidea.download.api.*
+
+import java.net.URL
+import java.nio.file.Path
 
 case class JbrDependency(ideaRoot: Path,
                           buildInfo: BuildInfo,

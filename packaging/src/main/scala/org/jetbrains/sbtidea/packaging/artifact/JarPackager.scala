@@ -1,13 +1,13 @@
 package org.jetbrains.sbtidea.packaging.artifact
 
+import org.jetbrains.sbtidea.packaging.ExcludeFilter
+import sbt.Keys.TaskStreams
+
 import java.net.URI
-import java.nio.file._
+import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
 import java.util
 import java.util.Collections
-
-import org.jetbrains.sbtidea.packaging.ExcludeFilter
-import sbt.Keys.TaskStreams
 
 trait JarPackager {
   def copySingleJar(from: Path): Unit

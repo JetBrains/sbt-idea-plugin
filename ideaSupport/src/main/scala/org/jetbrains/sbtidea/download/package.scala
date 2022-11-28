@@ -1,10 +1,10 @@
 package org.jetbrains.sbtidea
 
+import com.eclipsesource.json.Json
+import org.jetbrains.sbtidea.Keys.IntelliJPlatform as _
+
 import java.net.{HttpURLConnection, URL}
 import java.nio.file.{Files, Path}
-import com.eclipsesource.json.Json
-import org.jetbrains.sbtidea.Keys.{IntelliJPlatform => _}
-
 import scala.concurrent.duration.DurationInt
 
 package object download {

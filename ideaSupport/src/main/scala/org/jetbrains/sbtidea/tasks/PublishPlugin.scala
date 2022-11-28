@@ -1,13 +1,13 @@
 package org.jetbrains.sbtidea.tasks
 
 import org.jetbrains.sbtidea.download.plugin.LocalPluginRegistry
+import org.jetbrains.sbtidea.packaging.PackagingKeys.{packageArtifactZip, packageOutputDir}
+import org.jetbrains.sbtidea.{PluginLogger, SbtPluginLogger, tasks}
+import sbt.*
+import sbt.Keys.streams
+import scalaj.http.*
 
 import java.io.InputStream
-import org.jetbrains.sbtidea.{PluginLogger, SbtPluginLogger, tasks}
-import org.jetbrains.sbtidea.packaging.PackagingKeys.{packageArtifactZip, packageOutputDir}
-import sbt.Keys.streams
-import sbt._
-import scalaj.http._
 
 
 object PublishPlugin extends SbtIdeaInputTask[Unit] {
@@ -52,7 +52,7 @@ object PublishPlugin extends SbtIdeaInputTask[Unit] {
     jline.TerminalFactory.get.isAnsiSupported
 
   override def createTask: Def.Initialize[InputTask[Unit]] = Def.inputTaskDyn {
-    import complete.DefaultParsers._
+    import complete.DefaultParsers.*
     import org.jetbrains.sbtidea.Keys.{signPlugin, signPluginOptions}
     val log = new SbtPluginLogger(streams.value)
     val signingEnabled = signPluginOptions.value.enabled

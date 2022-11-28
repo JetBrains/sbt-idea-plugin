@@ -1,8 +1,8 @@
 package org.jetbrains.sbtidea.download.plugin
+import org.jetbrains.sbtidea.*
 import org.jetbrains.sbtidea.Keys.String2Plugin
-import org.jetbrains.sbtidea._
 import org.jetbrains.sbtidea.download.FileDownloader
-import org.jetbrains.sbtidea.download.api._
+import org.jetbrains.sbtidea.download.api.*
 
 import java.nio.file.Files
 

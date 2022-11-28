@@ -5,7 +5,7 @@ import org.jetbrains.sbtidea.download.idea.IdeaMock
 import org.jetbrains.sbtidea.{ConsoleLogger, TmpDirUtils}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import sbt._
+import sbt.*
 
 import java.nio.file.{Files, Path}
 

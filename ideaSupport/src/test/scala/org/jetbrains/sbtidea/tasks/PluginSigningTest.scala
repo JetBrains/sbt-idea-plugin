@@ -6,8 +6,7 @@ import org.jetbrains.sbtidea.download.plugin.{PluginDescriptor, PluginMock}
 import org.jetbrains.zip.signer.verifier.{SuccessfulVerificationResult, ZipVerificationResult, ZipVerifier}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.jetbrains.sbtidea.pathToPathExt
-import sbt._
+import sbt.*
 
 import java.nio.file.Files
 

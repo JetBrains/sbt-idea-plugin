@@ -3,8 +3,8 @@ package org.jetbrains.sbtidea.download.plugin
 import java.io.InputStream
 import java.net.URL
 import java.nio.file.{Files, Path}
+import scala.xml.*
 import scala.xml.Utility.escape
-import scala.xml._
 
 case class PluginDescriptor(id: String,
                             vendor: String,

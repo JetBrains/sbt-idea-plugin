@@ -2,8 +2,8 @@ package org.jetbrains.sbtidea.packaging
 
 import org.jetbrains.sbtidea.packaging.structure.sbtImpl.SbtPackageProjectData
 import org.jetbrains.sbtidea.structure.ModuleKey
+import sbt.*
 import sbt.jetbrains.ideaPlugin.apiAdapter.SbtTaskKeyExt
-import sbt._
 
 object PackagingKeys extends PackagingKeysInit with PackagingDefs {
 

@@ -1,16 +1,16 @@
 package org.jetbrains.sbtidea.runIdea
 
+import org.jetbrains.sbtidea.PluginLogger as log
 import org.jetbrains.sbtidea.download.jbr.JbrInstaller
 import org.jetbrains.sbtidea.packaging.artifact
 import org.jetbrains.sbtidea.runIdea.IntellijAwareRunner.getBundledJRE
-import org.jetbrains.sbtidea.{pathToPathExt, PluginLogger => log}
-import sbt._
+import sbt.*
 
-import java.lang.{ProcessBuilder => JProcessBuilder}
+import java.lang.ProcessBuilder as JProcessBuilder
 import java.nio.file.Files.newInputStream
 import java.nio.file.{Path, Paths}
 import java.util.{Locale, Properties}
-import scala.collection.JavaConverters._
+import scala.collection.JavaConverters.*
 
 abstract class IntellijAwareRunner(intellijBaseDirectory: Path, blocking: Boolean) {
 

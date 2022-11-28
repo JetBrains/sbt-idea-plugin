@@ -3,7 +3,7 @@ package org.jetbrains.sbtidea.tasks
 import org.jetbrains.sbtidea.Keys.{intellijAttachSources, intellijBaseDirectory, intellijBuild, intellijMainJars, intellijPluginJars}
 import org.jetbrains.sbtidea.download.idea.IdeaSourcesImpl
 import sbt.Keys.{Classpath, artifact, configuration, moduleID, update}
-import sbt.{Def, _}
+import sbt.{Def, *}
 
 import scala.collection.mutable
 
@@ -37,7 +37,7 @@ object UpdateWithIDEAInjectionTask extends SbtIdeaTask[UpdateReport] {
     "org.jetbrains" % "INTELLIJ-SDK" % build withSources()
 
   override def createTask: Def.Initialize[Task[sbt.UpdateReport]] = Def.task {
-    import org.jetbrains.sbtidea.ApiAdapter._
+    import org.jetbrains.sbtidea.ApiAdapter.*
     val intellijMainJarsValue = intellijMainJars.value
 
     val targetConfiguration     = Configurations.Compile

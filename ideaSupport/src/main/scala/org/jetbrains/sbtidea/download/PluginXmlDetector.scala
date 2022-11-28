@@ -7,7 +7,7 @@ import java.util.function.Predicate
 
 private class PluginXmlDetector extends Predicate[Path] {
 
-  import org.jetbrains.sbtidea.packaging.artifact._
+  import org.jetbrains.sbtidea.packaging.artifact.*
 
   private val MAP = Collections.emptyMap[String, Any]()
   var result: String = _

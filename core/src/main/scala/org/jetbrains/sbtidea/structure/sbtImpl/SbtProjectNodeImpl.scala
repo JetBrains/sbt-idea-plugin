@@ -1,7 +1,7 @@
 package org.jetbrains.sbtidea.structure.sbtImpl
 
 import org.jetbrains.sbtidea.structure.Library
-import sbt._
+import sbt.*
 
 
 class SbtProjectNodeImpl(override val ref: ProjectRef,

@@ -1,8 +1,8 @@
 package org.jetbrains.sbtidea.xml
 
+import sbt.*
+
 import java.nio.file.Path
-import org.jetbrains.sbtidea.pathToPathExt
-import sbt._
 
 object PluginXmlDetector {
   def getPluginXml(targetDir: Path): Option[Path] = {

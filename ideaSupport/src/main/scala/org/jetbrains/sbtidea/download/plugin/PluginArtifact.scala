@@ -1,9 +1,9 @@
 package org.jetbrains.sbtidea.download.plugin
 
+import org.jetbrains.sbtidea.download.api.*
+
 import java.net.URL
 import java.nio.file.Path
-
-import org.jetbrains.sbtidea.download.api._
 
 trait PluginArtifact extends ResolvedArtifact {
   def caller: PluginDependency

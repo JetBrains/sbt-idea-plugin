@@ -1,11 +1,11 @@
 package org.jetbrains.sbtidea
 
-import org.jetbrains.sbtidea.download._
-import org.jetbrains.sbtidea.packaging.PackagingKeys._
+import org.jetbrains.sbtidea.download.*
+import org.jetbrains.sbtidea.packaging.PackagingKeys.*
 import org.jetbrains.sbtidea.searchableoptions.BuildIndex
-import org.jetbrains.sbtidea.tasks._
-import sbt.{File, file, Keys => SbtKeys, _}
-import SbtKeys._
+import org.jetbrains.sbtidea.tasks.*
+import sbt.Keys.*
+import sbt.{File, file, Keys as SbtKeys, *}
 
 import scala.annotation.nowarn
 import scala.collection.mutable
@@ -19,11 +19,11 @@ trait Init { this: Keys.type =>
 
   private def isRunningFromIDEA: Boolean = sys.props.contains("idea.managed")
 
-  lazy val globalSettings : Seq[Setting[_]] = Seq(
+  lazy val globalSettings : Seq[Setting[?]] = Seq(
     intellijAttachSources     := true
   )
 
-  lazy val buildSettings: Seq[Setting[_]] = Seq(
+  lazy val buildSettings: Seq[Setting[?]] = Seq(
     intellijPluginName        := name.in(LocalRootProject).value,
     intellijBuild             := BuildInfo.LATEST_EAP_SNAPSHOT,
     intellijPlatform          := IntelliJPlatform.IdeaCommunity,
@@ -73,7 +73,7 @@ trait Init { this: Keys.type =>
     }) compose (onLoad in Global).value
   )
 
-  lazy val projectSettings: Seq[Setting[_]] = Seq(
+  lazy val projectSettings: Seq[Setting[?]] = Seq(
     intellijMainJars := {
       //NOTE: see also filtering in org.jetbrains.sbtidea.tasks.IdeaConfigBuilder.intellijPlatformJarsClasspath
       val globFilter: FileFilter = GlobFilter("*.jar") -- GlobFilter(IdeaConfigBuilder.JUnit3JarName)

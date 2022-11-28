@@ -2,7 +2,7 @@ package org.jetbrains.sbtidea.structure.sbtImpl
 
 import org.jetbrains.sbtidea.PluginLogger
 import sbt.ProjectRef
-import sbt.jetbrains.ideaPlugin.apiAdapter._
+import sbt.jetbrains.ideaPlugin.apiAdapter.*
 
 
 class SbtProjectStructureExtractor(override val rootProject: ProjectRef,

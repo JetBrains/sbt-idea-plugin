@@ -1,11 +1,11 @@
 package org.jetbrains.sbtidea.packaging.artifact
 
-import java.nio.file.{Files, Path, StandardOpenOption}
-
 import org.jetbrains.sbtidea.packaging.ShadePattern
-import org.pantsbuild.jarjar.{NiceJJProcessor, _}
 import org.pantsbuild.jarjar.util.EntryStruct
+import org.pantsbuild.jarjar.*
 import sbt.Keys.TaskStreams
+
+import java.nio.file.{Files, Path, StandardOpenOption}
 
 class ClassShader(patterns: Seq[ShadePattern])(implicit val streams: TaskStreams) {
 

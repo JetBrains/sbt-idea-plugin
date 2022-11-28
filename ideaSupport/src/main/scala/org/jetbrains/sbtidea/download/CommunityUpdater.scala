@@ -1,13 +1,12 @@
 package org.jetbrains.sbtidea.download
 
-import java.nio.file.Path
-import org.jetbrains.sbtidea.download.api._
+import org.jetbrains.sbtidea.{IntellijPlugin, JbrInfo, PluginLogger as log}
+import org.jetbrains.sbtidea.download.api.*
 import org.jetbrains.sbtidea.download.idea.IdeaDependency
-import org.jetbrains.sbtidea.download.plugin.{LocalPluginRegistry, PluginDependency, PluginRepoUtils}
-import org.jetbrains.sbtidea.IntellijPlugin
-import org.jetbrains.sbtidea.{PluginLogger => log}
-import org.jetbrains.sbtidea.JbrInfo
 import org.jetbrains.sbtidea.download.jbr.JbrDependency
+import org.jetbrains.sbtidea.download.plugin.{LocalPluginRegistry, PluginDependency, PluginRepoUtils}
+
+import java.nio.file.Path
 
 class CommunityUpdater(baseDirectory: Path, ideaBuildInfo: BuildInfo, jbrInfo: JbrInfo, plugins: Seq[IntellijPlugin], withSources: Boolean = true) {
 

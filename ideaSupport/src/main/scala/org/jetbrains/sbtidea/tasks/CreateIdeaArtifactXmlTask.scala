@@ -3,7 +3,7 @@ package org.jetbrains.sbtidea.tasks
 import org.jetbrains.sbtidea.packaging.PackagingKeys.{packageMappingsOffline, packageOutputDir}
 import org.jetbrains.sbtidea.packaging.artifact.IdeaArtifactXmlBuilder
 import sbt.Keys.{baseDirectory, thisProject}
-import sbt.{Def, _}
+import sbt.{Def, *}
 
 object CreateIdeaArtifactXmlTask extends SbtIdeaTask[Unit] {
   override def createTask: Def.Initialize[Task[Unit]] = Def.taskDyn {

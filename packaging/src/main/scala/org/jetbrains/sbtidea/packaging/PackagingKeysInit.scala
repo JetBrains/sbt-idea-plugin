@@ -1,18 +1,18 @@
 package org.jetbrains.sbtidea.packaging
 
-import org.jetbrains.sbtidea.packaging.artifact._
-import org.jetbrains.sbtidea.packaging.mappings._
+import org.jetbrains.sbtidea.packaging.artifact.*
+import org.jetbrains.sbtidea.packaging.mappings.*
 import org.jetbrains.sbtidea.packaging.structure.sbtImpl.SbtPackagingStructureExtractor
 import org.jetbrains.sbtidea.{NullLogger, SbtPluginLogger}
+import sbt.*
 import sbt.Def.spaceDelimited
-import sbt.Keys._
-import sbt._
-import sbt.jetbrains.ideaPlugin.apiAdapter._
+import sbt.Keys.*
+import sbt.jetbrains.ideaPlugin.apiAdapter.*
 
 trait PackagingKeysInit {
   this: PackagingKeys.type =>
 
-  lazy val projectSettings: Seq[Setting[_]] = Seq(
+  lazy val projectSettings: Seq[Setting[?]] = Seq(
     packageMethod := { // top level project should be packaged as a jar by default
       val workingDir = new File(sys.props("user.dir"))
       val projectRoot = baseDirectory.in(ThisProject).value

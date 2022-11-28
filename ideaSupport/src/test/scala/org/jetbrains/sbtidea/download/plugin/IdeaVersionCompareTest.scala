@@ -1,9 +1,9 @@
 package org.jetbrains.sbtidea.download.plugin
 
+import org.jetbrains.sbtidea.download.Version
+import org.jetbrains.sbtidea.download.plugin.RepoPluginInstaller.compareIdeaVersions
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import RepoPluginInstaller.compareIdeaVersions
-import org.jetbrains.sbtidea.download.Version
 
 class IdeaVersionCompareTest extends AnyFunSuite with Matchers {
 

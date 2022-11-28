@@ -2,9 +2,8 @@ package org.jetbrains.sbtidea.download.plugin
 
 import org.jetbrains.sbtidea.Keys.String2Plugin
 import org.jetbrains.sbtidea.download.idea.IdeaMock
-import org.jetbrains.sbtidea.pathToPathExt
 import org.jetbrains.sbtidea.tasks.CreatePluginsClasspath
-import sbt._
+import sbt.*
 
 import java.nio.file.Files
 

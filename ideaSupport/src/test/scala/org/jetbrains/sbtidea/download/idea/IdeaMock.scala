@@ -1,14 +1,13 @@
 package org.jetbrains.sbtidea.download.idea
 
+import org.jetbrains.sbtidea.Keys.String2Plugin
+import org.jetbrains.sbtidea.download.BuildInfo
+import org.jetbrains.sbtidea.packaging.artifact
+import org.jetbrains.sbtidea.*
+
 import java.net.{URI, URL}
 import java.nio.file.{Files, Path, Paths}
 import java.util.zip.{ZipEntry, ZipInputStream}
-
-import org.jetbrains.sbtidea.download.BuildInfo
-import org.jetbrains.sbtidea.packaging.artifact
-import org.jetbrains.sbtidea.{Keys, TmpDirUtils}
-import org.jetbrains.sbtidea.Keys.String2Plugin
-import org.jetbrains.sbtidea._
 
 trait IdeaMock extends TmpDirUtils {
   protected val IDEA_VERSION      = "211.5538.2"

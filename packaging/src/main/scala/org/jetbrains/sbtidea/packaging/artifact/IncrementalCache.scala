@@ -1,10 +1,9 @@
 package org.jetbrains.sbtidea.packaging.artifact
 
-import java.io.{BufferedOutputStream, ByteArrayInputStream, ObjectInputStream, ObjectOutputStream}
-import java.nio.file.{Files, Path}
-
 import sbt.Keys.TaskStreams
 
+import java.io.{BufferedOutputStream, ByteArrayInputStream, ObjectInputStream, ObjectOutputStream}
+import java.nio.file.{Files, Path}
 import scala.collection.mutable
 
 trait IncrementalCache extends AutoCloseable {
@@ -41,7 +40,7 @@ class PersistentIncrementalCache(private val root: Path)(implicit private val st
   }
 
   private def saveToDisk(): Unit = {
-    import java.nio.file.StandardOpenOption._
+    import java.nio.file.StandardOpenOption.*
     if (!Files.exists(myFile.getParent)) {
       Files.createDirectories(myFile.getParent)
       Files.createFile(myFile)

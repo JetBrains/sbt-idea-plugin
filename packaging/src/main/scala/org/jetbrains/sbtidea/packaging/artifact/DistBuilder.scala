@@ -1,10 +1,10 @@
 package org.jetbrains.sbtidea.packaging.artifact
 
-import java.nio.file._
-
-import org.jetbrains.sbtidea.packaging._
+import org.jetbrains.sbtidea.packaging.*
+import sbt.*
 import sbt.Keys.TaskStreams
-import sbt._
+
+import java.nio.file.*
 
 class DistBuilder(stream: TaskStreams, private val target: File) extends MappingArtifactBuilder[File] {
 

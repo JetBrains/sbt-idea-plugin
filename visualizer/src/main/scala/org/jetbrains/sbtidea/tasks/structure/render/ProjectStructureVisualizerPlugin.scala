@@ -2,16 +2,15 @@ package org.jetbrains.sbtidea.tasks.structure.render
 
 import org.jetbrains.sbtidea.SbtPluginLogger
 import org.jetbrains.sbtidea.structure.sbtImpl.{SbtProjectData, SbtProjectStructureExtractor}
-import sbt.KeyRanks.Invisible
-import sbt._
-import sbt.Keys._
+import sbt.*
+import sbt.Keys.*
 
 object ProjectStructureVisualizerPlugin extends AutoPlugin {
-  import autoImport._
+  import autoImport.*
   override def requires = plugins.JvmPlugin
   override def trigger = allRequirements
 
-  override def projectSettings: Seq[Setting[_]] = Seq(
+  override def projectSettings: Seq[Setting[?]] = Seq(
     printProjectGraph := {
       val rootProject = thisProjectRef.value
       val buildDeps = buildDependencies.value

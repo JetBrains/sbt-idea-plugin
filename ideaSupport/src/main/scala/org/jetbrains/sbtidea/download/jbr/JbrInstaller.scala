@@ -1,17 +1,17 @@
 package org.jetbrains.sbtidea.download.jbr
 
+import org.jetbrains.sbtidea.download.api.*
+import org.jetbrains.sbtidea.download.{FileDownloader, NioUtils}
+import org.jetbrains.sbtidea.packaging.artifact.using
+import org.jetbrains.sbtidea.{pathToPathExt, PluginLogger as log, *}
+import org.rauschig.jarchivelib.{ArchiveFormat, ArchiverFactory, CompressionType}
+import sbt.*
+
 import java.nio.file.{Files, Path}
 import java.util.Properties
 
-import org.jetbrains.sbtidea.download.api._
-import org.jetbrains.sbtidea.download.{FileDownloader, NioUtils}
-import org.jetbrains.sbtidea.packaging.artifact.using
-import org.jetbrains.sbtidea.{pathToPathExt, PluginLogger => log, _}
-import org.rauschig.jarchivelib.{ArchiveFormat, ArchiverFactory, CompressionType}
-import sbt._
-
 class JbrInstaller extends Installer[JbrArtifact] {
-  import JbrInstaller._
+  import JbrInstaller.*
 
   override def isInstalled(art: JbrArtifact)(implicit ctx: InstallContext): Boolean =
     (ctx.baseDirectory / JBR_DIR_NAME).exists && isSameJbr(art)

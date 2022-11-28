@@ -6,7 +6,7 @@ import org.jetbrains.sbtidea.download.api.InstallContext
 import org.jetbrains.sbtidea.{ConsoleLogger, TmpDirUtils, pathToPathExt}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import sbt._
+import sbt.*
 
 class IdeaInstallerTest extends AnyFunSuite with Matchers with IdeaMock with TmpDirUtils with ConsoleLogger {
 

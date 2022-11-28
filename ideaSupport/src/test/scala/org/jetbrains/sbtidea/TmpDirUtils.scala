@@ -7,8 +7,8 @@ import org.jetbrains.sbtidea.download.NioUtils
 
 trait TmpDirUtils {
 
-  def createTempFile(prefix: String, suffix: String, fileAttributes: FileAttribute[_]*): Path = {
-    val res = Files.createTempFile(prefix, suffix, fileAttributes:_*)
+  def createTempFile(prefix: String, suffix: String, fileAttributes: FileAttribute[?]*): Path = {
+    val res = Files.createTempFile(prefix, suffix, fileAttributes *)
     TmpDirUtils.allocatedTmpDirs += res
     res
   }

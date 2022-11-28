@@ -2,10 +2,10 @@ package org.jetbrains.sbtidea.tasks
 
 import org.jetbrains.sbtidea.Keys.signPluginOptions
 import org.jetbrains.sbtidea.PluginSigningOptions
-import org.jetbrains.sbtidea.packaging.PackagingKeys._
+import org.jetbrains.sbtidea.packaging.PackagingKeys.*
 import org.jetbrains.zip.signer.signer.{PublicKeyUtils, SignerInfoLoader}
 import org.jetbrains.zip.signer.signing.{DefaultSignatureProvider, ZipSigner}
-import sbt._
+import sbt.*
 
 import java.io.File
 import java.security.PrivateKey

@@ -1,11 +1,11 @@
 package org.jetbrains.sbtidea.tasks
 
-import org.jetbrains.sbtidea.Keys._
+import org.jetbrains.sbtidea.Keys.*
 import org.jetbrains.sbtidea.download.BuildInfo
 import org.jetbrains.sbtidea.packaging.PackagingKeys.packageOutputDir
 import org.jetbrains.sbtidea.{ClasspathStrategy, PluginLogger, SbtPluginLogger, tasks}
-import sbt.Keys._
-import sbt.{Def, _}
+import sbt.Keys.*
+import sbt.{Def, *}
 
 object GenerateIdeaRunConfigurations extends SbtIdeaTask[Unit] {
   override def createTask: Def.Initialize[Task[Unit]] = Def.taskDyn {

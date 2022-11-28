@@ -1,18 +1,16 @@
 package org.jetbrains.sbtidea.download.plugin
 
+import org.jetbrains.sbtidea.download.*
+import org.jetbrains.sbtidea.{IntellijPlugin, pathToPathExt, PluginLogger as log}
+import sbt.*
+
 import java.nio.file.{Files, Path}
 import java.util
-
-import org.jetbrains.sbtidea.IntellijPlugin
-import org.jetbrains.sbtidea.download._
-import org.jetbrains.sbtidea.{pathToPathExt, PluginLogger => log}
-import sbt._
-
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
 class LocalPluginRegistry (ideaRoot: Path) extends LocalPluginRegistryApi {
-  import LocalPluginRegistry._
+  import LocalPluginRegistry.*
 
   val index = new PluginIndexImpl(ideaRoot)
 
@@ -78,7 +76,7 @@ class LocalPluginRegistry (ideaRoot: Path) extends LocalPluginRegistryApi {
 
 
 object LocalPluginRegistry {
-  import org.jetbrains.sbtidea._
+  import org.jetbrains.sbtidea.*
 
   implicit class HashMapExt[K, V](val hm: util.HashMap[K,V]) extends AnyVal {
     def getOrError[T](err: => T)(key: K): Either[T, V] = hm

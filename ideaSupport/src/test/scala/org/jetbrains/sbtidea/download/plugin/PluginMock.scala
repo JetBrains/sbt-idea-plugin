@@ -1,13 +1,11 @@
 package org.jetbrains.sbtidea.download.plugin
 
+import org.jetbrains.sbtidea.*
+import org.jetbrains.sbtidea.packaging.artifact
+
 import java.net.URI
 import java.nio.file.{FileSystems, Files, Path}
-
-import org.jetbrains.sbtidea.TmpDirUtils
-import org.jetbrains.sbtidea.packaging.artifact
-import org.jetbrains.sbtidea._
-
-import scala.collection.JavaConverters._
+import scala.collection.JavaConverters.*
 
 trait PluginMock extends TmpDirUtils {
 

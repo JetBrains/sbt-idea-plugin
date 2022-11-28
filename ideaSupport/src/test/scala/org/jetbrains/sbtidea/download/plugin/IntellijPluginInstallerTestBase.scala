@@ -1,14 +1,14 @@
 package org.jetbrains.sbtidea.download.plugin
 
 import org.jetbrains.sbtidea.ConsoleLogger
-import org.jetbrains.sbtidea.Keys._
+import org.jetbrains.sbtidea.Keys.*
 import org.jetbrains.sbtidea.download.api.InstallContext
 import org.jetbrains.sbtidea.download.idea.IdeaMock
 import org.jetbrains.sbtidea.download.{BuildInfo, NioUtils}
 import org.scalatest.BeforeAndAfter
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import sbt._
+import sbt.*
 
 import java.nio.file.Path
 import scala.language.implicitConversions

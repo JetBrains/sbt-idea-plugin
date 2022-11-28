@@ -1,9 +1,7 @@
 package org.jetbrains.sbtidea.structure.sbtImpl
 
 import org.jetbrains.sbtidea.structure.ProjectNode
-import sbt._
-
-import scala.collection.mutable
+import sbt.*
 
 trait SbtProjectNode extends ProjectNode {
   def ref: ProjectRef

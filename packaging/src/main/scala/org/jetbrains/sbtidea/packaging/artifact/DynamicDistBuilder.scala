@@ -1,11 +1,10 @@
 package org.jetbrains.sbtidea.packaging.artifact
 
-import java.nio.file.{Files, Path, Paths, StandardCopyOption}
-
-import org.jetbrains.sbtidea.packaging.ExcludeFilter
-import org.jetbrains.sbtidea.packaging._
+import org.jetbrains.sbtidea.packaging.*
 import sbt.File
 import sbt.Keys.TaskStreams
+
+import java.nio.file.{Files, Path, Paths, StandardCopyOption}
 
 class DynamicDistBuilder(stream: TaskStreams, target: File, outputDir: File, private val hints: Seq[File]) extends DistBuilder(stream, target) {
 

@@ -1,12 +1,10 @@
 package org.jetbrains.sbtidea.packaging.mappings
 
 import org.jetbrains.sbtidea.PluginLogger
-import org.jetbrains.sbtidea.packaging.structure.PackagedProjectNode
-import org.jetbrains.sbtidea.packaging.{MAPPING_KIND, Mapping, Mappings, PackagingKeys}
-import org.jetbrains.sbtidea.packaging.structure.PackagingMethod
-import org.jetbrains.sbtidea.structure.sbtImpl.ModuleIdExt
+import org.jetbrains.sbtidea.packaging.structure.{PackagedProjectNode, PackagingMethod}
+import org.jetbrains.sbtidea.packaging.{MAPPING_KIND, Mapping, Mappings}
 import org.jetbrains.sbtidea.structure.{Library, ProjectNode}
-import sbt._
+import sbt.*
 
 import scala.collection.mutable
 

@@ -1,14 +1,10 @@
 package org.jetbrains.sbtidea.download
 
-import java.nio.file.{Files, Paths}
-
-import org.jetbrains.sbtidea.Keys.String2Plugin
+import org.jetbrains.sbtidea.ConsoleLogger
 import org.jetbrains.sbtidea.download.idea.IdeaMock
-import org.jetbrains.sbtidea.{ConsoleLogger, pathToPathExt}
-import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.Ignore
+import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import sbt._
 
 @Ignore
 final class CommunityIdeaUpdaterTest extends AnyFunSuite with Matchers with IdeaMock with ConsoleLogger {

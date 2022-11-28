@@ -1,15 +1,13 @@
 package org.jetbrains.sbtidea.download.idea
 
 
+import org.jetbrains.sbtidea.download.api.*
+import org.jetbrains.sbtidea.download.{BuildInfo, FileDownloader, IdeaUpdater, NioUtils}
+import org.jetbrains.sbtidea.{pathToPathExt, PluginLogger as log}
+
 import java.nio.file.attribute.PosixFilePermissions
 import java.nio.file.{Files, Path}
 import java.util.function.Consumer
-
-import org.jetbrains.sbtidea.download.{BuildInfo, FileDownloader, IdeaUpdater, NioUtils}
-import org.jetbrains.sbtidea.{PluginLogger => log}
-import org.jetbrains.sbtidea.download.api._
-import org.jetbrains.sbtidea.pathToPathExt
-import sbt._
 
 class IdeaDistInstaller(buildInfo: BuildInfo) extends Installer[IdeaDist] {
 
@@ -28,8 +26,9 @@ class IdeaDistInstaller(buildInfo: BuildInfo) extends Installer[IdeaDist] {
     FileDownloader(ctx.baseDirectory.getParent).download(art.dlUrl)
 
   private[idea] def installDist(artifact: Path)(implicit ctx: InstallContext): Path = {
-    import sys.process._
     import org.jetbrains.sbtidea.Keys.IntelliJPlatform.MPS
+
+    import sys.process.*
 
     log.info(s"Extracting ${buildInfo.edition.name} dist to $tmpDir")
 

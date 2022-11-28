@@ -1,17 +1,17 @@
 package org.jetbrains.sbtidea.tasks
 
-import java.net.URLEncoder
-import java.nio.file.Path
-import java.util.regex.Pattern
-import org.jetbrains.sbtidea.{PluginLogger, SbtPluginLogger}
+import com.eclipsesource.json.*
+import org.jetbrains.sbtidea.Keys.{intellijBaseDirectory, intellijBuild, intellijPlatform}
 import org.jetbrains.sbtidea.download.BuildInfo
 import org.jetbrains.sbtidea.download.plugin.LocalPluginRegistry
-import com.eclipsesource.json._
-import org.jetbrains.sbtidea.Keys.{intellijBaseDirectory, intellijBuild, intellijPlatform}
+import org.jetbrains.sbtidea.{PluginLogger, SbtPluginLogger}
 import sbt.Keys.streams
 import scalaj.http.Http
 
-import scala.collection.JavaConverters._
+import java.net.URLEncoder
+import java.nio.file.Path
+import java.util.regex.Pattern
+import scala.collection.JavaConverters.*
 
 class SearchPluginId(ideaRoot: Path, buildInfo: BuildInfo, useBundled: Boolean = true, useRemote: Boolean = true) {
 
@@ -54,9 +54,9 @@ class SearchPluginId(ideaRoot: Path, buildInfo: BuildInfo, useBundled: Boolean =
 }
 
 object SearchPluginId extends SbtIdeaInputTask[Map[String, (String, Boolean)]] {
-  import sbt._
+  import sbt.*
   override def createTask: Def.Initialize[InputTask[Map[String, (String, Boolean)]]] = Def.inputTask {
-    import complete.DefaultParsers._
+    import complete.DefaultParsers.*
     val log = streams.value.log
     val parsed = spaceDelimited("[--nobundled|--noremote] <plugin name regexp>").parsed
     val maybeQuery = parsed.lastOption.filterNot(_.startsWith("--"))

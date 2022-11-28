@@ -1,9 +1,9 @@
 package org.jetbrains.sbtidea.packaging
 
-import org.jetbrains.sbtidea.packaging.PackagingKeys._
+import org.jetbrains.sbtidea.packaging.PackagingKeys.*
 import org.jetbrains.sbtidea.packaging.structure.sbtImpl.SbtPackageProjectData
-import sbt._
-import sbt.Keys._
+import sbt.*
+import sbt.Keys.*
 
 object apiAdapter {
 

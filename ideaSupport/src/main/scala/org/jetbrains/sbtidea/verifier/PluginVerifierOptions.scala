@@ -18,7 +18,7 @@ case class PluginVerifierOptions(version: String,
 object PluginVerifierOptions {
 
   implicit class PVOEx(val pvo: PluginVerifierOptions) extends AnyVal {
-    import pvo._
+    import pvo.*
     def buildOptions: Seq[String] = {
       val buffer = new scala.collection.mutable.ListBuffer[String]()
       buffer += "-verification-reports-dir"

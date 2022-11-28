@@ -1,8 +1,7 @@
 package org.jetbrains.sbtidea.packaging
 
-import org.jetbrains.sbtidea.packaging.structure.PackagedProjectNode
+import org.jetbrains.sbtidea.packaging.structure.{PackagedProjectNode, PackagingMethod as StructurePackagingMethod}
 import org.jetbrains.sbtidea.structure.ProjectNode
-import org.jetbrains.sbtidea.packaging.structure.{PackagingMethod => StructurePackagingMethod}
 
 package object mappings {
 

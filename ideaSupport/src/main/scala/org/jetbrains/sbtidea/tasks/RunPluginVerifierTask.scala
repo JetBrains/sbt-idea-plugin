@@ -1,23 +1,22 @@
 package org.jetbrains.sbtidea.tasks
 
-import org.jetbrains.sbtidea.Keys._
+import org.jetbrains.sbtidea.Keys.*
 import org.jetbrains.sbtidea.download.FileDownloader
-import org.jetbrains.sbtidea.packaging.PackagingKeys._
+import org.jetbrains.sbtidea.packaging.PackagingKeys.*
 import org.jetbrains.sbtidea.packaging.artifact
 import org.jetbrains.sbtidea.runIdea.IntellijAwareRunner
 import org.jetbrains.sbtidea.verifier.FailureLevel
 import org.jetbrains.sbtidea.{Any2Option, PluginLogger, SbtPluginLogger}
 import sbt.Keys.{streams, target}
-import sbt.{Def, _}
+import sbt.{Def, *}
 
 import java.io.{BufferedReader, File, InputStreamReader}
-import java.lang.{ProcessBuilder => JProcessBuilder}
+import java.lang.ProcessBuilder as JProcessBuilder
 import java.net.URL
 import java.nio.file.Path
 import java.util.function.Consumer
 import scala.annotation.nowarn
-import scala.language.postfixOps
-import scala.language.reflectiveCalls
+import scala.language.{postfixOps, reflectiveCalls}
 import scala.util.{Failure, Try}
 import scala.xml.XML
 
@@ -42,7 +41,7 @@ object RunPluginVerifierTask extends SbtIdeaTask[File] {
 
   @nowarn("msg=a pure expression does nothing in statement position")
   override def createTask: Def.Initialize[Task[File]] = sbt.Def.task {
-    import scala.collection.JavaConverters._
+    import scala.collection.JavaConverters.*
     PluginLogger.bind(new SbtPluginLogger(streams.value))
     packageArtifact.value
     val verifierDir   = target.value / "verifier"

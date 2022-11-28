@@ -1,6 +1,6 @@
 package org.jetbrains.sbtidea
 
-import sbt.Keys._
+import sbt.Keys.*
 
 class SbtPluginLogger(streams: TaskStreams) extends PluginLogger {
   override def info(msg: => String): Unit = streams.log.info(msg)

@@ -3,15 +3,15 @@ package org.jetbrains.sbtidea.download.jbr
 import org.jetbrains.sbtidea.Keys.JBR
 import org.jetbrains.sbtidea.download.api.Resolver
 import org.jetbrains.sbtidea.packaging.artifact.using
-import org.jetbrains.sbtidea.{JbrPlatform, Keys, pathToPathExt, _}
-import sbt._
+import org.jetbrains.sbtidea.{JbrPlatform, pathToPathExt, *}
+import sbt.*
 
 import java.net.URL
 import java.nio.file.Path
 import java.util.Properties
 
 class JbrResolver extends Resolver[JbrDependency] {
-  import JbrResolver._
+  import JbrResolver.*
 
   override def resolve(dep: JbrDependency): Seq[JbrArtifact] = {
     dep.jbrInfo match {

@@ -1,8 +1,8 @@
 package org.jetbrains.sbtidea.structure.sbtImpl
 
 import org.jetbrains.sbtidea.PluginLogger
-import org.jetbrains.sbtidea.structure._
-import sbt.jetbrains.ideaPlugin.apiAdapter._
+import org.jetbrains.sbtidea.structure.*
+import sbt.jetbrains.ideaPlugin.apiAdapter.*
 import sbt.{Project, ProjectRef}
 
 import scala.collection.mutable

@@ -1,14 +1,13 @@
 package org.jetbrains.sbtidea.download.idea
 
-import org.jetbrains.sbtidea.download.api.Resolver
-import java.io.{FileNotFoundException, InputStream}
-
-import org.jetbrains.sbtidea.Keys
-import org.jetbrains.sbtidea.Keys._
+import org.jetbrains.sbtidea.Keys.*
+import org.jetbrains.sbtidea.{Keys, PluginLogger as log}
 import org.jetbrains.sbtidea.download.BuildInfo
 import org.jetbrains.sbtidea.download.IdeaUpdater.IJ_REPO_OVERRIDE
-import org.jetbrains.sbtidea.{PluginLogger => log}
+import org.jetbrains.sbtidea.download.api.Resolver
 import sbt.{URL, url}
+
+import java.io.{FileNotFoundException, InputStream}
 
 class IJRepoIdeaResolver extends Resolver[IdeaDependency] {
 

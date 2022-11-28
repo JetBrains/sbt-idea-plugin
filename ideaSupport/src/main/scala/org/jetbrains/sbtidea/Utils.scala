@@ -4,7 +4,7 @@ import java.net.URL
 
 trait Utils {
   implicit class String2Plugin(str: String) {
-    import org.jetbrains.sbtidea.IntellijPlugin._
+    import org.jetbrains.sbtidea.IntellijPlugin.*
     def toPlugin: IntellijPlugin = {
       val idMatcher  = ID_PATTERN.matcher(str)
       val urlMatcher = URL_PATTERN.matcher(str)

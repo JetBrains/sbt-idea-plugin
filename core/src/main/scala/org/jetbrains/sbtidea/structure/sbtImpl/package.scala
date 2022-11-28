@@ -1,6 +1,6 @@
 package org.jetbrains.sbtidea.structure
 
-import sbt._
+import sbt.*
 
 import scala.language.implicitConversions
 

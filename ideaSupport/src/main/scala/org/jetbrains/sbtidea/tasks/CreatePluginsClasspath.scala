@@ -1,14 +1,13 @@
 package org.jetbrains.sbtidea.tasks
 
-import java.nio.file.Path
-
-import org.jetbrains.sbtidea._
-import org.jetbrains.sbtidea.PluginLogger
+import org.jetbrains.sbtidea.*
 import org.jetbrains.sbtidea.download.BuildInfo
 import org.jetbrains.sbtidea.download.api.InstallContext
-import org.jetbrains.sbtidea.download.plugin._
-import sbt.Keys._
-import sbt._
+import org.jetbrains.sbtidea.download.plugin.*
+import sbt.*
+import sbt.Keys.*
+
+import java.nio.file.Path
 
 object CreatePluginsClasspath {
 

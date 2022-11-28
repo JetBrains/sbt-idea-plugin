@@ -2,7 +2,7 @@ package org.jetbrains.sbtidea.download.plugin
 
 import org.jetbrains.sbtidea.IntellijPlugin
 import org.jetbrains.sbtidea.download.BuildInfo
-import org.jetbrains.sbtidea.download.api._
+import org.jetbrains.sbtidea.download.api.*
 
 
 case class PluginDependency(plugin: IntellijPlugin,

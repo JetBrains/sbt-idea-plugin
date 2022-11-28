@@ -1,18 +1,19 @@
 package org.jetbrains.sbtidea.download.plugin
 
 import org.jetbrains.annotations.TestOnly
-
-import java.io.{BufferedInputStream, BufferedOutputStream, FileInputStream, FileOutputStream, ObjectInputStream, ObjectOutputStream}
-import java.nio.file.{Files, Path}
-import java.util.function.Consumer
 import org.jetbrains.sbtidea.download.plugin.LocalPluginRegistry.extractPluginMetaData
 import org.jetbrains.sbtidea.packaging.artifact.using
-import org.jetbrains.sbtidea.{pathToPathExt, PluginLogger => log}
-import sbt._
+import org.jetbrains.sbtidea.{pathToPathExt, PluginLogger as log}
+import sbt.*
+
+import java.io.*
+import java.nio.file.{Files, Path}
+import java.util.function.Consumer
 
 class PluginIndexImpl(ideaRoot: Path) extends PluginIndex {
 
-  import PluginIndexImpl._
+  import PluginIndexImpl.*
+
   import scala.collection.mutable
 
   type PluginId = String
@@ -65,7 +66,7 @@ class PluginIndexImpl(ideaRoot: Path) extends PluginIndex {
   override def getAllDescriptors: Seq[PluginDescriptor] = index.values.map(_._2).toSeq
 
   private def loadFromFile(): Repr = {
-    import PluginDescriptor._
+    import PluginDescriptor.*
     val buffer = new Repr
     using(new FileInputStream(indexFile.toFile)) { fis =>
       using(new ObjectInputStream(new BufferedInputStream(fis))) { stream =>

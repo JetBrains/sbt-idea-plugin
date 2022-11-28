@@ -1,14 +1,13 @@
 package org.jetbrains.sbtidea.packaging.artifact
 
+import org.jetbrains.sbtidea.packaging.*
+
 import java.io.File
 import java.nio.file.Path
-
-import org.jetbrains.sbtidea.packaging._
-
 import scala.collection.mutable
 
 class IdeaArtifactXmlBuilder(artifactName: String, root: File) extends MappingArtifactBuilder[String] {
-  import org.jetbrains.sbtidea.packaging.artifact.IdeaArtifactXmlBuilder._
+  import org.jetbrains.sbtidea.packaging.artifact.IdeaArtifactXmlBuilder.*
 
   private implicit val rootPath: Path = root.toPath
 

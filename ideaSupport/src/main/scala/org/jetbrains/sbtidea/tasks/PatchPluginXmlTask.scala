@@ -1,10 +1,10 @@
 package org.jetbrains.sbtidea.tasks
 
-import org.jetbrains.sbtidea.Keys._
-import org.jetbrains.sbtidea.{PluginLogger, SbtPluginLogger}
+import org.jetbrains.sbtidea.Keys.*
 import org.jetbrains.sbtidea.xml.{PluginXmlDetector, PluginXmlPatcher}
+import org.jetbrains.sbtidea.{PluginLogger, SbtPluginLogger}
 import sbt.Keys.{productDirectories, streams}
-import sbt.{Def, _}
+import sbt.{Def, *}
 
 object PatchPluginXmlTask extends SbtIdeaTask[Unit] {
   override def createTask: Def.Initialize[Task[Unit]] = Def.task {

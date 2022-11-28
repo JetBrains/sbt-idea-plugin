@@ -4,7 +4,7 @@ import org.jetbrains.sbtidea.ConsoleLogger
 import org.jetbrains.sbtidea.packaging.mappings.LinearMappingsBuilder
 import org.jetbrains.sbtidea.packaging.structure.sbtImpl.SbtPackagedProjectNodeImpl
 import org.scalatest.matchers.should.Matchers
-import sbt._
+import sbt.*
 
 import java.io.{File, ObjectInputStream}
 

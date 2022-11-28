@@ -1,7 +1,7 @@
 package org.jetbrains.sbtidea.download
 
 import org.jetbrains.sbtidea.download.FileDownloader.ProgressInfo
-import org.jetbrains.sbtidea.{PluginLogger => log, _}
+import org.jetbrains.sbtidea.{PluginLogger as log, *}
 
 import java.io.FileOutputStream
 import java.net.{SocketTimeoutException, URL}

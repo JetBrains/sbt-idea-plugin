@@ -1,9 +1,9 @@
 package org.jetbrains.sbtidea.packaging.artifact
 
-import java.nio.file.Path
+import org.jetbrains.sbtidea.packaging.*
+import sbt.*
 
-import org.jetbrains.sbtidea.packaging._
-import sbt._
+import java.nio.file.Path
 
 abstract class MappingArtifactBuilder[T] extends ArtifactBuilder [Mappings, T] {
 

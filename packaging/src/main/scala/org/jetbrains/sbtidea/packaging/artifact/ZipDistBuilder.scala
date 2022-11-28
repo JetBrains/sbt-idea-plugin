@@ -1,7 +1,7 @@
 package org.jetbrains.sbtidea.packaging.artifact
 
 import sbt.Keys.TaskStreams
-import sbt._
+import sbt.*
 
 
 class ZipDistBuilder(private val dest: File)(implicit stream: TaskStreams) extends ArtifactBuilder[File, File] {

@@ -1,16 +1,15 @@
 package org.jetbrains.sbtidea.download.plugin
-import java.nio.file.{Files, Path}
-
+import org.jetbrains.sbtidea.{IntellijPlugin, PluginLogger as log}
+import org.jetbrains.sbtidea.download.api.*
+import org.jetbrains.sbtidea.download.plugin.LocalPluginRegistry.extractInstalledPluginDescriptor
 import org.jetbrains.sbtidea.download.{BuildInfo, FileDownloader, IdeaUpdater, NioUtils, PluginXmlDetector, VersionComparatorUtil}
-import org.jetbrains.sbtidea.download.api._
-import org.jetbrains.sbtidea.{PluginLogger => log}
-import org.jetbrains.sbtidea.IntellijPlugin
-import LocalPluginRegistry.{extractInstalledPluginDescriptor, extractPluginMetaData}
+
+import java.nio.file.{Files, Path}
 
 
 class RepoPluginInstaller(buildInfo: BuildInfo)
                          (implicit repo: PluginRepoApi, localRegistry: LocalPluginRegistryApi) extends Installer[RemotePluginArtifact] {
-  import RepoPluginInstaller._
+  import RepoPluginInstaller.*
 
   override def isInstalled(art: RemotePluginArtifact)(implicit ctx: InstallContext): Boolean =
     !IdeaUpdater.isDumbPlugins &&
