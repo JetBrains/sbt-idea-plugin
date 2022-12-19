@@ -8,8 +8,11 @@ object IntelliJVersionDetector {
   private val IntellijVersionRegex = """\d+\.\d+(\.\d+)?""".r
 
   def detectIntellijVersion(intellijDirectory: File): Option[Version] = {
-    val buildTxtContent = readFileContent(intellijDirectory)
-    val fromBuildTxt = readVersionFromBuildTxt(buildTxtContent)
+    import sbt.io.syntax.fileToRichFile
+    val buildTxtFile = Option(intellijDirectory / "build.txt").filter(_.exists())
+    val buildTxtContent = buildTxtFile.map(readFileContent)
+    val fromBuildTxt = buildTxtContent.flatMap(readVersionFromBuildTxt)
+
     val orFromIntelliJDirectory = fromBuildTxt.orElse(readVersionFromIntellijDirectory(intellijDirectory))
     orFromIntelliJDirectory
   }
@@ -24,10 +27,8 @@ object IntelliJVersionDetector {
   def readVersionFromIntellijDirectory(intellijDirectory: File): Option[Version] =
     parseVersion(intellijDirectory.getName)
 
-  private def readFileContent(intellijDirectory: File): String = {
-    import sbt.io.syntax.fileToRichFile
-    util.Using.resource(Source.fromFile(intellijDirectory / "build.txt"))(_.getLines().mkString("\n"))
-  }
+  private def readFileContent(file: File): String =
+    util.Using.resource(Source.fromFile(file))(_.getLines().mkString("\n"))
 
   private def parseVersion(versionString: String): Option[Version] =
     versionString match {

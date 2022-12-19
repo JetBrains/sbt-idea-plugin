@@ -5,11 +5,16 @@ import org.jetbrains.sbtidea.runIdea.IntellijVMOptions
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
-import java.nio.file.Paths
+import java.nio.file.{Files, Paths}
 
 class IdeaVmOptionsTest extends AnyFunSuite with Matchers {
 
-  private val vmOpts = IntellijVMOptions(IdeaCommunity, Paths.get("foo bar"), Paths.get("bar baz"), Paths.get("test intellijDirectory"))
+  private val vmOpts = IntellijVMOptions(
+    IdeaCommunity,
+    Paths.get("foo bar"),
+    Paths.get("bar baz"),
+    Paths.get("test non-existent intellijDirectory")
+  )
   private val Q = "&quot;"
 
   private val mustBeQuoted = Seq(
