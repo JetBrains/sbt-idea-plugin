@@ -5,6 +5,7 @@ import org.jetbrains.sbtidea.download.{IntelliJVersionDetector, Version}
 import sbt.pathToPathOps
 
 import java.nio.file.Path
+import scala.annotation.nowarn
 import scala.collection.JavaConverters.*
 import scala.collection.mutable
 import scala.math.Ordered.orderingToOrdered
@@ -14,6 +15,7 @@ import scala.math.Ordered.orderingToOrdered
   *                          example: {{{ <userHome>/.ScalaPluginIU }}}
   * @param intellijDirectory example: {{{ <userHome>/.ScalaPluginIU/sdk/223.6160 }}}
   */
+@nowarn("cat=deprecation")
 case class IntellijVMOptions(platform: IntelliJPlatform,
                              pluginPath: Path,
                              ideaHome: Path,
@@ -24,6 +26,7 @@ case class IntellijVMOptions(platform: IntelliJPlatform,
                              softRefLRUPolicyMSPerMB: Int = 50,
                              gc: String = "-XX:+UseG1GC",
                              gcOpt: String = "-XX:CICompilerCount=2",
+                             @deprecated("This value is unused and will be deleted in future releases. In IntelliJ IDEA 2023.1 `-Didea.ProcessCanceledException` VM options is dropped (for details see https://youtrack.jetbrains.com/issue/IDEA-304945)")
                              noPCE: Boolean = false,
                              debug: Boolean = true,
                              debugPort: Int = 5005,
@@ -74,8 +77,6 @@ object IntellijVMOptions {
         buffer += "-Didea.use.core.classloader.for.plugin.path=true"
         buffer += "-Didea.force.use.core.classloader=true"
       }
-      if (noPCE)
-        buffer += "-Didea.ProcessCanceledException=disabled"
       if (!test)
         buffer += "-Didea.is.internal=true"
       if (debug) {

@@ -36,9 +36,7 @@ class IdeaConfigBuilder(moduleName: String,
 
   def build(): Unit = {
     if (options.generateDefaultRunConfig)
-      writeToFile(runConfigDir / s"$configName.xml", buildRunConfigurationXML())
-    if (options.generateNoPCEConfiguration)
-      writeToFile(runConfigDir / s"$configName-noPCE.xml", buildRunConfigurationXML(noPCE = true))
+      writeToFile(runConfigDir / s"$configName.xml", buildRunConfigurationXML)
     if (options.generateJUnitTemplate)
       writeToFile(runConfigDir / "_template__of_JUnit.xml", buildJUnitTemplate)
   }
@@ -155,16 +153,15 @@ class IdeaConfigBuilder(moduleName: String,
   }
 
 
-  private def buildRunConfigurationXML(noPCE: Boolean = false): String = {
-    val vmOptions = if (noPCE) intellijVMOptions.copy(noPCE = true) else intellijVMOptions
+  private def buildRunConfigurationXML: String = {
+    val vmOptions = intellijVMOptions
     val env = mkEnv(options.ideaRunEnv)
-    val name = if (noPCE) s"$configName-noPCE" else configName
 
     val classpathEntries = intellijPlatformJarsClasspath
     val classpathString = classpathEntries.mkString(File.pathSeparator)
 
     s"""<component name="ProjectRunConfigurationManager">
-       |  <configuration default="false" name="$name" type="Application" factoryName="Application">
+       |  <configuration default="false" name="$configName" type="Application" factoryName="Application">
        |    $jreSettings
        |    <log_file alias="IJ LOG" path="$dataDir/system/log/idea.log" />
        |    <log_file alias="JPS LOG" path="$dataDir/system/log/build-log/build.log" />

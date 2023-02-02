@@ -166,7 +166,7 @@ patchPluginXml := pluginXmlOptions { xml =>
 
 #### `intellijVMOptions :: SettingKey[IntellijVMOptions]`
 
-Fine tune java VM options for running the plugin with [`runIDE`](#runide-nopce-nodebug-suspend--inputkeyunit) task.
+Fine tune java VM options for running the plugin with [runIDE](#runide-nodebug-suspend-blocking--inputkeyunit) task.
 Example:
 
 ```SBT
@@ -177,14 +177,12 @@ intellijVMOptions := intellijVMOptions.value.copy(xmx = 2048, xms = 256)
 
 Fine tune how IntelliJ run configurations are generated when importing the project in IDEA.
 
-#### `runIDE [noPCE] [noDebug] [suspend] [blocking] :: InputKey[Unit]`
+#### `runIDE [noDebug] [suspend] [blocking] :: InputKey[Unit]`
 
 Runs IntelliJ IDE with current plugin. This task is non-blocking by default, so you can continue using SBT console.
 
 By default, IDE is run with non-suspending debug agent on port `5005`. This can be overridden by either optional
-arguments above, or by modifying default [`intellijVMOptions`](#intellijvmoptions--settingkeyintellijvmoptions). 
-[`ProcessCancelledExceptiona`](https://www.jetbrains.org/intellij/sdk/docs/basics/architectural_overview/general_threading_rules.html#background-processes-and-processcanceledexception)
-can also be disabled for current run by providing `noPCE` option.
+arguments above, or by modifying default [`intellijVMOptions`](#intellijvmoptions--settingkeyintellijvmoptions).
 
 ### Publishing and Verification
 
@@ -305,7 +303,7 @@ packageLibraryMappings += "org.scala-lang" % "scala-library" % scalaVersion -> S
 
 **Default**: `file("lib")`
 
-Sets the per-project default sub-folder into which external libraries are packaged. Rules from [`packageLibraryMappings`](#packagefilemappings--settingkeyseqfile-string)
+Sets the per-project default sub-folder into which external libraries are packaged. Rules from [`packageLibraryMappings`](#packagefilemappings--taskkeyseqfile-string)
 will override this setting. 
 
 **NB!**: This directory must be relative to the [`packageOutputDir`](#packageoutputdir--settingkeyfile) so don't prepend
@@ -415,7 +413,7 @@ Prints ASCII graph of currently selected project to console. Useful for debuggin
 
 ### From SBT
 
-To run the plugin from SBT simply use [runIDE](#runide-nopce-nodebug-suspend-blocking--inputkeyunit) task.
+To run the plugin from SBT simply use [runIDE](#runide-nodebug-suspend-blocking--inputkeyunit) task.
 Your plugin will be automatically compiled, an artifact built and attached to new IntelliJ instance.
 
 Debugger can later be attached to the process remotely - the default port is 5005.

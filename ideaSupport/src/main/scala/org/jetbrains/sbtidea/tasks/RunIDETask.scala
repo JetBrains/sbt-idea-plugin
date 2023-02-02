@@ -15,9 +15,8 @@ object RunIDETask extends SbtIdeaInputTask[Unit] {
     import complete.DefaultParsers.*
     packageArtifact.value // build the plugin before running
     PluginLogger.bind(new SbtPluginLogger(streams.value))
-    val opts = spaceDelimited("[noPCE] [noDebug] [suspend] [blocking]").parsed
+    val opts = spaceDelimited("[noDebug] [suspend] [blocking]").parsed
     val vmOptions = intellijVMOptions.value.copy(
-      noPCE = opts.contains("noPCE"),
       debug = !opts.contains("noDebug"),
       suspend = opts.contains("suspend")
     )
