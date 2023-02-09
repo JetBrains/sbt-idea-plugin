@@ -13,17 +13,16 @@ class IdeaDistInstaller(buildInfo: BuildInfo) extends Installer[IdeaDist] {
 
   override def isInstalled(art: IdeaDist)(implicit ctx: InstallContext): Boolean =
     IdeaUpdater.isDumbIdea ||
-      (ctx.baseDirectory.toFile.exists() &&
-       ctx.baseDirectory.toFile.listFiles().nonEmpty)
+      ctx.baseDirectory.toFile.exists() &&
+       ctx.baseDirectory.toFile.listFiles().nonEmpty
 
-  override def downloadAndInstall(art: IdeaDist)(implicit ctx: InstallContext): Unit =
-    installDist(FileDownloader(ctx.baseDirectory.getParent).download(art.dlUrl))
+  override def downloadAndInstall(art: IdeaDist)(implicit ctx: InstallContext): Unit = {
+    val artifactPath = FileDownloader(ctx.baseDirectory.getParent).download(art.dlUrl)
+    installDist(artifactPath)
+  }
 
-  private def tmpDir(implicit ctx: InstallContext) =
+  private def tmpDir(implicit ctx: InstallContext): Path =
     ctx.baseDirectory.getParent.resolve(s"${buildInfo.edition.name}-${buildInfo.buildNumber}-TMP")
-
-  private[idea] def downloadArtifact(art: IdeaDist)(implicit ctx: InstallContext): Path =
-    FileDownloader(ctx.baseDirectory.getParent).download(art.dlUrl)
 
   private[idea] def installDist(artifact: Path)(implicit ctx: InstallContext): Path = {
     import org.jetbrains.sbtidea.Keys.IntelliJPlatform.MPS
