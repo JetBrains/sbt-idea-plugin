@@ -1,6 +1,6 @@
 package org.jetbrains.sbtidea.download.idea
 
-import org.jetbrains.sbtidea.Keys
+import org.jetbrains.sbtidea.{Keys, PluginLogger as log}
 import org.jetbrains.sbtidea.download.BuildInfo
 import org.jetbrains.sbtidea.download.api.Resolver
 import sbt.URL
@@ -20,7 +20,7 @@ class IJRepoIdeaResolver extends Resolver[IdeaDependency] {
     val locationDescriptor = IntellijVersionUtils.detectArtifactLocation(platform, artifactSuffix)
     val artifactVersion = locationDescriptor.artifactVersion
     val artifactUrl = locationDescriptor.url
-    println(s"""[$LoggerName] build number: ${platform.buildNumber}, artifact version: $artifactVersion, artifact url: $artifactUrl""")
+    log.warn(s"""[$LoggerName] Artifact location for build number ${platform.buildNumber}: version: $artifactVersion, url: $artifactUrl""")
     artifactUrl
   }
 }

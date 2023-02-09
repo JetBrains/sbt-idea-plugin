@@ -1,6 +1,7 @@
 package org.jetbrains.sbtidea.download.idea
 
 import org.jetbrains.sbtidea.Keys.*
+import org.jetbrains.sbtidea.PluginLogger as log
 import org.jetbrains.sbtidea.download.BuildInfo
 import org.jetbrains.sbtidea.download.IdeaUpdater.IJ_REPO_OVERRIDE
 import sbt.{MavenRepository, url}
@@ -9,6 +10,7 @@ import java.io.IOException
 import java.net.SocketTimeoutException
 
 object IntellijVersionUtils {
+  private val LoggerName = this.getClass.getSimpleName.stripSuffix("$")
 
   case class IntellijArtifactLocationDescriptor(
     artifactVersion: String,
@@ -80,8 +82,7 @@ object IntellijVersionUtils {
           (intellijVersionEapCandidate, IntellijRepositories.Eap)
         else {
           val fallback = (intellijVersionEapCandidate, IntellijRepositories.Eap)
-          val exception = new IllegalStateException(s"Cannot determine build type for version $intellijVersion, fallback to: ${fallback._1} (if the fallback isn't resolved from local caches try change it in sources and reload)")
-          exception.printStackTrace()
+          log.warn(s"[$LoggerName] Cannot detect artifact location for version $intellijVersion, fallback to: $fallback")
           fallback
         }
       }
@@ -102,10 +103,12 @@ object IntellijVersionUtils {
 
   private val BaseIntelliJRepositoryUrl = {
     val urlFormEnv = System.getProperty(IJ_REPO_OVERRIDE)
-    if (urlFormEnv == null)
-      "https://www.jetbrains.com/intellij-repository"
-    else
+    if (urlFormEnv != null) {
+      log.warn(s"[$LoggerName] Using non-default IntelliJ repository URL: $urlFormEnv")
       urlFormEnv
+    } else {
+      "https://www.jetbrains.com/intellij-repository"
+    }
   }
 
   private object IntellijRepositories {
