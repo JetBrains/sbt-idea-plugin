@@ -20,19 +20,26 @@ class FileDownloader(private val baseDirectory: Path) {
 
   private val downloadDirectory = getOrCreateDLDir()
 
+  private val FilePartSuffix = ".part"
+
   @throws(classOf[DownloadException])
   def download(url: URL, optional: Boolean = false): Path = try {
     val partFile = downloadNativeWithConnectionRetry(url) { case (progressInfo, to) =>
       val text = s"\r${progressInfo.renderAll} -> $to"
       if (!progressInfo.done) print(text) else println(text)
     }
-    val targetFile = partFile.getParent.resolve(partFile.getFileName.toString.replace(".part", ""))
-    if (targetFile.toFile.exists()) {
-      log.warn(s"$targetFile already exists, recovering failed install...")
-      Files.delete(targetFile)
+    partFile match {
+      case DownloadedPath.PartPath(partPath) =>
+        val targetFile = partPath.getParent.resolve(partPath.getFileName.toString.replace(FilePartSuffix, ""))
+        if (targetFile.toFile.exists()) {
+          log.warn(s"$targetFile already exists, recovering failed install...")
+          Files.delete(targetFile)
+        }
+        Files.move(partPath, targetFile)
+        targetFile
+      case DownloadedPath.ZipPath(path) =>
+        path
     }
-    Files.move(partFile, targetFile)
-    targetFile
   } catch {
     case e: Exception if optional =>
       log.warn(s"Can't download${if (optional) " optional" else ""} $url: $e")
@@ -64,12 +71,18 @@ class FileDownloader(private val baseDirectory: Path) {
   private def getPositiveLongProperty(key: String, default: Long): Long =
     Option(System.getProperty(key)).map(_.toLong).getOrElse(default).ensuring(_ >= 0, s"key '$key' must be a non-negative value")
 
-  private def downloadNativeWithConnectionRetry(url: URL)(progressCallback: ProgressCallback): Path = {
+  private sealed trait DownloadedPath
+  private object DownloadedPath {
+    case class PartPath(path: Path) extends DownloadedPath
+    case class ZipPath(path: Path) extends DownloadedPath
+  }
+
+  private def downloadNativeWithConnectionRetry(url: URL)(progressCallback: ProgressCallback): DownloadedPath = {
     val retry1Timeout: Duration = DownloadRetryConnectionTimeoutWait
     val retry2Timeout: Duration = DownloadRetryConnectionIssueWait
 
     //noinspection NoTailRecursionAnnotation
-    def inner(retries1: Long, retries2: Long): Path = {
+    def inner(retries1: Long, retries2: Long): DownloadedPath = {
       try downloadNative(url)(progressCallback) catch {
         //this can happen when server is restarted
         case exception @ (_: SocketTimeoutException | _: SSLException) if retries1 > 0 =>
@@ -91,30 +104,40 @@ class FileDownloader(private val baseDirectory: Path) {
   }
 
   @throws[SocketTimeoutException]
-  private def downloadNative(url: URL)(progressCallback: ProgressCallback): Path = {
+  private def downloadNative(url: URL)(progressCallback: ProgressCallback): DownloadedPath = {
     val connection = url.openConnection()
     connection.setConnectTimeout(SocketConnectionTimeoutMs)
     connection.setReadTimeout(SocketReadTimeoutMs)
 
     val remoteMetaData = getRemoteMetaData(url)
-    val to =
+    val fileNameWithoutPartSuffix =
       if (remoteMetaData.fileName.nonEmpty)
-        downloadDirectory.resolve(remoteMetaData.fileName + ".part")
+        remoteMetaData.fileName
       else
-        downloadDirectory.resolve(Math.abs(url.hashCode()).toString + ".part")
-    val localLength = if (to.toFile.exists()) Files.size(to) else 0
+        Math.abs(url.hashCode()).toString
 
-    if (remoteMetaData.length == localLength) {
+    val to = downloadDirectory.resolve(fileNameWithoutPartSuffix)
+    val toLength = if (to.toFile.exists()) Files.size(to) else -1
+    if (remoteMetaData.length == toLength) {
+      //can be present if this VM option was set in previous project import run:
+      // `org.jetbrains.sbtidea.download.idea.IdeaDistInstaller.KeepDownloadedFilesVmOption`
+      log.warn(s"File already downloaded: $to")
+      return DownloadedPath.ZipPath(to)
+    }
+    val toPart = downloadDirectory.resolve(fileNameWithoutPartSuffix + FilePartSuffix)
+    val tpPartLength = if (toPart.toFile.exists()) Files.size(toPart) else -1
+
+    if (remoteMetaData.length == tpPartLength) {
       log.warn(s"Part file already downloaded: recovering interrupted install...")
-      return to
+      return DownloadedPath.PartPath(toPart)
     }
 
-    if (to.toFile.exists() && isResumeSupported(url)) {
-      connection.setRequestProperty("Range", s"bytes=$localLength-")
-      log.info(s"Resuming download of $url to $to")
+    if (toPart.toFile.exists() && isResumeSupported(url)) {
+      connection.setRequestProperty("Range", s"bytes=$tpPartLength-")
+      log.info(s"Resuming download of $url to $toPart")
     } else {
-      Files.deleteIfExists(to)
-      log.info(s"Starting download $url to $to")
+      Files.deleteIfExists(toPart)
+      log.info(s"Starting download $url to $toPart")
     }
 
     var inChannel: ReadableByteChannel = null
@@ -123,9 +146,9 @@ class FileDownloader(private val baseDirectory: Path) {
       val blockSize = 1 << 24 // 16M
       var transferred = -1L
       inChannel = Channels.newChannel(connection.getInputStream)
-      outStream = new FileOutputStream(to.toFile, to.toFile.exists())
+      outStream = new FileOutputStream(toPart.toFile, toPart.toFile.exists())
       val expectedFileSize = remoteMetaData.length
-      val rbc = new RBCWrapper(inChannel, expectedFileSize, localLength, progressCallback, to)
+      val rbc = new RBCWrapper(inChannel, expectedFileSize, tpPartLength, progressCallback, toPart)
       val fileChannel = outStream.getChannel
       var position = fileChannel.position()
 
@@ -134,10 +157,10 @@ class FileDownloader(private val baseDirectory: Path) {
         position += transferred
       }
 
-      if (expectedFileSize > 0 && Files.size(to) != expectedFileSize) {
-        throw new DownloadException(s"Incorrect downloaded file size: expected $expectedFileSize, got ${Files.size(to)}")
+      if (expectedFileSize > 0 && Files.size(toPart) != expectedFileSize) {
+        throw new DownloadException(s"Incorrect downloaded file size: expected $expectedFileSize, got ${Files.size(toPart)}")
       }
-      to
+      DownloadedPath.PartPath(toPart)
     } finally {
       try { if (inChannel != null) inChannel.close() } catch { case e: Exception => log.error(s"Failed to close input channel: $e") }
       try { if (outStream != null) outStream.close() } catch { case e: Exception => log.error(s"Failed to close output stream: $e") }
