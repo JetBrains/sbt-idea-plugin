@@ -28,9 +28,18 @@ object PluginLogger extends PluginLogger {
     }
 
   }
-  private var instance: PluginLogger = new BufferLogger
+
+  private val isInUnitTest: Boolean = {
+    val stacktrace = new RuntimeException().getStackTrace
+    stacktrace.exists(_.getClassName.contains("org.scalatest.tools.Runner"))
+  }
+
+  private var instance: PluginLogger =
+    if (isInUnitTest) new ConsoleLogger
+    else new BufferLogger
 
   def bind(actualLogger: PluginLogger): PluginLogger = {
+    assert(actualLogger != this, "Can't assign logger instance to self")
     val savedInstance = instance
     instance match {
       case bl: BufferLogger =>

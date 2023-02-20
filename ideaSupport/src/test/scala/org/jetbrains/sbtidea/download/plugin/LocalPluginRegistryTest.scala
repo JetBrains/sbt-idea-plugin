@@ -5,7 +5,7 @@ import org.jetbrains.sbtidea.Keys.String2Plugin
 import org.jetbrains.sbtidea.download.NioUtils
 import org.jetbrains.sbtidea.download.idea.IdeaMock
 import org.jetbrains.sbtidea.packaging.artifact
-import org.jetbrains.sbtidea.{ConsoleLogger, packaging, pathToPathExt}
+import org.jetbrains.sbtidea.{packaging, pathToPathExt}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfter, Inspectors}
@@ -15,7 +15,7 @@ import java.io.OutputStreamWriter
 import java.nio.file.{FileSystems, Files}
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 
-final class LocalPluginRegistryTest extends AnyFunSuite with Matchers with Inspectors with IdeaMock with PluginMock with ConsoleLogger with BeforeAndAfter {
+final class LocalPluginRegistryTest extends AnyFunSuite with Matchers with Inspectors with IdeaMock with PluginMock with BeforeAndAfter {
 
   private val ideaRoot = installIdeaMock
 

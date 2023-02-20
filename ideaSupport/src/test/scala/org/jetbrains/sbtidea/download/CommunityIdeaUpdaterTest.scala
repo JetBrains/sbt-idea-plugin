@@ -1,13 +1,12 @@
 package org.jetbrains.sbtidea.download
 
-import org.jetbrains.sbtidea.ConsoleLogger
 import org.jetbrains.sbtidea.download.idea.IdeaMock
 import org.scalatest.Ignore
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 @Ignore
-final class CommunityIdeaUpdaterTest extends AnyFunSuite with Matchers with IdeaMock with ConsoleLogger {
+final class CommunityIdeaUpdaterTest extends AnyFunSuite with Matchers with IdeaMock {
 
 //  test("IdeaUpdater Integration Test") {
 //    val dumbModeKey = "IdeaUpdater.dumbMode"

@@ -1,6 +1,6 @@
 package org.jetbrains.sbtidea.packaging
 
-import org.jetbrains.sbtidea.ConsoleLogger
+import org.jetbrains.sbtidea.PluginLogger
 import org.jetbrains.sbtidea.packaging.mappings.LinearMappingsBuilder
 import org.jetbrains.sbtidea.packaging.structure.sbtImpl.SbtPackagedProjectNodeImpl
 import org.scalatest.matchers.should.Matchers
@@ -8,7 +8,7 @@ import sbt.*
 
 import java.io.{File, ObjectInputStream}
 
-trait MappingsTestBase extends Matchers with ConsoleLogger {
+trait MappingsTestBase extends Matchers {
 
   case class Header(buildDir: File, userHome: File, outputDir: File)
   case class TestData(header: Header, structure: Seq[SbtPackagedProjectNodeImpl], mappings: Mappings)
@@ -50,7 +50,7 @@ trait MappingsTestBase extends Matchers with ConsoleLogger {
     val header = loadHeader(revision)
     val structure = readStructure(revision)
     val mappings= readMappings(revision)
-    val actualMappings = new LinearMappingsBuilder(header.outputDir, log).buildMappings(structure).map{ x=>
+    val actualMappings = new LinearMappingsBuilder(header.outputDir, PluginLogger).buildMappings(structure).map{ x=>
       x.copy(
         from = x.from.relativeTo(header.buildDir).orElse(x.from.relativeTo(header.userHome)).getOrElse(x.from),
         to   = x.to.relativeTo(header.buildDir).orElse(x.to.relativeTo(header.userHome)).getOrElse(x.to)

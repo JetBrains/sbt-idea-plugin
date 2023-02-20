@@ -1,12 +1,8 @@
 package org.jetbrains.sbtidea
 
-trait ConsoleLogger extends LogAware {
-  override protected def log: PluginLogger =  new PluginLogger {
-    override def info(msg: => String): Unit = println(msg)
-    override def warn(msg: => String): Unit = println(msg)
-    override def error(msg: => String): Unit = sys.error(msg)
-    override def fatal(msg: => String): Unit = sys.error(msg)
-  }
-
-  PluginLogger.bind(log)
+final class ConsoleLogger extends PluginLogger {
+  override def info(msg: => String): Unit = println(msg)
+  override def warn(msg: => String): Unit = println(msg)
+  override def error(msg: => String): Unit = throw new RuntimeException(msg)
+  override def fatal(msg: => String): Unit = throw new RuntimeException(msg)
 }

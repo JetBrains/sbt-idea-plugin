@@ -1,5 +1,6 @@
 package org.jetbrains.sbtidea.download.plugin
 
+import org.jetbrains.sbtidea.ConsoleLogger
 import org.jetbrains.sbtidea.Keys.String2Plugin
 import org.jetbrains.sbtidea.download.idea.IdeaMock
 import org.jetbrains.sbtidea.tasks.CreatePluginsClasspath
@@ -25,7 +26,7 @@ class PluginClassPathTest extends IntellijPluginInstallerTestBase with IdeaMock 
             "org.jetbrains.plugins.yaml".toPlugin,
             pluginJarMetadata.toPluginId,
             pluginZipMetadata.toPluginId),
-        log,
+        new ConsoleLogger,
         addSources = true)
 
     classpath.map(_.data.getName) should contain allElementsOf Seq("HOCON.jar", "yaml.jar", "Scala.jar", "properties.jar")
@@ -43,10 +44,10 @@ class PluginClassPathTest extends IntellijPluginInstallerTestBase with IdeaMock 
         IDEA_BUILDINFO,
         Seq("com.intellij.properties".toPlugin,
             "org.jetbrains.plugins.yaml".toPlugin),
-        log,
+        new ConsoleLogger,
         addSources = true)
 
-    classpath.map(_.data.getName) should not contain (wrongJar)
+    classpath.map(_.data.getName) should not contain wrongJar
   }
 
 

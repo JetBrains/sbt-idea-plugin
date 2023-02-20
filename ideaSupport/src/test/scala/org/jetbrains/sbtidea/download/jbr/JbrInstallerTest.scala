@@ -1,15 +1,15 @@
 package org.jetbrains.sbtidea.download.jbr
 
+import org.jetbrains.sbtidea.TmpDirUtils
 import org.jetbrains.sbtidea.download.api.InstallContext
 import org.jetbrains.sbtidea.download.idea.IdeaMock
-import org.jetbrains.sbtidea.{ConsoleLogger, TmpDirUtils}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import sbt.*
 
 import java.nio.file.{Files, Path}
 
-class JbrInstallerTest extends AnyFunSuite with Matchers with IdeaMock with TmpDirUtils with ConsoleLogger {
+class JbrInstallerTest extends AnyFunSuite with Matchers with IdeaMock with TmpDirUtils {
 
   private val jbrFileName = "jbr-11_0_5-linux-x64-b520.38.tar.gz"
   private val jbrMock = s"/org/jetbrains/sbtidea/download/$jbrFileName"

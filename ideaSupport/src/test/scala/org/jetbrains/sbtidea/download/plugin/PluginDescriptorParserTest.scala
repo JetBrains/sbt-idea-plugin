@@ -1,12 +1,11 @@
 package org.jetbrains.sbtidea.download.plugin
 
-import org.jetbrains.sbtidea.ConsoleLogger
 import org.jetbrains.sbtidea.download.idea.IdeaMock
+import org.jetbrains.sbtidea.download.plugin.PluginDescriptor.{Dependency, load}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import PluginDescriptor.{Dependency, load}
 
-class PluginDescriptorParserTest extends AnyFunSuite with Matchers with IdeaMock with PluginMock with ConsoleLogger {
+class PluginDescriptorParserTest extends AnyFunSuite with Matchers with IdeaMock with PluginMock {
 
   private val pluginDescriptor = PluginDescriptor("id", "vendor", "name", "1.0", "111", "222",
     Seq(Dependency("foo", optional = true), Dependency("bar", optional = true)))

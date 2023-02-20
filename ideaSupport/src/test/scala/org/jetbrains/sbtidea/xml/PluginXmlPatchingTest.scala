@@ -1,17 +1,15 @@
 package org.jetbrains.sbtidea.xml
 
-import java.nio.file.{Files, StandardCopyOption}
-
-import org.jetbrains.sbtidea.ConsoleLogger
-import org.jetbrains.sbtidea.pluginXmlOptions
 import org.jetbrains.sbtidea.download.idea.IdeaMock
 import org.jetbrains.sbtidea.packaging.artifact
+import org.jetbrains.sbtidea.pluginXmlOptions
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
+import java.nio.file.{Files, StandardCopyOption}
 import scala.collection.JavaConverters.collectionAsScalaIterableConverter
 
-private class PluginXmlPatchingTest extends AnyFunSuite with Matchers with IdeaMock with ConsoleLogger {
+private class PluginXmlPatchingTest extends AnyFunSuite with Matchers with IdeaMock {
 
   private def getPluginXml = {
     val tmpFile = createTempFile("", "plugin.xml")

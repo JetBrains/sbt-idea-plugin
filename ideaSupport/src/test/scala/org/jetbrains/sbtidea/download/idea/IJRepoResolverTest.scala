@@ -1,12 +1,12 @@
 package org.jetbrains.sbtidea.download.idea
 
 import org.jetbrains.sbtidea.CapturingLogger.captureLog
-import org.jetbrains.sbtidea.{ConsoleLogger, TmpDirUtils}
+import org.jetbrains.sbtidea.TmpDirUtils
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 
-class IJRepoResolverTest extends AnyFunSuite with Matchers with IdeaMock with TmpDirUtils with ConsoleLogger {
+class IJRepoResolverTest extends AnyFunSuite with Matchers with IdeaMock with TmpDirUtils {
 
   import org.jetbrains.sbtidea.download.IdeaUpdater.*
 

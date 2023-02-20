@@ -140,7 +140,7 @@ class IdeaConfigBuilder(moduleName: String,
     }
   }
 
-  private def mkEnv(env: Map[String, String]): String =  {
+  private def mkEnv(env: Map[String, String]): String = {
       val elems = env
         .map { case (k, v) => s"""<env name="$k" value="$v" />"""}
         .mkString("\n")
