@@ -2,7 +2,6 @@ package org.jetbrains.sbtidea.download.idea
 
 
 import org.jetbrains.sbtidea.download.api.*
-import org.jetbrains.sbtidea.download.idea.IdeaDistInstaller.KeepDownloadedFilesVmOption
 import org.jetbrains.sbtidea.download.{BuildInfo, FileDownloader, IdeaUpdater, NioUtils}
 import org.jetbrains.sbtidea.{pathToPathExt, PluginLogger as log}
 
@@ -64,10 +63,10 @@ class IdeaDistInstaller(buildInfo: BuildInfo) extends Installer[IdeaDist] {
 
     fixAccessRights(ctx.baseDirectory)
 
-    val keepDownloadedFiles = System.getProperty(KeepDownloadedFilesVmOption) != null
     if (!keepDownloadedFiles) {
       NioUtils.delete(artifact)
     }
+
     log.info(s"Installed ${buildInfo.edition.name}($buildInfo) to ${ctx.baseDirectory}")
     ctx.baseDirectory
   }
@@ -89,8 +88,4 @@ class IdeaDistInstaller(buildInfo: BuildInfo) extends Installer[IdeaDist] {
       }
     }
 
-}
-
-object IdeaDistInstaller {
-  val KeepDownloadedFilesVmOption = "sbt.idea.plugin.keep.downloaded.files"
 }

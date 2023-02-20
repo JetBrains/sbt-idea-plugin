@@ -118,12 +118,18 @@ class FileDownloader(private val baseDirectory: Path) {
 
     val to = downloadDirectory.resolve(fileNameWithoutPartSuffix)
     val toLength = if (to.toFile.exists()) Files.size(to) else -1
+
+    //The file can be present if this VM option was set in previous project import run:
+    // `-Dsbt.idea.plugin.keep.downloaded.files`
+    //
+    //NOTE: file can be present but can have a different size for some idea versions
+    //E.g. ideaIU-231.7515-EAP-CANDIDATE-SNAPSHOT can in reality represent different 231.7517.* versions
+    //Because when new EAP-CANDIDATE is uploaded, the previous one is overridden
     if (remoteMetaData.length == toLength) {
-      //can be present if this VM option was set in previous project import run:
-      // `org.jetbrains.sbtidea.download.idea.IdeaDistInstaller.KeepDownloadedFilesVmOption`
       log.warn(s"File already downloaded: $to")
       return DownloadedPath.ZipPath(to)
     }
+
     val toPart = downloadDirectory.resolve(fileNameWithoutPartSuffix + FilePartSuffix)
     val tpPartLength = if (toPart.toFile.exists()) Files.size(toPart) else -1
 
