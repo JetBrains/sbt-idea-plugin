@@ -52,6 +52,8 @@ object IntellijVersionUtils {
       else
         intellijVersion
 
+    import BuildInfo.*
+
     val (artifactVersion, repositoryUrl) =
       if (intellijVersion == LATEST_EAP_SNAPSHOT)
         (intellijVersion, IntellijRepositories.Eap)
@@ -94,12 +96,6 @@ object IntellijVersionUtils {
       url(urlString)
     )
   }
-
-  private val EAP_CANDIDATE_SNAPSHOT_SUFFIX = "-EAP-CANDIDATE-SNAPSHOT"
-  private val EAP_SNAPSHOT_SUFFIX = "-EAP-SNAPSHOT"
-  private val SNAPSHOT_SUFFIX = "-SNAPSHOT"
-
-  private val LATEST_EAP_SNAPSHOT = "LATEST-EAP-SNAPSHOT"
 
   private val BaseIntelliJRepositoryUrl = {
     val urlFormEnv = System.getProperty(IJ_REPO_OVERRIDE)

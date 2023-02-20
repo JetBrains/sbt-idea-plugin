@@ -15,6 +15,10 @@ package object download {
 
   object BuildInfo {
     val LATEST_EAP_SNAPSHOT = "LATEST-EAP-SNAPSHOT"
+
+    val EAP_CANDIDATE_SNAPSHOT_SUFFIX = "-EAP-CANDIDATE-SNAPSHOT"
+    val EAP_SNAPSHOT_SUFFIX = "-EAP-SNAPSHOT"
+    val SNAPSHOT_SUFFIX = "-SNAPSHOT"
   }
 
   def withConnection[V](url: URL)(f: => HttpURLConnection => V): V = {
