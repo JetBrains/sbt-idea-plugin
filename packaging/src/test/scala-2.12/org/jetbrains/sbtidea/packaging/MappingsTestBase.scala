@@ -46,7 +46,7 @@ trait MappingsTestBase extends Matchers {
     TestData(header, structure, mappings)
   }
 
-  def testMappings(revision: String) {
+  def testMappings(revision: String): Unit = {
     val header = loadHeader(revision)
     val structure = readStructure(revision)
     val mappings= readMappings(revision)
