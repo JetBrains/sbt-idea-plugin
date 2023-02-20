@@ -1,10 +1,10 @@
 package org.jetbrains.sbtidea.download
 
-import org.jetbrains.sbtidea.{IntellijPlugin, JbrInfo, PluginLogger as log}
 import org.jetbrains.sbtidea.download.api.*
 import org.jetbrains.sbtidea.download.idea.IdeaDependency
 import org.jetbrains.sbtidea.download.jbr.JbrDependency
 import org.jetbrains.sbtidea.download.plugin.{LocalPluginRegistry, PluginDependency, PluginRepoUtils}
+import org.jetbrains.sbtidea.{IntellijPlugin, JbrInfo, PluginLogger as log}
 
 import java.nio.file.Path
 
@@ -26,7 +26,20 @@ class CommunityUpdater(baseDirectory: Path, ideaBuildInfo: BuildInfo, jbrInfo: J
       JbrDependency(baseDirectory, ideaBuildInfo, jbrInfo, Seq(ideaDependency))  +:
       plugins.map(pl => PluginDependency(pl, ideaBuildInfo, Seq(ideaDependency)))
 
-  def update(): Unit = topoSort(dependencies).foreach(update)
+  def update(): Unit = {
+    topoSort(dependencies).foreach(update)
+
+    val actualBuildNumber = ideaBuildInfo.getActualIdeaBuild(baseDirectory)
+    val buildNumber = ideaBuildInfo.buildNumber
+    if (buildNumber != actualBuildNumber) {
+      log.warn(
+        s"""### Installed build number is different form the original build number
+           |### Installed : $actualBuildNumber
+           |### Original  : $buildNumber
+           |""".stripMargin.trim
+      )
+    }
+  }
 
   def update(dependency: UnresolvedArtifact): Unit = {
     val resolved = dependency.resolve
