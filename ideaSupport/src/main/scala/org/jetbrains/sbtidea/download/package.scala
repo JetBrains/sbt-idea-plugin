@@ -2,7 +2,7 @@ package org.jetbrains.sbtidea
 
 import com.eclipsesource.json.Json
 import org.jetbrains.sbtidea.Keys.IntelliJPlatform as _
-
+import org.jetbrains.sbtidea.PluginLogger as log
 import java.net.{HttpURLConnection, URL}
 import java.nio.file.{Files, Path}
 import scala.concurrent.duration.DurationInt
@@ -34,25 +34,33 @@ package object download {
     }
   }
 
-  implicit class BuildInfoOps(val buildInfo: BuildInfo) {
-
-    def getDeclaredOrActualNoSnapshotBuild(ideaRoot: Path): String =
-      if (buildInfo.buildNumber == BuildInfo.LATEST_EAP_SNAPSHOT)
-        getActualIdeaBuild(ideaRoot)
-      else
-        buildInfo.buildNumber
+  implicit class BuildInfoOps(private val buildInfo: BuildInfo) extends AnyVal {
 
     def getActualIdeaBuild(ideaRoot: Path): String = {
+      //Just for the record: build id is already present in `build.txt` file
       val productInfo = ideaRoot.resolve("product-info.json")
-      if (buildInfo.buildNumber.count(_ == '.') < 2 && productInfo.exists) { // most likely some LATEST-EAP-SNAPSHOT kind of version
+      val actualBuild = if (productInfo.exists)
         try {
           val content = new String(Files.readAllBytes(productInfo))
           val parsed = Json.parse(content)
-          parsed.asObject().getString("buildNumber", buildInfo.buildNumber)
+          val buildNumberValue = Option(parsed.asObject().getString("buildNumber", null))
+          buildNumberValue.toRight(s"Can't find `buildNumber` key in product info file: $productInfo")
         } catch {
-          case _: Throwable => buildInfo.buildNumber
+          case t: Throwable =>
+            Left(s"Error reading `buildNumber` from product-info file $productInfo: ${t.getMessage}")
         }
-      } else buildInfo.buildNumber
+      else
+        Left(s"Can't resolve product-info file: $productInfo")
+
+      actualBuild match {
+        case Left(errorMessage) =>
+          val fallbackValue = buildInfo.buildNumber
+          log.error(s"[getActualIdeaBuild] $errorMessage")
+          log.error(s"[getActualIdeaBuild] Fallback to build number: $fallbackValue")
+          fallbackValue
+        case Right(value) =>
+          value
+      }
     }
 
   }

@@ -17,7 +17,7 @@ object GenerateIdeaRunConfigurations extends SbtIdeaTask[Unit] {
       val buildInfo = BuildInfo(
         intellijBuild.in(ThisBuild).value,
         intellijPlatform.in(ThisBuild).value)
-      val actualIntellijBuild = buildInfo.getDeclaredOrActualNoSnapshotBuild(intellijBaseDirectory.in(ThisBuild).value.toPath)
+      val actualIntellijBuild = buildInfo.getActualIdeaBuild(intellijBaseDirectory.in(ThisBuild).value.toPath)
       val classLoadingStrategy = ClasspathStrategy.forVersion(actualIntellijBuild)
       PluginLogger.info(s"Class loading strategy: since ${classLoadingStrategy.version}")
       val vmOptions = intellijVMOptions.value.copy(debug = false)
