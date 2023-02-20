@@ -6,14 +6,16 @@ import org.scalatest.matchers.should.Matchers
 
 class SearchPluginIdTest extends AnyFunSuite with IdeaMock with Matchers {
 
-  test("testApply") {
-    val searcher = new SearchPluginId(installIdeaMock, IDEA_BUILDINFO, useRemote = false)
-    searcher("prop") should not be empty
+  test("search plugin: local only") {
+    val searcher = new SearchPluginId(installIdeaMock, IDEA_BUILDINFO, useRemote = false, useBundled = true)
+    val actual = searcher("prop")
+    actual should not be empty
   }
 
-  test("marketplace searching") {
+  test("search plugin: marketplace only") {
     val searcher = new SearchPluginId(installIdeaMock, IDEA_BUILDINFO, useRemote = true, useBundled = false)
-    searcher("Scala") should not be empty
+    val actual = searcher("Scala")
+    actual should not be empty
   }
 
 }
