@@ -112,7 +112,7 @@ object LocalPluginRegistry {
   def extractPluginIdsFromResources(resourceDirs: Seq[Path]): Either[String, Seq[String]] =
     extractDescriptorFromResources(resourceDirs).right.map(descriptors => descriptors.map(_.id).distinct)
 
-  def extractInstalledPluginDescriptor(pluginRoot: Path): Either[String, String] = {
+  def extractInstalledPluginDescriptor(pluginRoot: Path): Either[String, PluginXmlContent] = {
     try {
       if (Files.isDirectory(pluginRoot)) {
         val lib = pluginRoot.resolve("lib")
@@ -142,7 +142,7 @@ object LocalPluginRegistry {
     descriptor
       .fold(
         err => Left(err),
-        data => Right(PluginDescriptor.load(data))
+        data => Right(PluginDescriptor.load(data.content))
       )
   }
 

@@ -10,7 +10,7 @@ private class PluginXmlDetector extends Predicate[Path] {
   import org.jetbrains.sbtidea.packaging.artifact.*
 
   private val MAP = Collections.emptyMap[String, Any]()
-  var result: String = _
+  var result: PluginXmlContent = _
 
   override def test(t: Path): Boolean = {
     if (!t.toString.endsWith(".jar"))
@@ -22,7 +22,8 @@ private class PluginXmlDetector extends Predicate[Path] {
       using(FileSystems.newFileSystem(uri, MAP)) { fs =>
         val maybePluginXml = fs.getPath("META-INF", "plugin.xml")
         if (Files.exists(maybePluginXml)) {
-          result = new String(Files.readAllBytes(maybePluginXml))
+          val content = new String(Files.readAllBytes(maybePluginXml))
+          result = PluginXmlContent(maybePluginXml, content)
           true
         } else {
           false
@@ -33,3 +34,5 @@ private class PluginXmlDetector extends Predicate[Path] {
     }
   }
 }
+
+case class PluginXmlContent(path: Path, content: String)

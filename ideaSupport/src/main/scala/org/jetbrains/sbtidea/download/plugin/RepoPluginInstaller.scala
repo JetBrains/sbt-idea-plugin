@@ -53,7 +53,7 @@ class RepoPluginInstaller(buildInfo: BuildInfo)
         log.info(s"Up-to-date check failed, assuming plugin $plugin is out of date")
         return false
       case Right(data) =>
-        val descriptor = PluginDescriptor.load(data)
+        val descriptor = PluginDescriptor.load(data.content)
         if (!isPluginCompatibleWithIdea(descriptor)) {
           log.warn(s"Plugin $plugin is incompatible with current ideaVersion(${buildInfo.buildNumber}): $descriptor")
           return false

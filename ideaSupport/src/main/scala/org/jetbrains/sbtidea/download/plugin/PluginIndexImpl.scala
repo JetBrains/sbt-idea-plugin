@@ -8,22 +8,34 @@ import sbt.*
 
 import java.io.*
 import java.nio.file.{Files, Path}
-import java.util.function.Consumer
+import java.util.stream.Collectors
+import scala.jdk.CollectionConverters.asScalaBufferConverter
 
 class PluginIndexImpl(ideaRoot: Path) extends PluginIndex {
 
   import PluginIndexImpl.*
 
-  import scala.collection.mutable
-
-  type PluginId = String
-  type PluginFolder = String
-  type PersistentRepr = Array[String]
-  type Repr = mutable.HashMap[PluginId, (Path, PluginDescriptor)]
+  private type PluginId = String
+  private type ReprMutable = scala.collection.mutable.HashMap[PluginId, (Path, PluginDescriptor)]
+  private type Repr = scala.collection.Map[PluginId, (Path, PluginDescriptor)]
 
   private val indexFile: Path = ideaRoot / INDEX_FILENAME
 
-  lazy val index: Repr = {
+  private lazy val index: ReprMutable = {
+    val result = initIndex
+
+    val pluginIds = result.keys.toSeq
+      .filter(_.trim.nonEmpty) // for some reason there is some empty id
+      .sorted
+      .mkString(", ")
+    log.info(s"Plugin ids from $INDEX_FILENAME: $pluginIds")
+
+    val mutable = new ReprMutable
+    mutable ++= result
+    mutable
+  }
+
+  private def initIndex: Repr = {
     if (indexFile.exists) {
       try {
         loadFromFile()
@@ -38,7 +50,7 @@ class PluginIndexImpl(ideaRoot: Path) extends PluginIndex {
     }
   }
 
-  private def buildAndSaveIndex() = {
+  private def buildAndSaveIndex(): Repr = {
     val fromPluginsDir = buildFromPluginsDir()
     try {
       saveToFile(fromPluginsDir)
@@ -65,9 +77,9 @@ class PluginIndexImpl(ideaRoot: Path) extends PluginIndex {
 
   override def getAllDescriptors: Seq[PluginDescriptor] = index.values.map(_._2).toSeq
 
-  private def loadFromFile(): Repr = {
+  private def loadFromFile(): ReprMutable = {
     import PluginDescriptor.*
-    val buffer = new Repr
+    val buffer = new ReprMutable
     using(new FileInputStream(indexFile.toFile)) { fis =>
       using(new ObjectInputStream(new BufferedInputStream(fis))) { stream =>
         val version = stream.readInt()
@@ -101,21 +113,18 @@ class PluginIndexImpl(ideaRoot: Path) extends PluginIndex {
     }
   }
 
-  private def buildFromPluginsDir(): Repr = {
-    val buffer = new Repr
-    class IndexBuilder extends Consumer[Path] {
-      override def accept(path: Path): Unit = {
-        val pluginMetaData = extractPluginMetaData(path)
-        pluginMetaData match {
-          case Left(error) =>
-            log.warn(s"Failed to add plugin to index: $error")
-          case Right(descriptor) =>
-            buffer.put(descriptor.id, path -> descriptor)
-        }
+  private def buildFromPluginsDir(): Map[PluginId, (Path, PluginDescriptor)] = {
+    val pluginDirs = Files.list(ideaRoot.resolve("plugins")).collect(Collectors.toList[Path]).asScala
+    pluginDirs.flatMap { pluginDir =>
+      val pluginMetaData = extractPluginMetaData(pluginDir)
+      pluginMetaData match {
+        case Left(error) =>
+          log.warn(s"Failed to add plugin to index: $error")
+          None
+        case Right(descriptor) =>
+          Some((descriptor.id, pluginDir -> descriptor))
       }
-    }
-    Files.list(ideaRoot.resolve("plugins")).forEach(new IndexBuilder)
-    buffer
+    }.toMap
   }
 }
 
