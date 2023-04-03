@@ -1,9 +1,8 @@
 package org.jetbrains
 
-import java.nio.file.Path
-
 import sbt.jetbrains.ideaPlugin.apiAdapter
 
+import java.nio.file.Path
 import scala.language.implicitConversions
 
 package object sbtidea {
@@ -22,4 +21,11 @@ package object sbtidea {
 
   implicit def pathToPathExt(path: Path): apiAdapter.PathExt = new apiAdapter.PathExt(path)
 
+
+  implicit class IteratorExt[A](private val delegate: Iterator[A]) extends AnyVal {
+    def headOption: Option[A] = {
+      if (delegate.hasNext) Some(delegate.next())
+      else None
+    }
+  }
 }

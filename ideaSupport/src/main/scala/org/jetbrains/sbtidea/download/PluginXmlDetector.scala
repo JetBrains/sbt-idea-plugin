@@ -1,36 +1,58 @@
 package org.jetbrains.sbtidea.download
 
+import org.jetbrains.sbtidea.IteratorExt
+
 import java.net.URI
 import java.nio.file.{FileSystems, Files, Path}
 import java.util.Collections
-import java.util.function.Predicate
+import java.util.stream.Collectors
+import scala.jdk.CollectionConverters.asScalaBufferConverter
 
-private class PluginXmlDetector extends Predicate[Path] {
+private object PluginXmlDetector {
 
   import org.jetbrains.sbtidea.packaging.artifact.*
 
-  private val MAP = Collections.emptyMap[String, Any]()
-  var result: PluginXmlContent = _
+  private val EmptyEnvVars = Collections.emptyMap[String, Any]()
 
-  override def test(t: Path): Boolean = {
-    if (!t.toString.endsWith(".jar"))
-      return false
+  def isPluginJar(path: Path): Boolean =
+    pluginXmlFile(path).isDefined
 
-    val uri = URI.create(s"jar:${t.toUri}")
+  def pluginXmlContent(path: Path): Option[PluginXmlContent] = {
+    val maybePath = pluginXmlFile(path)
+    maybePath.map(readPluginXmlContent)
+  }
 
-    try {
-      using(FileSystems.newFileSystem(uri, MAP)) { fs =>
-        val maybePluginXml = fs.getPath("META-INF", "plugin.xml")
-        if (Files.exists(maybePluginXml)) {
-          val content = new String(Files.readAllBytes(maybePluginXml))
-          result = PluginXmlContent(maybePluginXml, content)
-          true
-        } else {
-          false
-        }
+  def findPluginContent(dir: Path): Option[PluginXmlContent] = {
+    val maybePath = findPluginXmlFileInDir(dir)
+    maybePath.map(readPluginXmlContent)
+  }
+
+  private def readPluginXmlContent(path: Path): PluginXmlContent = {
+    val bytes = Files.readAllBytes(path)
+    val content = new String(bytes)
+    PluginXmlContent(path, content)
+  }
+
+  private def findPluginXmlFileInDir(dir: Path): Option[Path] = {
+    val files = Files.list(dir).collect(Collectors.toList[Path]).asScala
+    files.iterator.flatMap(pluginXmlFile).headOption
+  }
+
+  private def pluginXmlFile(path: Path): Option[Path] = {
+    val isJarFile = path.toString.endsWith(".jar")
+    if (!isJarFile)
+      return None
+
+    val uri = URI.create(s"jar:${path.toUri}")
+
+    try
+      using(FileSystems.newFileSystem(uri, EmptyEnvVars)) { fs =>
+        val maybePluginXmlFile = fs.getPath("META-INF", "plugin.xml")
+        Some(maybePluginXmlFile).filter(Files.exists(_))
       }
-    } catch {
-      case e: java.util.zip.ZipError => throw new RuntimeException(s"Corrupt zip file: $t", e)
+    catch {
+      case e: java.util.zip.ZipError =>
+        throw new RuntimeException(s"Corrupt zip file: $path", e)
     }
   }
 }

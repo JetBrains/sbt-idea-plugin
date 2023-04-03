@@ -5,9 +5,7 @@ import org.jetbrains.sbtidea.{IntellijPlugin, pathToPathExt, PluginLogger as log
 import sbt.*
 
 import java.nio.file.{Files, Path}
-import java.util
 import scala.collection.mutable
-import scala.util.{Failure, Success, Try}
 
 class LocalPluginRegistry (ideaRoot: Path) extends LocalPluginRegistryApi {
   import LocalPluginRegistry.*
@@ -80,52 +78,25 @@ object LocalPluginRegistry {
   private val instances: mutable.Map[Path, LocalPluginRegistry] =
     new mutable.WeakHashMap[Path, LocalPluginRegistry]().withDefault(new LocalPluginRegistry(_))
 
-  class MissingPluginRootException(pluginName: String) extends
-    RuntimeException(s"Can't find plugin root for $pluginName: check plugin name")
-
-  def extractDescriptorFromResources(resourceDirs: Seq[Path]): Either[String, Seq[PluginDescriptor]] = {
-    val (errors, descriptors) = resourceDirs
-      .toStream
-      .map(_ / "META-INF" / "plugin.xml")
-      .filter(Files.exists(_))
-      .map(file => Try(
-        PluginDescriptor.load(new String(Files.readAllBytes(file))))
-      ).foldLeft(Seq.empty[String] -> Seq.empty[PluginDescriptor]) {
-      case ((errors, results), Success(descriptor))  => errors -> (results :+ descriptor)
-      case ((errors, results), Failure(exception))   => (errors :+ exception.getMessage) -> results
-    }
-    if (errors.nonEmpty)
-      Left(errors.mkString("\n"))
-    else
-      Right(descriptors)
-  }
-
-  def extractPluginIdsFromResources(resourceDirs: Seq[Path]): Either[String, Seq[String]] =
-    extractDescriptorFromResources(resourceDirs).right.map(descriptors => descriptors.map(_.id).distinct)
+  private class MissingPluginRootException(pluginName: String)
+    extends RuntimeException(s"Can't find plugin root for $pluginName: check plugin name")
 
   def extractInstalledPluginDescriptor(pluginRoot: Path): Either[String, PluginXmlContent] = {
-    try {
+    def couldNotFindPluginXml = s"Couldn't find plugin.xml in $pluginRoot"
+
+    try
       if (Files.isDirectory(pluginRoot)) {
         val lib = pluginRoot.resolve("lib")
-        if (!lib.toFile.exists())
-          return Left(s"Plugin root $pluginRoot has no lib directory")
-        val detector = new PluginXmlDetector
-        val result = Files
-          .list(lib)
-          .filter(detector)
-          .findFirst()
-        if (result.isPresent)
-          return Right(detector.result)
-      } else {
-        val detector = new PluginXmlDetector
-        if (detector.test(pluginRoot))
-          return Right(detector.result)
-      }
-    } catch {
+        if (lib.toFile.exists())
+          PluginXmlDetector.findPluginContent(lib).toRight(couldNotFindPluginXml)
+        else
+          Left(s"Plugin root $pluginRoot has no lib directory")
+      } else
+        PluginXmlDetector.pluginXmlContent(pluginRoot).toRight(couldNotFindPluginXml)
+    catch {
       case e: Exception =>
-        return Left(s"Error during detecting plugin.xml: $e")
+        Left(s"Error during detecting plugin.xml: $e")
     }
-    Left(s"Couldn't find plugin.xml in $pluginRoot")
   }
 
   def extractPluginMetaData(pluginRoot: Path): Either[String, PluginDescriptor] = {
