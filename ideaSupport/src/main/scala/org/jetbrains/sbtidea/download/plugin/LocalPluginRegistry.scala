@@ -76,15 +76,6 @@ class LocalPluginRegistry (ideaRoot: Path) extends LocalPluginRegistryApi {
 
 
 object LocalPluginRegistry {
-  import org.jetbrains.sbtidea.*
-
-  implicit class HashMapExt[K, V](val hm: util.HashMap[K,V]) extends AnyVal {
-    def getOrError[T](err: => T)(key: K): Either[T, V] = hm
-      .get(key)
-      .lift2Option
-      .map(Right(_))
-      .getOrElse(Left(err))
-  }
 
   private val instances: mutable.Map[Path, LocalPluginRegistry] =
     new mutable.WeakHashMap[Path, LocalPluginRegistry]().withDefault(new LocalPluginRegistry(_))
