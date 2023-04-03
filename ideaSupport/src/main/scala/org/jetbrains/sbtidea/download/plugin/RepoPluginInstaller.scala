@@ -1,11 +1,10 @@
 package org.jetbrains.sbtidea.download.plugin
+
 import org.jetbrains.sbtidea.download.api.*
-import org.jetbrains.sbtidea.download.plugin.LocalPluginRegistry.extractInstalledPluginDescriptor
 import org.jetbrains.sbtidea.download.{BuildInfo, FileDownloader, IdeaUpdater, NioUtils, PluginXmlDetector, VersionComparatorUtil}
 import org.jetbrains.sbtidea.{IntellijPlugin, PluginLogger as log}
 
 import java.nio.file.{Files, Path}
-
 
 class RepoPluginInstaller(buildInfo: BuildInfo)
                          (implicit repo: PluginRepoApi, localRegistry: LocalPluginRegistryApi) extends Installer[RemotePluginArtifact] {
@@ -22,7 +21,7 @@ class RepoPluginInstaller(buildInfo: BuildInfo)
   }
 
   private[plugin] def installIdeaPlugin(plugin: IntellijPlugin, artifact: Path)(implicit ctx: InstallContext): Path = {
-    val installedPluginRoot = if (!PluginXmlDetector.isPluginJar(artifact)) {
+    val installedPluginRoot = if (!PluginXmlDetector.Default.isPluginJar(artifact)) {
       val extractDir = Files.createTempDirectory(ctx.baseDirectory, s"${buildInfo.edition.name}-${buildInfo.buildNumber}-plugin")
       log.info(s"Extracting plugin '$plugin to $extractDir")
       sbt.IO.unzip(artifact.toFile, extractDir.toFile)
@@ -46,7 +45,7 @@ class RepoPluginInstaller(buildInfo: BuildInfo)
 
   private[plugin] def isInstalledPluginUpToDate(plugin: IntellijPlugin)(implicit ctx: InstallContext): Boolean = {
     val pluginRoot = localRegistry.getInstalledPluginRoot(plugin)
-    val descriptor = extractInstalledPluginDescriptor(pluginRoot)
+    val descriptor = LocalPluginRegistry.extractInstalledPluginDescriptorFileContent(pluginRoot)
     descriptor match {
       case Left(error) =>
         log.warn(s"Failed to extract descriptor from plugin $plugin: $error")
@@ -111,7 +110,7 @@ object RepoPluginInstaller {
       .map(x => x._1.toInt -> x._2.toInt)
 
     for ((a_i, b_i) <- pairs) {
-      if (a_i == b_i && (a_i == SNAPSHOT_VALUE)) return 0
+      if (a_i == b_i && a_i == SNAPSHOT_VALUE) return 0
       if (a_i == SNAPSHOT_VALUE) return 1
       if (b_i == SNAPSHOT_VALUE) return -1
       val res = a_i - b_i

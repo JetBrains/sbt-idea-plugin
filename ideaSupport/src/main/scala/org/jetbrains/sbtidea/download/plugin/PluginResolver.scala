@@ -53,7 +53,7 @@ class PluginResolver(private val processedPlugins: Set[IntellijPlugin] = Set.emp
         sbt.IO.unzip(downloadedFile.toFile, extractDir.toFile)
         assert(Files.list(extractDir).count() == 1, s"Expected only single plugin folder in extracted archive, got: ${extractDir.toFile.list().mkString}")
         val tmpPluginDir = Files.list(extractDir).findFirst().get()
-        val pluginDescriptor = LocalPluginRegistry.extractInstalledPluginDescriptor(tmpPluginDir)
+        val pluginDescriptor = LocalPluginRegistry.extractInstalledPluginDescriptorFileContent(tmpPluginDir)
         pluginDescriptor.right.map(_.content).map(PluginDescriptor.load)
       } else repo.getRemotePluginXmlDescriptor(plugin.buildInfo, key.id, key.channel)
 

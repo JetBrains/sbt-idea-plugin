@@ -72,8 +72,29 @@ final class LocalPluginRegistryTest extends AnyFunSuite with Matchers with Inspe
   test("LocalPluginRegistry extracts plugin descriptor from ") {
     for (root <- pluginsFolder.list) {
       withClue(s"checking $root")
-        { LocalPluginRegistry.extractInstalledPluginDescriptor(root) shouldBe 'right }
+        { LocalPluginRegistry.extractPluginMetaData(root) shouldBe 'right }
     }
+  }
+
+  test("LocalPluginRegistry extracts and merges plugin descriptor from from plugin.xml and pluginBase.xml") {
+    val expectedDescriptor = PluginDescriptor(
+      "com.jetbrains.codeWithMe",
+      "JetBrains",
+      "Code With Me",
+      "232.3318",
+      "232.3318",
+      "232.3318",
+      List(
+        PluginDescriptor.Dependency("com.intellij.modules.platform", optional = false),
+        PluginDescriptor.Dependency("com.jetbrains.projector.libs", optional = false),
+        PluginDescriptor.Dependency("org.jetbrains.plugins.terminal", optional = true),
+        PluginDescriptor.Dependency("com.intellij.java", optional = true),
+        PluginDescriptor.Dependency("Pythonid", optional = true),
+      )
+    )
+
+    val actualDescriptor = LocalPluginRegistry.extractPluginMetaData(pluginsFolder.resolve("cwm-plugin"))
+    actualDescriptor shouldBe Right(expectedDescriptor)
   }
 
   test("LocalPluginRegistry detects plugin roots") {
@@ -91,7 +112,7 @@ final class LocalPluginRegistryTest extends AnyFunSuite with Matchers with Inspe
     val fakePluginRoot = pluginsFolder / "fakePlugin"
     try {
       Files.createDirectory(fakePluginRoot)
-      LocalPluginRegistry.extractInstalledPluginDescriptor(fakePluginRoot) shouldBe 'left
+      LocalPluginRegistry.extractPluginMetaData(fakePluginRoot) shouldBe 'left
     } finally {
       Files.deleteIfExists(fakePluginRoot)
     }
@@ -104,7 +125,7 @@ final class LocalPluginRegistryTest extends AnyFunSuite with Matchers with Inspe
   }
 
   test("Plugin descriptor not extracted from invalid plugins") {
-    LocalPluginRegistry.extractInstalledPluginDescriptor(ideaRoot) shouldBe 'left
+    LocalPluginRegistry.extractPluginMetaData(ideaRoot) shouldBe 'left
   }
 
   test("LocalPluginRegistry saves and restores plugin index") {

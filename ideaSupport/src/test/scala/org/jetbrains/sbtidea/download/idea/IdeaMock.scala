@@ -22,7 +22,9 @@ trait IdeaMock extends TmpDirUtils {
 
   protected val bundledPlugins: List[Keys.IntellijPlugin] =
     "org.jetbrains.plugins.yaml".toPlugin ::
-    "com.intellij.properties".toPlugin :: Nil
+      "com.intellij.properties".toPlugin ::
+      "com.jetbrains.codeWithMe".toPlugin ::
+      Nil
 
   protected def installIdeaMock: Path = {
     val tmpDir      = newTmpDir

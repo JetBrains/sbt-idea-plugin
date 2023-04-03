@@ -38,6 +38,36 @@ case class PluginDescriptor(id: String,
        |</idea-plugin>
        |""".stripMargin
   }
+
+  /**
+   * This method merges descriptors loaded from multiple files.
+   *
+   * Most of the plugins keep all information in single file `plugin.xml` (id, name, sinceBuild, etc...)<br>
+   * However some plugins can keep this information in multiple files.
+   * For example "Code With Me" has different implementations for IDEA and Rider.
+   * They keep common parts in `pluginBase.xml` (like id, name, vendor) and other parts (IDE-specific) in `plugin.xml` file.
+   *
+   * Alternative approach could be to truely resolve all "include" directives in `plugin.xml`, like: {{{
+   *   <xi:include href="/META-INF/pluginBase.xml" xpointer="xpointer(/idea-plugin/)" />
+   * }}}
+   * However it would require more changes in existing sbt-idea-plugin code and it could be too much.
+   */
+  def merge(other: PluginDescriptor): PluginDescriptor = {
+    def choose(accessor: PluginDescriptor => String): String = {
+      val myValue = accessor(this)
+      val otherValue = accessor(other)
+      if (myValue.trim.nonEmpty) myValue else otherValue
+    }
+    PluginDescriptor(
+      choose(_.id),
+      choose(_.vendor),
+      choose(_.name),
+      choose(_.version),
+      choose(_.sinceBuild),
+      choose(_.untilBuild),
+      dependsOn ++ other.dependsOn
+    )
+  }
 }
 
 object PluginDescriptor {
@@ -83,7 +113,7 @@ object PluginDescriptor {
 //    res
 //  }
 
-  private def createNonValidatingParser = {
+  private def createNonValidatingParser: SAXParser = {
     val factory = javax.xml.parsers.SAXParserFactory.newInstance()
     factory.setValidating(false)
     factory.setFeature("http://xml.org/sax/features/validation", false)

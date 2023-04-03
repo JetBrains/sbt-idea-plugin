@@ -81,18 +81,24 @@ object LocalPluginRegistry {
   private class MissingPluginRootException(pluginName: String)
     extends RuntimeException(s"Can't find plugin root for $pluginName: check plugin name")
 
-  def extractInstalledPluginDescriptor(pluginRoot: Path): Either[String, PluginXmlContent] = {
-    def couldNotFindPluginXml = s"Couldn't find plugin.xml in $pluginRoot"
+  def extractInstalledPluginDescriptorFileContent(pluginRoot: Path): Either[String, PluginXmlContent] =
+    extractInstalledPluginDescriptorFileContent(pluginRoot, "plugin.xml")
 
-    try
+  private def extractInstalledPluginDescriptorFileContent(pluginRoot: Path, pluginXmlFileName: String): Either[String, PluginXmlContent] = {
+    def couldNotFindPluginXml = s"Couldn't find $pluginXmlFileName in $pluginRoot"
+
+    try {
+      val pluginXmlDetector = new PluginXmlDetector(pluginXmlFileName)
+
       if (Files.isDirectory(pluginRoot)) {
         val lib = pluginRoot.resolve("lib")
         if (lib.toFile.exists())
-          PluginXmlDetector.findPluginContent(lib).toRight(couldNotFindPluginXml)
+          pluginXmlDetector.findPluginXmlContentInDir(lib).toRight(couldNotFindPluginXml)
         else
           Left(s"Plugin root $pluginRoot has no lib directory")
       } else
-        PluginXmlDetector.pluginXmlContent(pluginRoot).toRight(couldNotFindPluginXml)
+        pluginXmlDetector.pluginXmlContent(pluginRoot).toRight(couldNotFindPluginXml)
+    }
     catch {
       case e: Exception =>
         Left(s"Error during detecting plugin.xml: $e")
@@ -100,12 +106,21 @@ object LocalPluginRegistry {
   }
 
   def extractPluginMetaData(pluginRoot: Path): Either[String, PluginDescriptor] = {
-    val descriptor = extractInstalledPluginDescriptor(pluginRoot)
-    descriptor
-      .fold(
-        err => Left(err),
-        data => Right(PluginDescriptor.load(data.content))
-      )
+    val content1 = extractInstalledPluginDescriptorFileContent(pluginRoot, PluginXmlDetector.PluginXmlFileNames.Default)
+    val content2 = extractInstalledPluginDescriptorFileContent(pluginRoot, PluginXmlDetector.PluginXmlFileNames.PluginBaseXml)
+
+    val descriptor1 = content1.map(_.content).map(PluginDescriptor.load)
+    val descriptor2 = content2.map(_.content).map(PluginDescriptor.load)
+
+    val descriptorFinal = descriptor1.map { d1 =>
+      descriptor2 match {
+        case Right(d2) =>
+          d1.merge(d2)
+        case Left(_) =>
+          d1
+      }
+    }
+    descriptorFinal
   }
 
   def instanceFor(ideaRoot: Path): LocalPluginRegistry = instances(ideaRoot)

@@ -17,7 +17,7 @@ final class IntellijPluginInstallerTest extends IntellijPluginInstallerTestBase 
     val installer = createInstaller
     val pluginRoot = installer.installIdeaPlugin(pluginMetadata.toPluginId, mockPluginDist)
     pluginRoot.toFile.exists() shouldBe true
-    LocalPluginRegistry.extractInstalledPluginDescriptor(pluginRoot) shouldBe 'right
+    LocalPluginRegistry.extractPluginMetaData(pluginRoot) shouldBe 'right
   }
 
   test("Plugin installer installs jar artifact") {
@@ -26,7 +26,7 @@ final class IntellijPluginInstallerTest extends IntellijPluginInstallerTestBase 
     val installer = createInstaller
     val pluginRoot = installer.installIdeaPlugin(pluginMetadata.toPluginId, mockPluginDist)
     pluginRoot.toFile.exists() shouldBe true
-    LocalPluginRegistry.extractInstalledPluginDescriptor(pluginRoot) shouldBe 'right
+    LocalPluginRegistry.extractPluginMetaData(pluginRoot) shouldBe 'right
   }
 
   test("Plugin installer checks IDEA compatibility") {

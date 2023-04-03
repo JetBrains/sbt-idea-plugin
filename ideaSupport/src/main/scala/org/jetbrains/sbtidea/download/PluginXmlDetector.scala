@@ -1,6 +1,7 @@
 package org.jetbrains.sbtidea.download
 
 import org.jetbrains.sbtidea.IteratorExt
+import org.jetbrains.sbtidea.packaging.artifact.using
 
 import java.net.URI
 import java.nio.file.{FileSystems, Files, Path}
@@ -8,37 +9,19 @@ import java.util.Collections
 import java.util.stream.Collectors
 import scala.jdk.CollectionConverters.asScalaBufferConverter
 
-private object PluginXmlDetector {
-
-  import org.jetbrains.sbtidea.packaging.artifact.*
+private class PluginXmlDetector(pluginXmlFileName: String = PluginXmlDetector.PluginXmlFileNames.Default) {
 
   private val EmptyEnvVars = Collections.emptyMap[String, Any]()
 
   def isPluginJar(path: Path): Boolean =
-    pluginXmlFile(path).isDefined
+    pluginXmlContent(path).isDefined
+
+  def findPluginXmlContentInDir(dir: Path): Option[PluginXmlContent] = {
+    val files = Files.list(dir).collect(Collectors.toList[Path]).asScala
+    files.iterator.flatMap(pluginXmlContent).headOption
+  }
 
   def pluginXmlContent(path: Path): Option[PluginXmlContent] = {
-    val maybePath = pluginXmlFile(path)
-    maybePath.map(readPluginXmlContent)
-  }
-
-  def findPluginContent(dir: Path): Option[PluginXmlContent] = {
-    val maybePath = findPluginXmlFileInDir(dir)
-    maybePath.map(readPluginXmlContent)
-  }
-
-  private def readPluginXmlContent(path: Path): PluginXmlContent = {
-    val bytes = Files.readAllBytes(path)
-    val content = new String(bytes)
-    PluginXmlContent(path, content)
-  }
-
-  private def findPluginXmlFileInDir(dir: Path): Option[Path] = {
-    val files = Files.list(dir).collect(Collectors.toList[Path]).asScala
-    files.iterator.flatMap(pluginXmlFile).headOption
-  }
-
-  private def pluginXmlFile(path: Path): Option[Path] = {
     val isJarFile = path.toString.endsWith(".jar")
     if (!isJarFile)
       return None
@@ -47,8 +30,11 @@ private object PluginXmlDetector {
 
     try
       using(FileSystems.newFileSystem(uri, EmptyEnvVars)) { fs =>
-        val maybePluginXmlFile = fs.getPath("META-INF", "plugin.xml")
-        Some(maybePluginXmlFile).filter(Files.exists(_))
+        val maybePluginXmlPath = Some(fs.getPath("META-INF", pluginXmlFileName)).filter(Files.exists(_))
+        maybePluginXmlPath.map { path =>
+          val content = new String(Files.readAllBytes(path))
+          PluginXmlContent(path, content)
+        }
       }
     catch {
       case e: java.util.zip.ZipError =>
@@ -57,4 +43,13 @@ private object PluginXmlDetector {
   }
 }
 
-case class PluginXmlContent(path: Path, content: String)
+private object PluginXmlDetector {
+  val Default = new PluginXmlDetector
+
+  /** See comment for [[org.jetbrains.sbtidea.download.plugin.PluginDescriptor#merge]] */
+  object PluginXmlFileNames {
+    val Default = "plugin.xml"
+    val PluginBaseXml = "pluginBase.xml"
+  }
+}
+

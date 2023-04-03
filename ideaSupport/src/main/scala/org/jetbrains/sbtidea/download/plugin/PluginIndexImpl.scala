@@ -24,12 +24,6 @@ class PluginIndexImpl(ideaRoot: Path) extends PluginIndex {
   private lazy val index: ReprMutable = {
     val result = initIndex
 
-    val pluginIds = result.keys.toSeq
-      .filter(_.trim.nonEmpty) // for some reason there is some empty id
-      .sorted
-      .mkString(", ")
-    log.info(s"Plugin ids from $INDEX_FILENAME: $pluginIds")
-
     val mutable = new ReprMutable
     mutable ++= result
     mutable
@@ -53,6 +47,12 @@ class PluginIndexImpl(ideaRoot: Path) extends PluginIndex {
   private def buildAndSaveIndex(): Repr = {
     val fromPluginsDir = buildFromPluginsDir()
     try {
+      val pluginIds = fromPluginsDir.keys.toSeq
+        .filter(_.trim.nonEmpty) // for some reason there is some empty id
+        .sorted
+        .mkString(", ")
+      log.info(s"Plugin ids from $INDEX_FILENAME: $pluginIds")
+
       saveToFile(fromPluginsDir)
     } catch {
       case e: Throwable =>
