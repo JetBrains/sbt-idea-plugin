@@ -35,8 +35,17 @@ class IdeaConfigBuilder(moduleName: String,
   private val IDEA_ROOT_KEY = "idea.installation.dir"
 
   def build(): Unit = {
-    if (options.generateDefaultRunConfig)
-      writeToFile(runConfigDir / s"$configName.xml", buildRunConfigurationXML)
+    if (options.generateDefaultRunConfig) {
+      val content = buildRunConfigurationXML(configName, intellijVMOptions)
+      writeToFile(runConfigDir / s"$configName.xml", content)
+    }
+    //TODO: how to ensure that it will be second in the UI list? Right now it can be the first, but it's not a configuration which goes by default
+    if (options.generateSlowOpsAssertionRunConfig) {
+      val IdeSlowOperationsAssertionOption = "-Dide.slow.operations.assertion=true"
+      val vmOptions = intellijVMOptions.copy(defaultOptions = intellijVMOptions.defaultOptions :+ IdeSlowOperationsAssertionOption)
+      val content = buildRunConfigurationXML(configName + " (with slow ops assertions)", vmOptions)
+      writeToFile(runConfigDir / s"${configName}_with_slow_ops_assertions.xml", content)
+    }
     if (options.generateJUnitTemplate)
       writeToFile(runConfigDir / "_template__of_JUnit.xml", buildJUnitTemplate)
   }
@@ -153,15 +162,14 @@ class IdeaConfigBuilder(moduleName: String,
   }
 
 
-  private def buildRunConfigurationXML: String = {
-    val vmOptions = intellijVMOptions
+  private def buildRunConfigurationXML(configurationName: String, vmOptions: IntellijVMOptions): String = {
     val env = mkEnv(options.ideaRunEnv)
 
     val classpathEntries = intellijPlatformJarsClasspath
     val classpathString = classpathEntries.mkString(File.pathSeparator)
 
     s"""<component name="ProjectRunConfigurationManager">
-       |  <configuration default="false" name="$configName" type="Application" factoryName="Application">
+       |  <configuration default="false" name="$configurationName" type="Application" factoryName="Application">
        |    $jreSettings
        |    <log_file alias="IJ LOG" path="$dataDir/system/log/idea.log" />
        |    <log_file alias="JPS LOG" path="$dataDir/system/log/build-log/build.log" />
