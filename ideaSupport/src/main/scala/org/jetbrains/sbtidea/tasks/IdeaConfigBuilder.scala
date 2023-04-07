@@ -39,13 +39,6 @@ class IdeaConfigBuilder(moduleName: String,
       val content = buildRunConfigurationXML(configName, intellijVMOptions)
       writeToFile(runConfigDir / s"$configName.xml", content)
     }
-    //TODO: how to ensure that it will be second in the UI list? Right now it can be the first, but it's not a configuration which goes by default
-    if (options.generateSlowOpsAssertionRunConfig) {
-      val IdeSlowOperationsAssertionOption = "-Dide.slow.operations.assertion=true"
-      val vmOptions = intellijVMOptions.copy(defaultOptions = intellijVMOptions.defaultOptions :+ IdeSlowOperationsAssertionOption)
-      val content = buildRunConfigurationXML(configName + " (with slow ops assertions)", vmOptions)
-      writeToFile(runConfigDir / s"${configName}_with_slow_ops_assertions.xml", content)
-    }
     if (options.generateJUnitTemplate)
       writeToFile(runConfigDir / "_template__of_JUnit.xml", buildJUnitTemplate)
   }
