@@ -14,7 +14,7 @@ lazy val commonSettings: Seq[Setting[_]] = Seq(
   homepage := Some(url("https://github.com/JetBrains/sbt-idea-plugin")),
   sonatypeProjectHosting := Some(GitHubHosting("JetBrains", "sbt-idea-plugin", "scala-developers@jetbrains.com")),
   licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0")),
-  libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.14" % Test
+  libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.15" % Test
 )
 
 lazy val core = (project in file("core"))
