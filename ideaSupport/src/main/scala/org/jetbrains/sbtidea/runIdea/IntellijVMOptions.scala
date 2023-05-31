@@ -55,8 +55,8 @@ object IntellijVMOptions {
       if (intellijVersion.forall(_ > Version("223.6160"))) {
         val pty4jFolderPath = (intellijDirectory / "lib/pty4j").toString.replace("\\", "/")
         val jnaFolderPath = (intellijDirectory / "lib/jna" / jnaFolderName).toString.replace("\\", "/")
-        buffer += s"-Dpty4j.preferred.native.folder=$pty4jFolderPath"
-        buffer += s"-Djna.boot.library.path=$jnaFolderPath"
+        buffer += s"-Dpty4j.preferred.native.folder=${OQ(pty4jFolderPath)}"
+        buffer += s"-Djna.boot.library.path=${OQ(jnaFolderPath)}"
         buffer += s"-Djna.nounpack=true"
         buffer += s"-Djna.nosys=true"
       }
