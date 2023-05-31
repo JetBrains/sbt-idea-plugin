@@ -2,7 +2,7 @@ import xerial.sbt.Sonatype.GitHubHosting
 
 Global / concurrentRestrictions := Seq(Tags.limit(Tags.Test, 1))
 
-lazy val commonSettings: Seq[Setting[_]] = Seq(
+lazy val commonSettings: Seq[Setting[?]] = Seq(
   organization          := "org.jetbrains",
   licenses              += ("MIT", url("https://opensource.org/licenses/MIT")),
   scalacOptions        ++= Seq("-deprecation", "-feature", "-release", "8", "-Xfatal-warnings"),
