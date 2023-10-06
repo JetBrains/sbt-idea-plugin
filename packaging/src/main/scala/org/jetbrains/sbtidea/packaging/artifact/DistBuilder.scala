@@ -10,7 +10,7 @@ class DistBuilder(stream: TaskStreams, private val target: File) extends Mapping
 
   protected implicit val streams: TaskStreams = stream
 
-  protected val incrementalCache = new PersistentIncrementalCache(target.toPath)
+  protected lazy val incrementalCache: IncrementalCache = new PersistentIncrementalCache(target.toPath)
 
   protected def createPackager(dest: Path, shader: ClassShader, excludeFilter: ExcludeFilter) =
     new SimplePackager(dest, shader, excludeFilter, incrementalCache)

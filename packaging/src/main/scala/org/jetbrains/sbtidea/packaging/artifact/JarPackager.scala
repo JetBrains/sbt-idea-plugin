@@ -129,7 +129,7 @@ class SimplePackager(protected val myOutput: Path,
 }
 
 class ZipPackager(myOutput: Path)(implicit private val streams: TaskStreams)
-  extends SimplePackager(myOutput, new NoOpClassShader, ExcludeFilter.AllPass, new DumbIncrementalCache) {
+  extends SimplePackager(myOutput, new NoOpClassShader, ExcludeFilter.AllPass, DumbIncrementalCache) {
 
   override protected def createOutputFS(output: Path): FileSystem = {
     val env = new util.HashMap[String, String]()
