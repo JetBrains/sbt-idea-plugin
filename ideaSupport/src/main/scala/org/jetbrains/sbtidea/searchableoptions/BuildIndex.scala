@@ -1,9 +1,10 @@
 package org.jetbrains.sbtidea.searchableoptions
 
 import org.jetbrains.sbtidea.Keys.{intellijBaseDirectory, intellijVMOptions}
+import org.jetbrains.sbtidea.download.NioUtils
 import org.jetbrains.sbtidea.packaging.*
 import org.jetbrains.sbtidea.packaging.PackagingKeys.packageArtifact
-import org.jetbrains.sbtidea.packaging.artifact.DistBuilder
+import org.jetbrains.sbtidea.packaging.artifact.{DistBuilder, DumbIncrementalCache, IncrementalCache}
 import org.jetbrains.sbtidea.runIdea.IdeaRunner
 import org.jetbrains.sbtidea.{PluginLogger, SbtPluginLogger, pathToPathExt}
 import sbt.*
@@ -31,20 +32,30 @@ object BuildIndex {
     val runner = new IdeaRunner(intellijBaseDir.toPath, vmOptions, blocking = true, programArguments = indexerCMD)
     runner.run()
 
-    val indexRoots          = getIndexFiles(pluginRoot, indexOutputPath.toPath)
-    val indexedMappings     = prepareMappings(indexRoots)
+    val tmp = Files.createTempDirectory("sbt-idea-searchable-options-building-")
+    try {
+      val indexRoots = getIndexFiles(pluginRoot, indexOutputPath.toPath)
+      val indexedMappings = prepareMappings(indexRoots, tmp)
 
-    if (indexRoots.isEmpty)
-      log.error(s"No options search index built for plugin root: $pluginRoot")
+      if (indexRoots.isEmpty)
+        log.error(s"No options search index built for plugin root: $pluginRoot")
 
-    if (indexedMappings.isEmpty)
-      log.error(s"No options search index packaged from given roots: $indexRoots")
+      if (indexedMappings.isEmpty)
+        log.error(s"No options search index packaged from given roots: $indexRoots")
 
-    indexedMappings.foreach { case (jar, mapping) =>
-      new DistBuilder(streams.value, target.value).patch(jar, Seq(mapping))
+
+      indexedMappings.foreach { case (jar, mapping) =>
+        val distBuilder = new DistBuilder(streams.value, target.value) {
+          // Use dumb cache so that all files that we want to patch are marked as changed
+          protected override lazy val incrementalCache: IncrementalCache = DumbIncrementalCache
+        }
+        distBuilder.patch(jar, Seq(mapping))
+      }
+
+      log.info(s"Successfully merged options index")
+    } finally {
+      NioUtils.delete(tmp)
     }
-
-    log.info(s"Successfully merged options index")
   }
 
 
@@ -71,14 +82,17 @@ object BuildIndex {
     indexesForPlugin
   }
 
-  private def prepareMappings(indexes: Seq[IndexElement]): Seq[(Path, Mapping)] =
-    indexes.map { case (jar, indexXML) =>
+  private def prepareMappings(indexes: Seq[IndexElement], tmp: Path): Seq[(Path, Mapping)] =
+    indexes.zipWithIndex.map { case ((jar, indexXML), idx) =>
+      // copy the xml file into a temporary directory that has the required target structure: search/searchableOptions.xml
+      val source = tmp / s"index-${jar.getFileName}-$idx"
+      val searchDir = source / "search"
+      Files.createDirectories(searchDir)
+      Files.copy(indexXML, searchDir / "searchableOptions.xml")
+
       jar ->
-        Mapping(indexXML.toFile,
-          new File( s"$jar!/search/searchableOptions.xml"),
+        Mapping(source.toFile,
+          jar.toFile,
           MappingMetaData.EMPTY.copy(kind = MAPPING_KIND.MISC))
     }
-
-
-
 }

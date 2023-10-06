@@ -10,7 +10,7 @@ trait IncrementalCache extends AutoCloseable {
   def fileChanged(in: Path): Boolean
 }
 
-class DumbIncrementalCache extends IncrementalCache {
+object DumbIncrementalCache extends IncrementalCache {
   override def fileChanged(in: Path): Boolean = true
   override def close(): Unit = ()
 }
@@ -21,7 +21,7 @@ class PersistentIncrementalCache(private val root: Path)(implicit private val st
   private val myFile   = root.resolve(FILENAME)
   private val myData   = loadOrCreate()
 
-  type Data = mutable.HashMap[String, Long]
+  private type Data = mutable.HashMap[String, Long]
 
   private def loadFromDisk(): Either[String, Data] = {
     if (!Files.exists(myFile) || Files.size(myFile) <= 0)
