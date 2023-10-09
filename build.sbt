@@ -7,14 +7,14 @@ lazy val commonSettings: Seq[Setting[?]] = Seq(
   licenses              += ("MIT", url("https://opensource.org/licenses/MIT")),
   scalacOptions        ++= Seq("-deprecation", "-feature", "-release", "8", "-Xfatal-warnings"),
   javacOptions         ++= Seq("--release", "8"),
-  scalaVersion := "2.12.17",
+  scalaVersion := "2.12.18",
   pluginCrossBuild / sbtVersion := "1.4.5",
   Test / classLoaderLayeringStrategy := ClassLoaderLayeringStrategy.Flat,
   sonatypeProfileName := "org.jetbrains",
   homepage := Some(url("https://github.com/JetBrains/sbt-idea-plugin")),
   sonatypeProjectHosting := Some(GitHubHosting("JetBrains", "sbt-idea-plugin", "scala-developers@jetbrains.com")),
   licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0")),
-  libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.15" % Test
+  libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.17" % Test
 )
 
 lazy val core = (project in file("core"))
