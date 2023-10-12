@@ -58,4 +58,5 @@ object PackagingKeys extends PackagingKeysInit with PackagingDefs {
   lazy val dumpDependencyStructureOffline = taskKey[SbtPackageProjectData]("").invisible
   lazy val packageMappings                = taskKey[Mappings]("").invisible
   lazy val packageMappingsOffline         = taskKey[Mappings]("").invisible
+  lazy val doPackageArtifactZip           = taskKey[File]("").invisible
 }

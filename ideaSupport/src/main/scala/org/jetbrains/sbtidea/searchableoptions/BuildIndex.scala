@@ -17,7 +17,7 @@ import scala.collection.JavaConverters.*
 object BuildIndex {
 
   private val IDX_DIR = "search"
-  type IndexElement = (Path, Path) // jar file -> options.xml
+  private type IndexElement = (Path, Path) // jar file -> options.xml
 
   def createTask: Def.Initialize[Task[Unit]] = Def.task {
     implicit val log: PluginLogger = new SbtPluginLogger(streams.value)

@@ -134,6 +134,10 @@ trait Init { this: Keys.type =>
       doPatchPluginXml.value
       packageArtifactDynamic.value
     },
+    packageArtifactZip := Def.sequential(
+      buildIntellijOptionsIndex.toTask,
+      doPackageArtifactZip.toTask,
+    ).value,
 
     publishPlugin     := PublishPlugin.createTask.evaluated,
     signPlugin        := SignPluginArtifactTask.createTask.value,
