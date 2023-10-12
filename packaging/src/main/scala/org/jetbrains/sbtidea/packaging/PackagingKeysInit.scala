@@ -100,7 +100,8 @@ trait PackagingKeysInit {
       new DynamicDistBuilder(stream, myTarget, outputDir, hints).produceArtifact(mappings)
       outputDir
     },
-    packageArtifactZip := {
+    packageArtifactZip := doPackageArtifactZip.value,
+    doPackageArtifactZip := {
       implicit val stream: TaskStreams = streams.value
       val outputDir = packageArtifact.value.getParentFile
       packageArtifactZipFile.?.value match {
