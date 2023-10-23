@@ -29,10 +29,4 @@ package object sbtImpl {
   }
 
   class SbtProjectExtractException(message: String) extends Exception(message)
-
-  private[sbtImpl] def extractProjectName(project: ProjectReference): String = {
-    val str = project.toString
-    val commaIdx = str.indexOf(',')
-    str.substring(commaIdx+1, str.length-1)
-  }
 }

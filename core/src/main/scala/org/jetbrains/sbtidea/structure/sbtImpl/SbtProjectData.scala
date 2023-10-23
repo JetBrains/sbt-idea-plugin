@@ -8,6 +8,7 @@ import scala.language.implicitConversions
 
 
 case class SbtProjectData(thisProject: ProjectRef,
+                          thisProjectName: String,
                           cp: Classpath,
                           definedDeps: Seq[ModuleID],
                           productDirs: Seq[File],

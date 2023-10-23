@@ -5,7 +5,7 @@ import sbt.*
 
 trait SbtProjectNode extends ProjectNode {
   def ref: ProjectRef
-  def name:  String = extractProjectName(ref)
+  def name:  String
 
   override def toString: String = s"{$name}"
   override def hashCode(): Int = ref.hashCode()

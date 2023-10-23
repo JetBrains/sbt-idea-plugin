@@ -14,7 +14,7 @@ object CreateIdeaArtifactXmlTask extends SbtIdeaTask[Unit] {
       Def.task {
         val outputDir = packageOutputDir.value
         val mappings  = packageMappingsOffline.value
-        val projectName = thisProject.value.id
+        val projectName = Keys.name.value
         val result = new IdeaArtifactXmlBuilder(projectName, outputDir).produceArtifact(mappings)
         val file = buildRoot / ".idea" / "artifacts" / s"$projectName.xml"
         IO.write(file, result)

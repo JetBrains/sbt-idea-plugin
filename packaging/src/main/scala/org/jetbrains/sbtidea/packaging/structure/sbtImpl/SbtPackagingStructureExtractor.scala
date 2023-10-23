@@ -52,7 +52,7 @@ class SbtPackagingStructureExtractor(override val rootProject: ProjectRef,
   }
 
   override def buildStub(data: SbtPackageProjectData): SbtPackagedProjectNodeImpl =
-    SbtPackagedProjectNodeImpl(data.thisProject, null, null, null, null)
+    SbtPackagedProjectNodeImpl(data.thisProject, data.thisProjectName, null, null, null, null)
 
   override def updateNode(node: SbtPackagedProjectNodeImpl, data: SbtPackageProjectData): SbtPackagedProjectNodeImpl = {
     val options = collectPackagingOptions(data)

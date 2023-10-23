@@ -10,6 +10,7 @@ object apiAdapter {
   def dumpDependencyStructureOffline = Def.task {
     SbtPackageProjectData(
       thisProjectRef.value,
+      name.in(thisProjectRef).value,
       managedClasspath.in(Compile).value,
       libraryDependencies.in(Compile).value,
       packageAdditionalProjects.value,
@@ -28,6 +29,7 @@ object apiAdapter {
   def dumpDependencyStructure = Def.task {
     SbtPackageProjectData(
       thisProjectRef.value,
+      name.in(thisProjectRef).value,
       managedClasspath.in(Compile).value,
       libraryDependencies.in(Compile).value,
       packageAdditionalProjects.value,
