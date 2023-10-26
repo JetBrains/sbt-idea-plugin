@@ -127,13 +127,11 @@ trait Init { this: Keys.type =>
         filterScalaLibraryCp(previousValue)
     },
     packageArtifact := {
-      doPatchPluginXml.value
-      packageArtifact.value
-    },
+      packageArtifact dependsOn Def.sequential(packageMappings, doPatchPluginXml)
+    }.value,
     packageArtifactDynamic := {
-      doPatchPluginXml.value
-      packageArtifactDynamic.value
-    },
+      packageArtifactDynamic dependsOn Def.sequential(packageMappings, doPatchPluginXml)
+    }.value,
     packageArtifactZip := Def.sequential(
       buildIntellijOptionsIndex.toTask,
       doPackageArtifactZip.toTask,
