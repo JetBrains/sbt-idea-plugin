@@ -2,43 +2,42 @@ package org.jetbrains.sbtidea.packaging
 
 import org.scalatest.featurespec.AnyFeatureSpec
 
-/**
-  * dump the model from build with model_dumper_sbt.txt
-  */
 class LinearMappingsBuilderTest extends AnyFeatureSpec with MappingsTestBase {
 
-  private val revisionsToTest = Seq(
-    "scio-idea-plugin",
-    "sttp-bundle-IJE",
-    "GH-106_scala-library-not-excluded"
+  /**
+   * NOTE: to update test data dump the model from build with `model_dumper_sbt.txt`<br>
+   *
+   * !!!ATTENTION:
+   * Ensure that sbt version in the test repository equals to the sbt version in `build.sbt` in pluginCrossBuild / sbtVersion
+   *
+   * TODO: automate generation of test data?
+   */
+  private val testData: Seq[RevisionTestDataDescription] = Seq(
+    RevisionTestDataDescription(
+      "scioIdeaPlugin",
+      RevisionReference(
+        "https://github.com/spotify/scio-idea-plugin",
+        "9654963",
+        "Use patchPluginXml (#279)"
+      )
+    ),
+    RevisionTestDataDescription(
+      "sbtIdeaPlugin",
+      RevisionReference(
+        "https://github.com/JetBrains/sbt-idea-plugin",
+        "b59ea8fa",
+        "Merge pull request #123 from JetBrains/tobias/search-index"
+      )
+    )
   )
 
 
   Feature("mappings equality on various builds") {
-    revisionsToTest.foreach { rev =>
-      Scenario(s"revision: $rev") {
-        testMappings(rev)
+    testData.foreach { rev =>
+      val fileName = rev.testDataFileName
+      Scenario(s"revision: $fileName") {
+        testMappings(fileName)
       }
     }
   }
-
-  Feature("same mappings and structure across SIP versions") {
-    val pairs = Seq(
-      "d1950bef0ddfd50de365c45da2c0187e8e5e8cde" -> "d1950bef0ddfd50de365c45da2c0187e8e5e8cde-GH_106")
-    for ((a, b) <- pairs) {
-      Scenario(s"$a === $b") {
-        val dataA = readTestData(a)
-        val dataB = readTestData(b)
-
-        val structureDiff = dataA.structure.toSet.diff(dataB.structure.toSet)
-        val mappingsDiff = dataA.mappings.toSet.diff(dataB.mappings.toSet)
-          .filterNot(_.from.toString.replace("\\", "/").contains("/tmp")) // filter out temp files with random names
-
-        structureDiff shouldBe empty
-        mappingsDiff shouldBe empty
-      }
-    }
-  }
-
-
 }

@@ -11,6 +11,7 @@ import java.io.{File, ObjectInputStream}
 trait MappingsTestBase extends Matchers {
 
   case class Header(buildDir: File, userHome: File, outputDir: File)
+
   case class TestData(header: Header, structure: Seq[SbtPackagedProjectNodeImpl], mappings: Mappings)
 
   private def loadHeader(revision: String): Header = {
@@ -42,20 +43,21 @@ trait MappingsTestBase extends Matchers {
   protected def readTestData(revision: String): TestData = {
     val header = loadHeader(revision)
     val structure = readStructure(revision)
-    val mappings= readMappings(revision)
+    val mappings = readMappings(revision)
     TestData(header, structure, mappings)
   }
 
-  def testMappings(revision: String): Unit = {
-    val header = loadHeader(revision)
-    val structure = readStructure(revision)
-    val mappings= readMappings(revision)
-    val actualMappings = new LinearMappingsBuilder(header.outputDir, PluginLogger).buildMappings(structure).map{ x=>
-      x.copy(
-        from = x.from.relativeTo(header.buildDir).orElse(x.from.relativeTo(header.userHome)).getOrElse(x.from),
-        to   = x.to.relativeTo(header.buildDir).orElse(x.to.relativeTo(header.userHome)).getOrElse(x.to)
-      )}
+  def testMappings(testDataFileName: String): Unit = {
+    val header = loadHeader(testDataFileName)
+    val mappings = readMappings(testDataFileName)
+    val structure = readStructure(testDataFileName)
+
+    val mappingsBuilder = new LinearMappingsBuilder(header.outputDir, PluginLogger)
+    val actualMappings = mappingsBuilder.buildMappings(structure).map { m =>
+      val fromNew = m.from.relativeTo(header.buildDir).orElse(m.from.relativeTo(header.userHome)).getOrElse(m.from)
+      val toNew = m.to.relativeTo(header.buildDir).orElse(m.to.relativeTo(header.userHome)).getOrElse(m.to)
+      m.copy(from = fromNew, to = toNew)
+    }
     mappings should contain theSameElementsAs actualMappings
   }
-
 }

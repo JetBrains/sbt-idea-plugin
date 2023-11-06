@@ -1,8 +1,10 @@
+
 lazy val dump = inputKey[Unit]("")
-dump    := {
-  import java.io.{FileOutputStream, ObjectOutputStream}
+dump := {
   import org.jetbrains.sbtidea.SbtPluginLogger
   import org.jetbrains.sbtidea.packaging.structure.sbtImpl.{SbtPackagedProjectNodeImpl, SbtPackagingStructureExtractor}
+
+  import java.io.{FileOutputStream, ObjectOutputStream}
   val revision = complete.DefaultParsers.spaceDelimited("revision").parsed.headOption.getOrElse(name.value)
   val rootProject = thisProjectRef.value
   val buildDeps = buildDependencies.value
@@ -11,29 +13,49 @@ dump    := {
   val logger = new SbtPluginLogger(streams.value)
   val base = baseDirectory.value
   val mappings = packageMappingsOffline.value
-  val structure: Seq[SbtPackagedProjectNodeImpl] = new SbtPackagingStructureExtractor(rootProject, data, buildDeps, logger).extract
+
+  val structureExtractor = new SbtPackagingStructureExtractor(rootProject, data, buildDeps, logger)
+  val structure: Seq[SbtPackagedProjectNodeImpl] = structureExtractor.extract
+
   val userHome = file(sys.props("user.home"))
-  val relative = mappings.map{ x=>
-    x.copy(
-      from = x.from.relativeTo(base).orElse(x.from.relativeTo(userHome)).getOrElse(x.from),
-      to = x.to.relativeTo(base).orElse(x.to.relativeTo(userHome)).getOrElse(x.to)
-    )
+  val relative = mappings.map { x =>
+    val from = x.from
+    val to = x.to
+    val fromNew = from.relativeTo(base).orElse(from.relativeTo(userHome)).getOrElse(from)
+    val toNew = to.relativeTo(base).orElse(to.relativeTo(userHome)).getOrElse(to)
+    x.copy(from = fromNew, to = toNew)
   }
+
+  val HeaderFile = new File(s"$revision.dat")
+  val MappingsFile = new File(s"$revision-mappings.dat")
+  val StructureFile = new File(s"$revision-structure.dat")
+
   writeHeader()
-  write(relative, "mappings")
-  write(structure, "structure")
+  write(relative, MappingsFile)
+  write(structure, StructureFile)
 
   def writeHeader(): Unit = {
-    val str = new ObjectOutputStream(new FileOutputStream(s"$revision.dat"))
+    val str = new ObjectOutputStream(new FileOutputStream(HeaderFile))
     str.writeUTF(base.getAbsolutePath)
     str.writeUTF(userHome.getAbsolutePath)
     str.writeUTF(outputDir.getAbsolutePath)
     str.close()
   }
 
-  def write(value: Any, suff: String): Unit = {
-    val str = new ObjectOutputStream(new FileOutputStream(s"$revision-$suff.dat"))
+  def write(value: Any, file: File): Unit = {
+    val str = new ObjectOutputStream(new FileOutputStream(file))
     str.writeObject(value)
     str.close()
   }
+
+  //EXTRA: copy generated files to `sbtIdeaPlugin` local repository in test data directory
+  val targetDir: File = ???
+  println(s"Copying dump files to $targetDir")
+
+  def copy(source: File): Unit =
+    Files.copy(source.toPath, (targetDir / source.getName).toPath, StandardCopyOption.REPLACE_EXISTING)
+
+  copy(HeaderFile)
+  copy(MappingsFile)
+  copy(StructureFile)
 }
