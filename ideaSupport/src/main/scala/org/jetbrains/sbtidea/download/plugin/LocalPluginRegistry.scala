@@ -20,7 +20,8 @@ class LocalPluginRegistry (ideaRoot: Path) extends LocalPluginRegistryApi {
       index.getPluginDescriptor(url.toString).toRight("sdfsf")
     case IntellijPlugin.Id(id, _, _) =>
       index.getPluginDescriptor(id).toRight("f45f")
-    case IntellijPlugin.BundledFolder(name) => getDescriptorFromPluginFolder(name)
+    case IntellijPlugin.BundledFolder(name) =>
+      getDescriptorFromPluginFolder(name)
   }
 
   override def getAllDescriptors: Seq[PluginDescriptor] = index.getAllDescriptors
@@ -36,19 +37,29 @@ class LocalPluginRegistry (ideaRoot: Path) extends LocalPluginRegistryApi {
   }
 
   override def isPluginInstalled(ideaPlugin: IntellijPlugin): Boolean = {
-    ideaPlugin match {
-      case IntellijPlugin.Url(url) => index.contains(url.toString)
-      case IntellijPlugin.Id(id,  _, _) => index.contains(id)
+    val existsInIndex = ideaPlugin match {
+      case IntellijPlugin.Url(url) =>
+        index.contains(url.toString)
+      case IntellijPlugin.Id(id,  _, _) =>
+        index.contains(id)
       case IntellijPlugin.BundledFolder(name) => getDescriptorFromPluginFolder(name) match {
-        case Right(descriptor) if index.contains(descriptor.id) =>
-          true
         case Right(descriptor) =>
-          log.warn(s"Bundled plugin folder - '$name(${descriptor.id})' exists but not in index: corrupt index file?")
+          if (!index.contains(descriptor.id)) {
+            log.warn(s"Bundled plugin folder - '$name(${descriptor.id})' exists but not in index: corrupt index file?")
+          }
           true
         case Left(_)  =>
           false
       }
     }
+    if (existsInIndex) {
+      val path = getInstalledPluginRoot(ideaPlugin)
+      if (!path.exists) {
+        log.warn(s"Plugin was registered in index but plugin installation directory does not exist: $path")
+      }
+      path.exists
+    }
+    else false
   }
 
   override def getInstalledPluginRoot(ideaPlugin: IntellijPlugin): Path = ideaPlugin match {
