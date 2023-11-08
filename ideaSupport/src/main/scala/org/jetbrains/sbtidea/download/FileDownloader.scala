@@ -180,8 +180,11 @@ class FileDownloader(private val baseDirectory: Path) {
 
   private def getRemoteMetaData(url: URL): RemoteMetaData = withConnection(url) { connection =>
     connection.setRequestMethod("HEAD")
-    if (connection.getResponseCode >= 400)
-      throw new DownloadException(s"Not found (404): $url")
+    val responseCode = connection.getResponseCode
+    if (responseCode >= 400) {
+      val message = connection.getResponseMessage
+      throw new DownloadException(s"$message ($responseCode): $url")
+    }
     val contentLength = connection.getContentLength
     val nameFromHeader = java.net.URLDecoder
       .decode(
