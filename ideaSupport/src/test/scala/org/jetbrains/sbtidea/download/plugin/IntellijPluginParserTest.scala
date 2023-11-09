@@ -25,15 +25,7 @@ final class IntellijPluginParserTest extends AnyFunSuite with Matchers {
   test("plugin with url should parse as Id with optional URL set") {
     val p = "org.example.plugin:http://foo.bar/a.zip".toPlugin.asInstanceOf[IntellijPlugin.IdWithCustomUrl]
     p.id shouldBe "org.example.plugin"
-    p.version shouldBe None
     p.downloadUrl shouldBe new URL("http://foo.bar/a.zip")
-  }
-
-  test("plugin with url should parse as Id with optional URL set with version") {
-    val p = "org.example.plugin:1.0-api-212:https://foo.bar/a.zip".toPlugin.asInstanceOf[IntellijPlugin.IdWithCustomUrl]
-    p.id shouldBe "org.example.plugin"
-    p.version shouldBe Some("1.0-api-212")
-    p.downloadUrl shouldBe new URL("https://foo.bar/a.zip")
   }
 
   test("id should parse with with mixed segments") {

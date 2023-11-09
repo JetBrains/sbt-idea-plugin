@@ -83,7 +83,7 @@ class PluginResolver(
   private def getPluginDownloadUrl(plugin: PluginDependency, key: IntellijPlugin.WithKnownId): URL = key match {
     case key: IntellijPlugin.Id =>
       repo.getPluginDownloadURL(plugin.buildInfo, key)
-    case IntellijPlugin.IdWithCustomUrl(_, _, downloadUrl) =>
+    case IntellijPlugin.IdWithCustomUrl(_, downloadUrl) =>
       downloadUrl
   }
 

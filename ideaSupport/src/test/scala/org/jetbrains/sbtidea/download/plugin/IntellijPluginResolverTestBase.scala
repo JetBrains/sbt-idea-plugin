@@ -34,17 +34,16 @@ abstract class IntellijPluginResolverTestBase extends IntellijPluginInstallerTes
         throw new IllegalArgumentException("url plugin not supported")
       case IntellijPlugin.Id(id, _, _) =>
         descriptorMap.get(id).filterNot(_.name.contains("remote")).toRight("plugin is remote")
-      case IntellijPlugin.IdWithCustomUrl(id, _, _) =>
+      case IntellijPlugin.IdWithCustomUrl(id, _) =>
         descriptorMap.get(id).filterNot(_.name.contains("remote")).toRight("plugin is remote")
       case IntellijPlugin.BundledFolder(name) =>
         descriptorMap.get(name).filterNot(_.name.contains("remote")).toRight("plugin is remote")
     }
     override def isPluginInstalled(ideaPlugin: IntellijPlugin): Boolean = ideaPlugin match {
-      case IntellijPlugin.Url(_, _) => false
-      case IntellijPlugin.Id(id, _, _) =>
-        descriptorMap.get(id).exists(_.name.contains("bundled"))
-      case IntellijPlugin.IdWithCustomUrl(id, _, _) =>
-        descriptorMap.get(id).exists(_.name.contains("bundled"))
+      case IntellijPlugin.Url(_, _) =>
+        false
+      case withId: IntellijPlugin.WithKnownId =>
+        descriptorMap.get(withId.id).exists(_.name.contains("bundled"))
       case IntellijPlugin.BundledFolder(name) =>
         descriptorMap.get(name).exists(_.name.contains("bundled"))
     }

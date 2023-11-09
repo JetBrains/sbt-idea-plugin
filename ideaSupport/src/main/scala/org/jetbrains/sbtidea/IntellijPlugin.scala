@@ -23,7 +23,7 @@ object IntellijPlugin {
     override def toString: String = id
   }
 
-  final case class IdWithCustomUrl(override val id: String, version: Option[String], downloadUrl: URL) extends WithKnownId {
+  final case class IdWithCustomUrl(override val id: String, downloadUrl: URL) extends WithKnownId {
     override def toString: String = id
   }
 
@@ -54,7 +54,7 @@ object IntellijPlugin {
    *
    * Examples:
    *  - plugin-id:https://org.example
-   *  - plugin-id:2023.3.1:https://org.example
+   *  - plugin-id:2023.3.1:https://org.example //!!! version is not actually used, but it's parsed not to break old usages
    */
   val IdWithCustomUrlRegex: Regex = "^([^:]+):?([\\w.-]+)?:?(https?://.+)$".r
 

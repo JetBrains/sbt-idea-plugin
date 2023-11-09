@@ -43,7 +43,7 @@ class LocalPluginRegistry (ideaRoot: Path) extends LocalPluginRegistryApi {
         index.contains(url.toString)
       case IntellijPlugin.Id(id,  _, _) =>
         index.contains(id)
-      case IntellijPlugin.IdWithCustomUrl(id,  _, _) =>
+      case IntellijPlugin.IdWithCustomUrl(id, _) =>
         index.contains(id)
       case IntellijPlugin.BundledFolder(name) => getDescriptorFromPluginFolder(name) match {
         case Right(descriptor) =>
