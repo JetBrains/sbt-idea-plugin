@@ -1,12 +1,11 @@
 package org.jetbrains.sbtidea.download.plugin
 
-import org.jetbrains.sbtidea.*
 import org.jetbrains.sbtidea.Keys.String2Plugin
 import org.jetbrains.sbtidea.download.FileDownloader
 import org.jetbrains.sbtidea.download.api.*
+import org.jetbrains.sbtidea.{IntellijPlugin, PluginLogger as log}
 
 import java.net.URL
-import java.nio.file.Files
 
 class PluginResolver(
   private val processedPlugins: Set[IntellijPlugin] = Set.empty,
@@ -28,7 +27,7 @@ class PluginResolver(
         case key: IntellijPlugin.Url =>
           Right((null, RemotePluginArtifact(pluginDependency, key.url)))
         case key: IntellijPlugin.WithKnownId =>
-          resolvePluginById(pluginDependency)(key)
+          resolvePluginById(pluginDependency ,key)
         case key: IntellijPlugin.BundledFolder =>
           Left(s"Cannot find bundled plugin root for folder name: ${key.name}")
       }
@@ -42,7 +41,7 @@ class PluginResolver(
             Seq.empty
         artifact +: resolvedDeps
       case Left(errorMessage) =>
-        PluginLogger.error(errorMessage)
+        log.error(errorMessage)
         Seq.empty
     }
   }
@@ -64,12 +63,12 @@ class PluginResolver(
       .map(dep => PluginDependency(dep.id.toPlugin, plugin.buildInfo))
       .flatMap(new PluginResolver(processedPlugins = processedPlugins + key, resolveSettings).resolve)
 
-  private def resolvePluginById(plugin: PluginDependency)(key: IntellijPlugin.WithKnownId): Either[String, (PluginDescriptor, PluginArtifact)] = {
+  private def resolvePluginById(plugin: PluginDependency, key: IntellijPlugin.WithKnownId): Either[String, (PluginDescriptor, PluginArtifact)] = {
     val descriptor: Either[String, PluginDescriptor] = key match {
       case IntellijPlugin.Id(id, _, channel) =>
         repo.getRemotePluginXmlDescriptor(plugin.buildInfo, id, channel).left.map(_.toString)
-      case IntellijPlugin.IdWithCustomUrl(_, _, downloadUrl) =>
-        downloadAndExtractDescriptor(downloadUrl)
+      case withCustomUrl: IntellijPlugin.IdWithCustomUrl =>
+        downloadAndExtractDescriptor(withCustomUrl)
     }
     descriptor match {
       case Right(descriptor) =>
@@ -88,14 +87,13 @@ class PluginResolver(
       downloadUrl
   }
 
-  private def downloadAndExtractDescriptor(downloadUrl: URL)(implicit ctx: InstallContext): Either[String, PluginDescriptor] = {
-    val downloadedFile = FileDownloader(ctx.downloadDirectory).download(downloadUrl)
-
-    val extractDir = Files.createTempDirectory(ctx.downloadDirectory, s"tmp-resolve-downloads")
-    sbt.IO.unzip(downloadedFile.toFile, extractDir.toFile)
-    assert(Files.list(extractDir).count() == 1, s"Expected only single plugin folder in extracted archive, got: ${extractDir.toFile.list().mkString}")
-
-    val tmpPluginDir = Files.list(extractDir).findFirst().get()
+  private def downloadAndExtractDescriptor(plugin: IntellijPlugin.IdWithCustomUrl)(implicit ctx: InstallContext): Either[String, PluginDescriptor] = {
+    val downloadedFile = FileDownloader(ctx.downloadDirectory).download(plugin.downloadUrl)
+    val tmpPluginDir = RepoPluginInstaller.extractPluginToTemporaryDir(
+      downloadedFile,
+      plugin,
+      s"tmp-${plugin.id}-plugin"
+    )
     val pluginDescriptor = LocalPluginRegistry.extractInstalledPluginDescriptorFileContent(tmpPluginDir)
     pluginDescriptor.right.map(_.content).map(PluginDescriptor.load)
   }

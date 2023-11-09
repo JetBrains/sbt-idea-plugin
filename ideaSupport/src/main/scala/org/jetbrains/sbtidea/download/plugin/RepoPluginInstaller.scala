@@ -22,11 +22,11 @@ class RepoPluginInstaller(buildInfo: BuildInfo)
 
   private[plugin] def installIdeaPlugin(plugin: IntellijPlugin, artifact: Path)(implicit ctx: InstallContext): Path = {
     val installedPluginRoot = if (!PluginXmlDetector.Default.isPluginJar(artifact)) {
-      val extractDir = Files.createTempDirectory(ctx.baseDirectory, s"${buildInfo.edition.name}-${buildInfo.buildNumber}-plugin")
-      log.info(s"Extracting plugin '$plugin to $extractDir")
-      sbt.IO.unzip(artifact.toFile, extractDir.toFile)
-      assert(Files.list(extractDir).count() == 1, s"Expected only single plugin folder in extracted archive, got: ${extractDir.toFile.list().mkString}")
-      val tmpPluginDir = Files.list(extractDir).findFirst().get()
+      val tmpPluginDir = extractPluginToTemporaryDir(
+        artifact,
+        plugin,
+        s"${buildInfo.edition.name}-${buildInfo.buildNumber}-plugin"
+      )
       val installDir = pluginsDir.resolve(tmpPluginDir.getFileName)
       NioUtils.delete(installDir)
       Files.move(tmpPluginDir, installDir)
@@ -117,6 +117,19 @@ object RepoPluginInstaller {
       if (res != 0) return res
     }
     c1.length - c2.length
+  }
+
+  def extractPluginToTemporaryDir(
+    pluginZip: Path,
+    plugin: IntellijPlugin,
+    tempDirectoryName: String
+  )(implicit ctx: InstallContext): Path = {
+    val extractDir = Files.createTempDirectory(ctx.baseDirectory, tempDirectoryName)
+    log.info(s"Extracting plugin '$plugin to $extractDir")
+    sbt.IO.unzip(pluginZip.toFile, extractDir.toFile)
+    assert(Files.list(extractDir).count() == 1, s"Expected only single plugin folder in extracted archive, got: ${extractDir.toFile.list().mkString}")
+    val tmpPluginDir = Files.list(extractDir).findFirst().get()
+    tmpPluginDir
   }
 }
 
