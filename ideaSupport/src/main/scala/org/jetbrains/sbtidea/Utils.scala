@@ -21,8 +21,6 @@ trait Utils {
             log.warn(s"Version `$version` in plugin reference `$id` is not used because a direct link is used to download the plugin: $url")
           }
           IntellijPlugin.IdWithCustomUrl(id, new URL(url))
-        case UrlRegex(name, url) =>
-          Url(Option(name), new URL(url))
         case _ =>
           throw new RuntimeException(s"Failed to parse plugin: $str")
       }
@@ -42,15 +40,6 @@ trait Utils {
 }
 
 object Utils {
-  /**
-   * [name]:url
-   *
-   * Examples:
-   *  - https://org.example
-   *  - my-plugin-name:https://org.example
-   */
-  private val UrlRegex: Regex = "^(?:([^:]+):)??(https?://.+)$".r
-
   /**
    * id:[version]:[channel]
    *

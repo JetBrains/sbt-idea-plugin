@@ -7,12 +7,6 @@ sealed trait IntellijPlugin {
 }
 
 object IntellijPlugin {
-  /**
-   * @param name not used but might be a helpful readable reminder
-   */
-  final case class Url(name: Option[String], url: URL) extends IntellijPlugin {
-    override def toString: String = url.toString
-  }
 
   sealed trait WithKnownId extends IntellijPlugin {
     def id: String

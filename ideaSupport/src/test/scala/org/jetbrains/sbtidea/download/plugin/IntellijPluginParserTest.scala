@@ -17,11 +17,6 @@ final class IntellijPluginParserTest extends AnyFunSuite with Matchers {
     "org.jetbrains.scala".toPlugin shouldBe a [Id]
   }
 
-  test("plugin url should parse as Url") {
-    "https://foo.bar/a.zip".toPlugin shouldBe an [Url]
-    "http://foo.bar/a.zip".toPlugin shouldBe an [Url]
-  }
-
   test("plugin with url should parse as Id with optional URL set") {
     val p = "org.example.plugin:http://foo.bar/a.zip".toPlugin.asInstanceOf[IntellijPlugin.IdWithCustomUrl]
     p.id shouldBe "org.example.plugin"

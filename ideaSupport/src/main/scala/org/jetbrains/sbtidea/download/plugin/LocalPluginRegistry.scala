@@ -16,9 +16,6 @@ class LocalPluginRegistry (ideaRoot: Path) extends LocalPluginRegistryApi {
     extractPluginMetaData(ideaRoot / "plugins" / name)
 
   override def getPluginDescriptor(ideaPlugin: IntellijPlugin): Either[String, PluginDescriptor] = ideaPlugin match {
-    case IntellijPlugin.Url(name, url) =>
-      val nameHint = s"${name.fold("")(n => s"'$n'")}"
-      index.getPluginDescriptor(url.toString).toRight(s"Can't find plugin$nameHint descriptor in index for url $url")
     case idOwner: IntellijPlugin.WithKnownId =>
       index.getPluginDescriptor(idOwner.id).toRight(s"Can't find plugin descriptor with id ${idOwner.id} in index ")
     case IntellijPlugin.BundledFolder(name) =>
@@ -39,8 +36,6 @@ class LocalPluginRegistry (ideaRoot: Path) extends LocalPluginRegistryApi {
 
   override def isPluginInstalled(ideaPlugin: IntellijPlugin): Boolean = {
     val existsInIndex = ideaPlugin match {
-      case IntellijPlugin.Url(_, url) =>
-        index.contains(url.toString)
       case IntellijPlugin.Id(id,  _, _) =>
         index.contains(id)
       case IntellijPlugin.IdWithCustomUrl(id, _) =>
@@ -74,7 +69,6 @@ class LocalPluginRegistry (ideaRoot: Path) extends LocalPluginRegistryApi {
         throw new MissingPluginRootException(ideaPlugin.toString)
     case _ =>
       val key = ideaPlugin match {
-        case IntellijPlugin.Url(_, url) => url.toString
         case IntellijPlugin.Id(id, _, _) => id
         case unsupported =>
           throw new RuntimeException(s"Unsupported plugin: $unsupported")

@@ -24,8 +24,6 @@ class PluginResolver(
       else if (localRegistry.isPluginInstalled(plugin))
         resolveInstalledPluginPlugin(pluginDependency, plugin)
       else plugin match {
-        case key: IntellijPlugin.Url =>
-          Right((null, RemotePluginArtifact(pluginDependency, key.url)))
         case key: IntellijPlugin.WithKnownId =>
           resolvePluginById(pluginDependency ,key)
         case key: IntellijPlugin.BundledFolder =>
@@ -35,7 +33,7 @@ class PluginResolver(
     pluginDescriptorAndArtifact match {
       case Right((descriptor, artifact)) =>
         val resolvedDeps =
-          if (needToResolveTransitiveDependencies(plugin))
+          if (resolveSettings.transitive)
             resolveDependencies(pluginDependency, plugin, descriptor)
           else
             Seq.empty
@@ -45,14 +43,6 @@ class PluginResolver(
         Seq.empty
     }
   }
-
-  //There is no strong reason why we do not resolve plugin descriptor and transitive dependencies for IntellijPlugin.Url
-  //It just worked so before and I didn't change it.
-  //Theoretically we could do the same as for IntellijPlugin.IdWithCustomUrl (download plugin, read descriptor, resolve dependencies)
-  //But it's not even clear what are the use cases for IntellijPlugin.Url.
-  //Is it even used in any plugin?
-  private def needToResolveTransitiveDependencies(plugin: IntellijPlugin): Boolean =
-    resolveSettings.transitive && !plugin.isInstanceOf[IntellijPlugin.Url]
 
   private def resolveDependencies(plugin: PluginDependency, key: IntellijPlugin, descriptor: PluginDescriptor): Seq[PluginArtifact] =
     descriptor.dependsOn

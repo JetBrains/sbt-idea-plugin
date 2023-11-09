@@ -1,8 +1,8 @@
 package org.jetbrains.sbtidea.download.plugin
 
 import org.jetbrains.sbtidea.Keys.String2Plugin
-import org.jetbrains.sbtidea.{download, *}
 import org.jetbrains.sbtidea.download.plugin.PluginDescriptor.Dependency
+import org.jetbrains.sbtidea.{download, *}
 import org.scalatest.Inside
 import sbt.*
 
@@ -30,8 +30,6 @@ abstract class IntellijPluginResolverTestBase extends IntellijPluginInstallerTes
 
   override protected implicit def localRegistry: LocalPluginRegistryApi = new LocalPluginRegistryApi {
     override def getPluginDescriptor(ideaPlugin: IntellijPlugin): Either[String, PluginDescriptor] = ideaPlugin match {
-      case IntellijPlugin.Url(_, _) =>
-        throw new IllegalArgumentException("url plugin not supported")
       case IntellijPlugin.Id(id, _, _) =>
         descriptorMap.get(id).filterNot(_.name.contains("remote")).toRight("plugin is remote")
       case IntellijPlugin.IdWithCustomUrl(id, _) =>
@@ -40,8 +38,6 @@ abstract class IntellijPluginResolverTestBase extends IntellijPluginInstallerTes
         descriptorMap.get(name).filterNot(_.name.contains("remote")).toRight("plugin is remote")
     }
     override def isPluginInstalled(ideaPlugin: IntellijPlugin): Boolean = ideaPlugin match {
-      case IntellijPlugin.Url(_, _) =>
-        false
       case withId: IntellijPlugin.WithKnownId =>
         descriptorMap.get(withId.id).exists(_.name.contains("bundled"))
       case IntellijPlugin.BundledFolder(name) =>
