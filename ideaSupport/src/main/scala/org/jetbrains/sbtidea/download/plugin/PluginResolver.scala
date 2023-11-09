@@ -29,7 +29,7 @@ class PluginResolver(
     else plugin match {
       case key: IntellijPlugin.Url =>
         resolvePluginByUrl(pluginDependency)(key)
-      case key: IntellijPlugin.IdOwner =>
+      case key: IntellijPlugin.WithKnownId =>
         resolvePluginById(pluginDependency)(key)
       case key: IntellijPlugin.BundledFolder =>
         PluginLogger.error(s"Cannot find bundled plugin root for folder name: ${key.name}")
@@ -55,7 +55,7 @@ class PluginResolver(
   private def resolvePluginByUrl(plugin: PluginDependency)(key: IntellijPlugin.Url): Seq[PluginArtifact] =
     RemotePluginArtifact(plugin, key.url) :: Nil
 
-  private def resolvePluginById(plugin: PluginDependency)(key: IntellijPlugin.IdOwner): Seq[PluginArtifact] = {
+  private def resolvePluginById(plugin: PluginDependency)(key: IntellijPlugin.WithKnownId): Seq[PluginArtifact] = {
     val descriptor: Either[io.Serializable, PluginDescriptor] = key match {
       case IntellijPlugin.Id(id, version, channel) =>
         repo.getRemotePluginXmlDescriptor(plugin.buildInfo, id, channel)
@@ -75,7 +75,7 @@ class PluginResolver(
     }
   }
 
-  private def getPluginDownloadUrl(plugin: PluginDependency, key: IntellijPlugin.IdOwner): URL = key match {
+  private def getPluginDownloadUrl(plugin: PluginDependency, key: IntellijPlugin.WithKnownId): URL = key match {
     case key: IntellijPlugin.Id =>
       repo.getPluginDownloadURL(plugin.buildInfo, key)
     case IntellijPlugin.IdWithCustomUrl(id, version, downloadUrl) =>

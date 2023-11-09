@@ -19,7 +19,7 @@ class LocalPluginRegistry (ideaRoot: Path) extends LocalPluginRegistryApi {
     case IntellijPlugin.Url(name, url) =>
       val nameHint = s"${name.fold("")(n => s"'$n'")}"
       index.getPluginDescriptor(url.toString).toRight(s"Can't find plugin$nameHint descriptor in index for url $url")
-    case idOwner: IntellijPlugin.IdOwner =>
+    case idOwner: IntellijPlugin.WithKnownId =>
       index.getPluginDescriptor(idOwner.id).toRight(s"Can't find plugin descriptor with id ${idOwner.id} in index ")
     case IntellijPlugin.BundledFolder(name) =>
       getDescriptorFromPluginFolder(name)
