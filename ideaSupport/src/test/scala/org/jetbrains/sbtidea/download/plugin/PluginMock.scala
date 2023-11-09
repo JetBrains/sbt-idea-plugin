@@ -10,7 +10,7 @@ import scala.collection.JavaConverters.*
 trait PluginMock extends TmpDirUtils {
 
   implicit class PluginMetaDataExt(metadata: PluginDescriptor) {
-    def toPluginId: IntellijPlugin.Id = IntellijPlugin.Id(metadata.id, Some(metadata.version), None)()
+    def toPluginId: IntellijPlugin.Id = IntellijPlugin.Id(metadata.id, Some(metadata.version), None)
   }
 
   protected def createPluginJarMock(metaData: PluginDescriptor): Path = {

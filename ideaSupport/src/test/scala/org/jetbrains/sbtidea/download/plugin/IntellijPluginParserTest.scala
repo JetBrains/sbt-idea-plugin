@@ -1,5 +1,6 @@
 package org.jetbrains.sbtidea.download.plugin
 
+import org.jetbrains.sbtidea.IntellijPlugin
 import org.jetbrains.sbtidea.IntellijPlugin.*
 import org.jetbrains.sbtidea.Keys.String2Plugin
 import org.scalatest.funsuite.AnyFunSuite
@@ -22,14 +23,17 @@ final class IntellijPluginParserTest extends AnyFunSuite with Matchers {
   }
 
   test("plugin with url should parse as Id with optional URL set") {
-    val p = "org.example.plugin:http://foo.bar/a.zip".toPlugin
-    p shouldBe an [Id]
-    p.asInstanceOf[Id].url shouldEqual Some(new URL("http://foo.bar/a.zip"))
+    val p = "org.example.plugin:http://foo.bar/a.zip".toPlugin.asInstanceOf[IntellijPlugin.IdWithCustomUrl]
+    p.id shouldBe "org.example.plugin"
+    p.version shouldBe None
+    p.downloadUrl shouldBe new URL("http://foo.bar/a.zip")
+  }
 
-    val p1 = "org.example.plugin:1.0-api-212:https://foo.bar/a.zip".toPlugin
-    p1 shouldBe an [Id]
-    p1.asInstanceOf[Id].url shouldEqual Some(new URL("https://foo.bar/a.zip"))
-    p1.asInstanceOf[Id].version shouldEqual Some("1.0-api-212")
+  test("plugin with url should parse as Id with optional URL set with version") {
+    val p = "org.example.plugin:1.0-api-212:https://foo.bar/a.zip".toPlugin.asInstanceOf[IntellijPlugin.IdWithCustomUrl]
+    p.id shouldBe "org.example.plugin"
+    p.version shouldBe Some("1.0-api-212")
+    p.downloadUrl shouldBe new URL("https://foo.bar/a.zip")
   }
 
   test("id should parse with with mixed segments") {

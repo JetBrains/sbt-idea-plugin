@@ -54,7 +54,7 @@ final class IntellijPluginInstallerTest extends IntellijPluginInstallerTestBase 
     val pluginMetadata = PluginDescriptor("org.intellij.scala", "JetBrains", "Scala", "2019.2.1", "211.0", "211.*")
     val mockPluginDist = createPluginJarMock(pluginMetadata)
     val installer = createInstaller
-    val pluginId = pluginMetadata.toPluginId.copy(version = None)(None)
+    val pluginId = pluginMetadata.toPluginId.copy(version = None)
     installer.installIdeaPlugin(pluginId, mockPluginDist)
 
     val messages = captureLog(installer.isInstalled(pluginId) shouldBe false)

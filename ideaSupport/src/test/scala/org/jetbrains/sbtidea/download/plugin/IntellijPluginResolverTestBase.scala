@@ -24,22 +24,26 @@ abstract class IntellijPluginResolverTestBase extends IntellijPluginInstallerTes
     Seq(pluginA, pluginB, pluginC, pluginD, pluginE).map(p => p.id -> p).toMap
 
   protected implicit def descriptor2Plugin(descriptor: PluginDescriptor): PluginDependency =
-      PluginDependency(IntellijPlugin.Id(descriptor.id, None, None)(),
+      PluginDependency(IntellijPlugin.Id(descriptor.id, None, None),
         IDEA_BUILDINFO,
         descriptor.dependsOn.map(p => plugin2PluginDep(p.id.toPlugin)))
 
   override protected implicit def localRegistry: LocalPluginRegistryApi = new LocalPluginRegistryApi {
     override def getPluginDescriptor(ideaPlugin: IntellijPlugin): Either[String, PluginDescriptor] = ideaPlugin match {
-      case IntellijPlugin.Url(_) =>
+      case IntellijPlugin.Url(_, _) =>
         throw new IllegalArgumentException("url plugin not supported")
       case IntellijPlugin.Id(id, _, _) =>
+        descriptorMap.get(id).filterNot(_.name.contains("remote")).toRight("plugin is remote")
+      case IntellijPlugin.IdWithCustomUrl(id, _, _) =>
         descriptorMap.get(id).filterNot(_.name.contains("remote")).toRight("plugin is remote")
       case IntellijPlugin.BundledFolder(name) =>
         descriptorMap.get(name).filterNot(_.name.contains("remote")).toRight("plugin is remote")
     }
     override def isPluginInstalled(ideaPlugin: IntellijPlugin): Boolean = ideaPlugin match {
-      case IntellijPlugin.Url(_) => false
+      case IntellijPlugin.Url(_, _) => false
       case IntellijPlugin.Id(id, _, _) =>
+        descriptorMap.get(id).exists(_.name.contains("bundled"))
+      case IntellijPlugin.IdWithCustomUrl(id, _, _) =>
         descriptorMap.get(id).exists(_.name.contains("bundled"))
       case IntellijPlugin.BundledFolder(name) =>
         descriptorMap.get(name).exists(_.name.contains("bundled"))

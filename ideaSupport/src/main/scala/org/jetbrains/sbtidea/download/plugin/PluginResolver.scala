@@ -4,11 +4,14 @@ import org.jetbrains.sbtidea.Keys.String2Plugin
 import org.jetbrains.sbtidea.download.FileDownloader
 import org.jetbrains.sbtidea.download.api.*
 
+import java.io
+import java.net.URL
 import java.nio.file.Files
 
-
-class PluginResolver(private val processedPlugins: Set[IntellijPlugin] = Set.empty, private val resolveSettings: IntellijPlugin.Settings)
-                    (implicit ctx: InstallContext, repo: PluginRepoApi, localRegistry: LocalPluginRegistryApi) extends Resolver[PluginDependency] {
+class PluginResolver(
+  private val processedPlugins: Set[IntellijPlugin] = Set.empty,
+  private val resolveSettings: IntellijPlugin.Settings
+)(implicit ctx: InstallContext, repo: PluginRepoApi, localRegistry: LocalPluginRegistryApi) extends Resolver[PluginDependency] {
 
   // modules that are inside idea.jar
   private val INTERNAL_MODULE_PREFIX = "com.intellij.modules."
@@ -20,9 +23,9 @@ class PluginResolver(private val processedPlugins: Set[IntellijPlugin] = Set.emp
     } else {
       pluginDependency.plugin match {
         case key: IntellijPlugin.Url =>
-          resolveUrlPlugin(pluginDependency)(key)
-        case key: IntellijPlugin.Id =>
-          resolvePluginId(pluginDependency)(key)
+          resolvePluginByUrl(pluginDependency)(key)
+        case key: IntellijPlugin.IdOwner =>
+          resolvePluginById(pluginDependency)(key)
         case key: IntellijPlugin.BundledFolder =>
           resolveBundledPlugin(pluginDependency)(key)
       }
@@ -39,44 +42,55 @@ class PluginResolver(private val processedPlugins: Set[IntellijPlugin] = Set.emp
       .flatMap(new PluginResolver(processedPlugins = processedPlugins + key, resolveSettings).resolve)
   }
 
-  private def resolveUrlPlugin(plugin: PluginDependency)(key: IntellijPlugin.Url): Seq[PluginArtifact] =
+  private def resolvePluginByUrl(plugin: PluginDependency)(key: IntellijPlugin.Url): Seq[PluginArtifact] =
     RemotePluginArtifact(plugin, key.url) :: Nil
 
-  private def resolvePluginId(plugin: PluginDependency)(key: IntellijPlugin.Id): Seq[PluginArtifact] = {
+  private def resolvePluginById(plugin: PluginDependency)(key: IntellijPlugin.IdOwner): Seq[PluginArtifact] = {
     val alreadyInstalled = localRegistry.isPluginInstalled(key)
-    val descriptor =
+
+    val descriptor: Either[io.Serializable, PluginDescriptor] =
       if (alreadyInstalled)
         localRegistry.getPluginDescriptor(key)
-      else if (key.url.isDefined) {
-        val downloadedFile = FileDownloader(ctx.downloadDirectory).download(key.url.get)
-        val extractDir = Files.createTempDirectory(ctx.downloadDirectory, s"tmp-resolve-downloads")
-        sbt.IO.unzip(downloadedFile.toFile, extractDir.toFile)
-        assert(Files.list(extractDir).count() == 1, s"Expected only single plugin folder in extracted archive, got: ${extractDir.toFile.list().mkString}")
-        val tmpPluginDir = Files.list(extractDir).findFirst().get()
-        val pluginDescriptor = LocalPluginRegistry.extractInstalledPluginDescriptorFileContent(tmpPluginDir)
-        pluginDescriptor.right.map(_.content).map(PluginDescriptor.load)
-      } else repo.getRemotePluginXmlDescriptor(plugin.buildInfo, key.id, key.channel)
+      else
+        key match {
+          case IntellijPlugin.Id(id, version, channel) =>
+            repo.getRemotePluginXmlDescriptor(plugin.buildInfo, id, channel)
+          case IntellijPlugin.IdWithCustomUrl(id, version, downloadUrl) =>
+            downloadAndExtractDescriptor(downloadUrl)
+        }
 
     descriptor match {
       case Right(descriptor) =>
-
-        val thisPluginArtifact =
+        val thisPluginArtifact: PluginArtifact =
           if (alreadyInstalled)
             LocalPlugin(plugin, descriptor, localRegistry.getInstalledPluginRoot(key))
-          else {
-            val url = key.url.getOrElse(repo.getPluginDownloadURL(plugin.buildInfo, key))
-            RemotePluginArtifact(plugin, url)
-          }
-
-        val resolvedDeps =
-          if (resolveSettings.transitive)
-            resolveDependencies(plugin, key, descriptor)
           else
-            Seq.empty
-
-        thisPluginArtifact +: resolvedDeps
-      case Left(error) => PluginLogger.error(s"Failed to resolve $plugin: $error"); Seq.empty
+            RemotePluginArtifact(plugin, getPluginDownloadUrl(plugin, key))
+        val pluginTransitiveDependencies = if (!resolveSettings.transitive) Nil else resolveDependencies(plugin, key, descriptor)
+        thisPluginArtifact +: pluginTransitiveDependencies
+      case Left(error) =>
+        PluginLogger.error(s"Failed to resolve $plugin: $error"); Seq.empty
     }
+  }
+
+  private def getPluginDownloadUrl(plugin: PluginDependency, key: IntellijPlugin.IdOwner): URL =
+    key match {
+      case key: IntellijPlugin.Id =>
+        repo.getPluginDownloadURL(plugin.buildInfo, key)
+      case IntellijPlugin.IdWithCustomUrl(id, version, downloadUrl) =>
+        downloadUrl
+    }
+
+  private def downloadAndExtractDescriptor(downloadUrl: URL)(implicit ctx: InstallContext): Either[String, PluginDescriptor] = {
+    val downloadedFile = FileDownloader(ctx.downloadDirectory).download(downloadUrl)
+
+    val extractDir = Files.createTempDirectory(ctx.downloadDirectory, s"tmp-resolve-downloads")
+    sbt.IO.unzip(downloadedFile.toFile, extractDir.toFile)
+    assert(Files.list(extractDir).count() == 1, s"Expected only single plugin folder in extracted archive, got: ${extractDir.toFile.list().mkString}")
+
+    val tmpPluginDir = Files.list(extractDir).findFirst().get()
+    val pluginDescriptor = LocalPluginRegistry.extractInstalledPluginDescriptorFileContent(tmpPluginDir)
+    pluginDescriptor.right.map(_.content).map(PluginDescriptor.load)
   }
 
   private def resolveBundledPlugin(plugin: PluginDependency)(key: IntellijPlugin.BundledFolder): Seq[PluginArtifact] = {

@@ -1,26 +1,69 @@
 package org.jetbrains.sbtidea
 
 import java.net.URL
-import java.util.regex.Pattern
+import scala.util.matching.Regex
 
 sealed trait IntellijPlugin {
-    var resolveSettings: IntellijPlugin.Settings = IntellijPlugin.defaultSettings
+  var resolveSettings: IntellijPlugin.Settings = IntellijPlugin.defaultSettings
 }
 
 object IntellijPlugin {
-  final case class Url(url: URL) extends IntellijPlugin
-    { override def toString: String = url.toString }
-  final case class Id(id: String, version: Option[String], channel: Option[String])(val url: Option[URL] = None) extends IntellijPlugin
-   { override def toString: String = id }
+  /**
+   * @param name not used but might be a helpful readable reminder
+   */
+  final case class Url(name: Option[String], url: URL) extends IntellijPlugin {
+    override def toString: String = url.toString
+  }
+
+  sealed trait IdOwner extends IntellijPlugin {
+    def id: String
+  }
+
+  final case class Id(override val id: String, version: Option[String], channel: Option[String]) extends IdOwner {
+    override def toString: String = id
+  }
+
+  final case class IdWithCustomUrl(override val id: String, version: Option[String], downloadUrl: URL) extends IdOwner {
+    override def toString: String = id
+  }
+
   final case class BundledFolder(name: String) extends IntellijPlugin
 
-  val URL_PATTERN: Pattern = Pattern.compile("^(?:(\\w+):)??(https?://.+)$")
-  val ID_PATTERN:  Pattern = Pattern.compile("^([^:]+):?([\\w.]+)?:?([\\w]+)?$")
-  val ID_WITH_URL: Pattern = Pattern.compile("^([^:]+):?([\\w.-]+)?:?(https?://.+)?$")
+
+  /**
+   * [name]:url
+   *
+   * Examples:
+   *  - https://org.example
+   *  - my-plugin-name:https://org.example
+   */
+  val UrlRegex: Regex = "^(?:([^:]+):)??(https?://.+)$".r
+
+  /**
+   * id:[version]:[channel]
+   *
+   * Examples:
+   *  - plugin-id
+   *  - plugin-id:2023.3.1
+   *  - plugin-id:2023.3.1:eap
+   */
+  val IdRegex: Regex = "^([^:]+):?([\\w.-]+)?:?([\\w]+)?$".r
+
+  /**
+   * id:[channel]:url
+   *
+   * Examples:
+   *  - plugin-id:https://org.example
+   *  - plugin-id:2023.3.1:https://org.example
+   */
+  val IdWithCustomUrlRegex: Regex = "^([^:]+):?([\\w.-]+)?:?(https?://.+)$".r
 
   case class Settings(transitive: Boolean = true, optionalDeps: Boolean = true, excludedIds: Set[String] = Set.empty)
   val defaultSettings: Settings = Settings()
 
+
   def isExternalPluginStr(str: String): Boolean =
-    str.contains(":") || ID_PATTERN.matcher(str).matches() || URL_PATTERN.matcher(str).matches()
+    str.contains(":") ||
+      IdRegex.pattern.matcher(str).matches() ||
+      UrlRegex.pattern.matcher(str).matches()
 }

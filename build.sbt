@@ -52,7 +52,10 @@ lazy val ideaSupport = (project in file("ideaSupport"))
       "org.scalaj" %% "scalaj-http" % "2.4.2",
       "org.jetbrains" % "marketplace-zip-signer" % "0.1.8",
       "com.eclipsesource.minimal-json" % "minimal-json" % "0.9.5",
-      "org.rauschig" % "jarchivelib" % "1.2.0"
+      "org.rauschig" % "jarchivelib" % "1.2.0",
+
+      //for file utils in tests (create/delete cerucsively/write string)
+      "org.apache.commons" % "commons-io" % "1.3.2" % Test
     )
   )
 
