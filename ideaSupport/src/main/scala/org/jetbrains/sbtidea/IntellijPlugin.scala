@@ -4,7 +4,7 @@ import java.net.URL
 import scala.util.matching.Regex
 
 sealed trait IntellijPlugin {
-  var resolveSettings: IntellijPlugin.Settings = IntellijPlugin.defaultSettings
+  var resolveSettings: IntellijPlugin.Settings = IntellijPlugin.Settings()
 }
 
 object IntellijPlugin {
@@ -47,7 +47,7 @@ object IntellijPlugin {
    *  - plugin-id:2023.3.1
    *  - plugin-id:2023.3.1:eap
    */
-  val IdRegex: Regex = "^([^:]+):?([\\w.-]+)?:?([\\w]+)?$".r
+  val IdRegex: Regex = "^([^:]+):?([\\w.-]+)?:?(\\w+)?$".r
 
   /**
    * id:[channel]:url
@@ -58,12 +58,9 @@ object IntellijPlugin {
    */
   val IdWithCustomUrlRegex: Regex = "^([^:]+):?([\\w.-]+)?:?(https?://.+)$".r
 
-  case class Settings(transitive: Boolean = true, optionalDeps: Boolean = true, excludedIds: Set[String] = Set.empty)
-  val defaultSettings: Settings = Settings()
-
-
-  def isExternalPluginStr(str: String): Boolean =
-    str.contains(":") ||
-      IdRegex.pattern.matcher(str).matches() ||
-      UrlRegex.pattern.matcher(str).matches()
+  case class Settings(
+    transitive: Boolean = true,
+    optionalDeps: Boolean = true,
+    excludedIds: Set[String] = Set.empty
+  )
 }
