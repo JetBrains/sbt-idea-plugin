@@ -1,4 +1,5 @@
 package org.jetbrains.sbtidea.download.plugin
+
 import org.jetbrains.sbtidea.*
 import org.jetbrains.sbtidea.Keys.String2Plugin
 import org.jetbrains.sbtidea.download.FileDownloader
@@ -17,22 +18,31 @@ class PluginResolver(
   private val INTERNAL_MODULE_PREFIX = "com.intellij.modules."
 
   override def resolve(pluginDependency: PluginDependency): Seq[PluginArtifact] = {
-    if(processedPlugins.contains(pluginDependency.plugin)) {
+    val plugin = pluginDependency.plugin
+
+    val result = if (processedPlugins.contains(plugin)) {
       PluginLogger.warn(s"Circular plugin dependency detected: $pluginDependency already processed")
       Seq.empty
-    } else {
-      pluginDependency.plugin match {
-        case key: IntellijPlugin.Url =>
-          resolvePluginByUrl(pluginDependency)(key)
-        case key: IntellijPlugin.IdOwner =>
-          resolvePluginById(pluginDependency)(key)
-        case key: IntellijPlugin.BundledFolder =>
-          resolveBundledPlugin(pluginDependency)(key)
-      }
-    }.distinct
+    }
+    else if (localRegistry.isPluginInstalled(plugin))
+      resolveInstalledPluginPlugin(pluginDependency, plugin)
+    else plugin match {
+      case key: IntellijPlugin.Url =>
+        resolvePluginByUrl(pluginDependency)(key)
+      case key: IntellijPlugin.IdOwner =>
+        resolvePluginById(pluginDependency)(key)
+      case key: IntellijPlugin.BundledFolder =>
+        PluginLogger.error(s"Cannot find bundled plugin root for folder name: ${key.name}")
+        Seq.empty
+    }
+
+    result.distinct
   }
 
-  private def resolveDependencies(plugin: PluginDependency, key: IntellijPlugin, descriptor: PluginDescriptor) = {
+  private def resolveDependencies(plugin: PluginDependency, key: IntellijPlugin, descriptor: PluginDescriptor): Seq[PluginArtifact] = {
+    if (!resolveSettings.transitive)
+      return Seq.empty
+
     descriptor.dependsOn
       .filterNot(!resolveSettings.optionalDeps && _.optional)              // skip all optional plugins if flag is set
       .filterNot(dep => resolveSettings.excludedIds.contains(dep.id))      // remove plugins specified by user blacklist
@@ -46,40 +56,31 @@ class PluginResolver(
     RemotePluginArtifact(plugin, key.url) :: Nil
 
   private def resolvePluginById(plugin: PluginDependency)(key: IntellijPlugin.IdOwner): Seq[PluginArtifact] = {
-    val alreadyInstalled = localRegistry.isPluginInstalled(key)
-
-    val descriptor: Either[io.Serializable, PluginDescriptor] =
-      if (alreadyInstalled)
-        localRegistry.getPluginDescriptor(key)
-      else
-        key match {
-          case IntellijPlugin.Id(id, version, channel) =>
-            repo.getRemotePluginXmlDescriptor(plugin.buildInfo, id, channel)
-          case IntellijPlugin.IdWithCustomUrl(id, version, downloadUrl) =>
-            downloadAndExtractDescriptor(downloadUrl)
-        }
+    val descriptor: Either[io.Serializable, PluginDescriptor] = key match {
+      case IntellijPlugin.Id(id, version, channel) =>
+        repo.getRemotePluginXmlDescriptor(plugin.buildInfo, id, channel)
+      case IntellijPlugin.IdWithCustomUrl(_, _, downloadUrl) =>
+        downloadAndExtractDescriptor(downloadUrl)
+    }
 
     descriptor match {
       case Right(descriptor) =>
-        val thisPluginArtifact: PluginArtifact =
-          if (alreadyInstalled)
-            LocalPlugin(plugin, descriptor, localRegistry.getInstalledPluginRoot(key))
-          else
-            RemotePluginArtifact(plugin, getPluginDownloadUrl(plugin, key))
-        val pluginTransitiveDependencies = if (!resolveSettings.transitive) Nil else resolveDependencies(plugin, key, descriptor)
-        thisPluginArtifact +: pluginTransitiveDependencies
+        val downloadUrl = getPluginDownloadUrl(plugin, key)
+        val thisPluginArtifact = RemotePluginArtifact(plugin, downloadUrl)
+        val resolvedDeps = resolveDependencies(plugin, key, descriptor)
+        thisPluginArtifact +: resolvedDeps
       case Left(error) =>
-        PluginLogger.error(s"Failed to resolve $plugin: $error"); Seq.empty
+        PluginLogger.error(s"Failed to resolve $plugin: $error")
+        Seq.empty
     }
   }
 
-  private def getPluginDownloadUrl(plugin: PluginDependency, key: IntellijPlugin.IdOwner): URL =
-    key match {
-      case key: IntellijPlugin.Id =>
-        repo.getPluginDownloadURL(plugin.buildInfo, key)
-      case IntellijPlugin.IdWithCustomUrl(id, version, downloadUrl) =>
-        downloadUrl
-    }
+  private def getPluginDownloadUrl(plugin: PluginDependency, key: IntellijPlugin.IdOwner): URL = key match {
+    case key: IntellijPlugin.Id =>
+      repo.getPluginDownloadURL(plugin.buildInfo, key)
+    case IntellijPlugin.IdWithCustomUrl(id, version, downloadUrl) =>
+      downloadUrl
+  }
 
   private def downloadAndExtractDescriptor(downloadUrl: URL)(implicit ctx: InstallContext): Either[String, PluginDescriptor] = {
     val downloadedFile = FileDownloader(ctx.downloadDirectory).download(downloadUrl)
@@ -93,26 +94,17 @@ class PluginResolver(
     pluginDescriptor.right.map(_.content).map(PluginDescriptor.load)
   }
 
-  private def resolveBundledPlugin(plugin: PluginDependency)(key: IntellijPlugin.BundledFolder): Seq[PluginArtifact] = {
-    if (localRegistry.isPluginInstalled(key)) {
-      val root = localRegistry.getInstalledPluginRoot(key)
-      val descriptor = localRegistry.getPluginDescriptor(key)
-      descriptor match {
-        case Right(value) =>
-          val thisPluginArtifact = LocalPlugin(plugin, value, root)
-          val resolvedDeps =
-            if (resolveSettings.transitive)
-              resolveDependencies(plugin, key, value)
-            else
-              Seq.empty
-          thisPluginArtifact +: resolvedDeps
-        case Left(error) =>
-          PluginLogger.error(s"Cannot extract bundled plugin descriptor from $plugin: $error")
-          Seq.empty
-      }
-    } else {
-      PluginLogger.error(s"Cannot find bundled plugin root for folder name: ${key.name}")
-      Seq.empty
+  private def resolveInstalledPluginPlugin(plugin: PluginDependency, key: IntellijPlugin): Seq[PluginArtifact] = {
+    val descriptor = localRegistry.getPluginDescriptor(key)
+    descriptor match {
+      case Right(descriptor) =>
+        val root = localRegistry.getInstalledPluginRoot(key)
+        val thisPluginArtifact = LocalPlugin(plugin, descriptor, root)
+        val resolvedDeps = resolveDependencies(plugin, key, descriptor)
+        thisPluginArtifact +: resolvedDeps
+      case Left(error) =>
+        PluginLogger.error(s"Cannot extract bundled plugin descriptor from $plugin: $error")
+        Seq.empty
     }
   }
 }

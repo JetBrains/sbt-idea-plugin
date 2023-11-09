@@ -6,6 +6,9 @@ import java.nio.file.{Files, Path}
 import scala.xml.*
 import scala.xml.Utility.escape
 
+/**
+ * Represents data located in `plugin.xml` file
+ */
 case class PluginDescriptor(id: String,
                             vendor: String,
                             name: String,
