@@ -1,8 +1,10 @@
 package org.jetbrains.sbtidea
 
 import org.jetbrains.sbtidea.PluginLogger as log
+import org.jetbrains.sbtidea.Utils.*
 
 import java.net.URL
+import scala.util.matching.Regex
 
 trait Utils {
 
@@ -37,4 +39,34 @@ trait Utils {
       res
     }
   }
+}
+
+object Utils {
+  /**
+   * [name]:url
+   *
+   * Examples:
+   *  - https://org.example
+   *  - my-plugin-name:https://org.example
+   */
+  private val UrlRegex: Regex = "^(?:([^:]+):)??(https?://.+)$".r
+
+  /**
+   * id:[version]:[channel]
+   *
+   * Examples:
+   *  - plugin-id
+   *  - plugin-id:2023.3.1
+   *  - plugin-id:2023.3.1:eap
+   */
+  private val IdRegex: Regex = "^([^:]+):?([\\w.-]+)?:?(\\w+)?$".r
+
+  /**
+   * id:[channel]:url
+   *
+   * Examples:
+   *  - plugin-id:https://org.example
+   *  - plugin-id:2023.3.1:https://org.example //!!! version is not actually used, but it's parsed not to break old usages
+   */
+  private val IdWithCustomUrlRegex: Regex = "^([^:]+):?([\\w.-]+)?:?(https?://.+)$".r
 }

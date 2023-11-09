@@ -1,7 +1,6 @@
 package org.jetbrains.sbtidea
 
 import java.net.URL
-import scala.util.matching.Regex
 
 sealed trait IntellijPlugin {
   var resolveSettings: IntellijPlugin.Settings = IntellijPlugin.Settings()
@@ -28,35 +27,6 @@ object IntellijPlugin {
   }
 
   final case class BundledFolder(name: String) extends IntellijPlugin
-
-
-  /**
-   * [name]:url
-   *
-   * Examples:
-   *  - https://org.example
-   *  - my-plugin-name:https://org.example
-   */
-  val UrlRegex: Regex = "^(?:([^:]+):)??(https?://.+)$".r
-
-  /**
-   * id:[version]:[channel]
-   *
-   * Examples:
-   *  - plugin-id
-   *  - plugin-id:2023.3.1
-   *  - plugin-id:2023.3.1:eap
-   */
-  val IdRegex: Regex = "^([^:]+):?([\\w.-]+)?:?(\\w+)?$".r
-
-  /**
-   * id:[channel]:url
-   *
-   * Examples:
-   *  - plugin-id:https://org.example
-   *  - plugin-id:2023.3.1:https://org.example //!!! version is not actually used, but it's parsed not to break old usages
-   */
-  val IdWithCustomUrlRegex: Regex = "^([^:]+):?([\\w.-]+)?:?(https?://.+)$".r
 
   case class Settings(
     transitive: Boolean = true,
