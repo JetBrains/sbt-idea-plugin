@@ -115,14 +115,16 @@ Plugins will be checked for compatibility against the `intellijBuild` you specif
 intellijPlugins += "com.intellij.properties".toPlugin
 // use Scala plugin as a dependency
 intellijPlugins += "org.intellij.scala".toPlugin
-// use Scala plugin version 2019.2.1
-intellijPlugins += "org.intellij.scala:2019.2.1".toPlugin
+// use Scala plugin version 2023.3.10
+intellijPlugins += "org.intellij.scala:2023.3.10".toPlugin
 // use latest nightly build from the repo
 intellijPlugins += "org.intellij.scala::Nightly".toPlugin
 // use specific version from Eap update channel
-intellijPlugins += "org.intellij.scala:2019.3.2:Eap".toPlugin
+intellijPlugins += "org.intellij.scala:2023.3.10:Eap".toPlugin
 // add JavaScript plugin but without its Grazie plugin dependency
 intellijPlugins += "JavaScript".toPlugin(excludedIds = Set("tanvd.grazi"))
+// add custom plugin with id `org.custom.plugin`, download it using the direct link https://org.example/path/to/your/plugin.zip
+intellijPlugins += "org.custom.plugin:https://org.example/path/to/your/plugin.zip".toPlugin
 ```
 
 #### `searchPluginId :: Map[String, (String, Boolean)]`

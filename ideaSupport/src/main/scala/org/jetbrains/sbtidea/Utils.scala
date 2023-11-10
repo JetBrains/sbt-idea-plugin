@@ -22,7 +22,11 @@ trait Utils {
           }
           IntellijPlugin.IdWithCustomUrl(id, new URL(url))
         case _ =>
-          throw new RuntimeException(s"Failed to parse plugin: $str")
+          throw new RuntimeException(
+            s"""Failed to parse plugin: $str.
+               |Here are some examples of valid strings:
+               |${PluginStringExamples.mkString("\n")}""".stripMargin
+          )
       }
     }
 
@@ -40,6 +44,16 @@ trait Utils {
 }
 
 object Utils {
+  val PluginStringExamples: Seq[String] = Seq(
+    """org.intellij.scala""",
+    """org.intellij.scala:2023.3.6""",
+    """org.intellij.scala:2023.3.6:Eap""",
+    """org.intellij.scala:2023.3.6:Nightly""",
+    """org.custom.plugin""",
+    """org.custom.plugin:2022.1.1""",
+    """org.custom.plugin:https://org.example/path/to/your/plugin.zip""",
+  )
+
   /**
    * id:[version]:[channel]
    *

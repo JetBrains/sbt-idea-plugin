@@ -38,19 +38,19 @@ class PluginRepoUtilsTest extends AnyFeatureSpecLike with BeforeAndAfterAll {
       }
     }
 
-    Scenario(("id")) {
+    Scenario("id") {
       getUrlString(IntellijPlugin.Id("plugin-id", None, None)) shouldBe "https://plugins.jetbrains.com/pluginManager?action=download&noStatistic=true&id=plugin-id&build=IU-11.22.33-actual"
     }
 
-    Scenario(("id with chanel")) {
+    Scenario("id with chanel") {
       getUrlString(IntellijPlugin.Id("plugin-id", None, Some("EAP"))) shouldBe "https://plugins.jetbrains.com/pluginManager?action=download&noStatistic=true&id=plugin-id&channel=EAP&build=IU-11.22.33-actual"
     }
 
-    Scenario(("id with version")) {
+    Scenario("id with version") {
       getUrlString(IntellijPlugin.Id("plugin-id", Some("4.5.6"), None)) shouldBe "https://plugins.jetbrains.com/plugin/download?noStatistic=true&pluginId=plugin-id&version=4.5.6"
     }
 
-    Scenario(("id with version and channel")) {
+    Scenario("id with version and channel") {
       getUrlString(IntellijPlugin.Id("plugin-id", Some("4.5.6"), Some("EAP"))) shouldBe "https://plugins.jetbrains.com/plugin/download?noStatistic=true&pluginId=plugin-id&version=4.5.6&channel=EAP"
     }
   }
