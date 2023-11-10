@@ -17,9 +17,9 @@ class PluginRepoUtils(implicit ctx: InstallContext) extends PluginRepoApi {
 
   override def getPluginDownloadURL(idea: BuildInfo, pluginInfo: IntellijPlugin.Id): URL =
     pluginInfo match {
-      case IntellijPlugin.Id(id, Some(version), channel) =>
+      case IntellijPlugin.Id(id, Some(version), channel, _) =>
         MerketplaceUrls.download(id, version, channel)
-      case IntellijPlugin.Id(id, None, channel) =>
+      case IntellijPlugin.Id(id, None, channel, _) =>
         MerketplaceUrls.downloadViaPLuginManager(id, idea, channel)
     }
 
@@ -30,7 +30,7 @@ class PluginRepoUtils(implicit ctx: InstallContext) extends PluginRepoApi {
       val edition = buildInfo.edition.edition
       val buildNumber = buildInfo.getActualIdeaBuild(ctx.baseDirectory)
       val channelQuery = channel.fold("")(c => s"&channel=$c")
-      new URL(s"$BaseUrl/plugins/list?pluginId=$id$channelQuery&build=${edition}-${buildNumber}")
+      new URL(s"$BaseUrl/plugins/list?pluginId=$id$channelQuery&build=$edition-$buildNumber")
     }
 
     def download(id: String, version: String, channel: Option[String]): URL = {

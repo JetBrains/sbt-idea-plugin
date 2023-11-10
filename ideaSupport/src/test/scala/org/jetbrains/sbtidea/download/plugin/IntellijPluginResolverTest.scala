@@ -11,7 +11,7 @@ class IntellijPluginResolverTest extends IntellijPluginResolverTestBase {
   test("plugin resolver doesn't resolve fake plugin") {
     val fakePlugin = "org.myFake.plugin:0.999:trunk".toPlugin
     val messages = captureLog(new PluginResolver(resolveSettings = fakePlugin.resolveSettings).resolve(fakePlugin) shouldBe empty)
-    messages should contain ("[error] Failed to resolve PluginDependency(org.myFake.plugin): null")
+    messages should contain ("[error] Failed to resolve PluginDependency(org.myFake.plugin): java.lang.RuntimeException: TestPluginRepoApi error for getRemotePluginXmlDescriptor")
   }
 
   test("transitive plugin dependencies are resolved") {

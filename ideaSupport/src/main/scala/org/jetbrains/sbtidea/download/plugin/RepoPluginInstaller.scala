@@ -1,7 +1,8 @@
 package org.jetbrains.sbtidea.download.plugin
 
+import org.jetbrains.sbtidea.download.FileDownloader.DownloadException
 import org.jetbrains.sbtidea.download.api.*
-import org.jetbrains.sbtidea.download.{BuildInfo, FileDownloader, IdeaUpdater, NioUtils, PluginXmlDetector, VersionComparatorUtil}
+import org.jetbrains.sbtidea.download.{BuildInfo, FileDownloader, IdeaUpdater, NioUtils, NotFoundHttpResponseCode, PluginXmlDetector, VersionComparatorUtil}
 import org.jetbrains.sbtidea.{IntellijPlugin, PluginLogger as log}
 
 import java.nio.file.{Files, Path}
@@ -16,7 +17,20 @@ class RepoPluginInstaller(buildInfo: BuildInfo)
       isInstalledPluginUpToDate(art.caller.plugin)
 
   override def downloadAndInstall(art: RemotePluginArtifact)(implicit ctx: InstallContext): Unit = {
-    val dist = FileDownloader(ctx.baseDirectory.getParent).download(art.dlUrl)
+    val downloader = FileDownloader(ctx.baseDirectory.getParent)
+    val downloadUrl = art.dlUrl
+    val dist = try {
+      downloader.download(downloadUrl)
+    } catch {
+      case de: DownloadException if de.responseCode.contains(NotFoundHttpResponseCode) =>
+        art.caller.plugin.fallbackDownloadUrl match {
+          case Some(fallbackUrl) =>
+            log.warn(s"Plugin not found at $downloadUrl\nTrying to download from a fallback url $fallbackUrl")
+            downloader.download(fallbackUrl)
+          case _  =>
+            throw de
+        }
+    }
     installIdeaPlugin(art.caller.plugin, dist)
   }
 
@@ -58,10 +72,10 @@ class RepoPluginInstaller(buildInfo: BuildInfo)
           return false
         }
         plugin match {
-          case IntellijPlugin.Id(_, Some(version), _) if descriptor.version != version =>
+          case IntellijPlugin.Id(_, Some(version), _, _) if descriptor.version != version =>
             log.info(s"Locally installed plugin $plugin has different version: ${descriptor.version} != $version")
             return false
-          case IntellijPlugin.Id(_, None, channel) =>
+          case IntellijPlugin.Id(_, None, channel, _) =>
             getMoreUpToDateVersion(descriptor, channel) match {
               case None =>
               case Some(newVersion) =>

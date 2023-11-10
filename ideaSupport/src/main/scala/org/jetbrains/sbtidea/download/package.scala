@@ -68,4 +68,6 @@ package object download {
     }
 
   }
+
+  val NotFoundHttpResponseCode = 404
 }

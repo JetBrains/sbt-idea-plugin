@@ -1,6 +1,6 @@
 package org.jetbrains.sbtidea.download
 
-import org.jetbrains.sbtidea.download.FileDownloader.ProgressInfo
+import org.jetbrains.sbtidea.download.FileDownloader.{DownloadException, ProgressInfo}
 import org.jetbrains.sbtidea.{PluginLogger as log, *}
 
 import java.io.FileOutputStream
@@ -13,10 +13,9 @@ import scala.concurrent.duration.{Duration, DurationInt, DurationLong}
 
 class FileDownloader(private val baseDirectory: Path) {
 
-  type ProgressCallback = (ProgressInfo, Path) => Unit
+  private type ProgressCallback = (ProgressInfo, Path) => Unit
 
   private case class RemoteMetaData(length: Long, fileName: String)
-  class DownloadException(message: String) extends RuntimeException(message)
 
   private val downloadDirectory = getOrCreateDLDir()
 
@@ -90,7 +89,11 @@ class FileDownloader(private val baseDirectory: Path) {
           Thread.sleep(retry1Timeout.toMillis)
           inner(retries1 - 1, retries2)
 
-        case downloadException: DownloadException if retries2 > 0 =>
+        case downloadException: DownloadException =>
+          //if we got "404: Not Found" response we can be pretty sure that it's not a network error and hte artefact doesn't exist
+          if (retries2 <= 0 || downloadException.responseCode.contains(NotFoundHttpResponseCode))
+            throw downloadException
+
           log.warn(s"Error occurred during download: ${downloadException.getMessage}, retry in $retry2Timeout ...")
           Thread.sleep(retry2Timeout.toMillis)
           inner(retries1, retries2 - 1)
@@ -183,7 +186,7 @@ class FileDownloader(private val baseDirectory: Path) {
     val responseCode = connection.getResponseCode
     if (responseCode >= 400) {
       val message = connection.getResponseMessage
-      throw new DownloadException(s"$message ($responseCode): $url")
+      throw new DownloadException(s"$message ($responseCode): $url", Some(responseCode))
     }
     val contentLength = connection.getContentLength
     val nameFromHeader = java.net.URLDecoder
@@ -237,6 +240,7 @@ class FileDownloader(private val baseDirectory: Path) {
 }
 
 object FileDownloader {
+  class DownloadException(message: String, val responseCode: Option[Int] = None) extends RuntimeException(message)
 
   def apply(baseDirectory: Path): FileDownloader = new FileDownloader(baseDirectory)
 

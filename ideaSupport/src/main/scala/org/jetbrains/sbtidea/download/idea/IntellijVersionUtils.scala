@@ -2,7 +2,7 @@ package org.jetbrains.sbtidea.download.idea
 
 import org.jetbrains.sbtidea.Keys.*
 import org.jetbrains.sbtidea.PluginLogger as log
-import org.jetbrains.sbtidea.download.BuildInfo
+import org.jetbrains.sbtidea.download.{BuildInfo, NotFoundHttpResponseCode}
 import sbt.{MavenRepository, url}
 
 import java.io.IOException
@@ -145,7 +145,7 @@ object IntellijVersionUtils {
       connection.connect()
       val rc = connection.getResponseCode
       connection.disconnect()
-      rc != 404
+      rc != NotFoundHttpResponseCode
     } catch {
       case _: IOException | _: SocketTimeoutException =>
         //no internet, for example

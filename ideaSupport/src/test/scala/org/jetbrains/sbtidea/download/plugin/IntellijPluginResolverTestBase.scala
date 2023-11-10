@@ -24,15 +24,15 @@ abstract class IntellijPluginResolverTestBase extends IntellijPluginInstallerTes
     Seq(pluginA, pluginB, pluginC, pluginD, pluginE).map(p => p.id -> p).toMap
 
   protected implicit def descriptor2Plugin(descriptor: PluginDescriptor): PluginDependency =
-      PluginDependency(IntellijPlugin.Id(descriptor.id, None, None),
-        IDEA_BUILDINFO,
-        descriptor.dependsOn.map(p => plugin2PluginDep(p.id.toPlugin)))
+    PluginDependency(IntellijPlugin.Id(descriptor.id, None, None),
+      IDEA_BUILDINFO,
+      descriptor.dependsOn.map(p => plugin2PluginDep(p.id.toPlugin)))
 
   override protected implicit def localRegistry: LocalPluginRegistryApi = new LocalPluginRegistryApi {
     override def getPluginDescriptor(ideaPlugin: IntellijPlugin): Either[String, PluginDescriptor] = ideaPlugin match {
-      case IntellijPlugin.Id(id, _, _) =>
+      case IntellijPlugin.Id(id, _, _, _) =>
         descriptorMap.get(id).filterNot(_.name.contains("remote")).toRight("plugin is remote")
-      case IntellijPlugin.IdWithCustomUrl(id, _) =>
+      case IntellijPlugin.IdWithDownloadUrl(id, _) =>
         descriptorMap.get(id).filterNot(_.name.contains("remote")).toRight("plugin is remote")
       case IntellijPlugin.BundledFolder(name) =>
         descriptorMap.get(name).filterNot(_.name.contains("remote")).toRight("plugin is remote")
@@ -50,11 +50,17 @@ abstract class IntellijPluginResolverTestBase extends IntellijPluginInstallerTes
       Paths.get("INVALID")
   }
 
-  override protected implicit def repoAPI: PluginRepoApi = new PluginRepoApi {
-    override def getRemotePluginXmlDescriptor(idea: download.BuildInfo, pluginId: String, channel: Option[String]): Either[Throwable, PluginDescriptor] =
-      descriptorMap.get(pluginId).filter(_.name.contains("remote")).toRight(null)
+  override protected implicit def repoAPI: PluginRepoApi = new TestPluginRepoApi
+
+  private class TestPluginRepoApi extends PluginRepoApi {
+    override def getRemotePluginXmlDescriptor(idea: download.BuildInfo, pluginId: String, channel: Option[String]): Either[Throwable, PluginDescriptor] = {
+      val descriptor = descriptorMap.get(pluginId).filter(_.name.contains("remote"))
+      descriptor.toRight(new RuntimeException(s"TestPluginRepoApi error for getRemotePluginXmlDescriptor"))
+    }
+
     override def getPluginDownloadURL(idea: download.BuildInfo, pluginInfo: IntellijPlugin.Id): URL =
       new URL("file:INVALID")
+
     override def getLatestPluginVersion(idea: download.BuildInfo, pluginId: String, channel: Option[String]): Either[Throwable, String] =
       throw new IllegalArgumentException
   }

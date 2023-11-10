@@ -36,9 +36,9 @@ class LocalPluginRegistry (ideaRoot: Path) extends LocalPluginRegistryApi {
 
   override def isPluginInstalled(ideaPlugin: IntellijPlugin): Boolean = {
     val existsInIndex = ideaPlugin match {
-      case IntellijPlugin.Id(id,  _, _) =>
+      case IntellijPlugin.Id(id,  _, _, _) =>
         index.contains(id)
-      case IntellijPlugin.IdWithCustomUrl(id, _) =>
+      case IntellijPlugin.IdWithDownloadUrl(id, _) =>
         index.contains(id)
       case IntellijPlugin.BundledFolder(name) => getDescriptorFromPluginFolder(name) match {
         case Right(descriptor) =>
@@ -69,7 +69,7 @@ class LocalPluginRegistry (ideaRoot: Path) extends LocalPluginRegistryApi {
         throw new MissingPluginRootException(ideaPlugin.toString)
     case _ =>
       val key = ideaPlugin match {
-        case IntellijPlugin.Id(id, _, _) => id
+        case id: IntellijPlugin.Id => id.id
         case unsupported =>
           throw new RuntimeException(s"Unsupported plugin: $unsupported")
       }

@@ -15,19 +15,25 @@ class PluginResolver(
   // modules that are inside idea.jar
   private val INTERNAL_MODULE_PREFIX = "com.intellij.modules."
 
+  //Keeping multiple errors in `Seq[String]` mainly for the case when IntellijPlugin.Id.fallbackDownloadUrl is not empty
+  //In that case we try to resolve the artifact twice and want to report both errors
+  private type PluginDescriptorAndArtifactResolveResult = Either[Seq[String], (PluginDescriptor, PluginArtifact)]
+
   override def resolve(pluginDependency: PluginDependency): Seq[PluginArtifact] = {
     val plugin = pluginDependency.plugin
 
-    val pluginDescriptorAndArtifact: Either[String, (PluginDescriptor, PluginArtifact)] =
-      if (processedPlugins.contains(plugin))
-        Left(s"Circular plugin dependency detected: $pluginDependency already processed")
+    val pluginDescriptorAndArtifact: PluginDescriptorAndArtifactResolveResult =
+      if (processedPlugins.contains(plugin)) {
+        log.warn(s"Circular plugin dependency detected: $pluginDependency already processed")
+        Left(Nil)
+      }
       else if (localRegistry.isPluginInstalled(plugin))
         resolveInstalledPluginPlugin(pluginDependency, plugin)
       else plugin match {
         case key: IntellijPlugin.WithKnownId =>
           resolvePluginById(pluginDependency ,key)
         case key: IntellijPlugin.BundledFolder =>
-          Left(s"Cannot find bundled plugin root for folder name: ${key.name}")
+          Left(Seq(s"Cannot find bundled plugin root for folder name: ${key.name}"))
       }
 
     pluginDescriptorAndArtifact match {
@@ -38,8 +44,8 @@ class PluginResolver(
           else
             Seq.empty
         artifact +: resolvedDeps
-      case Left(errorMessage) =>
-        log.error(errorMessage)
+      case Left(errorMessages) =>
+        errorMessages.foreach(log.error(_))
         Seq.empty
     }
   }
@@ -53,11 +59,42 @@ class PluginResolver(
       .map(dep => PluginDependency(dep.id.toPlugin, plugin.buildInfo))
       .flatMap(new PluginResolver(processedPlugins = processedPlugins + key, resolveSettings).resolve)
 
-  private def resolvePluginById(plugin: PluginDependency, key: IntellijPlugin.WithKnownId): Either[String, (PluginDescriptor, PluginArtifact)] = {
+  private def resolvePluginById(
+    plugin: PluginDependency,
+    key: IntellijPlugin.WithKnownId,
+  ): PluginDescriptorAndArtifactResolveResult = {
+    val resolved = resolvePluginByIdImpl(plugin, key)
+    resolved.left.flatMap { originalErrors =>
+      tryToResolveUsingFallbackUrlIfExists(plugin, key, originalErrors)
+    }
+  }
+
+  private def tryToResolveUsingFallbackUrlIfExists(
+    plugin: PluginDependency,
+    key: IntellijPlugin.WithKnownId,
+    originalErrors: Seq[String]
+  ): PluginDescriptorAndArtifactResolveResult = {
+    val fallbackDownloadUrl = key.fallbackDownloadUrl
+    fallbackDownloadUrl match {
+      case Some(fallbackUrl) =>
+        log.warn(s"Failed to resolve plugin descriptor at marketplace\nTrying to resolve at a fallback url $fallbackUrl")
+        val keyNew = IntellijPlugin.IdWithDownloadUrl(key.id, fallbackUrl)
+        val pluginNew = plugin.copy(plugin = keyNew)
+        val result = resolvePluginByIdImpl(pluginNew, keyNew)
+        result.left.map(error => originalErrors ++ error)
+      case None =>
+        Left(originalErrors)
+    }
+  }
+
+  private def resolvePluginByIdImpl(
+    plugin: PluginDependency,
+    key: IntellijPlugin.WithKnownId,
+  ): PluginDescriptorAndArtifactResolveResult = {
     val descriptor: Either[String, PluginDescriptor] = key match {
-      case IntellijPlugin.Id(id, _, channel) =>
+      case IntellijPlugin.Id(id, _, channel, _) =>
         repo.getRemotePluginXmlDescriptor(plugin.buildInfo, id, channel).left.map(_.toString)
-      case withCustomUrl: IntellijPlugin.IdWithCustomUrl =>
+      case withCustomUrl: IntellijPlugin.IdWithDownloadUrl =>
         downloadAndExtractDescriptor(withCustomUrl)
     }
     descriptor match {
@@ -66,18 +103,18 @@ class PluginResolver(
         val artifact = RemotePluginArtifact(plugin, downloadUrl)
         Right((descriptor, artifact))
       case Left(error) =>
-        Left(s"Failed to resolve plugin $plugin: $error")
+        Left(Seq(s"Failed to resolve $plugin: $error"))
     }
   }
 
   private def getPluginDownloadUrl(plugin: PluginDependency, key: IntellijPlugin.WithKnownId): URL = key match {
     case key: IntellijPlugin.Id =>
       repo.getPluginDownloadURL(plugin.buildInfo, key)
-    case IntellijPlugin.IdWithCustomUrl(_, downloadUrl) =>
+    case IntellijPlugin.IdWithDownloadUrl(_, downloadUrl) =>
       downloadUrl
   }
 
-  private def downloadAndExtractDescriptor(plugin: IntellijPlugin.IdWithCustomUrl)(implicit ctx: InstallContext): Either[String, PluginDescriptor] = {
+  private def downloadAndExtractDescriptor(plugin: IntellijPlugin.IdWithDownloadUrl)(implicit ctx: InstallContext): Either[String, PluginDescriptor] = {
     val downloadedFile = FileDownloader(ctx.downloadDirectory).download(plugin.downloadUrl)
     val tmpPluginDir = RepoPluginInstaller.extractPluginToTemporaryDir(
       downloadedFile,
@@ -88,7 +125,7 @@ class PluginResolver(
     pluginDescriptor.right.map(_.content).map(PluginDescriptor.load)
   }
 
-  private def resolveInstalledPluginPlugin(plugin: PluginDependency, key: IntellijPlugin): Either[String, (PluginDescriptor, PluginArtifact)] = {
+  private def resolveInstalledPluginPlugin(plugin: PluginDependency, key: IntellijPlugin): PluginDescriptorAndArtifactResolveResult = {
     val descriptor = localRegistry.getPluginDescriptor(key)
     descriptor match {
       case Right(descriptor) =>
@@ -96,7 +133,7 @@ class PluginResolver(
         val artifact = LocalPlugin(plugin, descriptor, root)
         Right((descriptor, artifact))
       case Left(error) =>
-        Left(s"Cannot find installed plugin descriptor $plugin: $error")
+        Left(Seq(s"Cannot find installed plugin descriptor $plugin: $error"))
     }
   }
 }
