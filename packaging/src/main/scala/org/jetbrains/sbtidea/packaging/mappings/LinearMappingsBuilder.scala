@@ -65,7 +65,7 @@ class LinearMappingsBuilder(override val outputDir: File, log: PluginLogger) ext
         throw new MappingBuildException(s"No standalone-packaged parents found for $node")
       val candidates = nodes.filter(_.packagingOptions.packageMethod.isInstanceOf[PackagingMethod.Standalone]).distinct
       if (candidates.size > 1)
-        throw new MappingBuildException(s"Multiple direct parents package into standalone jar(use MergeIntoOther): $candidates")
+        throw new MappingBuildException(s"Multiple direct parents package into standalone jar ($node) (use MergeIntoOther): $candidates")
       if (candidates.size == 1)
         return candidates.head
       collectCandidate(nodes.flatMap(_.parents))
