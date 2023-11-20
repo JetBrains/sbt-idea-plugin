@@ -57,7 +57,11 @@ trait Init { this: Keys.type =>
           intellijPlatform.value
         ),
         jbrInfo.value,
-        intellijPlugins.?.all(ScopeFilter(inAnyProject)).value.flatten.flatten,
+        {
+          val pluginDeps = intellijPlugins.?.all(ScopeFilter(inAnyProject)).value.flatten.flatten
+          val runtimePlugins = intellijRuntimePlugins.?.all(ScopeFilter(inAnyProject)).value.flatten.flatten
+          (pluginDeps ++ runtimePlugins).distinct
+        },
         intellijDownloadSources.value
       ).update()
       updateFinished = true
@@ -81,6 +85,7 @@ trait Init { this: Keys.type =>
       finder.classpath
     },
     intellijPlugins := Seq.empty,
+    intellijRuntimePlugins := Seq.empty,
     intellijPluginJars :=
       tasks.CreatePluginsClasspath.buildPluginClassPaths(
         intellijBaseDirectory.in(ThisBuild).value.toPath,

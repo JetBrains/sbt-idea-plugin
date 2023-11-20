@@ -19,6 +19,9 @@ object Keys extends Defns with Init with Utils with Quirks {
   lazy val intellijPlugins = settingKey[Seq[IntellijPlugin]](
     "List of IntelliJ platform plugin to depend on")
 
+  lazy val intellijRuntimePlugins = settingKey[Seq[IntellijPlugin]](
+    "List of IntelliJ platform plugins to include at runtime (not as compile time dependencies, includes tests)")
+
   lazy val intellijPlatform = settingKey[IntelliJPlatform](
     "Edition of Intellij Platform to use in project")
 

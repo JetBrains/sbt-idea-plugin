@@ -31,8 +31,11 @@ object GenerateIdeaRunConfigurations extends SbtIdeaTask[Unit] {
         managedClasspath.all(ScopeFilter(inDependencies(ThisProject), inConfigurations(Test))).value
           .flatMap(_.map(_.data))
           .distinct
-
-      val allPlugins = intellijPlugins.all(ScopeFilter(inDependencies(ThisProject))).value.flatten.distinct
+      val allPlugins = {
+        val pluginDeps = intellijPlugins.all(ScopeFilter(inDependencies(ThisProject))).value.flatten
+        val runtimePlugins = intellijRuntimePlugins.all(ScopeFilter(inDependencies(ThisProject))).value.flatten
+        (pluginDeps ++ runtimePlugins).distinct
+      }
       val pluginRoots =
         tasks.CreatePluginsClasspath.collectPluginRoots(
           intellijBaseDirectory.in(ThisBuild).value.toPath,

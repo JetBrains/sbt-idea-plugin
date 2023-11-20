@@ -127,6 +127,15 @@ intellijPlugins += "JavaScript".toPlugin(excludedIds = Set("tanvd.grazi"))
 intellijPlugins += "org.custom.plugin:https://org.example/path/to/your/plugin.zip".toPlugin
 ```
 
+#### `intellijRuntimePlugins :: SettingKey[IdeaPlugin]`
+
+**Default**: `Seq.empty`
+
+IntelliJ plugins to load at runtime (includes tests). These plugins are not a compile time dependencies and cannot be
+referenced in code. Useful for testing your plugin in the presence of other plugins.
+
+The usage is the same as `intellijPlugins`.
+
 #### `searchPluginId :: Map[String, (String, Boolean)]`
 
 Usage: `searchPluginId [--nobundled|--noremote] <plugin name regexp>`
