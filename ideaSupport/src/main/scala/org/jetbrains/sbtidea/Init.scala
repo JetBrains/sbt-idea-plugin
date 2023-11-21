@@ -99,7 +99,22 @@ trait Init { this: Keys.type =>
         name.value),
 
     externalDependencyClasspath in Compile ++= UpdateWithIDEAInjectionTask.buildExternalDependencyClassPath.value,
-    externalDependencyClasspath in Test    ++= (externalDependencyClasspath in Compile).value,
+    Runtime / externalDependencyClasspath  ++= {
+      val cp = (Compile / externalDependencyClasspath).value
+      val runtimePlugins = tasks.CreatePluginsClasspath.buildPluginClassPaths(
+        intellijBaseDirectory.in(ThisBuild).value.toPath,
+        BuildInfo(
+          intellijBuild.in(ThisBuild).value,
+          intellijPlatform.in(ThisBuild).value
+        ),
+        intellijRuntimePlugins.value,
+        new SbtPluginLogger(streams.value),
+        intellijAttachSources.in(Global).value,
+        name.value
+      ).flatMap(_._2)
+      cp ++ runtimePlugins
+    },
+    externalDependencyClasspath in Test    ++= (externalDependencyClasspath in Runtime).value,
 
     update := UpdateWithIDEAInjectionTask.createTask.value,
 
