@@ -27,6 +27,8 @@ trait PackagingKeysInit {
       if (workingDir == projectRoot)
         Seq.empty
       else
+        "org.scala-lang" % "scala3-.*" % ".*"         -> None ::
+        "org.scala-lang.modules" % "scala3-.*" % ".*" -> None ::
         "org.scala-lang" % "scala-.*" % ".*"          -> None ::
         "org.scala-lang.modules" % "scala-.*" % ".*"  -> None :: Nil
     },
