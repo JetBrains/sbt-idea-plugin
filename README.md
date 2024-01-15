@@ -125,6 +125,9 @@ intellijPlugins += "org.intellij.scala:2023.3.10:Eap".toPlugin
 intellijPlugins += "JavaScript".toPlugin(excludedIds = Set("tanvd.grazi"))
 // add custom plugin with id `org.custom.plugin`, download it using the direct link https://org.example/path/to/your/plugin.zip
 intellijPlugins += "org.custom.plugin:https://org.example/path/to/your/plugin.zip".toPlugin
+// add custom plugin with id `org.custom.plugin` and resolve it from Marketplace.
+//  if it fails to resolve it in Marketplace it will use the fallback download link
+intellijPlugins += "org.custom.plugin".toPlugin.withFallbackDownloadUrl("https://org.example/path/to/your/plugin.zip")
 ```
 
 #### `intellijRuntimePlugins :: SettingKey[IdeaPlugin]`
