@@ -127,9 +127,11 @@ trait Init { this: Keys.type =>
         filterScalaLibraryCp(previousValue)
     },
     packageArtifact := {
+      // packageMappings must complete before patching
       packageArtifact dependsOn Def.sequential(packageMappings, doPatchPluginXml)
     }.value,
     packageArtifactDynamic := {
+      // packageMappings must complete before patching
       packageArtifactDynamic dependsOn Def.sequential(packageMappings, doPatchPluginXml)
     }.value,
     packageArtifactZip := Def.sequential(
