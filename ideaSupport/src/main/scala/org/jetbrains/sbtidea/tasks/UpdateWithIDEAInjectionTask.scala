@@ -2,7 +2,7 @@ package org.jetbrains.sbtidea.tasks
 
 import org.jetbrains.sbtidea.Keys.{intellijAttachSources, intellijBaseDirectory, intellijBuild, intellijMainJars, intellijPluginJars}
 import org.jetbrains.sbtidea.download.idea.IdeaSourcesImpl
-import sbt.Keys.{Classpath, artifact, configuration, moduleID, update}
+import sbt.Keys.*
 import sbt.{Def, *}
 
 import scala.collection.mutable
@@ -37,7 +37,6 @@ object UpdateWithIDEAInjectionTask extends SbtIdeaTask[UpdateReport] {
     "org.jetbrains" % "INTELLIJ-SDK" % build withSources()
 
   override def createTask: Def.Initialize[Task[sbt.UpdateReport]] = Def.task {
-    import org.jetbrains.sbtidea.ApiAdapter.*
     val intellijMainJarsValue = intellijMainJars.value
 
     val targetConfiguration     = Configurations.Compile
@@ -67,6 +66,16 @@ object UpdateWithIDEAInjectionTask extends SbtIdeaTask[UpdateReport] {
         }
       }.getOrElse(report)
     }
+  }
+
+  private def injectIntoUpdateReport(report: UpdateReport, injectInto: Configuration, artifacts: Seq[(Artifact, File)], module: ModuleID): UpdateReport = {
+    val newConfigurationReports = report.configurations.map { report =>
+      if (report.configuration.name == injectInto.name) {
+        val moduleReports = report.modules :+ ModuleReport(module, artifacts.toVector, Vector.empty)
+        report.withModules(moduleReports)
+      } else report
+    }
+    report.withConfigurations(newConfigurationReports)
   }
 
   def buildExternalDependencyClassPath: Def.Initialize[Task[Seq[Attributed[File]]]] = Def.task {
