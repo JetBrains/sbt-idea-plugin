@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
 
 /**
  * @author Leonid Shalupov
- *
+ * <br>
  * Copied from com.intellij.util.text.VersionComparatorUtil
  * This versions comparator is much smarter than StringUtil.compareVersionNumbers
  * E.g: is used for TeamCity plugins and Ruby gems versions
@@ -105,7 +105,7 @@ public class VersionComparatorUtil {
   /**
    * Compare two version strings. See TeamCity documentation on requirements comparison
    * for formal description.
-   *
+   * <br>
    * Examples: 1.0rc1 < 1.0release, 1.0 < 1.0.1, 1.1 > 1.02
    * @return 0 if ver1 equals ver2, positive value if ver1 > ver2, negative value if ver1 < ver2
    */
