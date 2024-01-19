@@ -77,10 +77,7 @@ class IdeaDistInstaller(buildInfo: BuildInfo) extends Installer[IdeaDist] {
         try {
           Files
             .walk(binDir)
-            .forEach(new Consumer[Path] {
-              override def accept(t: Path): Unit =
-                Files.setPosixFilePermissions(t, execPerms)
-            })
+            .forEach((t: Path) => Files.setPosixFilePermissions(t, execPerms))
         } catch {
           case e: Exception => log.warn(s"Failed to fix access rights for $binDir: ${e.getMessage}")
         }
