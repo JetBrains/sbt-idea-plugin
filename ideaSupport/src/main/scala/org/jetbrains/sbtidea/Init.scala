@@ -1,11 +1,12 @@
 package org.jetbrains.sbtidea
 
 import org.jetbrains.sbtidea.download.*
+import org.jetbrains.sbtidea.download.plugin.PluginDescriptor
 import org.jetbrains.sbtidea.packaging.PackagingKeys.*
 import org.jetbrains.sbtidea.searchableoptions.BuildIndex
 import org.jetbrains.sbtidea.tasks.*
 import sbt.Keys.*
-import sbt.{File, file, Keys as SbtKeys, *}
+import sbt.{Def, File, file, Keys as SbtKeys, *}
 
 import scala.annotation.nowarn
 import scala.collection.mutable
@@ -86,32 +87,12 @@ trait Init { this: Keys.type =>
     },
     intellijPlugins := Seq.empty,
     intellijRuntimePlugins := Seq.empty,
-    intellijPluginJars :=
-      tasks.CreatePluginsClasspath.buildPluginClassPaths(
-        intellijBaseDirectory.in(ThisBuild).value.toPath,
-        BuildInfo(
-          intellijBuild.in(ThisBuild).value,
-          intellijPlatform.in(ThisBuild).value
-        ),
-        intellijPlugins.value,
-        new SbtPluginLogger(streams.value),
-        intellijAttachSources.in(Global).value,
-        name.value),
+    intellijPluginJars := buildPluginClassPaths.value,
 
     externalDependencyClasspath in Compile ++= UpdateWithIDEAInjectionTask.buildExternalDependencyClassPath.value,
     Runtime / externalDependencyClasspath  ++= {
       val cp = (Compile / externalDependencyClasspath).value
-      val runtimePlugins = tasks.CreatePluginsClasspath.buildPluginClassPaths(
-        intellijBaseDirectory.in(ThisBuild).value.toPath,
-        BuildInfo(
-          intellijBuild.in(ThisBuild).value,
-          intellijPlatform.in(ThisBuild).value
-        ),
-        intellijRuntimePlugins.value,
-        new SbtPluginLogger(streams.value),
-        intellijAttachSources.in(Global).value,
-        name.value
-      ).flatMap(_._2)
+      val runtimePlugins = buildPluginClassPaths.value.flatMap(_._2)
       cp ++ runtimePlugins
     },
     externalDependencyClasspath in Test    ++= (externalDependencyClasspath in Runtime).value,
@@ -210,4 +191,18 @@ trait Init { this: Keys.type =>
 
     javaOptions.in(Test) ++= { intellijVMOptions.in(Test).value.asSeq() :+ s"-Dsbt.ivy.home=$ivyHomeDir" }
   )
+
+  private def buildPluginClassPaths: Def.Initialize[Task[Seq[(PluginDescriptor, Classpath)]]] = Def.task {
+    CreatePluginsClasspath.buildPluginClassPaths(
+      intellijBaseDirectory.in(ThisBuild).value.toPath,
+      BuildInfo(
+        intellijBuild.in(ThisBuild).value,
+        intellijPlatform.in(ThisBuild).value
+      ),
+      intellijRuntimePlugins.value,
+      new SbtPluginLogger(streams.value),
+      intellijAttachSources.in(Global).value,
+      name.value
+    )
+  }
 }
