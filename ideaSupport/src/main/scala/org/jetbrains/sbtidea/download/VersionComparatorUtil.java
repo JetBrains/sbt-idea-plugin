@@ -19,7 +19,7 @@ public class VersionComparatorUtil {
   private static final VersionTokenType[] VALUES = VersionTokenType.values();
 
   @SuppressWarnings("unused") //can be used by sbt plugin users
-  public static final Comparator<String> COMPARATOR = (s1, s2) -> compare(s1, s2);
+  public static final Comparator<String> COMPARATOR = VersionComparatorUtil::compare;
 
   private static final Function<String, Integer> DEFAULT_TOKEN_PRIORITY_PROVIDER = s -> VersionTokenType.lookup(s).getPriority();
 
