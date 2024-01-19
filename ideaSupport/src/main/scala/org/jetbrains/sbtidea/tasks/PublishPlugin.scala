@@ -8,7 +8,8 @@ import sbt.Keys.streams
 import scalaj.http.*
 
 import java.io.InputStream
-
+import java.nio.file.Files
+import scala.util.Using
 
 object PublishPlugin extends SbtIdeaInputTask[Unit] {
 
@@ -18,7 +19,7 @@ object PublishPlugin extends SbtIdeaInputTask[Unit] {
   def apply(token: String, xmlId: String, channel: Option[String], pluginFile: File, log: PluginLogger): Unit = {
     val host = "https://plugins.jetbrains.com"
     log.info(s"Uploading ${pluginFile.getName}(${pluginFile.length} bytes) to $host...")
-    sbt.jetbrains.ideaPlugin.apiAdapter.Using.fileInputStream(pluginFile) { pluginStream =>
+    Using.resource(Files.newInputStream(pluginFile.toPath)) { pluginStream =>
       val response = Http(s"$host/plugin/uploadPlugin")
         .timeout(connTimeoutMs = 5000, readTimeoutMs = 60000)
         .postForm(Seq(

@@ -2,10 +2,9 @@ package org.jetbrains.sbtidea.download.plugin
 
 import org.jetbrains.sbtidea.CapturingLogger.captureLog
 import org.jetbrains.sbtidea.Keys.String2Plugin
+import org.jetbrains.sbtidea.PathExt
 import org.jetbrains.sbtidea.download.NioUtils
 import org.jetbrains.sbtidea.download.idea.IdeaMock
-import org.jetbrains.sbtidea.packaging.artifact
-import org.jetbrains.sbtidea.{packaging, pathToPathExt}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfter, Inspectors}
@@ -14,6 +13,7 @@ import sbt.*
 import java.io.OutputStreamWriter
 import java.nio.file.{FileSystems, Files}
 import scala.collection.JavaConverters.mapAsJavaMapConverter
+import scala.util.Using
 
 final class LocalPluginRegistryTest extends AnyFunSuite with Matchers with Inspectors with IdeaMock with PluginMock with BeforeAndAfter {
 
@@ -44,7 +44,7 @@ final class LocalPluginRegistryTest extends AnyFunSuite with Matchers with Inspe
     Files.createDirectories(pluginJar.getParent)
     val isWindows = System.getProperty("os.name").toLowerCase.contains("win")
     val jarUri = new URI(s"jar:file:${if (isWindows) "/" else ""}" + pluginJar.toString.replace("\\", "/"))
-    packaging.artifact.using(FileSystems.newFileSystem(jarUri, options)) {fs =>
+    Using.resource(FileSystems.newFileSystem(jarUri, options)) {fs =>
       val jarXml = fs.getPath("META-INF", "plugin.xml")
       Files.createDirectories(jarXml.getParent)
       Files.write(jarXml, pluginXml.getBytes())
@@ -152,7 +152,7 @@ final class LocalPluginRegistryTest extends AnyFunSuite with Matchers with Inspe
     }
     NioUtils.delete(newPluginRoot) // so that registry won't reindex
 
-    artifact.using(new OutputStreamWriter(Files.newOutputStream(pluginsIndex))) { writer =>
+    Using.resource(new OutputStreamWriter(Files.newOutputStream(pluginsIndex))) { writer =>
       writer.write(0xff)
     }
 

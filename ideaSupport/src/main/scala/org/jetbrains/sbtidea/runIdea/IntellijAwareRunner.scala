@@ -2,7 +2,6 @@ package org.jetbrains.sbtidea.runIdea
 
 import org.jetbrains.sbtidea.PluginLogger as log
 import org.jetbrains.sbtidea.download.jbr.JbrInstaller
-import org.jetbrains.sbtidea.packaging.artifact
 import org.jetbrains.sbtidea.runIdea.IntellijAwareRunner.getBundledJRE
 import sbt.*
 
@@ -11,6 +10,7 @@ import java.nio.file.Files.newInputStream
 import java.nio.file.{Path, Paths}
 import java.util.{Locale, Properties}
 import scala.collection.JavaConverters.*
+import scala.util.Using
 
 abstract class IntellijAwareRunner(intellijBaseDirectory: Path, blocking: Boolean) {
 
@@ -86,7 +86,7 @@ object IntellijAwareRunner {
   }
 
   private def extractJBRVersion(home: Path): Option[Int] = try {
-    artifact.using(newInputStream(home / "release")) { stream =>
+    Using.resource(newInputStream(home / "release")) { stream =>
       val props = new Properties()
       props.load(stream)
       val versionValue = props.get("JAVA_VERSION").toString

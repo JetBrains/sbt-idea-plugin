@@ -3,7 +3,6 @@ package org.jetbrains.sbtidea.packaging
 import org.jetbrains.sbtidea.packaging.structure.sbtImpl.SbtPackageProjectData
 import org.jetbrains.sbtidea.structure.ModuleKey
 import sbt.*
-import sbt.jetbrains.ideaPlugin.apiAdapter.SbtTaskKeyExt
 
 object PackagingKeys extends PackagingKeysInit with PackagingDefs {
 
@@ -54,9 +53,9 @@ object PackagingKeys extends PackagingKeysInit with PackagingDefs {
     "Find and debug library mappings by library name")
 
 
-  lazy val dumpDependencyStructure        = taskKey[SbtPackageProjectData]("").invisible
-  lazy val dumpDependencyStructureOffline = taskKey[SbtPackageProjectData]("").invisible
-  lazy val packageMappings                = taskKey[Mappings]("").invisible
-  lazy val packageMappingsOffline         = taskKey[Mappings]("").invisible
-  lazy val doPackageArtifactZip           = taskKey[File]("").invisible
+  lazy val dumpDependencyStructure        = taskKey[SbtPackageProjectData]("").withRank(sbt.KeyRanks.Invisible)
+  lazy val dumpDependencyStructureOffline = taskKey[SbtPackageProjectData]("").withRank(sbt.KeyRanks.Invisible)
+  lazy val packageMappings                = taskKey[Mappings]("").withRank(sbt.KeyRanks.Invisible)
+  lazy val packageMappingsOffline         = taskKey[Mappings]("").withRank(sbt.KeyRanks.Invisible)
+  lazy val doPackageArtifactZip           = taskKey[File]("").withRank(sbt.KeyRanks.Invisible)
 }

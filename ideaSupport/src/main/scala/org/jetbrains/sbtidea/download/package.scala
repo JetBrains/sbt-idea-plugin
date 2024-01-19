@@ -3,6 +3,7 @@ package org.jetbrains.sbtidea
 import com.eclipsesource.json.Json
 import org.jetbrains.sbtidea.Keys.IntelliJPlatform as _
 import org.jetbrains.sbtidea.PluginLogger as log
+
 import java.net.{HttpURLConnection, URL}
 import java.nio.file.{Files, Path}
 import scala.concurrent.duration.DurationInt

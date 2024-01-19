@@ -2,13 +2,13 @@ package org.jetbrains.sbtidea.download.jbr
 
 import org.jetbrains.sbtidea.download.api.*
 import org.jetbrains.sbtidea.download.{FileDownloader, NioUtils}
-import org.jetbrains.sbtidea.packaging.artifact.using
-import org.jetbrains.sbtidea.{pathToPathExt, PluginLogger as log, *}
+import org.jetbrains.sbtidea.{PluginLogger as log, *}
 import org.rauschig.jarchivelib.{ArchiveFormat, ArchiverFactory, CompressionType}
 import sbt.*
 
 import java.nio.file.{Files, Path}
 import java.util.Properties
+import scala.util.Using
 
 class JbrInstaller extends Installer[JbrArtifact] {
   import JbrInstaller.*
@@ -26,7 +26,7 @@ class JbrInstaller extends Installer[JbrArtifact] {
     val props = new Properties()
     try {
       val jbrInfo = art.caller.jbrInfo
-      using(releaseFile.inputStream)(props.load)
+      Using.resource(releaseFile.inputStream)(props.load)
       props
         .getProperty("IMPLEMENTOR_VERSION")
         .lift2Option

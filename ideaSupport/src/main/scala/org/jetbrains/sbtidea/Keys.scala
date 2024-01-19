@@ -2,7 +2,6 @@ package org.jetbrains.sbtidea
 
 import org.jetbrains.sbtidea.download.plugin.PluginDescriptor
 import sbt.Keys.*
-import sbt.jetbrains.ideaPlugin.apiAdapter.{SbtInputKeyExt, SbtTaskKeyExt}
 import sbt.{Init as _, *}
 
 object Keys extends Defns with Init with Utils with Quirks {
@@ -109,11 +108,11 @@ object Keys extends Defns with Init with Utils with Quirks {
 
   /* Utility tasks */
 
-  lazy val doPatchPluginXml           = taskKey[Unit]("").invisible
-  lazy val doProjectSetup             = taskKey[Unit]("").invisible
-  lazy val createIDEARunConfiguration = taskKey[Unit]("").invisible
-  lazy val createIDEAArtifactXml      = taskKey[Unit]("").invisible
-  lazy val dumpStructure              = taskKey[Unit]("").invisible
-  lazy val dumpStructureTo            = inputKey[File]("").invisible
+  lazy val doPatchPluginXml           = taskKey[Unit]("").withRank(sbt.KeyRanks.Invisible)
+  lazy val doProjectSetup             = taskKey[Unit]("").withRank(sbt.KeyRanks.Invisible)
+  lazy val createIDEARunConfiguration = taskKey[Unit]("").withRank(sbt.KeyRanks.Invisible)
+  lazy val createIDEAArtifactXml      = taskKey[Unit]("").withRank(sbt.KeyRanks.Invisible)
+  lazy val dumpStructure              = taskKey[Unit]("").withRank(sbt.KeyRanks.Invisible)
+  lazy val dumpStructureTo            = inputKey[File]("").withRank(sbt.KeyRanks.Invisible)
 
 }

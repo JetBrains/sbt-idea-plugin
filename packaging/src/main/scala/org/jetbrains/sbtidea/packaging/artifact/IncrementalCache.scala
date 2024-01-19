@@ -5,6 +5,7 @@ import sbt.Keys.TaskStreams
 import java.io.{BufferedOutputStream, ByteArrayInputStream, ObjectInputStream, ObjectOutputStream}
 import java.nio.file.{Files, Path}
 import scala.collection.mutable
+import scala.util.Using
 
 trait IncrementalCache extends AutoCloseable {
   def fileChanged(in: Path): Boolean
@@ -27,7 +28,7 @@ class PersistentIncrementalCache(private val root: Path)(implicit private val st
     if (!Files.exists(myFile) || Files.size(myFile) <= 0)
       return Left("Cache file is empty or doesn't exist")
     val data = Files.readAllBytes(myFile)
-    using(new ObjectInputStream(new ByteArrayInputStream(data))) { stream =>
+    Using.resource(new ObjectInputStream(new ByteArrayInputStream(data))) { stream =>
       Right(stream.readObject().asInstanceOf[Data])
     }
   }
@@ -45,9 +46,9 @@ class PersistentIncrementalCache(private val root: Path)(implicit private val st
       Files.createDirectories(myFile.getParent)
       Files.createFile(myFile)
     }
-    using(new ObjectOutputStream(
-          new BufferedOutputStream(
-            Files.newOutputStream(myFile, CREATE, WRITE, TRUNCATE_EXISTING)))) { stream =>
+    Using.resource(new ObjectOutputStream(new BufferedOutputStream(
+      Files.newOutputStream(myFile, CREATE, WRITE, TRUNCATE_EXISTING)
+    ))) { stream =>
       stream.writeObject(myData)
     }
   }

@@ -1,9 +1,9 @@
 package org.jetbrains.sbtidea.download.idea
 
-import org.jetbrains.sbtidea.download.{FileDownloader, NioUtils}
 import org.jetbrains.sbtidea.download.api.*
 import org.jetbrains.sbtidea.download.idea.IdeaSourcesImpl.SOURCES_ZIP
-import org.jetbrains.sbtidea.{PluginLogger, pathToPathExt}
+import org.jetbrains.sbtidea.download.{FileDownloader, NioUtils}
+import org.jetbrains.sbtidea.{PathExt, PluginLogger}
 import sbt.*
 
 import java.net.URL
@@ -14,7 +14,7 @@ abstract class IdeaSources extends IdeaArtifact {
   override type R = IdeaSources
   override protected def usedInstaller: Installer[IdeaSources] = new Installer[IdeaSources] {
     override def isInstalled(art: IdeaSources)(implicit ctx: InstallContext): Boolean =
-      ctx.baseDirectory / SOURCES_ZIP exists
+      (ctx.baseDirectory / SOURCES_ZIP).exists
     override def downloadAndInstall(art: IdeaSources)(implicit ctx: InstallContext): Unit = {
       val file = FileDownloader(ctx.baseDirectory.getParent).download(art.dlUrl, optional = true)
       Files.copy(file, ctx.baseDirectory.resolve(SOURCES_ZIP))

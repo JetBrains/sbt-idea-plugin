@@ -1,13 +1,13 @@
 package org.jetbrains.sbtidea.download.idea
 
+import org.jetbrains.sbtidea.*
 import org.jetbrains.sbtidea.Keys.String2Plugin
 import org.jetbrains.sbtidea.download.BuildInfo
-import org.jetbrains.sbtidea.packaging.artifact
-import org.jetbrains.sbtidea.*
 
 import java.net.{URI, URL}
 import java.nio.file.{Files, Path, Paths}
 import java.util.zip.{ZipEntry, ZipInputStream}
+import scala.util.Using
 
 trait IdeaMock extends TmpDirUtils {
   protected val IDEA_VERSION      = "211.5538.2"
@@ -30,7 +30,7 @@ trait IdeaMock extends TmpDirUtils {
     val tmpDir      = newTmpDir
     val installDir  = Files.createDirectory(tmpDir.resolve(IDEA_VERSION))
     val stream      = getClass.getResourceAsStream(IDEA_DIST_PATH)
-    artifact.using(new ZipInputStream(stream)) { zip =>
+    Using.resource(new ZipInputStream(stream)) { zip =>
       var entry: ZipEntry = zip.getNextEntry
       while (entry != null) {
         val toPath = installDir.resolve(entry.getName)

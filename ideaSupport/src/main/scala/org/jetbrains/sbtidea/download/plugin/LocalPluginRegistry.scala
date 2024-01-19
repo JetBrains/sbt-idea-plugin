@@ -1,7 +1,7 @@
 package org.jetbrains.sbtidea.download.plugin
 
 import org.jetbrains.sbtidea.download.*
-import org.jetbrains.sbtidea.{IntellijPlugin, pathToPathExt, PluginLogger as log}
+import org.jetbrains.sbtidea.{IntellijPlugin, PathExt, PluginLogger as log}
 import sbt.*
 
 import java.nio.file.{Files, Path}

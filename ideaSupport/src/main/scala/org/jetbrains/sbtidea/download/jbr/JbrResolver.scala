@@ -2,13 +2,13 @@ package org.jetbrains.sbtidea.download.jbr
 
 import org.jetbrains.sbtidea.Keys.JBR
 import org.jetbrains.sbtidea.download.api.Resolver
-import org.jetbrains.sbtidea.packaging.artifact.using
-import org.jetbrains.sbtidea.{JbrPlatform, pathToPathExt, *}
+import org.jetbrains.sbtidea.{JbrPlatform, *}
 import sbt.*
 
 import java.net.URL
 import java.nio.file.Path
 import java.util.Properties
+import scala.util.Using
 
 class JbrResolver extends Resolver[JbrDependency] {
   import JbrResolver.*
@@ -62,7 +62,7 @@ class JbrResolver extends Resolver[JbrDependency] {
   private[jbr] def extractVersionFromIdea(ideaInstallationDir: Path): Option[String] = {
     val dependenciesFile = ideaInstallationDir / "dependencies.txt"
     val props = new Properties()
-    using(dependenciesFile.inputStream)(props.load)
+    Using.resource(dependenciesFile.inputStream)(props.load)
     val value1 = Option(props.getProperty("runtimeBuild")) //since 2022.2
     val value2 = value1.orElse(Option(props.getProperty("jdkBuild")))
     value2

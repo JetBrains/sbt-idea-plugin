@@ -1,13 +1,13 @@
 package org.jetbrains.sbtidea.download
 
 import org.jetbrains.sbtidea.IteratorExt
-import org.jetbrains.sbtidea.packaging.artifact.using
 
 import java.net.URI
 import java.nio.file.{FileSystems, Files, Path}
 import java.util.Collections
 import java.util.stream.Collectors
 import scala.jdk.CollectionConverters.asScalaBufferConverter
+import scala.util.Using
 
 private class PluginXmlDetector(pluginXmlFileName: String = PluginXmlDetector.PluginXmlFileNames.Default) {
 
@@ -29,7 +29,7 @@ private class PluginXmlDetector(pluginXmlFileName: String = PluginXmlDetector.Pl
     val uri = URI.create(s"jar:${path.toUri}")
 
     try
-      using(FileSystems.newFileSystem(uri, EmptyEnvVars)) { fs =>
+      Using.resource(FileSystems.newFileSystem(uri, EmptyEnvVars)) { fs =>
         val maybePluginXmlPath = Some(fs.getPath("META-INF", pluginXmlFileName)).filter(Files.exists(_))
         maybePluginXmlPath.map { path =>
           val content = new String(Files.readAllBytes(path))

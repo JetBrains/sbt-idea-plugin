@@ -2,14 +2,14 @@ package org.jetbrains.sbtidea.download.plugin
 
 import org.jetbrains.annotations.TestOnly
 import org.jetbrains.sbtidea.download.plugin.LocalPluginRegistry.extractPluginMetaData
-import org.jetbrains.sbtidea.packaging.artifact.using
-import org.jetbrains.sbtidea.{pathToPathExt, PluginLogger as log}
+import org.jetbrains.sbtidea.{PathExt, PluginLogger as log}
 import sbt.*
 
 import java.io.*
 import java.nio.file.{Files, Path}
 import java.util.stream.Collectors
 import scala.jdk.CollectionConverters.asScalaBufferConverter
+import scala.util.Using
 
 class PluginIndexImpl(ideaRoot: Path) extends PluginIndex {
 
@@ -80,8 +80,8 @@ class PluginIndexImpl(ideaRoot: Path) extends PluginIndex {
   private def loadFromFile(): ReprMutable = {
     import PluginDescriptor.*
     val buffer = new ReprMutable
-    using(new FileInputStream(indexFile.toFile)) { fis =>
-      using(new ObjectInputStream(new BufferedInputStream(fis))) { stream =>
+    Using.resource(new FileInputStream(indexFile.toFile)) { fis =>
+      Using.resource(new ObjectInputStream(new BufferedInputStream(fis))) { stream =>
         val version = stream.readInt()
         val size = stream.readInt()
         if (version != INDEX_VERSION)
@@ -102,7 +102,7 @@ class PluginIndexImpl(ideaRoot: Path) extends PluginIndex {
   }
 
   private def saveToFile(idx: Repr): Unit = {
-    using(new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(indexFile.toFile)))) { stream =>
+    Using.resource(new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(indexFile.toFile)))) { stream =>
       stream.writeInt(INDEX_VERSION)
       stream.writeInt(idx.size)
       val values = idx.values

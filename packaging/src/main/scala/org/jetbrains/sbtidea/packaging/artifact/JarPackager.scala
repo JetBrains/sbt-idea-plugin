@@ -8,6 +8,7 @@ import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
 import java.util
 import java.util.Collections
+import scala.util.Using
 
 trait JarPackager {
   def copySingleJar(from: Path): Unit
@@ -34,7 +35,7 @@ class SimplePackager(protected val myOutput: Path,
   }
 
   override def mergeIntoOne(sources: Seq[Path]): Unit = {
-    using(createOutputFS(myOutput)) { outputFS =>
+    Using.resource(createOutputFS(myOutput)) { outputFS =>
       sources.foreach(processSingleSource(_, outputFS))
     }
     if (counter > 0)
@@ -97,7 +98,7 @@ class SimplePackager(protected val myOutput: Path,
   private def processSingleSource(src: Path, outputFS: FileSystem): Unit = {
     if (!src.toString.contains("jar!") && !Files.exists(src))
       return
-    using(createInputFS(src)) { fs =>
+    Using.resource(createInputFS(src)) { fs =>
       val inputRoot = createInput(src, fs)
       walkEntry(inputRoot, outputFS) { (from, to) =>
         if (to.getParent != null)

@@ -7,7 +7,6 @@ import org.jetbrains.sbtidea.{NullLogger, SbtPluginLogger}
 import sbt.*
 import sbt.Def.spaceDelimited
 import sbt.Keys.*
-import sbt.jetbrains.ideaPlugin.apiAdapter.*
 
 trait PackagingKeysInit {
   this: PackagingKeys.type =>
@@ -91,13 +90,11 @@ trait PackagingKeysInit {
       outputDir
     },
     packageArtifactDynamic := {
-      val compilationTimeStamp = System.currentTimeMillis()
       val outputDir = packageOutputDir.value
       val mappings = packageMappings.value
       val stream = streams.value
       val myTarget = target.value
-      val hints = extractAffectedFiles(compilationTimeStamp, compile.all(ScopeFilter(inAnyProject, inConfigurations(Compile))).value)
-      new DynamicDistBuilder(stream, myTarget, outputDir, hints).produceArtifact(mappings)
+      new DynamicDistBuilder(stream, myTarget, outputDir, Seq.empty).produceArtifact(mappings)
       outputDir
     },
     packageArtifactZip := doPackageArtifactZip.value,

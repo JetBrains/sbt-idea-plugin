@@ -1,11 +1,11 @@
 package org.jetbrains.sbtidea.download.plugin
 
 import org.jetbrains.sbtidea.*
-import org.jetbrains.sbtidea.packaging.artifact
 
 import java.net.URI
 import java.nio.file.{FileSystems, Files, Path}
 import scala.collection.JavaConverters.*
+import scala.util.Using
 
 trait PluginMock extends TmpDirUtils {
 
@@ -18,7 +18,7 @@ trait PluginMock extends TmpDirUtils {
     val targetPath = tmpDir.resolve(s"${metaData.name}.jar")
     val targetUri = URI.create("jar:" + targetPath.toUri)
     val opts = Map("create" -> "true").asJava
-    artifact.using(FileSystems.newFileSystem(targetUri, opts)) { fs =>
+    Using.resource(FileSystems.newFileSystem(targetUri, opts)) { fs =>
       Files.createDirectory(fs.getPath("/", "META-INF"))
       Files.write(
         fs.getPath("/", "META-INF", "plugin.xml"),
@@ -36,7 +36,7 @@ trait PluginMock extends TmpDirUtils {
 
     val mainPluginJar = createPluginJarMock(metaData)
 
-    artifact.using(FileSystems.newFileSystem(targetUri, opts)) { fs =>
+    Using.resource(FileSystems.newFileSystem(targetUri, opts)) { fs =>
       val libRoot = fs.getPath("/", metaData.name, "lib")
       Files.createDirectories(libRoot)
       Files.copy(

@@ -6,7 +6,7 @@ import org.jetbrains.sbtidea.packaging.*
 import org.jetbrains.sbtidea.packaging.PackagingKeys.packageArtifact
 import org.jetbrains.sbtidea.packaging.artifact.{DistBuilder, DumbIncrementalCache, IncrementalCache}
 import org.jetbrains.sbtidea.runIdea.IdeaRunner
-import org.jetbrains.sbtidea.{PluginLogger, SbtPluginLogger, pathToPathExt}
+import org.jetbrains.sbtidea.{PathExt, PluginLogger, SbtPluginLogger}
 import sbt.*
 import sbt.Keys.{streams, target}
 

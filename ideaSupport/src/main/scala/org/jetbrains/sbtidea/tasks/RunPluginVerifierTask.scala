@@ -3,7 +3,6 @@ package org.jetbrains.sbtidea.tasks
 import org.jetbrains.sbtidea.Keys.*
 import org.jetbrains.sbtidea.download.FileDownloader
 import org.jetbrains.sbtidea.packaging.PackagingKeys.*
-import org.jetbrains.sbtidea.packaging.artifact
 import org.jetbrains.sbtidea.runIdea.IntellijAwareRunner
 import org.jetbrains.sbtidea.verifier.FailureLevel
 import org.jetbrains.sbtidea.{Any2Option, PluginLogger, SbtPluginLogger}
@@ -17,7 +16,7 @@ import java.nio.file.Path
 import java.util.function.Consumer
 import scala.annotation.nowarn
 import scala.language.{postfixOps, reflectiveCalls}
-import scala.util.{Failure, Try}
+import scala.util.{Failure, Try, Using}
 import scala.xml.XML
 
 object RunPluginVerifierTask extends SbtIdeaTask[File] {
@@ -62,7 +61,7 @@ object RunPluginVerifierTask extends SbtIdeaTask[File] {
           .command(fullCommand)
           .start()
         PluginLogger.info(s"Started plugin verifier $verifierJar:\n${fullCommand.asScala.mkString(" ")}")
-        artifact.using(process.getInputStream) { stream =>
+        Using.resource(process.getInputStream) { stream =>
           val reader = new BufferedReader(new InputStreamReader(stream))
           reader
             .lines()
