@@ -12,7 +12,7 @@ sealed trait PluginArtifact extends ResolvedArtifact {
 final case class RemotePluginArtifact(
   caller: PluginDependency,
   dlUrl: URL
-)(implicit private val ctx: InstallContext, repo: PluginRepoApi, localRegistry: LocalPluginRegistryApi)
+)(implicit private val repo: PluginRepoApi, localRegistry: LocalPluginRegistryApi)
   extends PluginArtifact
     with UrlBasedArtifact {
 

@@ -18,11 +18,4 @@ public class NioUtils {
             Files.delete(path);
         } catch (IOException ignored) { }
     }
-
-    public static void writeContent(Path to, String content) throws IOException {
-        if (!to.getParent().toFile().exists())
-            Files.createDirectories(to.getParent());
-
-        Files.write(to, content.getBytes());
-    }
 }

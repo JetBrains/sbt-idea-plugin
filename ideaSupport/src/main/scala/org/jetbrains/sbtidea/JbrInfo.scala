@@ -69,6 +69,7 @@ object JbrVersion {
 /** For all possible values see [[https://github.com/JetBrains/JetBrainsRuntime/releases]] */
 final case class JbrKind(value: String)
 
+//noinspection ScalaUnusedSymbol (can be used by sbt plugin users)
 object JbrKind {
   val JBR_VANILLA: JbrKind    = JbrKind("jbr")
   val JBR_JCEF: JbrKind       = JbrKind("jbr_jcef")
@@ -89,6 +90,7 @@ object JbrKind {
  */
 final case class JbrPlatform(os: String, arch: String)
 
+//noinspection ScalaUnusedSymbol (can be used by sbt plugin users)
 object JbrPlatform {
   val linux_aarch64: JbrPlatform = JbrPlatform("linux", "aarch64")
   val linux_x64: JbrPlatform = JbrPlatform("linux", "x64")

@@ -15,7 +15,9 @@ public enum FailureLevel {
     INVALID_PLUGIN("The following files specified for the verification are not valid plugins"),
     NOT_DYNAMIC("Plugin cannot be loaded/unloaded without IDE restart");
 
+    @SuppressWarnings("unused") //can be used by sbt plugin users
     public static final EnumSet<FailureLevel> ALL = EnumSet.allOf(FailureLevel.class);
+    @SuppressWarnings("unused") //can be used by sbt plugin users
     public static final EnumSet<FailureLevel> NONE = EnumSet.noneOf(FailureLevel.class);
 
     public final String testValue;

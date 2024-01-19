@@ -8,7 +8,14 @@ import org.jetbrains.sbtidea.{IntellijPlugin, JbrInfo, PluginLogger as log}
 
 import java.nio.file.Path
 
-class CommunityUpdater(baseDirectory: Path, ideaBuildInfo: BuildInfo, jbrInfo: JbrInfo, plugins: Seq[IntellijPlugin], withSources: Boolean = true) {
+class CommunityUpdater(
+  baseDirectory: Path,
+  ideaBuildInfo: BuildInfo,
+  jbrInfo: JbrInfo,
+  plugins: Seq[IntellijPlugin],
+  //noinspection ScalaUnusedSymbol (can be used by sbt plugin users)
+  withSources: Boolean = true
+) {
 
   implicit protected val context: InstallContext =
     InstallContext(baseDirectory = baseDirectory, downloadDirectory = baseDirectory.getParent)

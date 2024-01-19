@@ -18,11 +18,8 @@ public class VersionComparatorUtil {
   private static final Pattern WORDS_SPLITTER = Pattern.compile("\\d+|[^\\d]+");
   private static final VersionTokenType[] VALUES = VersionTokenType.values();
 
-  public static final Comparator<String> COMPARATOR = new Comparator<String>() {
-    public int compare(String s1, String s2) {
-      return VersionComparatorUtil.compare(s1, s2);
-    }
-  };
+  @SuppressWarnings("unused") //can be used by sbt plugin users
+  public static final Comparator<String> COMPARATOR = (s1, s2) -> compare(s1, s2);
 
   private static final Function<String, Integer> DEFAULT_TOKEN_PRIORITY_PROVIDER = s -> VersionTokenType.lookup(s).getPriority();
 

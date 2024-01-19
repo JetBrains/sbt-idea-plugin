@@ -5,6 +5,7 @@ package org.jetbrains.sbtidea
   * all of the types mentioned in PackagingKeys aka exposed to the user should be aliased here to avoid the
   * necessity of explicit importing
   */
+//noinspection ScalaUnusedSymbol (can be used by sbt plugin users)
 trait Defns {
 
   type IdeaConfigBuildingOptions = org.jetbrains.sbtidea.IdeaConfigBuildingOptions

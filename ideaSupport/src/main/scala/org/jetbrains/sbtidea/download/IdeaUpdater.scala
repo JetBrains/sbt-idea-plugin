@@ -72,5 +72,6 @@ object IdeaUpdater {
   private def dumbOptions = sys.props.get(DUMB_KEY).getOrElse("").toLowerCase
   def isDumbIdea: Boolean = dumbOptions.contains(DUMB_KEY_IDEA)
   def isDumbPlugins: Boolean = dumbOptions.contains(DUMB_KEY_PLUGINS)
+  //noinspection ScalaUnusedSymbol (can be used by sbt plugin users)
   def isDumbJbr: Boolean = dumbOptions.contains(DUMB_KEY_JBR)
 }

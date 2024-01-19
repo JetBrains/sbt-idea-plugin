@@ -112,7 +112,4 @@ object Keys extends Defns with Init with Utils with Quirks {
   lazy val doProjectSetup             = taskKey[Unit]("").withRank(sbt.KeyRanks.Invisible)
   lazy val createIDEARunConfiguration = taskKey[Unit]("").withRank(sbt.KeyRanks.Invisible)
   lazy val createIDEAArtifactXml      = taskKey[Unit]("").withRank(sbt.KeyRanks.Invisible)
-  lazy val dumpStructure              = taskKey[Unit]("").withRank(sbt.KeyRanks.Invisible)
-  lazy val dumpStructureTo            = inputKey[File]("").withRank(sbt.KeyRanks.Invisible)
-
 }
