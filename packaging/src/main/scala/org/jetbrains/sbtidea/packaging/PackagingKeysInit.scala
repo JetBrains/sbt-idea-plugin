@@ -4,7 +4,7 @@ import org.jetbrains.sbtidea.packaging.artifact.*
 import org.jetbrains.sbtidea.packaging.mappings.*
 import org.jetbrains.sbtidea.packaging.structure.sbtImpl.SbtPackagingStructureExtractor
 import org.jetbrains.sbtidea.{NullLogger, SbtPluginLogger}
-import sbt.*
+import sbt.{Def, *}
 import sbt.Def.spaceDelimited
 import sbt.Keys.*
 
@@ -39,27 +39,11 @@ trait PackagingKeysInit {
 
     packageMappings := {
       streams.value.log.info("started dumping structure")
-      val rootProject = thisProjectRef.value
-      val buildDeps = buildDependencies.value
-      val data = dumpDependencyStructure.?.all(ScopeFilter(inAnyProject)).value.flatten.filterNot(_ == null)
-      val outputDir = packageOutputDir.value
-      val logger: SbtPluginLogger = new SbtPluginLogger(streams.value)
-      val structure = new SbtPackagingStructureExtractor(rootProject, data, buildDeps, logger).extract
-      val res = new LinearMappingsBuilder(outputDir, logger).buildMappings(structure)
-      logger.throwFatalErrors()
-      res
+      packageMappingsImpl.value
     },
     packageMappingsOffline := {
       streams.value.log.info("started dumping offline structure")
-      val rootProject = thisProjectRef.value
-      val buildDeps = buildDependencies.value
-      val data = dumpDependencyStructureOffline.?.all(ScopeFilter(inAnyProject)).value.flatten.filterNot(_ == null)
-      val outputDir = packageOutputDir.value
-      val logger: SbtPluginLogger = new SbtPluginLogger(streams.value)
-      val structure = new SbtPackagingStructureExtractor(rootProject, data, buildDeps, logger).extract
-      val res = new LinearMappingsBuilder(outputDir, logger).buildMappings(structure)
-      logger.throwFatalErrors()
-      res
+      packageMappingsImpl.value
     },
     findLibraryMapping := {
       val args        = spaceDelimited("<arg>").parsed
@@ -112,4 +96,16 @@ trait PackagingKeysInit {
       }
     }
   )
+
+  private def packageMappingsImpl: Def.Initialize[Task[Mappings]] = Def.task {
+    val rootProject = thisProjectRef.value
+    val buildDeps = buildDependencies.value
+    val data = dumpDependencyStructure.?.all(ScopeFilter(inAnyProject)).value.flatten.filterNot(_ == null)
+    val outputDir = packageOutputDir.value
+    val logger: SbtPluginLogger = new SbtPluginLogger(streams.value)
+    val structure = new SbtPackagingStructureExtractor(rootProject, data, buildDeps, logger).extract
+    val res = new LinearMappingsBuilder(outputDir, logger).buildMappings(structure)
+    logger.throwFatalErrors()
+    res
+  }
 }
