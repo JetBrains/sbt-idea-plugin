@@ -37,6 +37,6 @@ class ClassShader(patterns: Seq[ShadePattern])(implicit val streams: TaskStreams
 
 }
 
-class NoOpClassShader() extends ClassShader(Seq())(null) {
+class NoOpClassShader extends ClassShader(Seq())(null) {
   override def applyShading(from: Path, to: Path)(cont: => Unit): Unit = cont
 }
