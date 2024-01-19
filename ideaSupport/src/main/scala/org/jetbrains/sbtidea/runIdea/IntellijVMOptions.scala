@@ -26,8 +26,6 @@ case class IntellijVMOptions(platform: IntelliJPlatform,
                              softRefLRUPolicyMSPerMB: Int = 50,
                              gc: String = "-XX:+UseG1GC",
                              gcOpt: String = "-XX:CICompilerCount=2",
-                             @deprecated("This value is unused and will be deleted in future releases. In IntelliJ IDEA 2023.1 `-Didea.ProcessCanceledException` VM options is dropped (for details see https://youtrack.jetbrains.com/issue/IDEA-304945)")
-                             noPCE: Boolean = false,
                              debug: Boolean = true,
                              debugPort: Int = 5005,
                              suspend: Boolean = false,

@@ -76,13 +76,6 @@ object JbrKind {
   val JBR_DCEVM: JbrKind      = JbrKind("jbr_dcevm")
   val JBR_FAST_DEBUG: JbrKind = JbrKind("jbr_fd")
   val JBR_SDK: JbrKind        = JbrKind("jbrsdk")
-
-  @deprecated("use JBR_JCEF", since = "3.14.2")
-  def JBR_WITH_JCEF: JbrKind = JBR_JCEF
-  @deprecated("use JBR_DCEVM", since = "3.14.2")
-  def JBR_WITH_JCEF_DCEVM: JbrKind = JBR_DCEVM
-  @deprecated("use JBR_FAST_DEBUG", since = "3.14.2")
-  def JBR_WITH_JCEF_FAST_DEBUG: JbrKind = JBR_FAST_DEBUG
 }
 
 /**

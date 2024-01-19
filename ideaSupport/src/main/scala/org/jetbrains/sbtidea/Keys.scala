@@ -30,10 +30,6 @@ object Keys extends Defns with Init with Utils with Quirks {
   lazy val intellijAttachSources = settingKey[Boolean](
     "Flag indicating whether to add sources to IntelliJ Platform SDK libraries")
 
-  @deprecated("use jbrInfo instead", "3.9.1")
-  lazy val jbrVersion = settingKey[Option[String]](
-    "DEPRECATED: use jbrInfo instead")
-
   lazy val jbrInfo = settingKey[JbrInfo](
     "Version and variant of JetBrains Runtime to download and install")
 
@@ -63,13 +59,6 @@ object Keys extends Defns with Init with Utils with Quirks {
 
   lazy val intellijPluginJars = taskKey[Seq[(PluginDescriptor, Classpath)]](
     "Classpath containing jars of internal IntelliJ Platform plugins used in this project")
-
-  /**
-    * Deprecated. Use intellijMainJars or intellijPluginJars
-    */
-  @deprecated("IJ sdk jars and plugin jars are treated separately", "4.9.0")
-  lazy val intellijFullJars = taskKey[Classpath](
-    "[DEPRECATED]Complete classpath of IntelliJ Platform's internal and external plugins' jars")
 
   lazy val intellijTestConfigDir = settingKey[File](
     "IntelliJ Platform's config directory for tests")
