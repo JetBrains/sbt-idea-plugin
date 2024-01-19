@@ -39,15 +39,9 @@ class LinearMappingsBuilder(override val outputDir: File, log: PluginLogger) ext
       case PackagingMethod.DepsOnly(targetPath) =>
         outputDir / targetPath
       case PackagingMethod.MergeIntoParent() =>
-        val eligibleParentProject = findParentToMerge(node)
-        val parentJar = getTopLevelJarPath(eligibleParentProject)
-        validateMerge(node, eligibleParentProject)
-        addProductDirs(node, outputDir / parentJar)
+        mergeInto(node)
       case PackagingMethod.MergeIntoOther(project) =>
-        val eligibleParentProject = findParentToMerge(project)
-        val otherJar = getTopLevelJarPath(eligibleParentProject)
-        validateMerge(node, eligibleParentProject)
-        addProductDirs(node, outputDir / otherJar)
+        mergeInto(project)
       case PackagingMethod.Standalone("", isStatic) =>
         val target = outputDir / mkProjectJarDefaultPath(node)
         addProductDirs(node, target, isStatic)
@@ -56,6 +50,13 @@ class LinearMappingsBuilder(override val outputDir: File, log: PluginLogger) ext
         addProductDirs(node, target, isStatic)
       case PackagingMethod.Skip() => throw new MappingBuildException("Unreachable")
     }
+  }
+
+  private def mergeInto(node: PackagedProjectNode): sbt.File = {
+    val eligibleParentProject = findParentToMerge(node)
+    val parentJar = getTopLevelJarPath(eligibleParentProject)
+    validateMerge(node, eligibleParentProject)
+    addProductDirs(node, outputDir / parentJar)
   }
 
   private def findParentToMerge(node: PackagedProjectNode): PackagedProjectNode = {
