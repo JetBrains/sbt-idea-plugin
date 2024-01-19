@@ -4,9 +4,9 @@ import org.jetbrains.sbtidea.packaging.*
 import sbt.File
 import sbt.Keys.TaskStreams
 
-import java.nio.file.{Files, Path, Paths, StandardCopyOption}
+import java.nio.file.Path
 
-class DynamicDistBuilder(stream: TaskStreams, target: File, outputDir: File, private val hints: Seq[File]) extends DistBuilder(stream, target) {
+class DynamicDistBuilder(stream: TaskStreams, target: File, outputDir: File) extends DistBuilder(stream, target) {
 
   override def packageJar(to: Path, mappings: Mappings): Unit = {
     val isStatic = mappings.forall(_.metaData.static)
@@ -14,27 +14,8 @@ class DynamicDistBuilder(stream: TaskStreams, target: File, outputDir: File, pri
       super.packageJar(to, mappings)
     else {
       val newOutputPath = outputDir.toPath.resolve("classes")
-      if (!Files.exists(newOutputPath) || hints.isEmpty)
-        packageNoHints(newOutputPath, mappings)
-      else
-        packageUsingHints(newOutputPath)
+      packageNoHints(newOutputPath, mappings)
     }
-  }
-
-  private def packageUsingHints(newOutputPath: Path): Unit = {
-    timed(s"Using ${hints.size} hints from previous compilation: $newOutputPath", {
-      val key = "classes"
-      val offset = key.length + 1
-      for (hint <- hints) {
-        val hintStr = hint.toString
-        val relativisedStr = hintStr.substring(hintStr.indexOf(key) + offset)
-        val newRelativePath = Paths.get(relativisedStr)
-        val newAbsolutePath = newOutputPath.resolve(newRelativePath)
-        if (newAbsolutePath.toFile.getParentFile == null || !newAbsolutePath.toFile.getParentFile.exists())
-          Files.createDirectories(newAbsolutePath.getParent)
-        Files.copy(hint.toPath, newAbsolutePath, StandardCopyOption.REPLACE_EXISTING)
-      }
-    })
   }
 
   private def packageNoHints(newOutputPath: Path, mappings: Mappings): Unit = {
@@ -47,5 +28,4 @@ class DynamicDistBuilder(stream: TaskStreams, target: File, outputDir: File, pri
   override def patch(to: Path, mappings: Mappings): Unit = {
     streams.log.info(s"Patching has no effect when building dynamic artifact")
   }
-
 }

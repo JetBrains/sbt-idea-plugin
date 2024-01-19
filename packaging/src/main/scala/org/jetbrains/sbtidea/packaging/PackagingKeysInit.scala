@@ -94,7 +94,7 @@ trait PackagingKeysInit {
       val mappings = packageMappings.value
       val stream = streams.value
       val myTarget = target.value
-      new DynamicDistBuilder(stream, myTarget, outputDir, Seq.empty).produceArtifact(mappings)
+      new DynamicDistBuilder(stream, myTarget, outputDir).produceArtifact(mappings)
       outputDir
     },
     packageArtifactZip := doPackageArtifactZip.value,
