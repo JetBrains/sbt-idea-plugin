@@ -49,7 +49,8 @@ lazy val ideaSupport = (project in file("ideaSupport"))
   .settings(
     name := "sbt-idea-plugin",
     libraryDependencies ++= Seq(
-      "org.scalaj" %% "scalaj-http" % "2.4.2",
+      "org.apache.httpcomponents.client5" % "httpclient5" % "5.2.3",
+
       "org.jetbrains" % "marketplace-zip-signer" % "0.1.8",
       "com.eclipsesource.minimal-json" % "minimal-json" % "0.9.5",
       "org.rauschig" % "jarchivelib" % "1.2.0",
