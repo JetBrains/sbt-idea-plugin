@@ -471,6 +471,12 @@ object AutoSbtIdeaPlugin extends AbstractSbtIdeaPlugin {
   override def trigger  = allRequirements
 }
 ``` 
+## Grouping with qualified names is available from Scala plugin version 2024.1.4
+In the Scala plugin 2024.1.4 a significant change has been made according to modules grouping and their naming. You can read more about this change [here](https://youtrack.jetbrains.com/issue/SCL-21288/Rewrite-deprecated-module-grouping-logic-to-the-new-API-grouping-with-qualified-names-is-now-supported.#focus=Comments-27-8977291.0-0). 
+Because of this change, it was necessary to change how the project names are generated in packageMapping tasks (`packageMappings` and `packageMappingsOffline`).
+To switch between the new and the old projects naming logic, `grouping.with.qualified.names.enabled` system property has been introduced.
+If your Scala plugin version is 2024.1.4 or higher, then in order to generate correct mappings you should set this property to true (`-Dgrouping.with.qualified.names.enabled=true`). 
+Otherwise, there is no need to do anything as this value is set to false by default.
 
 ## Known Issues and Limitations
 

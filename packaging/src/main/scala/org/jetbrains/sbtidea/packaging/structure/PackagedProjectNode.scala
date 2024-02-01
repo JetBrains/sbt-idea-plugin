@@ -4,5 +4,6 @@ import org.jetbrains.sbtidea.structure.ProjectNode
 
 trait PackagedProjectNode extends ProjectNode {
   override type T = PackagedProjectNode
+  def rootProjectName: Option[String]
   def packagingOptions: ProjectPackagingOptions
 }

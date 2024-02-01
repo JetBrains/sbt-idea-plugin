@@ -10,8 +10,13 @@ package object mappings {
       MappingMetaData(shading = node.packagingOptions.shadePatterns,
         excludeFilter = node.packagingOptions.excludeFilter,
         static = true,
-        project = Some(node.name),
+        project = Some(nodeNameWithRootProjectNamePrepended),
         kind = MAPPING_KIND.UNDEFINED)
+
+    private def nodeNameWithRootProjectNamePrepended: String = {
+      val nodeName = node.name
+      node.rootProjectName.map(root => s"$root.$nodeName").getOrElse(nodeName)
+    }
 
     private def collectNodes(node: PackagedProjectNode)(predicate: PackagedProjectNode => Boolean): Seq[ProjectNode] = {
       val lst = node.parents.filter(predicate)
