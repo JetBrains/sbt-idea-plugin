@@ -54,6 +54,7 @@ lazy val ideaSupport = (project in file("ideaSupport"))
       "org.jetbrains" % "marketplace-zip-signer" % "0.1.24",
       "com.eclipsesource.minimal-json" % "minimal-json" % "0.9.5",
       "org.rauschig" % "jarchivelib" % "1.2.0",
+      "org.ow2.asm" % "asm" % "9.6",
 
       //for file utils in tests (create/delete cerucsively/write string)
       "commons-io" % "commons-io" % "2.15.1" % Test

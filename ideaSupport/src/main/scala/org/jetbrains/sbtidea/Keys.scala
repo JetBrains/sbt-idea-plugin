@@ -84,6 +84,10 @@ object Keys extends Defns with Init with Utils with Quirks {
   lazy val bundleScalaLibrary = settingKey[Boolean](
     "Include scala-library.jar in the artifact and generated run configurations")
 
+  lazy val instrumentThreadingAnnotations = settingKey[Boolean](
+    "Generate JVM bytecode to assert that a method is called on the correct IDEA thread " ++
+      "(supported method annotations: @RequiresBackgroundThread, @RequiresEdt, @RequiresReadLock, @RequiresReadLockAbsence, @RequiresWriteLock)")
+
   /* Deprecated task aliases */
 
   lazy val buildIntellijOptionsIndex = taskKey[Unit](
