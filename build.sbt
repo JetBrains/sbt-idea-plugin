@@ -56,7 +56,7 @@ lazy val ideaSupport = (project in file("ideaSupport"))
       "org.rauschig" % "jarchivelib" % "1.2.0",
 
       //for file utils in tests (create/delete cerucsively/write string)
-      "org.apache.commons" % "commons-io" % "1.3.2" % Test
+      "commons-io" % "commons-io" % "2.15.1" % Test
     )
   )
 
