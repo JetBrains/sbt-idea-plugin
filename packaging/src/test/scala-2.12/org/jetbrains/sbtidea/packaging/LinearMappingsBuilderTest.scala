@@ -13,20 +13,49 @@ class LinearMappingsBuilderTest extends AnyFeatureSpec with MappingsTestBase {
    * TODO: automate generation of test data?
    */
   private val testData: Seq[RevisionTestDataDescription] = Seq(
+    // tested on Scala plugin version without qualified names grouping (less than 2024.1.4)
     RevisionTestDataDescription(
       "scioIdeaPlugin",
       RevisionReference(
         "https://github.com/spotify/scio-idea-plugin",
-        "9654963",
-        "Use patchPluginXml (#279)"
+        "06ed4690",
+        "Rename plugin according to verifier rules (#284)"
       )
     ),
     RevisionTestDataDescription(
       "sbtIdeaPlugin",
       RevisionReference(
         "https://github.com/JetBrains/sbt-idea-plugin",
-        "b59ea8fa",
-        "Merge pull request #123 from JetBrains/tobias/search-index"
+        "e56f4bb6",
+        "introduce usingFileSystem to avoid UnsupportedOperationException with default file system close method"
+      )
+    ),
+    // note: zio-intellij was introduced because it contains module dependencies and the difference
+    // between how it works with and without qualified names grouping is visible
+    // (PackagedProjectNode.rootProjectName is not empty with qualified names grouping)
+    RevisionTestDataDescription(
+      "zio-intellij",
+      RevisionReference(
+        "https://github.com/zio/zio-intellij",
+        "99aa4d54",
+        "Initial support for IntelliJ 2024.1"
+      )
+    ),
+    // tested on Scala plugin version with qualified names grouping (higher or equal 2024.1.4)
+    RevisionTestDataDescription(
+      "scioIdeaPlugin-qualified-names-grouping",
+      RevisionReference(
+        "https://github.com/spotify/scio-idea-plugin",
+        "06ed4690",
+        "Rename plugin according to verifier rules (#284)"
+      )
+    ),
+    RevisionTestDataDescription(
+      "zio-intellij-qualified-names-grouping",
+      RevisionReference(
+        "https://github.com/zio/zio-intellij",
+        "99aa4d54",
+        "Initial support for IntelliJ 2024.1"
       )
     )
   )

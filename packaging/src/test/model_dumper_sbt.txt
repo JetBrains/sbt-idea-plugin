@@ -1,6 +1,7 @@
 
 lazy val dump = inputKey[Unit]("")
 dump := {
+  import java.nio.file.{Files, StandardCopyOption}
   import org.jetbrains.sbtidea.SbtPluginLogger
   import org.jetbrains.sbtidea.packaging.structure.sbtImpl.{SbtPackagedProjectNodeImpl, SbtPackagingStructureExtractor}
 
@@ -13,8 +14,9 @@ dump := {
   val logger = new SbtPluginLogger(streams.value)
   val base = baseDirectory.value
   val mappings = packageMappingsOffline.value
+  val buildStructure = Keys.buildStructure.value
 
-  val structureExtractor = new SbtPackagingStructureExtractor(rootProject, data, buildDeps, logger)
+  val structureExtractor = new SbtPackagingStructureExtractor(rootProject, data, buildDeps, buildStructure, logger)
   val structure: Seq[SbtPackagedProjectNodeImpl] = structureExtractor.extract
 
   val userHome = file(sys.props("user.home"))
