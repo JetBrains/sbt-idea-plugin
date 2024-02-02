@@ -5,7 +5,7 @@ import org.jetbrains.sbtidea.structure.Library
 import org.jetbrains.sbtidea.structure.sbtImpl.SbtProjectNode
 import sbt.ProjectRef
 
-@SerialVersionUID(1)
+@SerialVersionUID(2)
 class SbtPackagedProjectNodeImpl(override val ref: ProjectRef,
                                  override val name: String,
                                  override val rootProjectName: Option[String],
