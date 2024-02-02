@@ -49,7 +49,7 @@ lazy val ideaSupport = (project in file("ideaSupport"))
   .settings(
     name := "sbt-idea-plugin",
     libraryDependencies ++= Seq(
-      "org.apache.httpcomponents.client5" % "httpclient5" % "5.2.3",
+      "org.apache.httpcomponents.client5" % "httpclient5" % "5.3.1",
 
       "org.jetbrains" % "marketplace-zip-signer" % "0.1.8",
       "com.eclipsesource.minimal-json" % "minimal-json" % "0.9.5",
