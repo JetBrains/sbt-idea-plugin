@@ -11,7 +11,6 @@ import sbt.internal.{BuildDependencies, BuildStructure}
 import scala.language.implicitConversions
 
 /**
- *
  * @param rootProject in the case of projects which consist of multiple builds, this variable describes the root of all roots
  */
 class SbtPackagingStructureExtractor(override val rootProject: ProjectRef,
