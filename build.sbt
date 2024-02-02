@@ -51,7 +51,7 @@ lazy val ideaSupport = (project in file("ideaSupport"))
     libraryDependencies ++= Seq(
       "org.apache.httpcomponents.client5" % "httpclient5" % "5.3.1",
 
-      "org.jetbrains" % "marketplace-zip-signer" % "0.1.8",
+      "org.jetbrains" % "marketplace-zip-signer" % "0.1.24",
       "com.eclipsesource.minimal-json" % "minimal-json" % "0.9.5",
       "org.rauschig" % "jarchivelib" % "1.2.0",
 
