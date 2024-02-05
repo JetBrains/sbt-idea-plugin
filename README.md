@@ -383,6 +383,19 @@ To workaround this issue `sbt-idea-plugin` tries to automatically detect if your
 other plugins with Scala and filter out scala-library.jar from the resulting artifact. However, the heuristic cannot
 cover all possible cases and thereby this setting is exposed to allow manual control over bundling the scala-library.jar  
 
+#### `instrumentThreadingAnnotations :: SettingKey[Boolean]`
+
+**Default**: `false`
+
+Generate JVM bytecode to assert that a method is called on the correct IDEA thread. The supported annotations are:
+1. `com.intellij.util.concurrency.annotations.RequiresBackgroundThread`
+2. `com.intellij.util.concurrency.annotations.RequiresEdt`
+3. `com.intellij.util.concurrency.annotations.RequiresReadLock`
+4. `com.intellij.util.concurrency.annotations.RequiresReadLockAbsence`
+5. `com.intellij.util.concurrency.annotations.RequiresWriteLock`
+
+See: [IntelliJ IDEA ThreadingAssertions.java](https://github.com/JetBrains/intellij-community/blob/5758eb99b4a1971ebe75cda755693cc930949465/platform/core-api/src/com/intellij/util/concurrency/ThreadingAssertions.java)
+
 #### `packageOutputDir :: SettingKey[File]`
 
 **Default**: `target.value / "plugin" / intellijPluginName.in(ThisBuild).value.removeSpaces`
