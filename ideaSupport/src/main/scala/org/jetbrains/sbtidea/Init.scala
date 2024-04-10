@@ -82,8 +82,9 @@ trait Init { this: Keys.type =>
     intellijMainJars := {
       //NOTE: see also filtering in org.jetbrains.sbtidea.tasks.IdeaConfigBuilder.intellijPlatformJarsClasspath
       val globFilter: FileFilter = GlobFilter("*.jar") -- GlobFilter(IdeaConfigBuilder.JUnit3JarName)
-      val finder = intellijBaseDirectory.in(ThisBuild).value / "lib" * globFilter
-      finder.classpath
+      val finderLib = intellijBaseDirectory.in(ThisBuild).value / "lib" * globFilter
+      val finderLibModules = intellijBaseDirectory.in(ThisBuild).value / "lib" / "modules" * globFilter
+      finderLib.classpath ++ finderLibModules.classpath
     },
     intellijPlugins := Seq.empty,
     intellijRuntimePlugins := Seq.empty,
