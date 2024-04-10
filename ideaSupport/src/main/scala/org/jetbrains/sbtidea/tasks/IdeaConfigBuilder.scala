@@ -193,12 +193,18 @@ class IdeaConfigBuilder(moduleName: String,
 
   private def intellijPlatformJarsClasspath: Seq[String] = {
     //NOTE: see also filtering in org.jetbrains.sbtidea.Init.projectSettings
-    intellijPlatformJarsFolder
-      .listFiles((_, fileName: String) => {
-        fileName.endsWith(".jar") && fileName != JUnit3JarName
-      })
-      .map(_.getPath)
-      .toSeq :+
+    def jarsExcludingJUnit(dir: File): Seq[String] =
+      if (dir.isDirectory) {
+        dir
+          .listFiles((_, fileName: String) => {
+            fileName.endsWith(".jar") && fileName != JUnit3JarName
+          })
+          .map(_.getPath)
+          .toSeq
+      } else Seq.empty
+
+    jarsExcludingJUnit(intellijPlatformJarsFolder) ++
+      jarsExcludingJUnit(intellijPlatformJarsFolder / "modules") :+
       (intellijPlatformJarsFolder / "ant" / "lib" / "ant.jar").getPath
   }
 
