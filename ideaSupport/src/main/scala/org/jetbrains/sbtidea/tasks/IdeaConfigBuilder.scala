@@ -208,11 +208,16 @@ class IdeaConfigBuilder(moduleName: String,
       (intellijPlatformJarsFolder / "ant" / "lib" / "ant.jar").getPath
   }
 
-  private def pluginClasspathPattern(pluginPath: File): String =
-    if (pluginPath.isDirectory)
-      s"${pluginPath / "lib"}${File.separator}*"
-    else
-      pluginPath.toString
+  private def pluginClasspathPattern(pluginPath: File): Seq[String] =
+    if (pluginPath.isDirectory) {
+      val lib = pluginPath / "lib"
+      val modules = lib / "modules"
+
+      Seq(lib, modules).collect {
+        case dir if dir.exists() && dir.isDirectory =>
+          s"$dir${File.separator}*"
+      }
+    } else Seq(pluginPath.toString)
 
   private def buildJUnitTemplate: String = {
     val testVMOptions = intellijVMOptions.copy(test = true)
@@ -226,7 +231,7 @@ class IdeaConfigBuilder(moduleName: String,
         classPathEntries += (pluginAssemblyDir / "lib").toString + File.separator + "*"
 
         classPathEntries ++= intellijPlatformJarsClasspath
-        classPathEntries ++= pluginRoots.map(pluginClasspathPattern)
+        classPathEntries ++= pluginRoots.flatMap(pluginClasspathPattern)
         classPathEntries ++= ownProductDirs.map(_.toString)
 
         //runtime jars from the *currently running* IJ to actually start the tests:
