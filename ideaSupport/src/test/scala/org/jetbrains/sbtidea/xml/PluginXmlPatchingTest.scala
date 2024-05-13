@@ -9,7 +9,7 @@ import java.nio.file.{Files, StandardCopyOption}
 import scala.collection.JavaConverters.collectionAsScalaIterableConverter
 import scala.util.Using
 
-private class PluginXmlPatchingTest extends AnyFunSuite with Matchers with IdeaMock {
+class PluginXmlPatchingTest extends AnyFunSuite with Matchers with IdeaMock {
 
   private def getPluginXml(pluginXmlName: String = "plugin.xml") = {
     val tmpFile = createTempFile("", "plugin.xml")
