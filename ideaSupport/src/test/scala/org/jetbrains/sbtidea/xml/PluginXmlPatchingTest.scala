@@ -11,9 +11,9 @@ import scala.util.Using
 
 private class PluginXmlPatchingTest extends AnyFunSuite with Matchers with IdeaMock {
 
-  private def getPluginXml = {
+  private def getPluginXml(pluginXmlName: String = "plugin.xml") = {
     val tmpFile = createTempFile("", "plugin.xml")
-    Using.resource(getClass.getResourceAsStream("plugin.xml")) { stream =>
+    Using.resource(getClass.getResourceAsStream(pluginXmlName)) { stream =>
       Files.copy(stream, tmpFile, StandardCopyOption.REPLACE_EXISTING)
     }
     tmpFile
@@ -27,7 +27,7 @@ private class PluginXmlPatchingTest extends AnyFunSuite with Matchers with IdeaM
       xml.sinceBuild        = "SINCE_BUILD"
       xml.untilBuild        = "UNTIL_BUILD"
     }
-    val pluginXml = getPluginXml
+    val pluginXml = getPluginXml()
     val initialContent = Files.readAllLines(pluginXml).asScala
     val patcher = new PluginXmlPatcher(pluginXml)
     val result = patcher.patch(options)
@@ -49,7 +49,7 @@ private class PluginXmlPatchingTest extends AnyFunSuite with Matchers with IdeaM
       xml.pluginDescription = "DESCRIPTION"
       xml.sinceBuild        = "SINCE_BUILD"
     }
-    val pluginXml = getPluginXml
+    val pluginXml = getPluginXml()
     val initialContent = Files.readAllLines(pluginXml).asScala
     val patcher = new PluginXmlPatcher(pluginXml)
     val result = patcher.patch(options)
@@ -71,7 +71,7 @@ private class PluginXmlPatchingTest extends AnyFunSuite with Matchers with IdeaM
       xml.pluginDescription = "DESCRIPTION"
       xml.untilBuild        = "UNTIL_BUILD"
     }
-    val pluginXml = getPluginXml
+    val pluginXml = getPluginXml()
     val initialContent = Files.readAllLines(pluginXml).asScala
     val patcher = new PluginXmlPatcher(pluginXml)
     val result = patcher.patch(options)
@@ -88,7 +88,7 @@ private class PluginXmlPatchingTest extends AnyFunSuite with Matchers with IdeaM
 
   test("no modifications done if no patching options are defined") {
     val options = pluginXmlOptions { _ => }
-    val pluginXml = getPluginXml
+    val pluginXml = getPluginXml()
     val initialContent = Files.readAllLines(pluginXml).asScala
     val patcher = new PluginXmlPatcher(pluginXml)
     val result = patcher.patch(options)
@@ -99,4 +99,33 @@ private class PluginXmlPatchingTest extends AnyFunSuite with Matchers with IdeaM
     diff.size shouldBe 0
   }
 
+  test("multi-line tags are patched correctly") {
+    val pluginXml = getPluginXml("plugin-multilinetag.xml")
+
+    val options = pluginXmlOptions { xml =>
+      xml.pluginDescription = "DESCRIPTION\nLINE2"
+    }
+    val patcher = new PluginXmlPatcher(pluginXml)
+    val result = patcher.patch(options)
+    val newContent = Files.readAllLines(result).asScala
+
+    val newContentPattern = s"(?s).*<description>${options.pluginDescription}</description>.*$$".r
+    newContent.mkString("\n") should fullyMatch regex newContentPattern
+  }
+
+  test("duplicate tags are only patched the first one") {
+    val pluginXml = getPluginXml("plugin-duplicatedtags.xml")
+
+    val options = pluginXmlOptions { xml =>
+      xml.pluginDescription = "DESCRIPTION\nLINE2"
+    }
+    val patcher = new PluginXmlPatcher(pluginXml)
+    val result = patcher.patch(options)
+    val newContent = Files.readAllLines(result).asScala
+
+    val pattern1 = s"(?s)<description>.*?</description>".r
+    pattern1.findAllMatchIn(newContent.mkString("\n")).size shouldBe 2
+    val pattern2 = s"(?s).*<description>${options.pluginDescription}</description>.*<description>.*</description>.*$$".r
+    newContent.mkString("\n") should fullyMatch regex pattern2
+  }
 }

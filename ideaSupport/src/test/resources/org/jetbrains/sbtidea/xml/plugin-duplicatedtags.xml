@@ -1,0 +1,8 @@
+<idea-plugin url="https://www.jetbrains.com/idea">
+    <description>Integrates Volume Snapshot Service W10
+    This is a very
+    long description.
+    It have multiple lines.
+    </description>
+<!--    <description>This is comment</description>-->
+</idea-plugin>
