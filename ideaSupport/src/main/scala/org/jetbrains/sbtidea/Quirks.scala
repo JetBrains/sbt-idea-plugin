@@ -1,5 +1,6 @@
 package org.jetbrains.sbtidea
 
+import org.jetbrains.sbtidea.structure.sbtImpl.isScalaLibrary
 import sbt.Keys.{Classpath, moduleID}
 import sbt.{Keys as SbtKeys, *}
 
@@ -27,9 +28,4 @@ trait Quirks { this: Keys.type =>
 
   def hasPluginsWithScala(plugins: Seq[IntellijPlugin]): Boolean =
     plugins.exists(plugin => pluginsWithScala.exists(id => plugin.toString.matches(s".*$id.*")))
-
-  private def isScalaLibrary(moduleId: ModuleID): Boolean = moduleId.name match {
-    case "scala-library" | "scala3-library_3" => true
-    case _ => false
-  }
 }
