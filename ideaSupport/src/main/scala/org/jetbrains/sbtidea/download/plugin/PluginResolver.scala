@@ -50,14 +50,17 @@ class PluginResolver(
     }
   }
 
-  private def resolveDependencies(plugin: PluginDependency, key: IntellijPlugin, descriptor: PluginDescriptor): Seq[PluginArtifact] =
-    descriptor.dependsOn
-      .filterNot(!resolveSettings.optionalDeps && _.optional)              // skip all optional plugins if flag is set
-      .filterNot(dep => resolveSettings.excludedIds.contains(dep.id))      // remove plugins specified by user blacklist
-      .filterNot(_.id.startsWith(INTERNAL_MODULE_PREFIX))                  // skip plugins embedded in idea.jar
+  private def resolveDependencies(plugin: PluginDependency, key: IntellijPlugin, descriptor: PluginDescriptor): Seq[PluginArtifact] = {
+    val dependencies = descriptor.dependsOn
+      .filterNot(!resolveSettings.optionalDeps && _.optional)                              // skip all optional plugins if flag is set
+      .filterNot(dep => resolveSettings.excludedIds.contains(dep.id))                      // remove plugins specified by user blacklist
+      .filterNot(_.id.startsWith(INTERNAL_MODULE_PREFIX))                                  // skip plugins embedded in idea.jar
       .filterNot(dep => dep.optional && !localRegistry.isPluginInstalled(dep.id.toPlugin)) // skip optional non-bundled plugins
+
+    dependencies
       .map(dep => PluginDependency(dep.id.toPlugin, plugin.buildInfo))
       .flatMap(new PluginResolver(processedPlugins = processedPlugins + key, resolveSettings).resolve)
+  }
 
   private def resolvePluginById(
     plugin: PluginDependency,

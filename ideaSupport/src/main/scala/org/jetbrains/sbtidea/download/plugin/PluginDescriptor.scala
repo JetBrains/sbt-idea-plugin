@@ -74,6 +74,21 @@ case class PluginDescriptor(id: String,
 }
 
 object PluginDescriptor {
+  /**
+   * See [[PluginIndexImpl.buildFromProductModulesDir]].
+   *
+   * We cannot parse a descriptor from module's plugin.xml because it doesn't have one.
+   * The only xml file modules have (and it is located in jar's root, i.e.: outside META-INF directory)
+   * will not have any of the fields below.
+   *
+   * Minimal example of a module without extensions, actions and even optional package:
+   * {{{
+   *   <idea-plugin>
+   *   </idea-plugin>
+   * }}}
+   */
+  private[sbtidea] def apply(id: String): PluginDescriptor =
+    new PluginDescriptor(id = id, vendor = "", name = "", version = "", sinceBuild = "", untilBuild = "")
 
   private val OPTIONAL_KEY  = "(optional) "
   private val OPTIONAL_ATTR = "optional"

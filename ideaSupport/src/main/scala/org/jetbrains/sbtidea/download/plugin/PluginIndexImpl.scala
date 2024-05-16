@@ -45,20 +45,22 @@ class PluginIndexImpl(ideaRoot: Path) extends PluginIndex {
   }
 
   private def buildAndSaveIndex(): Repr = {
-    val fromPluginsDir = buildFromPluginsDir()
+    val plugins = buildFromPluginsDir()
+    val productModules = buildFromProductModulesDir()
+    val allEntries = plugins ++ productModules
     try {
-      val pluginIds = fromPluginsDir.keys.toSeq
-        .filter(_.trim.nonEmpty) // for some reason there is some empty id
+      val pluginIds = allEntries.keys.toSeq
+        .filter(_.trim.nonEmpty) // for some reason, there is some empty id
         .sorted
         .mkString(", ")
       log.info(s"Plugin ids from $INDEX_FILENAME: $pluginIds")
 
-      saveToFile(fromPluginsDir)
+      saveToFile(allEntries)
     } catch {
       case e: Throwable =>
         log.warn(s"Failed to write back plugin index: $e")
     }
-    fromPluginsDir
+    allEntries
   }
 
   override def put(descriptor: PluginDescriptor, installPath: Path): Unit = {
@@ -125,6 +127,22 @@ class PluginIndexImpl(ideaRoot: Path) extends PluginIndex {
           Some((descriptor.id, pluginDir -> descriptor))
       }
     }.toMap
+  }
+
+  /**
+   * See SCL-22564
+   *
+   * This is a workaround to avoid sbt import failures on productModuleV2 dependency resolution.
+   * V2 modules should be taken from the `layout` field of `product-info.json`.
+   */
+  private def buildFromProductModulesDir(): Map[PluginId, (Path, PluginDescriptor)] = {
+    val modulesDir = ideaRoot.resolve("lib").resolve("modules").toFile
+    if (modulesDir.isDirectory) {
+      modulesDir.listFiles((_, name) => name.endsWith(".jar")).map { file =>
+        val moduleName = file.getName.stripSuffix(".jar")
+        moduleName -> (file.toPath, PluginDescriptor(moduleName))
+      }.toMap
+    } else Map.empty
   }
 }
 
