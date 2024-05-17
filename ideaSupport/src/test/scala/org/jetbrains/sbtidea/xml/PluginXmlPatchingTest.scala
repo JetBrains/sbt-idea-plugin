@@ -107,13 +107,13 @@ class PluginXmlPatchingTest extends AnyFunSuite with Matchers with IdeaMock {
     }
     val patcher = new PluginXmlPatcher(pluginXml)
     val result = patcher.patch(options)
-    val newContent = Files.readAllLines(result).asScala
+    val newContent = Files.readAllLines(result).asScala.mkString("\n")
 
-    val newContentPattern = s"(?s).*<description>${options.pluginDescription}</description>.*$$".r
-    newContent.mkString("\n") should fullyMatch regex newContentPattern
+    val golden = Files.readAllLines(getPluginXml("plugin-multilinetag-golden.xml")).asScala.mkString("\n")
+    newContent shouldBe golden
   }
 
-  test("duplicate tags are only patched the first one") {
+  test("duplicate tags are only patched the uncommented first one") {
     val pluginXml = getPluginXml("plugin-duplicatedtags.xml")
 
     val options = pluginXmlOptions { xml =>
@@ -121,11 +121,9 @@ class PluginXmlPatchingTest extends AnyFunSuite with Matchers with IdeaMock {
     }
     val patcher = new PluginXmlPatcher(pluginXml)
     val result = patcher.patch(options)
-    val newContent = Files.readAllLines(result).asScala
+    val newContent = Files.readAllLines(result).asScala.mkString("\n")
 
-    val pattern1 = s"(?s)<description>.*?</description>".r
-    pattern1.findAllMatchIn(newContent.mkString("\n")).size shouldBe 2
-    val pattern2 = s"(?s).*<description>${options.pluginDescription}</description>.*<description>.*</description>.*$$".r
-    newContent.mkString("\n") should fullyMatch regex pattern2
+    val golden = Files.readAllLines(getPluginXml("plugin-duplicatedtags-golden.xml")).asScala.mkString("\n")
+    newContent shouldBe golden
   }
 }

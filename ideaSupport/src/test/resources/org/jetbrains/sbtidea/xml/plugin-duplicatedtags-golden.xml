@@ -3,15 +3,9 @@
     <!--    <description>This is
     comment 2</description>   -->
 <!--<description>This is comment 3</description>12345-->
-    <description>Integrates Volume Snapshot Service W10
-    This is a very
-    long description.
-    It has multiple lines.
-    </description>
+    <description>DESCRIPTION
+LINE2</description>
 <!--    <description>This is comment 4</description>-->
-    <description>Integrates Volume Snapshot Service W10
-        This is a very
-        long description.
-        It has multiple lines.
-    </description>
+    <description>DESCRIPTION
+LINE2</description>
 </idea-plugin>
