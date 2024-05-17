@@ -49,17 +49,22 @@ class PluginXmlPatcher(input: Path, createCopy: Boolean = false) {
   }
 
   private def tag(str: String, name: String, value: String): String = {
-    val tagPattern = s"(?s)<$name>.*?</$name>".r
-    val matchCount: Int = tagPattern.findAllIn(str).length
-    if (matchCount > 0) {
-      if (matchCount > 1) {
-        log.warn(s"$input have multiple $name tag defined, only patching the first one")
+    val tagPattern = s"(?s)(<!--.*?-->)|(<$name>.*?</$name>)".r
+    val matches = tagPattern.findAllMatchIn(str).toList
+    var replacedStr = str
+
+    matches.reverse.foreach { matchItem =>
+      val matchedStr = matchItem.matched
+      val startIdx = matchItem.start
+      val endIdx = matchItem.end
+
+      if (!matchedStr.startsWith("<!--")) {
+        val newValue = matchedStr.replaceFirst(s"(?s)<$name>.*?</$name>", s"<$name>$value</$name>")
+        val prefix = replacedStr.substring(0, startIdx)
+        val postfix = replacedStr.substring(endIdx)
+        replacedStr = prefix + newValue + postfix
       }
-      tagPattern.replaceFirstIn(str, s"<$name>$value</$name>")
     }
-    else {
-      log.warn(s"$input doesn't have $name tag defined, not patching")
-      str
-    }
+    replacedStr
   }
 }
