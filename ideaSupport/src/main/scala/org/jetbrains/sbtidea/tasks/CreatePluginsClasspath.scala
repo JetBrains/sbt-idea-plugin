@@ -11,7 +11,13 @@ import java.nio.file.Path
 
 object CreatePluginsClasspath {
 
-  def collectPluginRoots(ideaBaseDir: Path, ideaBuildInfo: BuildInfo, plugins: Seq[IntellijPlugin], log: PluginLogger, moduleNameHint: String = ""): Seq[(PluginDescriptor, Path)] = {
+  def collectPluginRoots(
+    ideaBaseDir: Path,
+    ideaBuildInfo: BuildInfo,
+    plugins: Seq[IntellijPlugin],
+    log: PluginLogger,
+    moduleNameHint: String = ""
+  ): Seq[(PluginDescriptor, Path)] = {
     implicit val context: InstallContext = InstallContext(baseDirectory = ideaBaseDir, downloadDirectory = ideaBaseDir)
     implicit val remoteRepoApi: PluginRepoUtils = new PluginRepoUtils
     implicit val localRegistry: LocalPluginRegistry = new LocalPluginRegistry(ideaBaseDir)
@@ -39,14 +45,21 @@ object CreatePluginsClasspath {
     roots
   }
 
-  def buildPluginClassPaths(ideaBaseDir: Path, ideaBuildInfo: BuildInfo, plugins: Seq[IntellijPlugin], log: PluginLogger, addSources: Boolean, moduleNameHint: String = ""): Seq[(PluginDescriptor, Classpath)] = {
+  def buildPluginClassPaths(
+    ideaBaseDir: Path,
+    ideaBuildInfo: BuildInfo,
+    plugins: Seq[IntellijPlugin],
+    log: PluginLogger,
+    addSources: Boolean,
+    moduleNameHint: String = ""
+  ): Seq[(PluginDescriptor, Classpath)] = {
     val roots = collectPluginRoots(ideaBaseDir, ideaBuildInfo, plugins, log, moduleNameHint)
     roots.map { case (descriptor, pluginRoot) =>
       val pluginsFinder =
         if (pluginRoot.toFile.isDirectory)
           PathFinder.empty +++
-            pluginRoot.toFile / "lib" * (globFilter("*.jar") -- "asm*.jar") +++
-            pluginRoot.toFile / "lib" / "modules" * (globFilter("*.jar") -- "asm*.jar")
+            pluginRoot.toFile / "lib" * globFilter("*.jar") +++
+            pluginRoot.toFile / "lib" / "modules" * globFilter("*.jar")
         else
           PathFinder.empty +++ pluginRoot.toFile
 
@@ -65,7 +78,13 @@ object CreatePluginsClasspath {
     }
   }
 
-  def apply(ideaBaseDir: Path, ideaBuildInfo: BuildInfo, plugins: Seq[IntellijPlugin], log: PluginLogger, addSources: Boolean, moduleNameHint: String = ""): Classpath =
+  def apply(
+    ideaBaseDir: Path,
+    ideaBuildInfo: BuildInfo,
+    plugins: Seq[IntellijPlugin],
+    log: PluginLogger,
+    addSources: Boolean,
+    moduleNameHint: String = ""
+  ): Classpath =
     buildPluginClassPaths(ideaBaseDir, ideaBuildInfo, plugins, log, addSources, moduleNameHint).flatMap(_._2)
-
 }

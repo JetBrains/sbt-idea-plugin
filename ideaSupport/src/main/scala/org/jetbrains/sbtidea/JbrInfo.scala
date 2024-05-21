@@ -85,27 +85,35 @@ final case class JbrPlatform(os: String, arch: String)
 
 //noinspection ScalaUnusedSymbol (can be used by sbt plugin users)
 object JbrPlatform {
-  val linux_aarch64: JbrPlatform = JbrPlatform("linux", "aarch64")
-  val linux_x64: JbrPlatform = JbrPlatform("linux", "x64")
-  val linux_x86: JbrPlatform = JbrPlatform("linux", "x86")
+  object Arch {
+    val aarch6 = "aarch64"
+    val x64 = "x64"
+  }
 
-  val osx_aarch64: JbrPlatform = JbrPlatform("osx", "aarch64")
-  val osx_x64: JbrPlatform = JbrPlatform("osx", "x64")
+  object Os {
+    val linux = "linux"
+    val osx = "osx"
+    val windows = "windows"
+  }
 
-  val windows_x64: JbrPlatform = JbrPlatform("windows", "x64")
-  val windows_x86: JbrPlatform = JbrPlatform("windows", "x86")
+  val linux_aarch64: JbrPlatform = JbrPlatform(Os.linux, Arch.aarch6)
+  val linux_x64: JbrPlatform = JbrPlatform(Os.linux, Arch.x64)
+
+  val osx_aarch64: JbrPlatform = JbrPlatform(Os.osx, Arch.aarch6)
+  val osx_x64: JbrPlatform = JbrPlatform(Os.osx, Arch.x64)
+
+  val windows_x64: JbrPlatform = JbrPlatform(Os.windows, Arch.x64)
 
   def auto: JbrPlatform = {
     val osName = System.getProperty("os.name", "").toLowerCase(Locale.ENGLISH) match {
-      case value if value.startsWith("win") => "windows"
-      case value if value.startsWith("lin") => "linux"
-      case value if value.startsWith("mac") => "osx"
+      case value if value.startsWith("win") => Os.windows
+      case value if value.startsWith("lin") => Os.linux
+      case value if value.startsWith("mac") => Os.osx
       case other => throw new IllegalStateException(s"OS $other is unsupported")
     }
     val osArch = System.getProperty("os.arch") match {
-      case "x86" => "x86"
-      case "aarch64" => "aarch64"
-      case _ => "x64"
+      case Arch.aarch6 => Arch.aarch6
+      case _ => Arch.x64
     }
     JbrPlatform(osName, osArch)
   }

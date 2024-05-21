@@ -3,10 +3,11 @@ package org.jetbrains.sbtidea
 import org.jetbrains.sbtidea.download.*
 import org.jetbrains.sbtidea.instrumentation.ManipulateBytecode
 import org.jetbrains.sbtidea.packaging.PackagingKeys.*
+import org.jetbrains.sbtidea.productInfo.ProductInfoParser
 import org.jetbrains.sbtidea.searchableoptions.BuildIndex
 import org.jetbrains.sbtidea.tasks.*
 import sbt.Keys.*
-import sbt.{File, file, Keys as SbtKeys, *}
+import sbt.{Attributed, File, file, Keys as _, *}
 
 import scala.annotation.nowarn
 import scala.collection.mutable
@@ -49,6 +50,10 @@ trait Init { this: Keys.type =>
         updateIntellij.value
       } else Def.task { }
     }.value,
+    productInfo := {
+      val productInfoFile = intellijBaseDirectory.value / "product-info.json"
+      ProductInfoParser.parse(productInfoFile)
+    },
     updateIntellij := {
       PluginLogger.bind(new SbtPluginLogger(streams.value))
       new CommunityUpdater(
@@ -80,11 +85,13 @@ trait Init { this: Keys.type =>
 
   lazy val projectSettings: Seq[Setting[?]] = Seq(
     intellijMainJars := {
-      //NOTE: see also filtering in org.jetbrains.sbtidea.tasks.IdeaConfigBuilder.intellijPlatformJarsClasspath
-      val globFilter: FileFilter = GlobFilter("*.jar") -- GlobFilter(IdeaConfigBuilder.JUnit3JarName)
-      val finderLib = intellijBaseDirectory.in(ThisBuild).value / "lib" * globFilter
-      val finderLibModules = intellijBaseDirectory.in(ThisBuild).value / "lib" / "modules" * globFilter
-      finderLib.classpath ++ finderLibModules.classpath
+      val intellijBaseDir = Keys.intellijBaseDirectory.in(ThisBuild).value
+      val productInfo = Keys.productInfo.in(ThisBuild).value
+      val jbrPlatform = jbrInfo.in(ThisBuild).value.platform
+
+      val bootstrapJars = productInfo.bootClasspathJars(jbrPlatform, intellijBaseDir)
+      val coreModulesJars = productInfo.coreModulesJars(intellijBaseDir)
+      Attributed.blankSeq(bootstrapJars ++ coreModulesJars)
     },
     intellijPlugins := Seq.empty,
     intellijRuntimePlugins := Seq.empty,

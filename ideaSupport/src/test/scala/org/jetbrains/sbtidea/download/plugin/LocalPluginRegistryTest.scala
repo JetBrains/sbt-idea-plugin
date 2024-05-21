@@ -11,8 +11,9 @@ import org.scalatest.{BeforeAndAfter, Inspectors}
 import sbt.*
 
 import java.io.OutputStreamWriter
-import java.nio.file.{FileSystems, Files}
+import java.nio.file.{FileSystems, Files, Path}
 import scala.collection.JavaConverters.mapAsJavaMapConverter
+import scala.collection.mutable
 import scala.util.Using
 
 final class LocalPluginRegistryTest extends AnyFunSuite with Matchers with Inspectors with IdeaMock with PluginMock with BeforeAndAfter {
@@ -143,7 +144,7 @@ final class LocalPluginRegistryTest extends AnyFunSuite with Matchers with Inspe
   }
 
   test("LocalPluginRegistry should handle corrupt index") {
-    val oldRegistry = LocalPluginRegistry.instanceFor(ideaRoot)
+    val oldRegistry = new LocalPluginRegistry(ideaRoot)
     val newPlugin = "org.jetbrains.plugins.hocon".toPlugin
     val newPluginRoot = pluginsFolder / "hocon"
 

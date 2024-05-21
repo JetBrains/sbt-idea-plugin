@@ -1,6 +1,9 @@
 package org.jetbrains.sbtidea.productInfo
 
 import org.jetbrains.sbtidea.JbrPlatform
+import sbt.fileToRichFile
+
+import java.io.File
 
 /**
  * The class represents a subset of fields of `product-info.json` file in IntelliJ installation root.
@@ -15,7 +18,50 @@ case class ProductInfo(
   buildNumber: String,
   launch: Seq[Launch],
   layout: Seq[LayoutItem]
-)
+) {
+
+  def bootClasspathJars(jbrPlatform: JbrPlatform, intellijBaseDir: File): Seq[File] = {
+    val launch = launchFor(jbrPlatform)
+    launch.bootClassPathJarNames.map(jarName => intellijBaseDir / "lib" / jarName)
+  }
+
+  def coreModulesJars(intellijBaseDir: File): Seq[File] =
+    layout.filter(_.kind == LayoutItemKind.ProductModuleV2)
+      .flatMap(_.classPath.toSeq.flatten)
+      .map(intellijBaseDir / _)
+
+  /**
+   * Finds the [[Launch]] object for the given OS and architecture corresponding to the [[JbrPlatform]]
+   */
+  @throws[IllegalArgumentException]
+  private def launchFor(jbrPlatform: JbrPlatform): Launch = {
+    val os = jbrPlatform.os
+    val arch = jbrPlatform.arch
+
+    val archInProductFormat = arch match {
+      case JbrPlatform.Arch.x64 => "amd64"
+      case JbrPlatform.Arch.aarch6 => "aarch64"
+      case other =>
+        throw new IllegalArgumentException(s"Unsupported JVM architecture: '$other'")
+    }
+
+    val osInProductFormat = os match {
+      case  JbrPlatform.Os.windows => OS.Windows
+      case  JbrPlatform.Os.linux => OS.Linux
+      case  JbrPlatform.Os.osx => OS.macOs
+      case other =>
+        throw new IllegalArgumentException(s"Unsupported OS: $other")
+    }
+
+    val foundLaunch = launch.find(l => l.os == osInProductFormat && l.arch == archInProductFormat)
+    foundLaunch.getOrElse {
+      throw new IllegalArgumentException(
+        s"""Could not find launch information for the OS: '$os' ($arch).
+           |Available OS/architectures:
+           |${launch.map(l => (l.os, l.arch)).mkString("\n")}""".stripMargin)
+    }
+  }
+}
 
 case class LayoutItem(
   name: String,

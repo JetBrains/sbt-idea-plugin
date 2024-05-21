@@ -1,6 +1,7 @@
 package org.jetbrains.sbtidea
 
 import org.jetbrains.sbtidea.download.plugin.PluginDescriptor
+import org.jetbrains.sbtidea.productInfo.ProductInfo
 import sbt.Keys.*
 import sbt.{Init as _, *}
 
@@ -56,6 +57,9 @@ object Keys extends Defns with Init with Utils with Quirks {
 
   lazy val intellijMainJars = taskKey[Classpath](
     "Classpath containing main IntelliJ Platform jars")
+
+  lazy val productInfo = taskKey[ProductInfo](
+    "Information about IntelliJ distribution extracted from product-info.json file from IntelliJ Platform root directory")
 
   lazy val intellijPluginJars = taskKey[Seq[(PluginDescriptor, Classpath)]](
     "Classpath containing jars of internal IntelliJ Platform plugins used in this project")

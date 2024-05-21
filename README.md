@@ -73,7 +73,7 @@ incomplete, so it is strongly recommended to verify it against
 [available releases](https://www.jetbrains.com/intellij-repository/releases) and
 [available snapshots](https://www.jetbrains.com/intellij-repository/snapshots).
 
-**Note**: minimum supported major IDEA version: `211.x` (~`2021.1.x`)
+**Note**: minimum supported major IDEA version: `242.x` (~`2024.2.x`)
 
 #### `intellijPlatform in ThisBuild :: SettingKey[IntelliJPlatform]`
 

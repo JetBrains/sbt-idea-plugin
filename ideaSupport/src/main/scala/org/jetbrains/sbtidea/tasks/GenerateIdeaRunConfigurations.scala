@@ -3,7 +3,7 @@ package org.jetbrains.sbtidea.tasks
 import org.jetbrains.sbtidea.Keys.*
 import org.jetbrains.sbtidea.download.BuildInfo
 import org.jetbrains.sbtidea.packaging.PackagingKeys.packageOutputDir
-import org.jetbrains.sbtidea.{ClasspathStrategy, PluginLogger, SbtPluginLogger, tasks}
+import org.jetbrains.sbtidea.{PluginLogger, SbtPluginLogger, tasks}
 import sbt.Keys.*
 import sbt.{Def, *}
 
@@ -17,9 +17,6 @@ object GenerateIdeaRunConfigurations extends SbtIdeaTask[Unit] {
       val buildInfo = BuildInfo(
         intellijBuild.in(ThisBuild).value,
         intellijPlatform.in(ThisBuild).value)
-      val actualIntellijBuild = buildInfo.getActualIdeaBuild(intellijBaseDirectory.in(ThisBuild).value.toPath)
-      val classLoadingStrategy = ClasspathStrategy.forVersion(actualIntellijBuild)
-      PluginLogger.info(s"Class loading strategy: since ${classLoadingStrategy.version}")
       val vmOptions = intellijVMOptions.value.copy(debug = false)
       val configName = name.value
       val dotIdeaFolder = baseDirectory.in(ThisBuild).value / ".idea"
@@ -53,13 +50,14 @@ object GenerateIdeaRunConfigurations extends SbtIdeaTask[Unit] {
         intellijVMOptions = vmOptions,
         dataDir = intellijPluginDirectory.value,
         intellijBaseDir = intellijBaseDirectory.in(ThisBuild).value,
+        productInfo = productInfo.in(ThisBuild).value,
+        jbrPlatform = jbrInfo.in(ThisBuild).value.platform,
         dotIdeaFolder = dotIdeaFolder,
         pluginAssemblyDir = packageOutputDir.value,
         ownProductDirs = ownClassPath,
         pluginRoots = pluginRoots,
         extraJUnitTemplateClasspath = managedTestClasspath,
         options = config,
-        classpathStrategy = classLoadingStrategy
       )
 
       configBuilder.build()
