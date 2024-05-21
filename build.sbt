@@ -52,7 +52,7 @@ lazy val ideaSupport = (project in file("ideaSupport"))
       "org.apache.httpcomponents.client5" % "httpclient5" % "5.3.1",
 
       "org.jetbrains" % "marketplace-zip-signer" % "0.1.24",
-      "com.eclipsesource.minimal-json" % "minimal-json" % "0.9.5",
+      "io.spray" %% "spray-json" % "1.3.6",
       "org.rauschig" % "jarchivelib" % "1.2.0",
       "org.ow2.asm" % "asm" % "9.6",
 

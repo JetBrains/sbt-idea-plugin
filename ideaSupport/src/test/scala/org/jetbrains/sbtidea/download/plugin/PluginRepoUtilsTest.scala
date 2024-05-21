@@ -20,11 +20,8 @@ class PluginRepoUtilsTest extends AnyFeatureSpecLike with BeforeAndAfterAll {
       val downloadDir = Files.createTempDirectory("PluginRepoUtilsTest_downloadDir")
 
       FileUtils.writeStringToFile(
-        baseDir.resolve("product-info.json").toFile,
-        """{
-          |  "buildNumber": "11.22.33-actual"
-          |}
-          |""".replace("\r", "").stripMargin.trim,
+        baseDir.resolve("build.txt").toFile,
+        "IU-11.22.33-actual",
         "UTF-8"
       )
 

@@ -1,6 +1,5 @@
 package org.jetbrains.sbtidea.tasks
 
-import com.eclipsesource.json.*
 import org.apache.hc.client5.http.classic.methods.HttpGet
 import org.apache.hc.client5.http.impl.classic.HttpClients
 import org.apache.hc.core5.http.ClassicHttpResponse
@@ -10,11 +9,12 @@ import org.jetbrains.sbtidea.download.BuildInfo
 import org.jetbrains.sbtidea.download.plugin.LocalPluginRegistry
 import org.jetbrains.sbtidea.{PluginLogger, SbtPluginLogger}
 import sbt.Keys.streams
+import spray.json.*
+import spray.json.DefaultJsonProtocol.{RootJsArrayFormat, StringJsonFormat}
 
 import java.net.URLEncoder
 import java.nio.file.Path
 import java.util.regex.Pattern
-import scala.collection.JavaConverters.*
 
 class SearchPluginId(ideaRoot: Path, buildInfo: BuildInfo, useBundled: Boolean = true, useRemote: Boolean = true) {
 
@@ -44,10 +44,12 @@ class SearchPluginId(ideaRoot: Path, buildInfo: BuildInfo, useBundled: Boolean =
       val build: String = s"${buildInfo.edition.edition}-${buildInfo.getActualIdeaBuild(ideaRoot)}"
       val url: String = getMarketplaceSearchUrl(query, build)
       val data: String = getHttpGetResponseString(url)
-      val json = Json.parse(data)
-      val values = json.asArray().values().asScala.map(_.asObject())
-      val names = values.map(_.getString("name", "") -> true)
-      val ids = values.map(_.getString("xmlId", ""))
+
+      val jsonAst = data.parseJson
+      val jsonArray = jsonAst.convertTo[JsArray]
+      val values = jsonArray.elements.map(_.asJsObject())
+      val names = values.map(jsObject => jsObject.fields("name").convertTo[String] -> true)
+      val ids = values.map(jsObject => jsObject.fields("xmlId").convertTo[String])
       ids.zip(names).toMap
     } catch {
       case ex: Throwable =>
