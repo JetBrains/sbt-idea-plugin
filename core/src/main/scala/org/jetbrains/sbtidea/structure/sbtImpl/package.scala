@@ -45,13 +45,16 @@ package object sbtImpl {
   }
 
   def detectScalaVersion(projectData: CommonSbtProjectData): ProjectScalaVersionImpl = {
+    val mainScalaLibraryFormDeps = detectMainScalaLibrary(projectData.definedDeps)
     val mainScalaLibraryFromClasspath = detectMainScalaLibrary(projectData.cp.flatMap(_.metadata.get(sbt.Keys.moduleID.key)))
-
-    val mainScalaLibrary = if (mainScalaLibraryFromClasspath.nonEmpty)
-      mainScalaLibraryFromClasspath
-    else
-      detectMainScalaLibrary(projectData.definedDeps)
-
+    // First detect scala version form dependencies and only then form the classpath. Classpath entire can include more
+    // items then direct libraries dependencies. If a Scala 2 module depends on a Scala 3 module, we need to consider
+    // the module Scala 2 anyway. But the classpath contain Scala 3 even though direct dependencies won't.
+    // Thus we first check dependencies only.
+    //
+    // NOTE: it seems like the most straight-forward way would be not "guessing" but propagating the version form the project "scalaVersion" key
+    // We could reimplement it in future
+    val mainScalaLibrary = mainScalaLibraryFormDeps.orElse(mainScalaLibraryFromClasspath)
     ProjectScalaVersionImpl(mainScalaLibrary)
   }
 }
