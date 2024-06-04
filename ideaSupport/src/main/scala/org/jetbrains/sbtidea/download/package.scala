@@ -8,6 +8,9 @@ import scala.concurrent.duration.DurationInt
 
 package object download {
 
+  /**
+   * See also [[org.jetbrains.sbtidea.productInfo.ProductInfo]]
+   */
   case class BuildInfo(buildNumber: String, edition: IntelliJPlatform) {
     override def toString: String = s"BuildInfo($edition-$buildNumber)"
   }
