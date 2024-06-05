@@ -115,7 +115,10 @@ class PluginIndexImpl(ideaRoot: Path) extends PluginIndex {
   }
 
   private def buildFromPluginsDir: Map[PluginId, (Path, PluginDescriptor)] = {
-    val pluginDirs = Files.list(ideaRoot.resolve("plugins")).collect(Collectors.toList[Path]).asScala
+    val pluginDirs = Files.list(ideaRoot.resolve("plugins")).collect(Collectors.toList[Path]).asScala.filter { file =>
+      //extra filtering of unexpected extensions (e.g., some strange file plugin-classpath.txt)
+      file.isDir || file.toString.endsWith(".jar")
+    }
     pluginDirs.flatMap { pluginDir =>
       val pluginMetaData = extractPluginMetaData(pluginDir)
       pluginMetaData match {
