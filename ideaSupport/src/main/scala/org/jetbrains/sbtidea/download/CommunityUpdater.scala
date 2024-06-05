@@ -39,7 +39,7 @@ class CommunityUpdater(
   def update(): Unit = {
     topoSort(dependencies).foreach(update)
 
-    val actualBuildNumber = ideaBuildInfo.getActualIdeaBuild(baseDirectory)
+    val actualBuildNumber = context.productInfo.buildNumber
     val buildNumber = ideaBuildInfo.buildNumber
     if (buildNumber != actualBuildNumber) {
       log.warn(

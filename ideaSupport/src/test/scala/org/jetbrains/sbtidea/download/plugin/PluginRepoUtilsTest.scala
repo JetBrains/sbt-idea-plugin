@@ -3,6 +3,7 @@ package org.jetbrains.sbtidea.download.plugin
 import org.apache.commons.io.FileUtils
 import org.jetbrains.sbtidea.download.BuildInfo
 import org.jetbrains.sbtidea.download.api.InstallContext
+import org.jetbrains.sbtidea.productInfo.{ProductInfo, ProductInfoParser}
 import org.jetbrains.sbtidea.{IntelliJPlatform, IntellijPlugin}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.featurespec.AnyFeatureSpecLike
@@ -12,6 +13,20 @@ import java.nio.file.Files
 
 class PluginRepoUtilsTest extends AnyFeatureSpecLike with BeforeAndAfterAll {
 
+  private def createDummyProductInfoJson(buildNumber: String): String = {
+    val productInfo = ProductInfo(
+      name = "",
+      version = "",
+      versionSuffix = "",
+      buildNumber = buildNumber,
+      productCode = "",
+      modules = Nil,
+      launch = Nil,
+      layout = Nil
+    )
+    ProductInfoParser.toJsonString(productInfo)
+  }
+
   Feature("getPluginDownloadURL") {
     val buildInfo = BuildInfo("1.2.3", IntelliJPlatform.IdeaUltimate)
 
@@ -20,8 +35,8 @@ class PluginRepoUtilsTest extends AnyFeatureSpecLike with BeforeAndAfterAll {
       val downloadDir = Files.createTempDirectory("PluginRepoUtilsTest_downloadDir")
 
       FileUtils.writeStringToFile(
-        baseDir.resolve("build.txt").toFile,
-        "IU-11.22.33-actual",
+        baseDir.resolve("product-info.json").toFile,
+        createDummyProductInfoJson("11.22.33-actual"),
         "UTF-8"
       )
 

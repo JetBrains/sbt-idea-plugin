@@ -35,7 +35,15 @@ class IdeaInstallerTest extends AnyFunSuite with Matchers with IdeaMock with Tmp
     val dist = getDistCopy
     val ideaInstallRoot = installer.installDist(dist)
     ideaInstallRoot.toFile.exists() shouldBe true
-    ideaInstallRoot.list.map(_.getFileName.toString) should contain allElementsOf Seq("lib", "bin", "plugins", "build.txt")
-  }
 
+    val fileNamesInRoot = ideaInstallRoot.list.map(_.getFileName.toString).toList
+    fileNamesInRoot should contain allElementsOf Seq(
+      "lib",
+      "bin",
+      "plugins",
+      "product-info.json",
+      "build.txt",
+      "dependencies.txt"
+    )
+  }
 }

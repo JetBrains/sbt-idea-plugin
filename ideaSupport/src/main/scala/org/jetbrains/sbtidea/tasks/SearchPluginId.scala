@@ -49,7 +49,7 @@ class SearchPluginId(
   private def searchPluginIdRemote(queryRaw: String): Map[String, (String, Boolean)] = {
     try {
       val query: String = URLEncoder.encode(queryRaw, "UTF-8")
-      val build: String = s"${buildInfo.edition.edition}-${buildInfo.getActualIdeaBuild(ideaRoot)}"
+      val build: String = s"${buildInfo.edition.edition}-${context.productInfo.buildNumber}"
       val url: String = getMarketplaceSearchUrl(query, build)
       val data: String = getHttpGetResponseString(url)
 

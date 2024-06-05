@@ -1,5 +1,6 @@
 package org.jetbrains.sbtidea.productInfo
 
+import org.jetbrains.annotations.TestOnly
 import org.jetbrains.sbtidea.PluginLogger as log
 import spray.json.DefaultJsonProtocol.*
 
@@ -18,6 +19,10 @@ object ProductInfoParser {
     val jsonAst = lines.parseJson
     jsonAst.convertTo[ProductInfo]
   }
+
+  @TestOnly
+  def toJsonString(productInfo: ProductInfo): String =
+    productInfo.toJson(productInfoFormat).prettyPrint
 
   private implicit def productInfoFormat: RootJsonFormat[ProductInfo] = jsonFormat8(ProductInfo)
   private implicit def launchFormat: JsonFormat[Launch] = jsonFormat8(Launch)

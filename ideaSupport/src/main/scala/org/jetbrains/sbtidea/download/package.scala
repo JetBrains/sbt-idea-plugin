@@ -40,21 +40,5 @@ package object download {
     }
   }
 
-  implicit class BuildInfoOps(private val buildInfo: BuildInfo) extends AnyVal {
-
-    /**
-     * @note build number can be obtained from two places:
-     *       - build.txt
-     *       - product-info.json
-     *       In this method we use `build.txt` because has a primitive structure
-     */
-    def getActualIdeaBuild(ideaRoot: Path): String = {
-      val buildTxt = ideaRoot.resolve("build.txt")
-      //example: `IU-241.17011.2`
-      val content = new String(Files.readAllBytes(buildTxt)).trim
-      content.substring(content.indexOf("-") + 1)
-    }
-  }
-
   val NotFoundHttpResponseCode = 404
 }

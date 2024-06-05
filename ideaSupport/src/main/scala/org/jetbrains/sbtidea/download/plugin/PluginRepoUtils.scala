@@ -20,7 +20,7 @@ class PluginRepoUtils(implicit ctx: InstallContext) extends PluginRepoApi {
       case IntellijPlugin.Id(id, Some(version), channel, _) =>
         MerketplaceUrls.download(id, version, channel)
       case IntellijPlugin.Id(id, None, channel, _) =>
-        MerketplaceUrls.downloadViaPLuginManager(id, idea, channel)
+        MerketplaceUrls.downloadViaPluginManager(id, idea, channel)
     }
 
   private object MerketplaceUrls {
@@ -28,7 +28,7 @@ class PluginRepoUtils(implicit ctx: InstallContext) extends PluginRepoApi {
 
     def pluginsList(id: String, buildInfo: BuildInfo, channel: Option[String]): URL = {
       val edition = buildInfo.edition.edition
-      val buildNumber = buildInfo.getActualIdeaBuild(ctx.baseDirectory)
+      val buildNumber = ctx.productInfo.buildNumber
       val channelQuery = channel.fold("")(c => s"&channel=$c")
       new URL(s"$BaseUrl/plugins/list?pluginId=$id$channelQuery&build=$edition-$buildNumber")
     }
@@ -38,9 +38,9 @@ class PluginRepoUtils(implicit ctx: InstallContext) extends PluginRepoApi {
       new URL(s"$BaseUrl/plugin/download?noStatistic=true&pluginId=$id&version=$version$channelQuery")
     }
 
-    def downloadViaPLuginManager(id: String, buildInfo: BuildInfo, channel: Option[String]): URL = {
+    def downloadViaPluginManager(id: String, buildInfo: BuildInfo, channel: Option[String]): URL = {
       val edition = buildInfo.edition.edition
-      val buildNumber = buildInfo.getActualIdeaBuild(ctx.baseDirectory)
+      val buildNumber = ctx.productInfo.buildNumber
       val channelQuery = channel.fold("")(c => s"&channel=$c")
       new URL(s"$BaseUrl/pluginManager?action=download&noStatistic=true&id=$id$channelQuery&build=$edition-$buildNumber")
     }
