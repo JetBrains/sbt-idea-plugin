@@ -15,7 +15,12 @@ import java.io.File
  * See also [[org.jetbrains.sbtidea.download.BuildInfo]]
  */
 case class ProductInfo(
+  name: String,
+  version: String,
+  versionSuffix: String,
   buildNumber: String,
+  productCode: String,
+  modules: Seq[String],
   launch: Seq[Launch],
   layout: Seq[LayoutItem]
 ) {
@@ -25,10 +30,19 @@ case class ProductInfo(
     launch.bootClassPathJarNames.map(jarName => intellijBaseDir / "lib" / jarName)
   }
 
-  def coreModulesJars(intellijBaseDir: File): Seq[File] =
-    layout.filter(_.kind == LayoutItemKind.ProductModuleV2)
+  def testFrameworkJars(intellijBaseDir: File): Seq[File] =
+    Seq(intellijBaseDir / "lib" / "testFramework.jar")
+
+  def productModulesNames: Seq[String] =
+    productModulesLayout.map(_.name)
+
+  def productModulesJars(intellijBaseDir: File): Seq[File] =
+    productModulesLayout
       .flatMap(_.classPath.toSeq.flatten)
       .map(intellijBaseDir / _)
+
+  private def productModulesLayout: Seq[LayoutItem] =
+    layout.filter(_.kind == LayoutItemKind.ProductModuleV2)
 
   /**
    * Finds the [[Launch]] object for the given OS and architecture corresponding to the [[JbrPlatform]]
@@ -75,6 +89,7 @@ object LayoutItemKind {
   case object PluginAlias extends LayoutItemKind
   case object ProductModuleV2 extends LayoutItemKind
   case object ModuleV2 extends LayoutItemKind
+  case class Unknown(value: String) extends LayoutItemKind
 }
 
 /**

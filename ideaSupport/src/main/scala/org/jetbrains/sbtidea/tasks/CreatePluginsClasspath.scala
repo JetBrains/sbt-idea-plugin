@@ -20,7 +20,7 @@ object CreatePluginsClasspath {
   ): Seq[(PluginDescriptor, Path)] = {
     implicit val context: InstallContext = InstallContext(baseDirectory = ideaBaseDir, downloadDirectory = ideaBaseDir)
     implicit val remoteRepoApi: PluginRepoUtils = new PluginRepoUtils
-    implicit val localRegistry: LocalPluginRegistry = new LocalPluginRegistry(ideaBaseDir)
+    implicit val localRegistry: LocalPluginRegistry = new LocalPluginRegistry(context)
 
     PluginLogger.bind(log)
 

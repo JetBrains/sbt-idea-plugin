@@ -6,6 +6,7 @@ import org.apache.hc.core5.http.ClassicHttpResponse
 import org.apache.hc.core5.http.io.entity.EntityUtils
 import org.jetbrains.sbtidea.Keys.{intellijBaseDirectory, intellijBuild, intellijPlatform}
 import org.jetbrains.sbtidea.download.BuildInfo
+import org.jetbrains.sbtidea.download.api.InstallContext
 import org.jetbrains.sbtidea.download.plugin.LocalPluginRegistry
 import org.jetbrains.sbtidea.{PluginLogger, SbtPluginLogger}
 import sbt.Keys.streams
@@ -16,7 +17,14 @@ import java.net.URLEncoder
 import java.nio.file.Path
 import java.util.regex.Pattern
 
-class SearchPluginId(ideaRoot: Path, buildInfo: BuildInfo, useBundled: Boolean = true, useRemote: Boolean = true) {
+class SearchPluginId(
+  ideaRoot: Path,
+  buildInfo: BuildInfo,
+  useBundled: Boolean = true,
+  useRemote: Boolean = true
+) {
+
+  private val context: InstallContext = InstallContext(baseDirectory = ideaRoot, downloadDirectory = ideaRoot)
 
   private def getMarketplaceSearchUrl(query: String, build: String) =
     "https://plugins.jetbrains.com/api/search/plugins?search=%s&build=%s".format(query, build)
@@ -30,7 +38,7 @@ class SearchPluginId(ideaRoot: Path, buildInfo: BuildInfo, useBundled: Boolean =
 
   private def searchPluginIdLocal(query: String): Map[String, (String, Boolean)] = {
     val pattern = Pattern.compile(query)
-    val registry = new LocalPluginRegistry(ideaRoot)
+    val registry = new LocalPluginRegistry(context)
     val allDescriptors = registry.getAllDescriptors
     allDescriptors
         .filter(descriptor => pattern.matcher(descriptor.name).find() || pattern.matcher(descriptor.id).find())

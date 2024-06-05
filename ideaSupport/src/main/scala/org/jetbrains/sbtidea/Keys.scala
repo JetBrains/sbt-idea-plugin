@@ -58,6 +58,9 @@ object Keys extends Defns with Init with Utils with Quirks {
   lazy val intellijMainJars = taskKey[Classpath](
     "Classpath containing main IntelliJ Platform jars")
 
+  lazy val intellijTestJars = taskKey[Classpath](
+    "Classpath containing IntelliJ Platform test framework jars")
+
   lazy val productInfo = taskKey[ProductInfo](
     "Information about IntelliJ distribution extracted from product-info.json file from IntelliJ Platform root directory")
 

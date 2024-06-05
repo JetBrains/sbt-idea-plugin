@@ -20,14 +20,16 @@ class PluginClassPathTest extends IntellijPluginInstallerTestBase with IdeaMock 
     installer.installIdeaPlugin(pluginJarMetadata.toPluginId, mockPluginJarDist)
 
     val classpath =
-      CreatePluginsClasspath(ideaRoot,
+      CreatePluginsClasspath(
+        ideaRoot,
         IDEA_BUILDINFO,
         Seq("com.intellij.properties".toPlugin,
             "org.jetbrains.plugins.yaml".toPlugin,
             pluginJarMetadata.toPluginId,
             pluginZipMetadata.toPluginId),
         new ConsoleLogger,
-        addSources = true)
+        addSources = true
+      )
 
     classpath.map(_.data.getName) should contain allElementsOf Seq("HOCON.jar", "yaml.jar", "Scala.jar", "properties.jar")
   }
@@ -35,17 +37,21 @@ class PluginClassPathTest extends IntellijPluginInstallerTestBase with IdeaMock 
   test("plugin classpath doesn't contain jars other than from 'lib'") {
     val stuffPath = pluginsRoot / "properties" / "lib" / "stuff"
     val wrongJar = "wrong.jar"
+    println(stuffPath.toFile.getParentFile.exists())
+    println(stuffPath.toFile.exists())
     Files.createDirectory(stuffPath)
     Files.createFile(stuffPath / wrongJar)
     Files.createFile(pluginsRoot / wrongJar)
 
     val classpath =
-      CreatePluginsClasspath(ideaRoot,
+      CreatePluginsClasspath(
+        ideaRoot,
         IDEA_BUILDINFO,
         Seq("com.intellij.properties".toPlugin,
             "org.jetbrains.plugins.yaml".toPlugin),
         new ConsoleLogger,
-        addSources = true)
+        addSources = true
+      )
 
     classpath.map(_.data.getName) should not contain wrongJar
   }

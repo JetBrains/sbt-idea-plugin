@@ -1,16 +1,18 @@
 package org.jetbrains.sbtidea.download.plugin
 
 import org.jetbrains.sbtidea.download.*
+import org.jetbrains.sbtidea.download.api.InstallContext
 import org.jetbrains.sbtidea.{IntellijPlugin, PathExt, PluginLogger as log}
 import sbt.*
 
 import java.nio.file.{Files, Path}
-import scala.collection.mutable
 
-class LocalPluginRegistry (ideaRoot: Path) extends LocalPluginRegistryApi {
+class LocalPluginRegistry(ctx: InstallContext) extends LocalPluginRegistryApi {
   import LocalPluginRegistry.*
 
-  val index = new PluginIndexImpl(ideaRoot)
+  private val ideaRoot = ctx.baseDirectory
+
+  lazy val index = new PluginIndexImpl(ideaRoot)
 
   private def getDescriptorFromPluginFolder(name: String): Either[String, PluginDescriptor] =
     extractPluginMetaData(ideaRoot / "plugins" / name)
@@ -83,9 +85,6 @@ class LocalPluginRegistry (ideaRoot: Path) extends LocalPluginRegistryApi {
 
 object LocalPluginRegistry {
 
-  private val instances: mutable.Map[Path, LocalPluginRegistry] =
-    new mutable.WeakHashMap[Path, LocalPluginRegistry]().withDefault(new LocalPluginRegistry(_))
-
   private class MissingPluginRootException(pluginName: String)
     extends RuntimeException(s"Can't find plugin root for $pluginName: check plugin name")
 
@@ -130,6 +129,4 @@ object LocalPluginRegistry {
     }
     descriptorFinal
   }
-
-  def instanceFor(ideaRoot: Path): LocalPluginRegistry = instances(ideaRoot)
 }

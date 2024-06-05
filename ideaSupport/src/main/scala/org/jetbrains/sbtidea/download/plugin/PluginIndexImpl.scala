@@ -2,6 +2,7 @@ package org.jetbrains.sbtidea.download.plugin
 
 import org.jetbrains.annotations.TestOnly
 import org.jetbrains.sbtidea.download.plugin.LocalPluginRegistry.extractPluginMetaData
+import org.jetbrains.sbtidea.productInfo.ProductInfo
 import org.jetbrains.sbtidea.{PathExt, PluginLogger as log}
 import sbt.*
 
@@ -45,22 +46,20 @@ class PluginIndexImpl(ideaRoot: Path) extends PluginIndex {
   }
 
   private def buildAndSaveIndex(): Repr = {
-    val plugins = buildFromPluginsDir()
-    val productModules = buildFromProductModulesDir()
-    val allEntries = plugins ++ productModules
+    val plugins = buildFromPluginsDir
     try {
-      val pluginIds = allEntries.keys.toSeq
+      val pluginIds = plugins.keys.toSeq
         .filter(_.trim.nonEmpty) // for some reason, there is some empty id
         .sorted
         .mkString(", ")
       log.info(s"Plugin ids from $INDEX_FILENAME: $pluginIds")
 
-      saveToFile(allEntries)
+      saveToFile(plugins)
     } catch {
       case e: Throwable =>
         log.warn(s"Failed to write back plugin index: $e")
     }
-    allEntries
+    plugins
   }
 
   override def put(descriptor: PluginDescriptor, installPath: Path): Unit = {
@@ -115,7 +114,7 @@ class PluginIndexImpl(ideaRoot: Path) extends PluginIndex {
     }
   }
 
-  private def buildFromPluginsDir(): Map[PluginId, (Path, PluginDescriptor)] = {
+  private def buildFromPluginsDir: Map[PluginId, (Path, PluginDescriptor)] = {
     val pluginDirs = Files.list(ideaRoot.resolve("plugins")).collect(Collectors.toList[Path]).asScala
     pluginDirs.flatMap { pluginDir =>
       val pluginMetaData = extractPluginMetaData(pluginDir)
@@ -127,22 +126,6 @@ class PluginIndexImpl(ideaRoot: Path) extends PluginIndex {
           Some((descriptor.id, pluginDir -> descriptor))
       }
     }.toMap
-  }
-
-  /**
-   * See SCL-22564
-   *
-   * This is a workaround to avoid sbt import failures on productModuleV2 dependency resolution.
-   * V2 modules should be taken from the `layout` field of `product-info.json`.
-   */
-  private def buildFromProductModulesDir(): Map[PluginId, (Path, PluginDescriptor)] = {
-    val modulesDir = ideaRoot.resolve("lib").resolve("modules").toFile
-    if (modulesDir.isDirectory) {
-      modulesDir.listFiles((_, name) => name.endsWith(".jar")).map { file =>
-        val moduleName = file.getName.stripSuffix(".jar")
-        moduleName -> (file.toPath, PluginDescriptor(moduleName))
-      }.toMap
-    } else Map.empty
   }
 }
 

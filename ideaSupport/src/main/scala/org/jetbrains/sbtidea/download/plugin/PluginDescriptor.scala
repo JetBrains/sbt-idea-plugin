@@ -47,7 +47,7 @@ case class PluginDescriptor(id: String,
    *
    * Most of the plugins keep all information in single file `plugin.xml` (id, name, sinceBuild, etc...)<br>
    * However some plugins can keep this information in multiple files.
-   * For example "Code With Me" has different implementations for IDEA and Rider.
+   * For example, "Code With Me" has different implementations for IDEA and Rider.
    * They keep common parts in `pluginBase.xml` (like id, name, vendor) and other parts (IDE-specific) in `plugin.xml` file.
    *
    * Alternative approach could be to truely resolve all "include" directives in `plugin.xml`, like: {{{
@@ -74,22 +74,6 @@ case class PluginDescriptor(id: String,
 }
 
 object PluginDescriptor {
-  /**
-   * See [[PluginIndexImpl.buildFromProductModulesDir]].
-   *
-   * We cannot parse a descriptor from module's plugin.xml because it doesn't have one.
-   * The only xml file modules have (and it is located in jar's root, i.e.: outside META-INF directory)
-   * will not have any of the fields below.
-   *
-   * Minimal example of a module without extensions, actions and even optional package:
-   * {{{
-   *   <idea-plugin>
-   *   </idea-plugin>
-   * }}}
-   */
-  private[sbtidea] def apply(id: String): PluginDescriptor =
-    new PluginDescriptor(id = id, vendor = "", name = "", version = "", sinceBuild = "", untilBuild = "")
-
   private val OPTIONAL_KEY  = "(optional) "
   private val OPTIONAL_ATTR = "optional"
 

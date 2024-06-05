@@ -18,13 +18,16 @@ class CommunityUpdater(
 ) {
 
   implicit protected val context: InstallContext =
-    InstallContext(baseDirectory = baseDirectory, downloadDirectory = baseDirectory.getParent)
+    InstallContext(
+      baseDirectory = baseDirectory,
+      downloadDirectory = baseDirectory.getParent,
+    )
 
   implicit protected val remoteRepoApi: PluginRepoUtils =
     new PluginRepoUtils
 
   implicit protected val localRegistry: LocalPluginRegistry =
-    new LocalPluginRegistry(baseDirectory)
+    new LocalPluginRegistry(context)
 
   protected val ideaDependency: IdeaDependency = IdeaDependency(ideaBuildInfo)
 

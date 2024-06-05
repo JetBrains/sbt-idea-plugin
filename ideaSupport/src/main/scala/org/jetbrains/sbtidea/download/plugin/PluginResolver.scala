@@ -12,11 +12,8 @@ class PluginResolver(
   private val resolveSettings: IntellijPlugin.Settings
 )(implicit ctx: InstallContext, repo: PluginRepoApi, localRegistry: LocalPluginRegistryApi) extends Resolver[PluginDependency] {
 
-  // modules that are inside idea.jar
-  private val INTERNAL_MODULE_PREFIX = "com.intellij.modules."
-
   //Keeping multiple errors in `Seq[String]` mainly for the case when IntellijPlugin.Id.fallbackDownloadUrl is not empty
-  //In that case we try to resolve the artifact twice and want to report both errors
+  //In that case, we try to resolve the artifact twice and want to report both errors
   private type PluginDescriptorAndArtifactResolveResult = Either[Seq[String], (PluginDescriptor, PluginArtifact)]
 
   override def resolve(pluginDependency: PluginDependency): Seq[PluginArtifact] = {
@@ -51,10 +48,12 @@ class PluginResolver(
   }
 
   private def resolveDependencies(plugin: PluginDependency, key: IntellijPlugin, descriptor: PluginDescriptor): Seq[PluginArtifact] = {
+    val productInfo = ctx.productInfo
+    val coreModules = productInfo.modules ++ productInfo.productModulesNames
     val dependencies = descriptor.dependsOn
       .filterNot(!resolveSettings.optionalDeps && _.optional)                              // skip all optional plugins if flag is set
-      .filterNot(dep => resolveSettings.excludedIds.contains(dep.id))                      // remove plugins specified by user blacklist
-      .filterNot(_.id.startsWith(INTERNAL_MODULE_PREFIX))                                  // skip plugins embedded in idea.jar
+      .filterNot(dep => resolveSettings.excludedIds.contains(dep.id))                      // remove plugins specified by user blocklist
+      .filterNot(dep => coreModules.contains(dep.id))                                       // skip dependencies on core product modules
       .filterNot(dep => dep.optional && !localRegistry.isPluginInstalled(dep.id.toPlugin)) // skip optional non-bundled plugins
 
     dependencies

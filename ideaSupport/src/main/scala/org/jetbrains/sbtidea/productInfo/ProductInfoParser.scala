@@ -1,10 +1,10 @@
 package org.jetbrains.sbtidea.productInfo
 
+import org.jetbrains.sbtidea.PluginLogger as log
 import spray.json.DefaultJsonProtocol.*
 
 import java.io.File
 
-//TODO: unify with org.jetbrains.sbtidea.download.BuildInfoOps#getActualIdeaBuild
 object ProductInfoParser {
 
   import spray.json.*
@@ -19,7 +19,7 @@ object ProductInfoParser {
     jsonAst.convertTo[ProductInfo]
   }
 
-  private implicit def productInfoFormat: RootJsonFormat[ProductInfo] = jsonFormat3(ProductInfo)
+  private implicit def productInfoFormat: RootJsonFormat[ProductInfo] = jsonFormat8(ProductInfo)
   private implicit def launchFormat: JsonFormat[Launch] = jsonFormat8(Launch)
   private implicit def layoutItemFormat: RootJsonFormat[LayoutItem] = jsonFormat3(LayoutItem)
 
@@ -30,8 +30,10 @@ object ProductInfoParser {
         case "plugin" => LayoutItemKind.Plugin
         case "pluginAlias" => LayoutItemKind.PluginAlias
         case "productModuleV2" => LayoutItemKind.ProductModuleV2
-        case unknown =>
-          throw new RuntimeException(s"Unknown layout item kind: $unknown")
+        case value =>
+          log.warn(s"Unknown layout item kind: $value")
+          //use special "Unknown" case class to be more fail-tolerant
+          LayoutItemKind.Unknown(value)
       }
       case _ =>
         deserializationError("LayoutItemKind expected")
@@ -47,6 +49,8 @@ object ProductInfoParser {
         case "windows" => OS.Windows
         case "macos" => OS.macOs
         case "linux" => OS.Linux
+        case _ =>
+          throw new RuntimeException(s"Unknown OS: $value")
       }
       case _ =>
         deserializationError("OS expected")

@@ -20,7 +20,7 @@ trait IntellijPluginInstallerTestBase extends AnyFunSuite with Matchers with Ide
 
   protected implicit val defaultBuildInfo: BuildInfo = IDEA_BUILDINFO
 
-  protected implicit def localRegistry: LocalPluginRegistryApi  = new LocalPluginRegistry(ideaRoot)
+  protected implicit def localRegistry: LocalPluginRegistryApi  = new LocalPluginRegistry(installContext)
   protected implicit def repoAPI: PluginRepoApi                 = new PluginRepoUtils
 
   protected def createInstaller(implicit buildInfo: BuildInfo = IDEA_BUILDINFO): RepoPluginInstaller =
@@ -35,8 +35,9 @@ trait IntellijPluginInstallerTestBase extends AnyFunSuite with Matchers with Ide
   protected implicit def installContext: InstallContext = InstallContext(ideaRoot, ideaRoot.getParent)
 
   before {
-    ideaRoot        = installIdeaMock
-    pluginsRoot     = ideaRoot / "plugins"
+    val mockInstallation = installIdeaMock
+    ideaRoot = mockInstallation
+    pluginsRoot = ideaRoot / "plugins"
   }
 
   after {

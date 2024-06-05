@@ -12,6 +12,7 @@ import java.nio.file.{Path, Paths}
 import java.util.regex.Pattern
 import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 /**
   * @param pluginRoots contains only those plugins which are listed in the project IntelliJ plugin dependencies and their transitive dependencies
@@ -158,10 +159,7 @@ class IdeaConfigBuilder(
 
   private def buildRunConfigurationXML(configurationName: String, vmOptions: IntellijVMOptions): String = {
     val env = mkEnv(options.ideaRunEnv)
-
-    val bootClasspathJarPaths = productInfo.bootClasspathJars(jbrPlatform, intellijBaseDir).map(_.toString)
-    val bootClasspathString = bootClasspathJarPaths.mkString(File.pathSeparator)
-
+    val vmOptionsStr = buildRunVmOptionsString(vmOptions)
     s"""<component name="ProjectRunConfigurationManager">
        |  <configuration default="false" name="$configurationName" type="Application" factoryName="Application">
        |    $jreSettings
@@ -169,7 +167,7 @@ class IdeaConfigBuilder(
        |    <log_file alias="JPS LOG" path="$dataDir/system/log/build-log/build.log" />
        |    <option name="MAIN_CLASS_NAME" value="com.intellij.idea.Main" />
        |    <module name="$moduleName" />
-       |    <option name="VM_PARAMETERS" value="${IntellijVMOptions.USE_PATH_CLASS_LOADER} -cp &quot;$bootClasspathString&quot; ${vmOptions.asSeq(quoteValues = true).mkString(" ")}" />
+       |    <option name="VM_PARAMETERS" value="$vmOptionsStr" />
        |    <RunnerSettings RunnerId="Debug">
        |      <option name="DEBUG_PORT" value="" />
        |      <option name="TRANSPORT" value="0" />
@@ -192,12 +190,43 @@ class IdeaConfigBuilder(
 
   }
 
+  private def buildRunVmOptionsString(vmOptions: IntellijVMOptions): String = {
+    val bootClasspathJarPaths = productInfo.bootClasspathJars(jbrPlatform, intellijBaseDir).map(_.toString)
+    val bootClasspathString = bootClasspathJarPaths.mkString(File.pathSeparator)
+    s"""${IntellijVMOptions.USE_PATH_CLASS_LOADER} -cp &quot;$bootClasspathString&quot; ${vmOptions.asSeq(quoteValues = true).mkString(" ")}"""
+  }
+
+  private def buildTestClasspath: Seq[String] = {
+    val classPathEntries: mutable.Buffer[String] = new ArrayBuffer()
+
+    //plugin jars must go first when using CLASSLOADER_KEY
+    //example: ./target/plugin/Scala/lib/*
+    classPathEntries += (pluginAssemblyDir / "lib").toString + File.separator + "*"
+
+    classPathEntries ++= productInfo.bootClasspathJars(jbrPlatform, intellijBaseDir).map(_.toString)
+    classPathEntries ++= productInfo.productModulesJars(intellijBaseDir).map(_.toString)
+    classPathEntries ++= productInfo.testFrameworkJars(intellijBaseDir).map(_.toString)
+    classPathEntries ++= pluginRoots.flatMap(pluginClasspathPattern)
+    classPathEntries ++= ownProductDirs.map(_.toString)
+
+    //runtime jars from the *currently running* IJ to actually start the tests:
+    //<sdkRoot>/lib/idea_rt.jar;
+    //<sdkRoot>/plugins/junit/lib/junit5-rt.jar;
+    //<sdkRoot>/plugins/junit/lib/junit-rt.jar
+    val ijRuntimeJars = guessIJRuntimeJarsForJUnitTemplate()
+    classPathEntries ++= ijRuntimeJars.map(_.toString)
+
+    classPathEntries ++= extraJUnitTemplateClasspath.map(_.toString)
+    classPathEntries
+  }
+
   private def pluginClasspathPattern(pluginPath: File): Seq[String] =
     if (pluginPath.isDirectory) {
-      val lib = pluginPath / "lib"
-      val modules = lib / "modules"
-
-      Seq(lib, modules).collect {
+      val jarsLocations = Seq(
+        pluginPath / "lib",
+        pluginPath / "lib" / "modules"
+      )
+      jarsLocations.collect {
         case dir if dir.exists() && dir.isDirectory =>
           s"$dir${File.separator}*"
       }
@@ -205,8 +234,7 @@ class IdeaConfigBuilder(
 
   private def buildJUnitTemplate: String = {
     val env = mkEnv(options.ideaTestEnv)
-
-    val vmOptionsStr = buildVmOptionsString
+    val vmOptionsStr = buildTestVmOptionsString
 
     val searchScope = if (options.testSearchScope.nonEmpty)
       s"""<option name="TEST_SEARCH_SCOPE">
@@ -239,30 +267,9 @@ class IdeaConfigBuilder(
        |</component>""".stripMargin
   }
 
-  private def buildVmOptionsString: String = {
+  private def buildTestVmOptionsString: String = {
     val testVMOptions = intellijVMOptions.copy(test = true)
-
-    val classPathEntries: mutable.Buffer[String] = new mutable.ArrayBuffer()
-
-    //plugin jars must go first when using CLASSLOADER_KEY
-    //example: ./target/plugin/Scala/lib/*
-    classPathEntries += (pluginAssemblyDir / "lib").toString + File.separator + "*"
-
-    classPathEntries += (intellijBaseDir / "lib" / "testFramework.jar").toString
-    classPathEntries ++= productInfo.bootClasspathJars(jbrPlatform, intellijBaseDir).map(_.toString)
-    classPathEntries ++= productInfo.coreModulesJars(intellijBaseDir).map(_.toString)
-    classPathEntries ++= pluginRoots.flatMap(pluginClasspathPattern)
-    classPathEntries ++= ownProductDirs.map(_.toString)
-
-    //runtime jars from the *currently running* IJ to actually start the tests:
-    //<sdkRoot>/lib/idea_rt.jar;
-    //<sdkRoot>/plugins/junit/lib/junit5-rt.jar;
-    //<sdkRoot>/plugins/junit/lib/junit-rt.jar
-    val ijRuntimeJars = guessIJRuntimeJarsForJUnitTemplate()
-    classPathEntries ++= ijRuntimeJars.map(_.toString)
-
-    classPathEntries ++= extraJUnitTemplateClasspath.map(_.toString)
-
+    val classPathEntries = buildTestClasspath
     val classpathStr = classPathEntries.mkString(File.pathSeparator)
     s"-cp &quot;$classpathStr&quot; ${testVMOptions.asSeq(quoteValues = true).mkString(" ")}"
   }

@@ -1,13 +1,14 @@
 package org.jetbrains.sbtidea
 
 import org.jetbrains.sbtidea.download.*
+import org.jetbrains.sbtidea.download.plugin.PluginDescriptor
 import org.jetbrains.sbtidea.instrumentation.ManipulateBytecode
 import org.jetbrains.sbtidea.packaging.PackagingKeys.*
 import org.jetbrains.sbtidea.productInfo.ProductInfoParser
 import org.jetbrains.sbtidea.searchableoptions.BuildIndex
 import org.jetbrains.sbtidea.tasks.*
 import sbt.Keys.*
-import sbt.{Attributed, File, file, Keys as _, *}
+import sbt.{Attributed, Def, File, file, Keys as _, *}
 
 import scala.annotation.nowarn
 import scala.collection.mutable
@@ -83,6 +84,28 @@ trait Init { this: Keys.type =>
     }) compose (onLoad in Global).value
   )
 
+  private def pluginsClasspath: Def.Initialize[Task[Seq[(PluginDescriptor, Classpath)]]] = Def.taskDyn {
+    getPluginsClasspath(intellijPlugins.value)
+  }
+
+  private def runtimePluginsClasspath: Def.Initialize[Task[Seq[(PluginDescriptor, Classpath)]]] = Def.taskDyn {
+    getPluginsClasspath(intellijRuntimePlugins.value)
+  }
+
+  private def getPluginsClasspath(plugins: Seq[IntellijPlugin]): Def.Initialize[Task[Seq[(PluginDescriptor, Classpath)]]] = Def.task {
+    tasks.CreatePluginsClasspath.buildPluginClassPaths(
+      intellijBaseDirectory.in(ThisBuild).value.toPath,
+      BuildInfo(
+        intellijBuild.in(ThisBuild).value,
+        intellijPlatform.in(ThisBuild).value
+      ),
+      plugins,
+      new SbtPluginLogger(streams.value),
+      intellijAttachSources.in(Global).value,
+      name.value
+    )
+  }
+
   lazy val projectSettings: Seq[Setting[?]] = Seq(
     intellijMainJars := {
       val intellijBaseDir = Keys.intellijBaseDirectory.in(ThisBuild).value
@@ -90,40 +113,27 @@ trait Init { this: Keys.type =>
       val jbrPlatform = jbrInfo.in(ThisBuild).value.platform
 
       val bootstrapJars = productInfo.bootClasspathJars(jbrPlatform, intellijBaseDir)
-      val coreModulesJars = productInfo.coreModulesJars(intellijBaseDir)
-      Attributed.blankSeq(bootstrapJars ++ coreModulesJars)
+      val productModulesJars = productInfo.productModulesJars(intellijBaseDir)
+      Attributed.blankSeq(bootstrapJars ++ productModulesJars)
+    },
+    intellijTestJars := {
+      val intellijBaseDir = Keys.intellijBaseDirectory.in(ThisBuild).value
+      val productInfo = Keys.productInfo.in(ThisBuild).value
+      Attributed.blankSeq(productInfo.testFrameworkJars(intellijBaseDir))
     },
     intellijPlugins := Seq.empty,
     intellijRuntimePlugins := Seq.empty,
-    intellijPluginJars :=
-      tasks.CreatePluginsClasspath.buildPluginClassPaths(
-        intellijBaseDirectory.in(ThisBuild).value.toPath,
-        BuildInfo(
-          intellijBuild.in(ThisBuild).value,
-          intellijPlatform.in(ThisBuild).value
-        ),
-        intellijPlugins.value,
-        new SbtPluginLogger(streams.value),
-        intellijAttachSources.in(Global).value,
-        name.value),
+    intellijPluginJars := pluginsClasspath.value,
 
-    externalDependencyClasspath in Compile ++= UpdateWithIDEAInjectionTask.buildExternalDependencyClassPath.value,
+    Compile / externalDependencyClasspath ++= UpdateWithIDEAInjectionTask.buildExternalDependencyClassPath.value,
     Runtime / externalDependencyClasspath  ++= {
       val cp = (Compile / externalDependencyClasspath).value
-      val runtimePlugins = tasks.CreatePluginsClasspath.buildPluginClassPaths(
-        intellijBaseDirectory.in(ThisBuild).value.toPath,
-        BuildInfo(
-          intellijBuild.in(ThisBuild).value,
-          intellijPlatform.in(ThisBuild).value
-        ),
-        intellijRuntimePlugins.value,
-        new SbtPluginLogger(streams.value),
-        intellijAttachSources.in(Global).value,
-        name.value
-      ).flatMap(_._2)
+      val runtimePlugins = runtimePluginsClasspath.value.flatMap(_._2)
       cp ++ runtimePlugins
     },
-    externalDependencyClasspath in Test    ++= (externalDependencyClasspath in Runtime).value,
+    Test / externalDependencyClasspath ++= {
+      UpdateWithIDEAInjectionTask.buildTestExternalDependencyClassPath.value ++ (Runtime / externalDependencyClasspath).value
+    },
 
     update := UpdateWithIDEAInjectionTask.createTask.value,
 

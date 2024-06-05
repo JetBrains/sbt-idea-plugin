@@ -3,7 +3,7 @@ package org.jetbrains.sbtidea.tasks
 import org.jetbrains.sbtidea.Keys.*
 import org.jetbrains.sbtidea.download.BuildInfo
 import org.jetbrains.sbtidea.packaging.PackagingKeys.packageOutputDir
-import org.jetbrains.sbtidea.{PluginLogger, SbtPluginLogger, tasks}
+import org.jetbrains.sbtidea.{PluginLogger, SbtPluginLogger, tasks, Keys as SbtIdeKeys}
 import sbt.Keys.*
 import sbt.{Def, *}
 
@@ -16,7 +16,9 @@ object GenerateIdeaRunConfigurations extends SbtIdeaTask[Unit] {
       PluginLogger.bind(new SbtPluginLogger(streams.value))
       val buildInfo = BuildInfo(
         intellijBuild.in(ThisBuild).value,
-        intellijPlatform.in(ThisBuild).value)
+        intellijPlatform.in(ThisBuild).value
+      )
+      val productInfo = SbtIdeKeys.productInfo.in(ThisBuild).value
       val vmOptions = intellijVMOptions.value.copy(debug = false)
       val configName = name.value
       val dotIdeaFolder = baseDirectory.in(ThisBuild).value / ".idea"
@@ -39,7 +41,8 @@ object GenerateIdeaRunConfigurations extends SbtIdeaTask[Unit] {
           buildInfo,
           allPlugins,
           new SbtPluginLogger(streams.value),
-          name.value).map(_._2.toFile)
+          name.value
+        ).map(_._2.toFile)
       val config = Some(ideaConfigOptions.value)
         .map(x => if (x.ideaRunEnv.isEmpty) x.copy(ideaRunEnv = sbtRunEnv) else  x)
         .map(x => if (x.ideaTestEnv.isEmpty) x.copy(ideaTestEnv = sbtTestEnv) else x)
@@ -50,7 +53,7 @@ object GenerateIdeaRunConfigurations extends SbtIdeaTask[Unit] {
         intellijVMOptions = vmOptions,
         dataDir = intellijPluginDirectory.value,
         intellijBaseDir = intellijBaseDirectory.in(ThisBuild).value,
-        productInfo = productInfo.in(ThisBuild).value,
+        productInfo = productInfo,
         jbrPlatform = jbrInfo.in(ThisBuild).value.platform,
         dotIdeaFolder = dotIdeaFolder,
         pluginAssemblyDir = packageOutputDir.value,

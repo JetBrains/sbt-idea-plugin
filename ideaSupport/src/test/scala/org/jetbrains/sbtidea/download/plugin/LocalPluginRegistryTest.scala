@@ -4,6 +4,7 @@ import org.jetbrains.sbtidea.CapturingLogger.captureLog
 import org.jetbrains.sbtidea.Keys.String2Plugin
 import org.jetbrains.sbtidea.PathExt
 import org.jetbrains.sbtidea.download.NioUtils
+import org.jetbrains.sbtidea.download.api.InstallContext
 import org.jetbrains.sbtidea.download.idea.IdeaMock
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -11,14 +12,21 @@ import org.scalatest.{BeforeAndAfter, Inspectors}
 import sbt.*
 
 import java.io.OutputStreamWriter
-import java.nio.file.{FileSystems, Files, Path}
+import java.nio.file.{FileSystems, Files}
 import scala.collection.JavaConverters.mapAsJavaMapConverter
-import scala.collection.mutable
 import scala.util.Using
 
-final class LocalPluginRegistryTest extends AnyFunSuite with Matchers with Inspectors with IdeaMock with PluginMock with BeforeAndAfter {
+final class LocalPluginRegistryTest
+  extends AnyFunSuite
+    with Matchers
+    with Inspectors
+    with IdeaMock
+    with PluginMock
+    with BeforeAndAfter {
 
   private val ideaRoot = installIdeaMock
+  protected val installContext: InstallContext = InstallContext(ideaRoot, ideaRoot.getParent)
+  private def newLocalPluginRegistry: LocalPluginRegistry = new LocalPluginRegistry(installContext)
 
   private val pluginsFolder = ideaRoot / "plugins"
   private val pluginsIndex = ideaRoot / PluginIndexImpl.INDEX_FILENAME
@@ -63,12 +71,14 @@ final class LocalPluginRegistryTest extends AnyFunSuite with Matchers with Inspe
   }
 
   test("LocalPluginRegistry builds bundled plugin index") {
-    val registry = new LocalPluginRegistry(ideaRoot)
+    val registry = newLocalPluginRegistry
+
     for (plugin <- bundledPlugins) {
       withClue(s"checking $plugin")
         { registry.isPluginInstalled(plugin) shouldBe true }
     }
   }
+
 
   test("LocalPluginRegistry extracts plugin descriptor from ") {
     for (root <- pluginsFolder.list) {
@@ -99,7 +109,7 @@ final class LocalPluginRegistryTest extends AnyFunSuite with Matchers with Inspe
   }
 
   test("LocalPluginRegistry detects plugin roots") {
-    val registry      = new LocalPluginRegistry(ideaRoot)
+    val registry      = newLocalPluginRegistry
     val actualRoots   = pluginsFolder.list
     val detectedRoots =
       for {plugin <- bundledPlugins}
@@ -120,7 +130,7 @@ final class LocalPluginRegistryTest extends AnyFunSuite with Matchers with Inspe
   }
 
   test("LocalPluginRegistry reports error when plugin is not in the index") {
-    val registry = new LocalPluginRegistry(ideaRoot)
+    val registry = newLocalPluginRegistry
     val newPlugin = "org.jetbrains.hocon".toPlugin
     assertThrows[RuntimeException](registry.getInstalledPluginRoot(newPlugin))
   }
@@ -130,13 +140,13 @@ final class LocalPluginRegistryTest extends AnyFunSuite with Matchers with Inspe
   }
 
   test("LocalPluginRegistry saves and restores plugin index") {
-    val oldRegistry = new LocalPluginRegistry(ideaRoot)
+    val oldRegistry = newLocalPluginRegistry
     val newPlugin = "org.jetbrains.plugins.hocon".toPlugin
     val newPluginRoot = pluginsFolder / "hocon"
     usingFakePlugin("hocon", hoconXML) {
       oldRegistry.markPluginInstalled(newPlugin, newPluginRoot)
 
-      val newRegistry = new LocalPluginRegistry(ideaRoot)
+      val newRegistry = newLocalPluginRegistry
       newRegistry.isPluginInstalled(newPlugin) shouldBe true
 
       Files.delete(pluginsIndex)
@@ -144,7 +154,7 @@ final class LocalPluginRegistryTest extends AnyFunSuite with Matchers with Inspe
   }
 
   test("LocalPluginRegistry should handle corrupt index") {
-    val oldRegistry = new LocalPluginRegistry(ideaRoot)
+    val oldRegistry = newLocalPluginRegistry
     val newPlugin = "org.jetbrains.plugins.hocon".toPlugin
     val newPluginRoot = pluginsFolder / "hocon"
 
@@ -157,7 +167,7 @@ final class LocalPluginRegistryTest extends AnyFunSuite with Matchers with Inspe
       writer.write(0xff)
     }
 
-    val newRegistry = new LocalPluginRegistry(ideaRoot)
+    val newRegistry = newLocalPluginRegistry
 
     val messages = captureLog {
       newRegistry.isPluginInstalled(newPlugin) shouldBe false // deleted plugin is not re-indexed
@@ -170,7 +180,7 @@ final class LocalPluginRegistryTest extends AnyFunSuite with Matchers with Inspe
     Files.createDirectory(pluginsFolder / "NON-PLUGIN")
     Files.createFile(pluginsFolder / ".DS_Store")
 
-    val registry = new LocalPluginRegistry(ideaRoot)
+    val registry = newLocalPluginRegistry
 
     val messages = captureLog {
       registry.isPluginInstalled(bundledPlugins.head) shouldBe true
@@ -186,8 +196,8 @@ final class LocalPluginRegistryTest extends AnyFunSuite with Matchers with Inspe
       }
     }
 
-    assertHasMatchingMessage("""\[warn\] Failed to add plugin to index: Couldn't find plugin.xml in .+\.DS_Store""")
+    //NOTE: non ".jar" and non-directories are silently ignored
+    //assertHasMatchingMessage("""\[warn\] Failed to add plugin to index: Couldn't find plugin.xml in .+\.DS_Store""")
     assertHasMatchingMessage("""\[warn\] Failed to add plugin to index: Plugin root .+NON-PLUGIN has no lib directory""")
   }
-
 }
