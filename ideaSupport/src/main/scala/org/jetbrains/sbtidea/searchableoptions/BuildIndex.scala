@@ -1,6 +1,6 @@
 package org.jetbrains.sbtidea.searchableoptions
 
-import org.jetbrains.sbtidea.Keys.{intellijBaseDirectory, intellijVMOptions}
+import org.jetbrains.sbtidea.Keys.{productInfoExtraDataProvider, intellijBaseDirectory, intellijVMOptions}
 import org.jetbrains.sbtidea.download.NioUtils
 import org.jetbrains.sbtidea.download.plugin.LocalPluginRegistry
 import org.jetbrains.sbtidea.packaging.*
@@ -50,7 +50,13 @@ object BuildIndex {
     val vmOptions       = intellijVMOptions.value
 
     log.info("Building searchable plugin options index...")
-    val runner = new IdeaRunner(intellijBaseDir.toPath, vmOptions, blocking = true, programArguments = indexerCMD)
+    val runner = new IdeaRunner(
+      intellijBaseDir.toPath,
+      productInfoExtraDataProvider.value,
+      vmOptions,
+      blocking = true,
+      programArguments = indexerCMD
+    )
     runner.run()
 
     val tmp = Files.createTempDirectory("sbt-idea-searchable-options-building-")
@@ -104,7 +110,7 @@ object BuildIndex {
     indexesForPlugin
   }
 
-  private def getIndexFilesNew(pluginOutputDir: Path, indexOutputDir: Path)(implicit log: PluginLogger): Seq[IndexElement] = {
+  private def getIndexFilesNew(pluginOutputDir: Path, indexOutputDir: Path): Seq[IndexElement] = {
     if (!indexOutputDir.exists)
       return Nil
 

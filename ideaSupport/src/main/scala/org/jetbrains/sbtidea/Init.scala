@@ -4,7 +4,7 @@ import org.jetbrains.sbtidea.download.*
 import org.jetbrains.sbtidea.download.plugin.PluginDescriptor
 import org.jetbrains.sbtidea.instrumentation.ManipulateBytecode
 import org.jetbrains.sbtidea.packaging.PackagingKeys.*
-import org.jetbrains.sbtidea.productInfo.ProductInfoParser
+import org.jetbrains.sbtidea.productInfo.{ProductInfoExtraDataProvider, ProductInfoParser}
 import org.jetbrains.sbtidea.searchableoptions.BuildIndex
 import org.jetbrains.sbtidea.tasks.*
 import sbt.Keys.*
@@ -107,19 +107,21 @@ trait Init { this: Keys.type =>
   }
 
   lazy val projectSettings: Seq[Setting[?]] = Seq(
+    productInfoExtraDataProvider := {
+      val intellijRoot = intellijBaseDirectory.in(ThisBuild).value
+      val info = productInfo.in(ThisBuild).value
+      val platform = jbrInfo.in(ThisBuild).value.platform
+      new ProductInfoExtraDataProvider(intellijRoot, info, info.launchFor(platform))
+    },
     intellijMainJars := {
-      val intellijBaseDir = Keys.intellijBaseDirectory.in(ThisBuild).value
-      val productInfo = Keys.productInfo.in(ThisBuild).value
-      val jbrPlatform = jbrInfo.in(ThisBuild).value.platform
-
-      val bootstrapJars = productInfo.bootClasspathJars(jbrPlatform, intellijBaseDir)
-      val productModulesJars = productInfo.productModulesJars(intellijBaseDir)
+      val argProvider = productInfoExtraDataProvider.value
+      val bootstrapJars = argProvider.bootClasspathJars
+      val productModulesJars = argProvider.productModulesJars
       Attributed.blankSeq(bootstrapJars ++ productModulesJars)
     },
     intellijTestJars := {
-      val intellijBaseDir = Keys.intellijBaseDirectory.in(ThisBuild).value
-      val productInfo = Keys.productInfo.in(ThisBuild).value
-      Attributed.blankSeq(productInfo.testFrameworkJars(intellijBaseDir))
+      val argProvider = productInfoExtraDataProvider.value
+      Attributed.blankSeq(argProvider.testFrameworkJars)
     },
     intellijPlugins := Seq.empty,
     intellijRuntimePlugins := Seq.empty,

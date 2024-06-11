@@ -1,10 +1,10 @@
 package org.jetbrains.sbtidea.tasks
 
 import org.jetbrains.sbtidea.Keys.IdeaConfigBuildingOptions
-import org.jetbrains.sbtidea.productInfo.ProductInfo
+import org.jetbrains.sbtidea.productInfo.ProductInfoExtraDataProvider
 import org.jetbrains.sbtidea.runIdea.{IntellijAwareRunner, IntellijVMOptions}
 import org.jetbrains.sbtidea.tasks.IdeaConfigBuilder.{pathPattern, pluginsPattern}
-import org.jetbrains.sbtidea.{JbrPlatform, PathExt, PluginLogger as log}
+import org.jetbrains.sbtidea.{PathExt, runIdea, PluginLogger as log}
 import sbt.*
 
 import java.io.File
@@ -23,8 +23,7 @@ class IdeaConfigBuilder(
   intellijVMOptions: IntellijVMOptions,
   dataDir: File,
   intellijBaseDir: File,
-  productInfo: ProductInfo,
-  jbrPlatform: JbrPlatform,
+  productInfoExtraDataProvider: ProductInfoExtraDataProvider,
   dotIdeaFolder: File,
   pluginAssemblyDir: File,
   ownProductDirs: Seq[File],
@@ -191,7 +190,7 @@ class IdeaConfigBuilder(
   }
 
   private def buildRunVmOptionsString(vmOptions: IntellijVMOptions): String = {
-    val bootClasspathJarPaths = productInfo.bootClasspathJars(jbrPlatform, intellijBaseDir).map(_.toString)
+    val bootClasspathJarPaths = productInfoExtraDataProvider.bootClasspathJars.map(_.toString)
     val bootClasspathString = bootClasspathJarPaths.mkString(File.pathSeparator)
     s"""${IntellijVMOptions.USE_PATH_CLASS_LOADER} -cp &quot;$bootClasspathString&quot; ${vmOptions.asSeq(quoteValues = true).mkString(" ")}"""
   }
@@ -203,9 +202,9 @@ class IdeaConfigBuilder(
     //example: ./target/plugin/Scala/lib/*
     classPathEntries += (pluginAssemblyDir / "lib").toString + File.separator + "*"
 
-    classPathEntries ++= productInfo.bootClasspathJars(jbrPlatform, intellijBaseDir).map(_.toString)
-    classPathEntries ++= productInfo.productModulesJars(intellijBaseDir).map(_.toString)
-    classPathEntries ++= productInfo.testFrameworkJars(intellijBaseDir).map(_.toString)
+    classPathEntries ++= productInfoExtraDataProvider.bootClasspathJars.map(_.toString)
+    classPathEntries ++= productInfoExtraDataProvider.productModulesJars.map(_.toString)
+    classPathEntries ++= productInfoExtraDataProvider.testFrameworkJars.map(_.toString)
     classPathEntries ++= pluginRoots.flatMap(pluginClasspathPattern)
     classPathEntries ++= ownProductDirs.map(_.toString)
 

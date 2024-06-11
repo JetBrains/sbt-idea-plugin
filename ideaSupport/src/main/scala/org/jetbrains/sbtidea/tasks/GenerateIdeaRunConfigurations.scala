@@ -3,7 +3,7 @@ package org.jetbrains.sbtidea.tasks
 import org.jetbrains.sbtidea.Keys.*
 import org.jetbrains.sbtidea.download.BuildInfo
 import org.jetbrains.sbtidea.packaging.PackagingKeys.packageOutputDir
-import org.jetbrains.sbtidea.{PluginLogger, SbtPluginLogger, tasks, Keys as SbtIdeKeys}
+import org.jetbrains.sbtidea.{PluginLogger, SbtPluginLogger, tasks}
 import sbt.Keys.*
 import sbt.{Def, *}
 
@@ -18,7 +18,6 @@ object GenerateIdeaRunConfigurations extends SbtIdeaTask[Unit] {
         intellijBuild.in(ThisBuild).value,
         intellijPlatform.in(ThisBuild).value
       )
-      val productInfo = SbtIdeKeys.productInfo.in(ThisBuild).value
       val vmOptions = intellijVMOptions.value.copy(debug = false)
       val configName = name.value
       val dotIdeaFolder = baseDirectory.in(ThisBuild).value / ".idea"
@@ -53,8 +52,7 @@ object GenerateIdeaRunConfigurations extends SbtIdeaTask[Unit] {
         intellijVMOptions = vmOptions,
         dataDir = intellijPluginDirectory.value,
         intellijBaseDir = intellijBaseDirectory.in(ThisBuild).value,
-        productInfo = productInfo,
-        jbrPlatform = jbrInfo.in(ThisBuild).value.platform,
+        productInfoExtraDataProvider.value,
         dotIdeaFolder = dotIdeaFolder,
         pluginAssemblyDir = packageOutputDir.value,
         ownProductDirs = ownClassPath,

@@ -1,11 +1,11 @@
 package org.jetbrains.sbtidea.tasks
 
-import org.jetbrains.sbtidea.Keys.{intellijBaseDirectory, intellijVMOptions}
+import org.jetbrains.sbtidea.Keys.{productInfoExtraDataProvider, intellijBaseDirectory, intellijVMOptions}
 import org.jetbrains.sbtidea.packaging.PackagingKeys.packageArtifact
 import org.jetbrains.sbtidea.runIdea.IdeaRunner
 import org.jetbrains.sbtidea.{PluginLogger, SbtPluginLogger}
 import sbt.Keys.streams
-import sbt.{Def, *}
+import sbt.*
 
 import scala.annotation.nowarn
 
@@ -20,7 +20,12 @@ object RunIDETask extends SbtIdeaInputTask[Unit] {
       debug = !opts.contains("noDebug"),
       suspend = opts.contains("suspend")
     )
-    val runner = new IdeaRunner(intellijBaseDirectory.value.toPath, vmOptions, opts.contains("blocking"))
+    val runner = new IdeaRunner(
+      intellijBaseDirectory.value.toPath,
+      productInfoExtraDataProvider.value,
+      vmOptions,
+      opts.contains("blocking")
+    )
     runner.run()
   }
 }

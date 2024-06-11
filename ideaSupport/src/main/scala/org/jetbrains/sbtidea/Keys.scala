@@ -1,7 +1,7 @@
 package org.jetbrains.sbtidea
 
 import org.jetbrains.sbtidea.download.plugin.PluginDescriptor
-import org.jetbrains.sbtidea.productInfo.ProductInfo
+import org.jetbrains.sbtidea.productInfo.{ProductInfo, ProductInfoExtraDataProvider}
 import sbt.Keys.*
 import sbt.{Init as _, *}
 
@@ -80,7 +80,10 @@ object Keys extends Defns with Init with Utils with Quirks {
     "Settings for patching plugin.xml")
 
   lazy val intellijVMOptions = settingKey[IntellijVMOptions](
-    "IntelliJ Platform java VM options used for running")
+    "Custom IntelliJ Platform JVM options used for running. The final list of all VM options is defined by IntellijVMOptionsBuilder")
+
+  //TODO: create alias, proper descriptipon
+  lazy val productInfoExtraDataProvider = taskKey[ProductInfoExtraDataProvider]("TODO")
 
   lazy val runIDE = inputKey[Unit](
     "Runs debug IntelliJ Platform instance with plugin")

@@ -1,9 +1,6 @@
 package org.jetbrains.sbtidea.productInfo
 
 import org.jetbrains.sbtidea.JbrPlatform
-import sbt.fileToRichFile
-
-import java.io.File
 
 /**
  * The class represents a subset of fields of `product-info.json` file in IntelliJ installation root.
@@ -25,30 +22,16 @@ case class ProductInfo(
   layout: Seq[LayoutItem]
 ) {
 
-  def bootClasspathJars(jbrPlatform: JbrPlatform, intellijBaseDir: File): Seq[File] = {
-    val launch = launchFor(jbrPlatform)
-    launch.bootClassPathJarNames.map(jarName => intellijBaseDir / "lib" / jarName)
-  }
-
-  def testFrameworkJars(intellijBaseDir: File): Seq[File] =
-    Seq(intellijBaseDir / "lib" / "testFramework.jar")
-
   def productModulesNames: Seq[String] =
     productModulesLayout.map(_.name)
 
-  def productModulesJars(intellijBaseDir: File): Seq[File] =
-    productModulesLayout
-      .flatMap(_.classPath.toSeq.flatten)
-      .map(intellijBaseDir / _)
-
-  private def productModulesLayout: Seq[LayoutItem] =
+  def productModulesLayout: Seq[LayoutItem] =
     layout.filter(_.kind == LayoutItemKind.ProductModuleV2)
 
   /**
    * Finds the [[Launch]] object for the given OS and architecture corresponding to the [[JbrPlatform]]
    */
-  @throws[IllegalArgumentException]
-  private def launchFor(jbrPlatform: JbrPlatform): Launch = {
+  def launchFor(jbrPlatform: JbrPlatform): Launch = {
     val os = jbrPlatform.os
     val arch = jbrPlatform.arch
 
