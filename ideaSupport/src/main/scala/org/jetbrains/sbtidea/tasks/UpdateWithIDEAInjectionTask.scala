@@ -114,10 +114,10 @@ object UpdateWithIDEAInjectionTask extends SbtIdeaTask[UpdateReport] {
   }
 
   def buildTestExternalDependencyClassPath: Def.Initialize[Task[Seq[Attributed[File]]]] = Def.taskDyn {
-    val jars = intellijMainJars.value
+    val jars = intellijMainJars.value ++ intellijTestJars.value
     val artifact = ideaTestArtifact
     val module = getIntellijSdkTestFrameworkModule(productInfo.in(ThisBuild).value.buildNumber)
-    doBuildTestExternalDependencyClassPath(jars, artifact, module, Compile)
+    doBuildTestExternalDependencyClassPath(jars, artifact, module, Test)
   }
 
   private def doBuildTestExternalDependencyClassPath(

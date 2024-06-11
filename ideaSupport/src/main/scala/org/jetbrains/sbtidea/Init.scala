@@ -55,6 +55,12 @@ trait Init { this: Keys.type =>
       val productInfoFile = intellijBaseDirectory.value / "product-info.json"
       ProductInfoParser.parse(productInfoFile)
     },
+    productInfoExtraDataProvider := {
+      val intellijRoot = intellijBaseDirectory.value
+      val info = productInfo.value
+      val platform = jbrInfo.value.platform
+      new ProductInfoExtraDataProvider(intellijRoot, info, info.launchFor(platform))
+    },
     updateIntellij := {
       PluginLogger.bind(new SbtPluginLogger(streams.value))
       new CommunityUpdater(
@@ -107,12 +113,6 @@ trait Init { this: Keys.type =>
   }
 
   lazy val projectSettings: Seq[Setting[?]] = Seq(
-    productInfoExtraDataProvider := {
-      val intellijRoot = intellijBaseDirectory.in(ThisBuild).value
-      val info = productInfo.in(ThisBuild).value
-      val platform = jbrInfo.in(ThisBuild).value.platform
-      new ProductInfoExtraDataProvider(intellijRoot, info, info.launchFor(platform))
-    },
     intellijMainJars := {
       val argProvider = productInfoExtraDataProvider.value
       val bootstrapJars = argProvider.bootClasspathJars
