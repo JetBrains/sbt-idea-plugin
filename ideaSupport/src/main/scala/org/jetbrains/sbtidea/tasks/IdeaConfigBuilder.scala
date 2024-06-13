@@ -4,7 +4,8 @@ import org.jetbrains.sbtidea.Keys.IdeaConfigBuildingOptions
 import org.jetbrains.sbtidea.productInfo.ProductInfoExtraDataProvider
 import org.jetbrains.sbtidea.runIdea.{IntellijAwareRunner, IntellijVMOptions}
 import org.jetbrains.sbtidea.tasks.IdeaConfigBuilder.{pathPattern, pluginsPattern}
-import org.jetbrains.sbtidea.{PathExt, runIdea, PluginLogger as log}
+import org.jetbrains.sbtidea.tasks.classpath.PluginClasspathUtils
+import org.jetbrains.sbtidea.{PathExt, PluginLogger as log}
 import sbt.*
 
 import java.io.File
@@ -15,7 +16,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 /**
-  * @param pluginRoots contains only those plugins which are listed in the project IntelliJ plugin dependencies and their transitive dependencies
+  * @param testPluginRoots contains only those plugins which are listed in the project IntelliJ plugin dependencies and their transitive dependencies
   */
 class IdeaConfigBuilder(
   moduleName: String,
@@ -27,7 +28,7 @@ class IdeaConfigBuilder(
   dotIdeaFolder: File,
   pluginAssemblyDir: File,
   ownProductDirs: Seq[File],
-  pluginRoots: Seq[File],
+  testPluginRoots: Seq[File],
   extraJUnitTemplateClasspath: Seq[File],
   options: IdeaConfigBuildingOptions
 ) {
@@ -155,7 +156,6 @@ class IdeaConfigBuilder(
     else ""
   }
 
-
   private def buildRunConfigurationXML(configurationName: String, vmOptions: IntellijVMOptions): String = {
     val env = mkEnv(options.ideaRunEnv)
     val vmOptionsStr = buildRunVmOptionsString(vmOptions)
@@ -205,7 +205,7 @@ class IdeaConfigBuilder(
     classPathEntries ++= productInfoExtraDataProvider.bootClasspathJars.map(_.toString)
     classPathEntries ++= productInfoExtraDataProvider.productModulesJars.map(_.toString)
     classPathEntries ++= productInfoExtraDataProvider.testFrameworkJars.map(_.toString)
-    classPathEntries ++= pluginRoots.flatMap(pluginClasspathPattern)
+    classPathEntries ++= testPluginRoots.flatMap(PluginClasspathUtils.getPluginClasspathPattern)
     classPathEntries ++= ownProductDirs.map(_.toString)
 
     //runtime jars from the *currently running* IJ to actually start the tests:
@@ -218,18 +218,6 @@ class IdeaConfigBuilder(
     classPathEntries ++= extraJUnitTemplateClasspath.map(_.toString)
     classPathEntries
   }
-
-  private def pluginClasspathPattern(pluginPath: File): Seq[String] =
-    if (pluginPath.isDirectory) {
-      val jarsLocations = Seq(
-        pluginPath / "lib",
-        pluginPath / "lib" / "modules"
-      )
-      jarsLocations.collect {
-        case dir if dir.exists() && dir.isDirectory =>
-          s"$dir${File.separator}*"
-      }
-    } else Seq(pluginPath.toString)
 
   private def buildJUnitTemplate: String = {
     val env = mkEnv(options.ideaTestEnv)

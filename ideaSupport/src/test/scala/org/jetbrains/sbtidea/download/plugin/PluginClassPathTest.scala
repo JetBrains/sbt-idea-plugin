@@ -3,7 +3,7 @@ package org.jetbrains.sbtidea.download.plugin
 import org.jetbrains.sbtidea.ConsoleLogger
 import org.jetbrains.sbtidea.Keys.String2Plugin
 import org.jetbrains.sbtidea.download.idea.IdeaMock
-import org.jetbrains.sbtidea.tasks.CreatePluginsClasspath
+import org.jetbrains.sbtidea.tasks.classpath.PluginClasspathUtils
 import sbt.*
 
 import java.nio.file.Files
@@ -20,7 +20,7 @@ class PluginClassPathTest extends IntellijPluginInstallerTestBase with IdeaMock 
     installer.installIdeaPlugin(pluginJarMetadata.toPluginId, mockPluginJarDist)
 
     val classpath =
-      CreatePluginsClasspath(
+      PluginClasspathUtils.buildPluginJars(
         ideaRoot,
         IDEA_BUILDINFO,
         Seq("com.intellij.properties".toPlugin,
@@ -28,10 +28,9 @@ class PluginClassPathTest extends IntellijPluginInstallerTestBase with IdeaMock 
             pluginJarMetadata.toPluginId,
             pluginZipMetadata.toPluginId),
         new ConsoleLogger,
-        addSources = true
-      )
+      ).flatMap(_.pluginJars)
 
-    classpath.map(_.data.getName) should contain allElementsOf Seq("HOCON.jar", "yaml.jar", "Scala.jar", "properties.jar")
+    classpath.map(_.getName) should contain allElementsOf Seq("HOCON.jar", "yaml.jar", "Scala.jar", "properties.jar")
   }
 
   test("plugin classpath doesn't contain jars other than from 'lib'") {
@@ -44,17 +43,14 @@ class PluginClassPathTest extends IntellijPluginInstallerTestBase with IdeaMock 
     Files.createFile(pluginsRoot / wrongJar)
 
     val classpath =
-      CreatePluginsClasspath(
+      PluginClasspathUtils.buildPluginJars(
         ideaRoot,
         IDEA_BUILDINFO,
         Seq("com.intellij.properties".toPlugin,
             "org.jetbrains.plugins.yaml".toPlugin),
         new ConsoleLogger,
-        addSources = true
-      )
+      ).flatMap(_.pluginJars)
 
-    classpath.map(_.data.getName) should not contain wrongJar
+    classpath.map(_.getName) should not contain wrongJar
   }
-
-
 }

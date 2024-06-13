@@ -13,17 +13,22 @@ object Keys extends Defns with Init with Utils with Quirks {
   lazy val intellijBuild = settingKey[String](
     "Number of IntelliJ IntelliJ Platform build to use in project")
 
+  lazy val intellijPlatform = settingKey[IntelliJPlatform](
+    "Edition of Intellij Platform to use in project")
+
+  private[sbtidea] lazy val intellijBuildInfo = settingKey[download.BuildInfo]("")
+
+  lazy val jbrInfo = settingKey[JbrInfo](
+    "Version and variant of JetBrains Runtime to download and install")
+
   lazy val intellijDownloadDirectory = settingKey[File](
     "Directory where IntelliJ Platform binaries and sources are downloaded")
 
   lazy val intellijPlugins = settingKey[Seq[IntellijPlugin]](
     "List of IntelliJ platform plugin to depend on")
 
-  lazy val intellijRuntimePlugins = settingKey[Seq[IntellijPlugin]](
-    "List of IntelliJ platform plugins to include at runtime (not as compile time dependencies, includes tests)")
-
-  lazy val intellijPlatform = settingKey[IntelliJPlatform](
-    "Edition of Intellij Platform to use in project")
+  lazy val intellijExtraRuntimePluginsInTests = settingKey[Seq[IntellijPlugin]](
+    "List of IntelliJ platform plugins to include in tests at runtime")
 
   lazy val intellijDownloadSources = settingKey[Boolean](
     "Flag indicating whether IntelliJ Platform sources should be downloaded too")
@@ -31,8 +36,6 @@ object Keys extends Defns with Init with Utils with Quirks {
   lazy val intellijAttachSources = settingKey[Boolean](
     "Flag indicating whether to add sources to IntelliJ Platform SDK libraries")
 
-  lazy val jbrInfo = settingKey[JbrInfo](
-    "Version and variant of JetBrains Runtime to download and install")
 
   lazy val searchPluginId = inputKey[Map[String, (String, Boolean)]](
     "Search for plugin ID by plugin name or description")
@@ -55,17 +58,28 @@ object Keys extends Defns with Init with Utils with Quirks {
   lazy val intellijBaseDirectory = settingKey[File](
     "Directory where downloaded IntelliJ Platform binaries and sources are unpacked")
 
-  lazy val intellijMainJars = taskKey[Classpath](
-    "Classpath containing main IntelliJ Platform jars")
-
-  lazy val intellijTestJars = taskKey[Classpath](
-    "Classpath containing IntelliJ Platform test framework jars")
 
   lazy val productInfo = taskKey[ProductInfo](
     "Information about IntelliJ distribution extracted from product-info.json file from IntelliJ Platform root directory")
 
-  lazy val intellijPluginJars = taskKey[Seq[(PluginDescriptor, Classpath)]](
+  lazy val intellijMainJars = taskKey[Seq[File]](
+    "Classpath containing main IntelliJ Platform jars")
+  lazy val intellijTestJars = taskKey[Seq[File]](
+    "Classpath containing IntelliJ Platform test framework jars")
+
+  lazy val intellijPluginJars = taskKey[Seq[PluginJars]](
     "Classpath containing jars of internal IntelliJ Platform plugins used in this project")
+  lazy val intellijExtraRuntimePluginsJarsInTests = taskKey[Seq[PluginJars]](
+    "Classpath containing jars of extra plugins added to test classpath at runtime")
+
+  private[sbtidea] lazy val intellijMainJarsClasspath = taskKey[Classpath](
+    "Attributed classpath containing main IntelliJ Platform jars")
+  private[sbtidea] lazy val intellijTestJarsClasspath = taskKey[Classpath](
+    "Attributed classpath containing IntelliJ Platform test framework jars")
+  private[sbtidea] lazy val intellijPluginJarsClasspath = taskKey[Seq[(PluginDescriptor, Classpath)]](
+    "Attributed classpath containing jars of internal IntelliJ Platform plugins used in this project")
+  private[sbtidea] lazy val intellijExtraRuntimePluginsJarsInTestsClasspath = taskKey[Seq[(PluginDescriptor, Classpath)]](
+    "Attributed classpath containing jars of extra plugins added to test classpath at runtime")
 
   lazy val intellijTestConfigDir = settingKey[File](
     "IntelliJ Platform's config directory for tests")

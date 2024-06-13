@@ -1,14 +1,14 @@
 package org.jetbrains.sbtidea
 
 import org.jetbrains.sbtidea.download.*
-import org.jetbrains.sbtidea.download.plugin.PluginDescriptor
 import org.jetbrains.sbtidea.instrumentation.ManipulateBytecode
 import org.jetbrains.sbtidea.packaging.PackagingKeys.*
 import org.jetbrains.sbtidea.productInfo.{ProductInfoExtraDataProvider, ProductInfoParser}
 import org.jetbrains.sbtidea.searchableoptions.BuildIndex
 import org.jetbrains.sbtidea.tasks.*
+import org.jetbrains.sbtidea.tasks.classpath.{AttributedClasspathTasks, ExternalDependencyClasspathTasks, PluginClasspathUtils}
 import sbt.Keys.*
-import sbt.{Attributed, Def, File, file, Keys as _, *}
+import sbt.{Keys as _, *}
 
 import scala.annotation.nowarn
 import scala.collection.mutable
@@ -30,6 +30,7 @@ trait Init { this: Keys.type =>
     intellijPluginName        := name.in(LocalRootProject).value,
     intellijBuild             := BuildInfo.LATEST_EAP_SNAPSHOT,
     intellijPlatform          := IntelliJPlatform.IdeaCommunity,
+    intellijBuildInfo         := BuildInfo(intellijBuild.value, intellijPlatform.value),
     intellijDownloadSources   := true,
     jbrInfo                   := AutoJbr(),
     intellijPluginDirectory   := homePrefix / s".${intellijPluginName.value.removeSpaces}Plugin${intellijPlatform.value.edition}",
@@ -65,14 +66,11 @@ trait Init { this: Keys.type =>
       PluginLogger.bind(new SbtPluginLogger(streams.value))
       new CommunityUpdater(
         intellijBaseDirectory.value.toPath,
-        BuildInfo(
-          intellijBuild.value,
-          intellijPlatform.value
-        ),
+        intellijBuildInfo.value,
         jbrInfo.value,
         {
           val pluginDeps = intellijPlugins.?.all(ScopeFilter(inAnyProject)).value.flatten.flatten
-          val runtimePlugins = intellijRuntimePlugins.?.all(ScopeFilter(inAnyProject)).value.flatten.flatten
+          val runtimePlugins = intellijExtraRuntimePluginsInTests.?.all(ScopeFilter(inAnyProject)).value.flatten.flatten
           (pluginDeps ++ runtimePlugins).distinct
         },
         intellijDownloadSources.value
@@ -90,52 +88,46 @@ trait Init { this: Keys.type =>
     }) compose (onLoad in Global).value
   )
 
-  private def pluginsClasspath: Def.Initialize[Task[Seq[(PluginDescriptor, Classpath)]]] = Def.taskDyn {
-    getPluginsClasspath(intellijPlugins.value)
+  private def intellijPluginsJars: Def.Initialize[Task[Seq[PluginJars]]] = Def.taskDyn {
+    getPluginJars(intellijPlugins.value)
   }
 
-  private def runtimePluginsClasspath: Def.Initialize[Task[Seq[(PluginDescriptor, Classpath)]]] = Def.taskDyn {
-    getPluginsClasspath(intellijRuntimePlugins.value)
+  private def intellijExtraRuntimePluginsInTestsJars: Def.Initialize[Task[Seq[PluginJars]]] = Def.taskDyn {
+    getPluginJars(intellijExtraRuntimePluginsInTests.value)
   }
 
-  private def getPluginsClasspath(plugins: Seq[IntellijPlugin]): Def.Initialize[Task[Seq[(PluginDescriptor, Classpath)]]] = Def.task {
-    tasks.CreatePluginsClasspath.buildPluginClassPaths(
+  private def getPluginJars(plugins: Seq[IntellijPlugin]): Def.Initialize[Task[Seq[PluginJars]]] = Def.task {
+    PluginClasspathUtils.buildPluginJars(
       intellijBaseDirectory.in(ThisBuild).value.toPath,
-      BuildInfo(
-        intellijBuild.in(ThisBuild).value,
-        intellijPlatform.in(ThisBuild).value
-      ),
+      intellijBuildInfo.in(ThisBuild).value,
       plugins,
       new SbtPluginLogger(streams.value),
-      intellijAttachSources.in(Global).value,
       name.value
     )
   }
 
   lazy val projectSettings: Seq[Setting[?]] = Seq(
     intellijMainJars := {
-      val argProvider = productInfoExtraDataProvider.value
-      val bootstrapJars = argProvider.bootClasspathJars
-      val productModulesJars = argProvider.productModulesJars
-      Attributed.blankSeq(bootstrapJars ++ productModulesJars)
+      val p = productInfoExtraDataProvider.value
+      p.bootClasspathJars ++ p.productModulesJars
     },
     intellijTestJars := {
-      val argProvider = productInfoExtraDataProvider.value
-      Attributed.blankSeq(argProvider.testFrameworkJars)
+      val extraDataProvider = productInfoExtraDataProvider.value
+      extraDataProvider.testFrameworkJars
     },
-    intellijPlugins := Seq.empty,
-    intellijRuntimePlugins := Seq.empty,
-    intellijPluginJars := pluginsClasspath.value,
+    intellijPluginJars := intellijPluginsJars.value,
+    intellijExtraRuntimePluginsJarsInTests := intellijExtraRuntimePluginsInTestsJars.value,
 
-    Compile / externalDependencyClasspath ++= UpdateWithIDEAInjectionTask.buildExternalDependencyClassPath.value,
-    Runtime / externalDependencyClasspath  ++= {
-      val cp = (Compile / externalDependencyClasspath).value
-      val runtimePlugins = runtimePluginsClasspath.value.flatMap(_._2)
-      cp ++ runtimePlugins
-    },
-    Test / externalDependencyClasspath ++= {
-      UpdateWithIDEAInjectionTask.buildTestExternalDependencyClassPath.value ++ (Runtime / externalDependencyClasspath).value
-    },
+    intellijPlugins := Seq.empty,
+    intellijExtraRuntimePluginsInTests := Seq.empty,
+
+    intellijMainJarsClasspath := AttributedClasspathTasks.main.value,
+    intellijTestJarsClasspath := AttributedClasspathTasks.test.value,
+    intellijPluginJarsClasspath := AttributedClasspathTasks.plugins.value,
+    intellijExtraRuntimePluginsJarsInTestsClasspath := AttributedClasspathTasks.extraRuntimePluginsInTests.value,
+
+    Compile / externalDependencyClasspath ++= ExternalDependencyClasspathTasks.main.value,
+    Test / externalDependencyClasspath ++= ExternalDependencyClasspathTasks.test.value,
 
     update := UpdateWithIDEAInjectionTask.createTask.value,
 

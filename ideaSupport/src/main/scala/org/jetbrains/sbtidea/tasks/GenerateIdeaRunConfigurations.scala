@@ -1,9 +1,10 @@
 package org.jetbrains.sbtidea.tasks
 
+import org.jetbrains.sbtidea
 import org.jetbrains.sbtidea.Keys.*
-import org.jetbrains.sbtidea.download.BuildInfo
 import org.jetbrains.sbtidea.packaging.PackagingKeys.packageOutputDir
-import org.jetbrains.sbtidea.{PluginLogger, SbtPluginLogger, tasks}
+import org.jetbrains.sbtidea.tasks.classpath.PluginClasspathUtils
+import org.jetbrains.sbtidea.{PluginLogger, SbtPluginLogger}
 import sbt.Keys.*
 import sbt.{Def, *}
 
@@ -14,10 +15,7 @@ object GenerateIdeaRunConfigurations extends SbtIdeaTask[Unit] {
 
     if (buildRoot == projectRoot) Def.task {
       PluginLogger.bind(new SbtPluginLogger(streams.value))
-      val buildInfo = BuildInfo(
-        intellijBuild.in(ThisBuild).value,
-        intellijPlatform.in(ThisBuild).value
-      )
+      val buildInfo = sbtidea.Keys.intellijBuildInfo.in(ThisBuild).value
       val vmOptions = intellijVMOptions.value.copy(debug = false)
       val configName = name.value
       val dotIdeaFolder = baseDirectory.in(ThisBuild).value / ".idea"
@@ -31,11 +29,11 @@ object GenerateIdeaRunConfigurations extends SbtIdeaTask[Unit] {
           .distinct
       val allPlugins = {
         val pluginDeps = intellijPlugins.all(ScopeFilter(inDependencies(ThisProject))).value.flatten
-        val runtimePlugins = intellijRuntimePlugins.all(ScopeFilter(inDependencies(ThisProject))).value.flatten
+        val runtimePlugins = intellijExtraRuntimePluginsInTests.all(ScopeFilter(inDependencies(ThisProject))).value.flatten
         (pluginDeps ++ runtimePlugins).distinct
       }
       val pluginRoots =
-        tasks.CreatePluginsClasspath.collectPluginRoots(
+        PluginClasspathUtils.collectPluginRoots(
           intellijBaseDirectory.in(ThisBuild).value.toPath,
           buildInfo,
           allPlugins,
@@ -56,7 +54,7 @@ object GenerateIdeaRunConfigurations extends SbtIdeaTask[Unit] {
         dotIdeaFolder = dotIdeaFolder,
         pluginAssemblyDir = packageOutputDir.value,
         ownProductDirs = ownClassPath,
-        pluginRoots = pluginRoots,
+        testPluginRoots = pluginRoots,
         extraJUnitTemplateClasspath = managedTestClasspath,
         options = config,
       )
