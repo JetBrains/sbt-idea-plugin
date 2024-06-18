@@ -14,6 +14,12 @@ package object mappings {
         kind = MAPPING_KIND.UNDEFINED)
 
     private def nodeNameWithRootProjectNamePrepended: String = {
+      val nodeNameExtended = prependRootProjectName
+      if (hasProdTestSeparationEnabled) s"$nodeNameExtended.main"
+      else nodeNameExtended
+    }
+
+    private def prependRootProjectName: String = {
       val nodeName = node.name
       node.rootProjectName.map(root => s"$root.$nodeName").getOrElse(nodeName)
     }
