@@ -58,15 +58,9 @@ class SbtPackagingStructureExtractor(override val rootProject: ProjectRef,
 
   override def buildStub(data: SbtPackageProjectData): SbtPackagedProjectNodeImpl = {
     val parentName =
-      if (isGroupingWithQualifiedNamesEnabled) {
-        val rootData = findRootProjectDataInTheProjectBuild(data.thisProject)
-        val isRootProject = data.thisProject.project == rootData.thisProject.project
-        // note: it is important to take thisProjectName from rootData, because in the scala plugin the name of the root module is generated
-        // from the root project name and not from the root project id (see SbtProjectResolver#createBuildProjectGroups)
-        if (!isRootProject) Some(rootData.thisProjectName) else None
-      } else {
-        None
-      }
+      if (isGroupingWithQualifiedNamesEnabled) extractParentModuleName(data)
+      else None
+
     SbtPackagedProjectNodeImpl(data.thisProject, data.thisProjectName, parentName, null, null, null, null)
   }
 
@@ -80,6 +74,14 @@ class SbtPackagingStructureExtractor(override val rootProject: ProjectRef,
     node.parents = parents
     node.libs = libs
     node
+  }
+
+  private def extractParentModuleName(data: SbtPackageProjectData): Option[String] = {
+    val rootData = findRootProjectDataInTheProjectBuild(data.thisProject)
+    val isRootProject = data.thisProject.project == rootData.thisProject.project
+    // note: it is important to take thisProjectName from rootData, because in the scala plugin the name of the root module is generated
+    // from the root project name and not from the root project id (see SbtProjectResolver#createBuildProjectGroups)
+    if (!isRootProject) Some(rootData.thisProjectName) else None
   }
 
   private def isGroupingWithQualifiedNamesEnabled: Boolean =
