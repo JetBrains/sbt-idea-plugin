@@ -5,6 +5,7 @@ import org.jetbrains.sbtidea.Keys.*
 import org.jetbrains.sbtidea.packaging.PackagingKeys.packageOutputDir
 import org.jetbrains.sbtidea.tasks.classpath.PluginClasspathUtils
 import org.jetbrains.sbtidea.{PluginLogger, SbtPluginLogger}
+import org.jetbrains.sbtidea.packaging.hasProdTestSeparationEnabled
 import sbt.Keys.*
 import sbt.{Def, *}
 
@@ -44,8 +45,12 @@ object GenerateIdeaRunConfigurations extends SbtIdeaTask[Unit] {
         .map(x => if (x.ideaRunEnv.isEmpty) x.copy(ideaRunEnv = sbtRunEnv) else  x)
         .map(x => if (x.ideaTestEnv.isEmpty) x.copy(ideaTestEnv = sbtTestEnv) else x)
         .get
+      val projectName = name.value
+      val moduleName =
+        if (hasProdTestSeparationEnabled) s"$projectName.main"
+        else projectName
       val configBuilder = new IdeaConfigBuilder(
-        moduleName = name.value,
+        moduleName = moduleName,
         configName = configName,
         intellijVMOptions = vmOptions,
         dataDir = intellijPluginDirectory.value,
