@@ -12,8 +12,7 @@ class LinearMappingsBuilderTest extends AnyFeatureSpec with MappingsTestBase {
    *
    * TODO: automate generation of test data?
    */
-  private val testData: Seq[RevisionTestDataDescription] = Seq(
-    // tested on Scala plugin version without qualified names grouping (less than 2024.1.4)
+  private val withoutQualifiedNamesGrouping: Seq[RevisionTestDataDescription] = Seq(
     RevisionTestDataDescription(
       "scioIdeaPlugin",
       RevisionReference(
@@ -40,8 +39,9 @@ class LinearMappingsBuilderTest extends AnyFeatureSpec with MappingsTestBase {
         "99aa4d54",
         "Initial support for IntelliJ 2024.1"
       )
-    ),
-    // tested on Scala plugin version with qualified names grouping (higher or equal 2024.1.4)
+    )
+  )
+  private val withQualifiedNamesGrouping: Seq[RevisionTestDataDescription] = Seq(
     RevisionTestDataDescription(
       "scioIdeaPlugin-qualified-names-grouping",
       RevisionReference(
@@ -59,14 +59,40 @@ class LinearMappingsBuilderTest extends AnyFeatureSpec with MappingsTestBase {
       )
     )
   )
+  private val withSeparateProdTestSources: Seq[RevisionTestDataDescription] = Seq(
+    RevisionTestDataDescription(
+      "zio-inteliij-prod-test-sources",
+      RevisionReference(
+        "https://github.com/zio/zio-intellij",
+        "ee40b293",
+        "Test fixtures upgrade"
+      )
+    )
+  )
 
+  runFeatureTest("mappings equality on builds without qualified names grouping", withoutQualifiedNamesGrouping)
+  runFeatureTest("mappings equality on builds with qualified names grouping", withQualifiedNamesGrouping)
+  runFeatureTest("mappings equality on builds with prod/test sources separated", withSeparateProdTestSources, sepProdTest = true)
 
-  Feature("mappings equality on various builds") {
-    testData.foreach { rev =>
-      val fileName = rev.testDataFileName
-      Scenario(s"revision: $fileName") {
-        testMappings(fileName)
+  private def runFeatureTest(featureDesc: String, revisionTestData: Seq[RevisionTestDataDescription], sepProdTest: Boolean = false): Unit =
+    Feature(featureDesc) {
+      revisionTestData.foreach { rev =>
+        val fileName = rev.testDataFileName
+        Scenario(s"revision: $fileName") {
+          runTestMappings(fileName, sepProdTest)
+        }
       }
     }
-  }
+
+  private def runTestMappings(fileName: String, sepProdTest: Boolean = false): Unit =
+    if (sepProdTest) {
+      try {
+        System.setProperty(ProdTestSourcesKey, "true")
+        testMappings(fileName)
+      } finally {
+        System.clearProperty(ProdTestSourcesKey)
+      }
+    } else {
+      testMappings(fileName)
+    }
 }
