@@ -491,6 +491,14 @@ To switch between the new and the old projects naming logic, `grouping.with.qual
 If your Scala plugin version is 2024.1.4 or higher, then in order to generate correct mappings you should set this property to true (`-Dgrouping.with.qualified.names.enabled=true`). 
 Otherwise, there is no need to do anything as this value is set to false by default.
 
+## Separate modules for production and test sources are available from Scala plugin version XXX
+From the XXX Scala plugin version, the option to create separate modules for production and test sources has been introduced. You can read more about this change [here](https://youtrack.jetbrains.com/issue/SCL-21157/sbt-represent-production-and-test-sources-as-separate-IntelliJ-modules).
+Because of this change, it was necessary to change how the project names (in `packageMappings` and `packageMappingsOffline` tasks) and module name (in `createIDEARunConfiguration` task) are generated.
+To switch between separate modules for production and test sources and the "old approach" of module generation, `separate.prod.test.sources.enabled` system property has been introduced.
+If your Scala plugin version is XXX or higher, and you enabled separate modules for production and test sources in `Settings | Build, Execution, Deployment | Build Tools | sbt` 
+then to generate correct mappings and IDEA Run Configuration you should set this property to true (`-Dseparate.prod.test.sources.enabled=true`).
+Otherwise, there is no need to do anything as this value is set to false by default.
+
 ## Known Issues and Limitations
 
 ### `name` key in projects
