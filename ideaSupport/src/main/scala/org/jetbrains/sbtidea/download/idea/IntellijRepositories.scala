@@ -13,7 +13,7 @@ object IntellijRepositories {
       log.warn(s"[$LoggerName] Using non-default IntelliJ repository URL: $urlFormEnv")
       urlFormEnv
     } else {
-      "https://www.jetbrains.com/intellij-repository"
+      "https://cache-redirector.jetbrains.com/intellij-repository"
     }
   }
 
