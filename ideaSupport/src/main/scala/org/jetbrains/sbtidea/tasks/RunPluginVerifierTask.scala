@@ -25,7 +25,7 @@ object RunPluginVerifierTask extends SbtIdeaTask[File] {
   def defaultVerifierOptions: Def.Initialize[PluginVerifierOptions] = Def.setting {
     val isRunningOnTC = System.getenv("TEAMCITY_VERSION") != null
     PluginVerifierOptions(
-      version             = System.getenv("JBPV_VERSION").lift2Option.getOrElse(fetchLatestVerifierVersion),
+      version             = System.getenv("JBPV_VERSION").lift2Option.getOrElse(latestVerifierVersion),
       reportsDir          = target.value / "verifier" / "reports",
       teamcity            = isRunningOnTC,
       teamcityGrouping    = isRunningOnTC,
@@ -93,7 +93,7 @@ object RunPluginVerifierTask extends SbtIdeaTask[File] {
     }
   }
 
-  private def fetchLatestVerifierVersion: String = {
+  private lazy val latestVerifierVersion: String = {
     Try(XML.load(SPACE_METADATA_URL)) match {
       case Failure(exception) =>
         PluginLogger.error(s"failed get latest verifier version: ${exception.getMessage}")
@@ -109,7 +109,7 @@ object RunPluginVerifierTask extends SbtIdeaTask[File] {
     }
   }
 
-  val HARDCODED_VERSION = "1.254"
-  val BASE_URL           = "https://packages.jetbrains.team/maven/p/intellij-plugin-verifier/intellij-plugin-verifier"
-  val SPACE_METADATA_URL  = "https://packages.jetbrains.team/maven/p/intellij-plugin-verifier/intellij-plugin-verifier/org/jetbrains/intellij/plugins/verifier-cli/maven-metadata.xml"
+  val HARDCODED_VERSION  = "1.369"
+  val BASE_URL           = "https://cache-redirector.jetbrains.com/packages.jetbrains.team/maven/p/intellij-plugin-verifier/intellij-plugin-verifier"
+  val SPACE_METADATA_URL = "https://cache-redirector.jetbrains.com/packages.jetbrains.team/maven/p/intellij-plugin-verifier/intellij-plugin-verifier/org/jetbrains/intellij/plugins/verifier-cli/maven-metadata.xml"
 }
