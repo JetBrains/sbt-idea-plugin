@@ -30,7 +30,9 @@ case class IntellijVMOptions(platform: IntelliJPlatform,
                              debugPort: Int = 5005,
                              suspend: Boolean = false,
                              test: Boolean = false,
-                             defaultOptions: Seq[String] = IntellijVMOptions.DEFAULT_STATIC_OPTS)
+                             defaultOptions: Seq[String] = IntellijVMOptions.DEFAULT_STATIC_OPTS) {
+  def withOption(opt: String): IntellijVMOptions = copy(defaultOptions = defaultOptions :+ opt)
+}
 
 object IntellijVMOptions {
 

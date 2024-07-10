@@ -47,7 +47,7 @@ object BuildIndex {
     val pluginRoot      = packageArtifact.value.toPath
     val indexOutputPath = target.value / "searchableOptions"
     val indexerCMD      = "traverseUI" :: indexOutputPath.getCanonicalPath :: "true" :: Nil
-    val vmOptions       = intellijVMOptions.value
+    val vmOptions       = intellijVMOptions.value.withOption("-Didea.l10n.keys=only")
 
     log.info("Building searchable plugin options index...")
     val runner = new IdeaRunner(
