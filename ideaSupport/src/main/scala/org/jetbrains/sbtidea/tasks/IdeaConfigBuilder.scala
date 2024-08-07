@@ -1,10 +1,10 @@
 package org.jetbrains.sbtidea.tasks
 
-import coursier.{Dependency, Fetch, Module, ModuleName, Organization, dependencyString}
+import coursier.{Dependency, Fetch, Module, ModuleName, Organization}
 import org.jetbrains.sbtidea.Keys.IdeaConfigBuildingOptions
 import org.jetbrains.sbtidea.productInfo.ProductInfoExtraDataProvider
 import org.jetbrains.sbtidea.runIdea.{IntellijAwareRunner, IntellijVMOptions}
-import org.jetbrains.sbtidea.tasks.IdeaConfigBuilder.{pathPattern, pluginsPattern}
+import org.jetbrains.sbtidea.tasks.IdeaConfigBuilder.{computeJupiterRuntimeDependencies, pathPattern, pluginsPattern}
 import org.jetbrains.sbtidea.tasks.classpath.PluginClasspathUtils
 import org.jetbrains.sbtidea.{PathExt, PluginLogger as log}
 import sbt.*
@@ -114,73 +114,7 @@ class IdeaConfigBuilder(
       }
 
   private def resolveJUnitJupiterRuntime(testClasspath: Seq[Path]): Seq[Path] = {
-    val fallbackJupiterVersion = "5.10.3"
-    val fallbackLauncherVersion = "1.10.3"
-
-    def findJar(orgName: String, artifactName: String): Option[Path] =
-      testClasspath.find { path =>
-        // org.junit.jupiter -> org/junit/jupiter or org\junit\jupiter
-        val orgPath = orgName.replace('.', File.separatorChar)
-        // Checks that the jar absolute path contains both the expected organization name and artifact name.
-        // This is done to filter out hypothetical jars that have the same name but a different organization.
-        path.toString.contains(orgPath) &&
-          path.getFileName.toString.matches(s"$artifactName-(.*)\\.jar")
-      }
-
-    // Detect the version of the jupiter artifacts already on the classpath. If none, fall back to a hardcoded version.
-    val jupiterVersion = findJar("org.junit.jupiter", "junit-jupiter-api").flatMap { jar =>
-      val versionRegex = "junit-jupiter-api-(.*)\\.jar".r
-
-      jar.getFileName.toString match {
-        case versionRegex(version) => Some(version)
-        case _ => None
-      }
-    }.getOrElse(fallbackJupiterVersion)
-
-    val jupiterVersionRegex = "5\\.(.*)".r
-
-    // Use the corresponding jupiter platform launcher version for the given jupiter version, e.g. 5.9.3 -> 1.9.3.
-    val launcherVersion = jupiterVersion match {
-      case jupiterVersionRegex(rest) => s"1.$rest"
-      case _ => fallbackLauncherVersion
-    }
-
-    val toResolve = {
-      val result = mutable.Set.empty[Dependency]
-
-      // Resolve the junit-jupiter-engine jar if not already on the test classpath.
-      findJar("org.junit.jupiter", "junit-jupiter-engine") match {
-        case Some(_) =>
-        case None =>
-          result += Dependency(
-            Module(Organization("org.junit.jupiter"), ModuleName("junit-jupiter-engine")),
-            jupiterVersion
-          )
-      }
-
-      // Resolve the junit-vintage-engine jar if not already on the classpath.
-      findJar("org.junit.vintage", "junit-vintage-engine") match {
-        case Some(_) =>
-        case None =>
-          result += Dependency(
-            Module(Organization("org.junit.vintage"), ModuleName("junit-vintage-engine")),
-            jupiterVersion
-          )
-      }
-
-      // Resolve the junit-platform-launcher jar if not already on the classpath.
-      findJar("org.junit.platform", "junit-platform-launcher") match {
-        case Some(_) =>
-        case None =>
-          result += Dependency(
-            Module(Organization("org.junit.platform"), ModuleName("junit-platform-launcher")),
-            launcherVersion
-          )
-      }
-
-      result.toSeq
-    }
-
+    val toResolve = computeJupiterRuntimeDependencies(testClasspath)
     Fetch()
       .withDependencies(toResolve)
       .run()
@@ -342,4 +276,74 @@ class IdeaConfigBuilder(
 object IdeaConfigBuilder {
   private val pathPattern = Pattern.compile("(^.+sbt-launch\\.jar).*$")
   private val pluginsPattern = Pattern.compile("^.+\\.plugins$")
+
+  private[tasks] val fallbackJupiterVersion = "5.10.3"
+  private[tasks] val fallbackPlatformVersion = "1.10.3"
+
+  private[tasks] def computeJupiterRuntimeDependencies(testClasspath: Seq[Path]): Seq[Dependency] = {
+    def findJar(org: String, artifact: String): Option[(Path, String)] =
+      testClasspath.find { path =>
+        // org.junit.jupiter -> org/junit/jupiter or org\junit\jupiter
+        val orgPath = org.replace('.', File.separatorChar)
+        // Checks that the jar absolute path contains both the expected organization name and artifact name.
+        // This is done to filter out hypothetical jars that have the same name but a different organization.
+        path.toString.contains(orgPath) &&
+          path.getFileName.toString.matches(s"$artifact-(.*)\\.jar")
+      }.map(path => (path, artifact))
+
+    // Detect the version of the jupiter artifacts already on the classpath. If none, fall back to a hardcoded version.
+    val jupiterVersion = findJar("org.junit.jupiter", "junit-jupiter-api")
+      .orElse(findJar("org.junit.jupiter", "junit-jupiter-engine"))
+      .orElse(findJar("org.junit.vintage", "junit-vintage-engine"))
+      .flatMap { case (jar, artifact) =>
+        val versionRegex = s"$artifact-(.*)\\.jar".r
+
+        jar.getFileName.toString match {
+          case versionRegex(version) => Some(version)
+          case _ => None
+        }
+      }.getOrElse(fallbackJupiterVersion)
+
+    val jupiterVersionRegex = "5\\.(.*)".r
+
+    // Use the corresponding jupiter platform launcher version for the given jupiter version, e.g. 5.9.3 -> 1.9.3.
+    val platformVersion = jupiterVersion match {
+      case jupiterVersionRegex(rest) => s"1.$rest"
+      case _ => fallbackPlatformVersion
+    }
+
+    val dependencies = Seq.newBuilder[Dependency]
+
+    // Resolve the junit-jupiter-engine jar if not already on the test classpath.
+    findJar("org.junit.jupiter", "junit-jupiter-engine") match {
+      case Some(_) =>
+      case None =>
+        dependencies += Dependency(
+          Module(Organization("org.junit.jupiter"), ModuleName("junit-jupiter-engine")),
+          jupiterVersion
+        )
+    }
+
+    // Resolve the junit-vintage-engine jar if not already on the classpath.
+    findJar("org.junit.vintage", "junit-vintage-engine") match {
+      case Some(_) =>
+      case None =>
+        dependencies += Dependency(
+          Module(Organization("org.junit.vintage"), ModuleName("junit-vintage-engine")),
+          jupiterVersion
+        )
+    }
+
+    // Resolve the junit-platform-launcher jar if not already on the classpath.
+    findJar("org.junit.platform", "junit-platform-launcher") match {
+      case Some(_) =>
+      case None =>
+        dependencies += Dependency(
+          Module(Organization("org.junit.platform"), ModuleName("junit-platform-launcher")),
+          platformVersion
+        )
+    }
+
+    dependencies.result()
+  }
 }
