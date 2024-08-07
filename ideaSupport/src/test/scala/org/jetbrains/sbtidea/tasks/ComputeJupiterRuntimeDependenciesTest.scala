@@ -8,7 +8,7 @@ import java.nio.file.{Path, Paths}
 import scala.util.chaining.scalaUtilChainingOps
 
 class ComputeJupiterRuntimeDependenciesTest extends AnyFunSuite with Matchers {
-  
+
   import IdeaConfigBuilder.*
 
   private val basePath: Path = Paths.get("/", "tmp", ".cache")
@@ -80,27 +80,27 @@ class ComputeJupiterRuntimeDependenciesTest extends AnyFunSuite with Matchers {
     first should be("org.junit.jupiter:junit-jupiter-engine:5.9.3")
     second should be("org.junit.platform:junit-platform-launcher:1.9.3")
   }
-  
+
   test("classpath contains jupiter engine and vintage engine") {
     // transitive dependency of junit-jupiter-engine
     val jupiterApi = basePath.resolve(Paths.get("org", "junit", "jupiter", "junit-jupiter-api", "5.9.3", "junit-jupiter-api-5.9.3.jar"))
     val jupiterEngine = basePath.resolve(Paths.get("org", "junit", "jupiter", "junit-jupiter-engine", "5.9.3", "junit-jupiter-engine-5.9.3.jar"))
     val vintageEngine = basePath.resolve(Paths.get("org", "junit", "vintage", "junit-vintage-engine", "5.9.3", "junit-vintage-engine-5.9.3.jar"))
     val testClasspath = Seq(jupiterApi, jupiterEngine, vintageEngine)
-    
+
     val dependencies = computeJupiterRuntimeDependencies(testClasspath) pipe depString
-    
+
     dependencies should have(size(1))
     dependencies.head should be("org.junit.platform:junit-platform-launcher:1.9.3")
   }
-  
+
   test("classpath contains only platform launcher") {
     // platform launcher version 1.9.3
     val platformLauncher = basePath.resolve(Paths.get("org", "junit", "platform", "junit-platform-launcher", "1.9.3", "junit-platform-launcher-1.9.3.jar"))
     val testClasspath = Seq(platformLauncher)
-    
+
     val dependencies = computeJupiterRuntimeDependencies(testClasspath) pipe depString
-    
+
     dependencies should have(size(2))
     val Seq(first, second) = dependencies
     // We do not do "reverse" discovery of the jupiter version (from platform to jupiter, example 1.9.3 -> 5.9.3).
