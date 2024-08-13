@@ -14,7 +14,7 @@ import org.jetbrains.sbtidea.JbrPlatform
 case class ProductInfo(
   name: String,
   version: String,
-  versionSuffix: String,
+  versionSuffix: Option[String],
   buildNumber: String,
   productCode: String,
   modules: Seq[String],

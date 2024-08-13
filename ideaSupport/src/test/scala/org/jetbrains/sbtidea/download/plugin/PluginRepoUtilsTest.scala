@@ -17,7 +17,7 @@ class PluginRepoUtilsTest extends AnyFeatureSpecLike with BeforeAndAfterAll {
     val productInfo = ProductInfo(
       name = "",
       version = "",
-      versionSuffix = "",
+      versionSuffix = None,
       buildNumber = buildNumber,
       productCode = "",
       modules = Nil,
