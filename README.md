@@ -275,6 +275,12 @@ packageMethod := PackagingMethod.Standalone()
 // specify in which project to merge into
 packageMethod := PackagingMethod.MergeIntoParent()
 
+// This packages all projects that are marked with the same moduleName into
+// a module jar under lib/modules/<moduleName>.jar
+// Modules are a new mechanism in intellij to better configure dependencies
+// between plugins and builtin modules.
+packageMethod := PackagingMethod.PluginModule("moduleName")
+
 // merge all dependencies of this project in a standalone jar
 // being used together with assembleLibraries setting allows sbt-assembly like packaging
 // the project may contain classes but they will be ignored during packaging

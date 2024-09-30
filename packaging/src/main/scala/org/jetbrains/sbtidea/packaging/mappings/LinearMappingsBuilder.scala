@@ -54,6 +54,9 @@ class LinearMappingsBuilder(override val outputDir: File, log: PluginLogger) ext
       case PackagingMethod.Standalone(targetPath, isStatic) =>
         val target = outputDir / targetPath
         addProductDirs(node, target, isStatic)
+      case PackagingMethod.PluginModule(moduleName, isStatic) =>
+        val target = outputDir / mkPluginModulePath(moduleName)
+        addProductDirs(node, target, isStatic)
       case PackagingMethod.Skip() => throw new MappingBuildException("Unreachable")
     }
   }
@@ -63,6 +66,8 @@ class LinearMappingsBuilder(override val outputDir: File, log: PluginLogger) ext
     def collectCandidate(nodes: Seq[PackagedProjectNode]): PackagedProjectNode = {
       if (nodes.isEmpty)
         throw new MappingBuildException(s"No standalone-packaged parents found for $node")
+
+      // note that we do not package into parent with PackagingMethod.PluginModule. For this explicilty use PluginModule
       val candidates = nodes.filter(_.packagingOptions.packageMethod.isInstanceOf[PackagingMethod.Standalone]).distinct
       if (candidates.size > 1)
         throw new MappingBuildException(s"Multiple direct parents package into standalone jar ($node) (use MergeIntoOther): $candidates")
@@ -148,9 +153,12 @@ class LinearMappingsBuilder(override val outputDir: File, log: PluginLogger) ext
       mkProjectJarDefaultPath(node)
     case PackagingMethod.Standalone(nonEmptyPath, _) =>
       nonEmptyPath
+    case PackagingMethod.PluginModule(moduleName, _) =>
+      mkPluginModulePath(moduleName)
   }
 
   private def mkProjectJarDefaultPath(node: ProjectNode): String = s"lib/${node.name}.jar"
+  private def mkPluginModulePath(moduleName: String): String = s"lib/modules/$moduleName.jar"
 
   private def fixPaths(str: String): String = System.getProperty("os.name") match {
     case os if os.startsWith("Windows") => str.replace('/', '\\')
