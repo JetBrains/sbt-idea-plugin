@@ -2,6 +2,9 @@ import xerial.sbt.Sonatype.GitHubHosting
 
 Global / concurrentRestrictions := Seq(Tags.limit(Tags.Test, 1))
 
+// Some tests test global properties and fail when tests are run in parallel
+Test / parallelExecution := false
+
 lazy val commonSettings: Seq[Setting[?]] = Seq(
   organization          := "org.jetbrains",
   licenses              += ("MIT", url("https://opensource.org/licenses/MIT")),
