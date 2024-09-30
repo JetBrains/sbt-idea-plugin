@@ -205,11 +205,12 @@ class IdeaConfigBuilder(
   }
 
   private def buildTestClasspath: Seq[String] = {
-    val classPathEntries: mutable.Buffer[String] = new ArrayBuffer()
+    val classPathEntries = Seq.newBuilder[String]
 
     //plugin jars must go first when using CLASSLOADER_KEY
     //example: ./target/plugin/Scala/lib/*
     classPathEntries += (pluginAssemblyDir / "lib").toString + File.separator + "*"
+    classPathEntries += (pluginAssemblyDir / "lib" / "modules").toString + File.separator + "*"
 
     classPathEntries ++= productInfoExtraDataProvider.bootClasspathJars.map(_.toString)
     classPathEntries ++= productInfoExtraDataProvider.productModulesJars.map(_.toString)
@@ -227,7 +228,7 @@ class IdeaConfigBuilder(
     classPathEntries ++= junitJupiterRuntimeJars.map(_.toString)
 
     classPathEntries ++= extraJUnitTemplateClasspath.map(_.toString)
-    classPathEntries
+    classPathEntries.result()
   }
 
   private def buildJUnitTemplate: String = {
