@@ -7,6 +7,7 @@ import org.jetbrains.sbtidea.structure.{Library, ProjectNode}
 import sbt.*
 
 import scala.collection.mutable
+import scala.util.Try
 
 class LinearMappingsBuilder(override val outputDir: File, log: PluginLogger) extends AbstractMappingBuilder {
 
@@ -70,10 +71,62 @@ class LinearMappingsBuilder(override val outputDir: File, log: PluginLogger) ext
         return candidates.head
       collectCandidate(nodes.flatMap(_.parents))
     }
-    if (node.packagingOptions.packageMethod.isInstanceOf[PackagingMethod.Standalone])
+
+    if (node.packagingOptions.packageMethod.isInstanceOf[PackagingMethod.Standalone]) {
       node
-    else
-      collectCandidate(node.parents)
+    } else {
+      // We want to find all reachable parent nodes that have PackagingMethod.Standalone
+      // and that are not reachable through another parent node with PackingMethod.Standalone
+      // The value of the map below tracks whether there is another standalone node that
+      // is between the key and `node`
+      val standaloneParents = mutable.Map.empty[PackagedProjectNode, Boolean]
+
+      def process(node: PackagedProjectNode, covered: Boolean): Unit = {
+        val isStandalone = node.packagingOptions.packageMethod.isInstanceOf[PackagingMethod.Standalone]
+        if (isStandalone) {
+          val wasInitialized = standaloneParents.contains(node)
+
+          standaloneParents(node) = covered || standaloneParents.getOrElse(node, false)
+
+          if (wasInitialized) {
+            // It doesn't matter whether this node was covered or not;
+            // all parents have at least been covered by this node.
+            // So we don't have to process them again
+            return
+          }
+        }
+
+        node.parents.foreach(process(_, covered || isStandalone))
+      }
+
+      process(node, covered = false)
+
+      val candidates = standaloneParents.iterator.filter(_._2 == false).map(_._1).toSeq
+      val candidate = candidates match {
+        case Seq(one) => one
+        case Seq() =>
+          throw new MappingBuildException(s"No standalone-packaged parents found for $node")
+        case _ =>
+          val withoutModules = candidates.filter(_.packagingOptions.packageMethod match {
+            case PackagingMethod.Standalone(_, _, true) => false
+            case _ => true
+          })
+
+          withoutModules match {
+            case Seq(one) => one
+            case _ =>
+              throw new MappingBuildException(
+                s"Cannot determine a standalone parent package to merge into for $node, " +
+                  s"Standalone candidates: ${candidates.sortBy(_.name).mkString(", ")}"
+              )
+          }
+      }
+
+      log.info(s"                     Merging $node into $candidate")
+      log.info(s"Old method would have merged $node into ${Try(collectCandidate(node.parents)).fold(_.getMessage, _.toString)}")
+
+      candidate
+    }
   }
 
   private def validateMerge(from: PackagedProjectNode, to: PackagedProjectNode): Unit = {
