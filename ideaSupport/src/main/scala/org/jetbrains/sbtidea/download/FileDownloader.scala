@@ -24,8 +24,13 @@ class FileDownloader(private val baseDirectory: Path) {
   @throws(classOf[DownloadException])
   def download(url: URL, optional: Boolean = false): Path = try {
     val partFile = downloadNativeWithConnectionRetry(url) { case (progressInfo, to) =>
+      //use carriage return to overwrite the previous progress line
       val text = s"\r${progressInfo.renderAll} -> $to"
-      if (!progressInfo.done) print(text) else println(text)
+      //until the progress is 100%, we don't print a trailing new line
+      if (!progressInfo.done)
+        System.out.print(text)
+      else
+        System.out.println(text)
     }
     partFile match {
       case DownloadedPath.PartPath(partPath) =>
@@ -168,6 +173,8 @@ class FileDownloader(private val baseDirectory: Path) {
 
       if (expectedFileSize > 0 && Files.size(toPart) != expectedFileSize) {
         throw new DownloadException(s"Incorrect downloaded file size: expected $expectedFileSize, got ${Files.size(toPart)}")
+      } else {
+        rbc.ensureFinalLogProgressCall()
       }
       DownloadedPath.PartPath(toPart)
     } finally {
@@ -188,7 +195,7 @@ class FileDownloader(private val baseDirectory: Path) {
       val message = connection.getResponseMessage
       throw new DownloadException(s"$message ($responseCode): $url", Some(responseCode))
     }
-    val contentLength = connection.getContentLength
+    val contentLength = connection.getContentLengthLong
     val nameFromHeader = java.net.URLDecoder
       .decode(
         connection
@@ -213,6 +220,7 @@ class FileDownloader(private val baseDirectory: Path) {
     private var readSoFar       = alreadyDownloaded
     private var lastTimeStamp   = System.nanoTime()
     private var readLastSecond  = 0L
+
     override def isOpen: Boolean  = rbc.isOpen
     override def close(): Unit    = rbc.close()
     override def read(bb: ByteBuffer): Int = {
@@ -220,20 +228,37 @@ class FileDownloader(private val baseDirectory: Path) {
       if (numRead > 0) {
         readSoFar       += numRead
         readLastSecond  += numRead
-        val newTimeStamp = System.nanoTime()
-        val duration = Duration.fromNanos(newTimeStamp) - Duration.fromNanos(lastTimeStamp)
-        if (duration >= 1.second || readSoFar == expectedSize) { // update every second or on finish
-          val percent = if (expectedSize > 0)
-            readSoFar.toDouble / expectedSize.toDouble * 100.0
-          else
-            -1.0
-          val speed = readLastSecond.toDouble / ((duration + 1.millisecond).toMillis / 1000.0)
-          progressCallback(ProgressInfo(percent.toInt, speed, readSoFar, expectedSize), target)
-          lastTimeStamp  = newTimeStamp
-          readLastSecond = 0
-        }
+
+        maybeFlushProgressOutput(readSoFar)
       }
       numRead
+    }
+
+    private def maybeFlushProgressOutput(_readSoFar: Long): Unit = {
+      val newTimeStamp = System.nanoTime()
+      val duration = Duration.fromNanos(newTimeStamp) - Duration.fromNanos(lastTimeStamp)
+
+      if (duration >= 1.second || _readSoFar == expectedSize) { // update every second or on finish
+        val percent = if (expectedSize > 0)
+          _readSoFar.toDouble / expectedSize.toDouble * 100.0
+        else
+          -1.0
+        val speed = readLastSecond.toDouble / ((duration + 1.millisecond).toMillis / 1000.0)
+        progressCallback(ProgressInfo(percent.toInt, speed, _readSoFar, expectedSize), target)
+        lastTimeStamp = newTimeStamp
+        readLastSecond = 0
+      }
+    }
+
+    // Sometimes there might be an off-by-1-byte difference between these two
+    // (potentially due to https://stackoverflow.com/a/263127?)
+    // It's not reproduced for all files, though...
+    // We want to ensure that 100% progress output is reported, thus we pretend that we read all bytes by enforcing readSoFar
+    // It also ensures that a new line is printed after the progress
+    private[FileDownloader] def ensureFinalLogProgressCall(): Unit = {
+      if (readSoFar < expectedSize) {
+        maybeFlushProgressOutput(_readSoFar = expectedSize)
+      }
     }
   }
 
