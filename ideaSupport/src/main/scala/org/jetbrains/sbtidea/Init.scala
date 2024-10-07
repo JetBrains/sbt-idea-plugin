@@ -220,7 +220,8 @@ trait Init { this: Keys.type =>
       val fullClasspathValue = fullClasspath.in(Test).value
       val pathFinder = PathFinder.empty +++ // the new IJ plugin loading strategy in tests requires external plugins to be prepended to the classpath
         packageOutputDir.value * globFilter("*.jar") +++
-        packageOutputDir.value / "lib" * globFilter("*.jar")
+        packageOutputDir.value / "lib" * globFilter("*.jar") +++
+        packageOutputDir.value / "lib" / "modules" ** globFilter("*.jar")
       val allExportedProducts = exportedProducts.all(ScopeFilter(inDependencies(ThisProject), inConfigurations(Compile))).value.flatten
       pathFinder.classpath ++ (fullClasspathValue.to[mutable.LinkedHashSet] -- allExportedProducts.toSet).toSeq // exclude classes already in the artifact
     },
