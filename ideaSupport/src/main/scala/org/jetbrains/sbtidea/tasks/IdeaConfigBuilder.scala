@@ -2,6 +2,7 @@ package org.jetbrains.sbtidea.tasks
 
 import coursier.{Dependency, Fetch, Module, ModuleName, Organization}
 import org.jetbrains.sbtidea.Keys.IdeaConfigBuildingOptions
+import org.jetbrains.sbtidea.packaging.hasProdTestSeparationEnabled
 import org.jetbrains.sbtidea.productInfo.ProductInfoExtraDataProvider
 import org.jetbrains.sbtidea.runIdea.{IntellijAwareRunner, IntellijVMOptions}
 import org.jetbrains.sbtidea.tasks.IdeaConfigBuilder.{computeJupiterRuntimeDependencies, pathPattern, pluginsPattern}
@@ -13,15 +14,12 @@ import java.io.File
 import java.nio.file.{Path, Paths}
 import java.util.regex.Pattern
 import scala.annotation.tailrec
-import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 
 /**
   * @param testPluginRoots contains only those plugins which are listed in the project IntelliJ plugin dependencies and their transitive dependencies
   */
 class IdeaConfigBuilder(
-  moduleName: String,
-  configName: String,
+  projectName: String,
   intellijVMOptions: IntellijVMOptions,
   dataDir: File,
   intellijBaseDir: File,
@@ -37,10 +35,14 @@ class IdeaConfigBuilder(
 
   private val IDEA_ROOT_KEY = "idea.installation.dir"
 
+  private val moduleName: String =
+    if (hasProdTestSeparationEnabled) s"$projectName.main"
+    else projectName
+
   def build(): Unit = {
     if (options.generateDefaultRunConfig) {
-      val content = buildRunConfigurationXML(configName, intellijVMOptions)
-      writeToFile(runConfigDir / s"$configName.xml", content)
+      val content = buildRunConfigurationXML(projectName, intellijVMOptions)
+      writeToFile(runConfigDir / s"$projectName.xml", content)
     }
     if (options.generateJUnitTemplate)
       writeToFile(runConfigDir / "_template__of_JUnit.xml", buildJUnitTemplate)
@@ -190,7 +192,7 @@ class IdeaConfigBuilder(
        |    <method v="2">
        |      <option name="Make" enabled="true" />
        |      <option name="BuildArtifacts" enabled="true">
-       |        <artifact name="$moduleName" />
+       |        <artifact name="$projectName" />
        |      </option>
        |    </method>
        |  </configuration>
@@ -259,7 +261,7 @@ class IdeaConfigBuilder(
        |    <method v="2">
        |      <option name="Make" enabled="true" />
        |      <option name="BuildArtifacts" enabled="true">
-       |        <artifact name="$moduleName" />
+       |        <artifact name="$projectName" />
        |      </option>
        |    </method>
        |  </configuration>

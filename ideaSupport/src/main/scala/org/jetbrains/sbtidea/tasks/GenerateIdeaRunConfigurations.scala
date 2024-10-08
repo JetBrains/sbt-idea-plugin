@@ -18,7 +18,6 @@ object GenerateIdeaRunConfigurations extends SbtIdeaTask[Unit] {
       PluginLogger.bind(new SbtPluginLogger(streams.value))
       val buildInfo = sbtidea.Keys.intellijBuildInfo.in(ThisBuild).value
       val vmOptions = intellijVMOptions.value.copy(debug = false)
-      val configName = name.value
       val dotIdeaFolder = baseDirectory.in(ThisBuild).value / ".idea"
       val sbtRunEnv = envVars.value
       val sbtTestEnv = envVars.in(Test).value
@@ -45,13 +44,8 @@ object GenerateIdeaRunConfigurations extends SbtIdeaTask[Unit] {
         .map(x => if (x.ideaRunEnv.isEmpty) x.copy(ideaRunEnv = sbtRunEnv) else  x)
         .map(x => if (x.ideaTestEnv.isEmpty) x.copy(ideaTestEnv = sbtTestEnv) else x)
         .get
-      val projectName = name.value
-      val moduleName =
-        if (hasProdTestSeparationEnabled) s"$projectName.main"
-        else projectName
       val configBuilder = new IdeaConfigBuilder(
-        moduleName = moduleName,
-        configName = configName,
+        projectName = name.value,
         intellijVMOptions = vmOptions,
         dataDir = intellijPluginDirectory.value,
         intellijBaseDir = intellijBaseDirectory.in(ThisBuild).value,
