@@ -37,10 +37,6 @@ class IdeaConfigBuilder(
 
   private val artifactName = projectName
 
-  private val moduleName: String =
-    if (hasProdTestSeparationEnabled) s"$projectName.main"
-    else projectName
-
   def build(): Unit = {
     if (options.generateDefaultRunConfig) {
       val content = buildRunConfigurationXML(artifactName, intellijVMOptions)
@@ -172,6 +168,8 @@ class IdeaConfigBuilder(
   private def buildRunConfigurationXML(configurationName: String, vmOptions: IntellijVMOptions): String = {
     val env = mkEnv(options.ideaRunEnv)
     val vmOptionsStr = buildRunVmOptionsString(vmOptions)
+    val moduleName = generateModuleName(sourceSetModuleSuffix =  "main")
+
     s"""<component name="ProjectRunConfigurationManager">
        |  <configuration default="false" name="$configurationName" type="Application" factoryName="Application">
        |    $jreSettings
@@ -235,9 +233,14 @@ class IdeaConfigBuilder(
     classPathEntries.result()
   }
 
+  private def generateModuleName(sourceSetModuleSuffix: String): String =
+    if (hasProdTestSeparationEnabled) s"$projectName.$sourceSetModuleSuffix"
+    else projectName
+
   private def buildJUnitTemplate: String = {
     val env = mkEnv(options.ideaTestEnv)
     val vmOptionsStr = buildTestVmOptionsString
+    val moduleName = generateModuleName(sourceSetModuleSuffix = "test")
 
     val searchScope = if (options.testSearchScope.nonEmpty)
       s"""<option name="TEST_SEARCH_SCOPE">
