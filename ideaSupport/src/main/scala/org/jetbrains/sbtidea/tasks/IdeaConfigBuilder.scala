@@ -35,14 +35,16 @@ class IdeaConfigBuilder(
 
   private val IDEA_ROOT_KEY = "idea.installation.dir"
 
+  private val artifactName = projectName
+
   private val moduleName: String =
     if (hasProdTestSeparationEnabled) s"$projectName.main"
     else projectName
 
   def build(): Unit = {
     if (options.generateDefaultRunConfig) {
-      val content = buildRunConfigurationXML(projectName, intellijVMOptions)
-      writeToFile(runConfigDir / s"$projectName.xml", content)
+      val content = buildRunConfigurationXML(artifactName, intellijVMOptions)
+      writeToFile(runConfigDir / s"$artifactName.xml", content)
     }
     if (options.generateJUnitTemplate)
       writeToFile(runConfigDir / "_template__of_JUnit.xml", buildJUnitTemplate)
@@ -192,7 +194,7 @@ class IdeaConfigBuilder(
        |    <method v="2">
        |      <option name="Make" enabled="true" />
        |      <option name="BuildArtifacts" enabled="true">
-       |        <artifact name="$projectName" />
+       |        <artifact name="$artifactName" />
        |      </option>
        |    </method>
        |  </configuration>
@@ -261,7 +263,7 @@ class IdeaConfigBuilder(
        |    <method v="2">
        |      <option name="Make" enabled="true" />
        |      <option name="BuildArtifacts" enabled="true">
-       |        <artifact name="$projectName" />
+       |        <artifact name="$artifactName" />
        |      </option>
        |    </method>
        |  </configuration>
