@@ -7,12 +7,12 @@ import sbt.*
 
 import java.lang.ProcessBuilder as JProcessBuilder
 import java.nio.file.Files.newInputStream
-import java.nio.file.{Path, Paths}
+import java.nio.file.{Files, Path, Paths}
 import java.util.{Locale, Properties}
 import scala.collection.JavaConverters.*
 import scala.util.Using
 
-abstract class IntellijAwareRunner(intellijBaseDirectory: Path, blocking: Boolean) {
+abstract class IntellijAwareRunner(intellijBaseDirectory: Path, blocking: Boolean, discardOutput: Boolean) {
 
   //NOTE: most of these methods could be extracted to companion object
 
@@ -58,11 +58,21 @@ abstract class IntellijAwareRunner(intellijBaseDirectory: Path, blocking: Boolea
   protected def buildJavaArgs: Seq[String]
 
   def run(): Int = {
-    val processBuilder = new JProcessBuilder()
-    val process = processBuilder
-      .command(buildFullCommand)
-      .inheritIO()
-      .start()
+    val processBuilder = {
+      val builder = new JProcessBuilder()
+      builder.command(buildFullCommand)
+      if (discardOutput) {
+        // Would have been nice to use `.redirectOutput(ProcessBuilder.Redirect.DISCARD)`,
+        // but it is only available on JDK 9+.
+        builder
+          .redirectOutput(Files.createTempFile("idea-runner-out", ".log").toFile)
+          .redirectError(Files.createTempFile("idea-runner-err", ".log").toFile)
+      } else {
+        builder.inheritIO()
+      }
+      builder
+    }
+    val process = processBuilder.start()
     if (blocking)
       process.waitFor()
     else 0

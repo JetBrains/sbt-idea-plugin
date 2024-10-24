@@ -11,8 +11,9 @@ class IdeaRunner(
   productInfoExtraDataProvider: ProductInfoExtraDataProvider,
   vmOptions: IntellijVMOptions,
   blocking: Boolean,
+  discardOutput: Boolean,
   programArguments: Seq[String] = Seq.empty
-) extends IntellijAwareRunner(intellijBaseDirectory, blocking) {
+) extends IntellijAwareRunner(intellijBaseDirectory, blocking, discardOutput) {
 
   override protected def buildJavaArgs: Seq[String] = {
     val builder = mutable.ArrayBuffer[String]()

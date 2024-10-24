@@ -1,6 +1,6 @@
 package org.jetbrains.sbtidea.searchableoptions
 
-import org.jetbrains.sbtidea.Keys.{productInfoExtraDataProvider, intellijBaseDirectory, intellijVMOptions}
+import org.jetbrains.sbtidea.Keys.{intellijBaseDirectory, intellijVMOptions, productInfoExtraDataProvider}
 import org.jetbrains.sbtidea.download.NioUtils
 import org.jetbrains.sbtidea.download.plugin.LocalPluginRegistry
 import org.jetbrains.sbtidea.packaging.*
@@ -14,6 +14,7 @@ import sbt.Keys.{streams, target}
 import java.nio.file.{Files, Path}
 import java.util.function.Predicate
 import scala.collection.JavaConverters.*
+import scala.util.Try
 
 /**
  * Task to generate searchable options indices and insert them into the plugin jars
@@ -50,11 +51,18 @@ object BuildIndex {
     val vmOptions       = intellijVMOptions.value.withOption("-Didea.l10n.keys=only")
 
     log.info("Building searchable plugin options index...")
+
+    val discardOutput =
+      sys.env.get("SBT_IDEA_GEN_SEARCHABLE_OPTIONS_INDEX_DISCARD_OUTPUT")
+        .flatMap(v => Try(v.toBoolean).toOption)
+        .getOrElse(true)
+
     val runner = new IdeaRunner(
       intellijBaseDir.toPath,
       productInfoExtraDataProvider.value,
       vmOptions,
       blocking = true,
+      discardOutput = discardOutput,
       programArguments = indexerCMD
     )
     runner.run()
