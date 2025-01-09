@@ -1,6 +1,6 @@
 # sbt-idea-plugin
 
-[ ![Version](https://maven-badges.herokuapp.com/maven-central/org.jetbrains/sbt-idea-plugin/badge.svg) ](https://maven-badges.herokuapp.com/maven-central/org.jetbrains/sbt-idea-plugin) 
+[![Maven Central Version](https://img.shields.io/maven-central/v/org.jetbrains/sbt-idea-plugin_2.12_1.0?color=light-green)](https://central.sonatype.com/artifact/org.jetbrains/sbt-idea-plugin_2.12_1.0)
 ![Build Status](https://github.com/jetbrains/sbt-idea-plugin/actions/workflows/scala.yml/badge.svg)
 [![JetBrains team project](http://jb.gg/badges/team.svg)](https://confluence.jetbrains.com/display/ALL/JetBrains+on+GitHub)
 [![Discord](https://badgen.net/badge/icon/discord?icon=discord&label)](https://discord.gg/aUKpZzeHCK)
