@@ -53,8 +53,12 @@ object UpdateWithIDEAInjectionTask extends SbtIdeaTask[UpdateReport] {
       intellijMainJars.map(mainJarsArtifact -> _) ++ sourcesArtifactMapping
     }
 
-    val ideaTestArtifactMappings: Seq[(sbt.Artifact, File)] =
-      intellijTestJars.map(Artifacts.ideaTestArtifact -> _)
+    val ideaTestArtifactMappings: Seq[(sbt.Artifact, File)] = {
+      //testFramework sources are located in the same archive as main sources
+      val sourcesArtifactMapping = if (attachSources) Seq(Artifacts.ideaTestSourcesArtifact -> intelliJSourcesArchive) else Seq.empty
+      val testJarsArtifact = Artifacts.ideaTestArtifact
+      intellijTestJars.map(testJarsArtifact -> _) ++ sourcesArtifactMapping
+    }
 
     val pluginArtifactsMappings: Seq[(ModuleID, Seq[(Artifact, File)], Configuration)] = intellijPluginClasspath.flatMap { case (_, classpath) =>
       val representativeJar = classpath.headOption
@@ -64,6 +68,7 @@ object UpdateWithIDEAInjectionTask extends SbtIdeaTask[UpdateReport] {
         val pluginModule = f.get(moduleID.key).get
         val pluginArtifact = f.get(artifact.key).get
         val mainArtifactMapping = classpath.map(pluginArtifact -> _.data)
+        //bundled plugin sources are located in the same archive as main sources
         val sourcesArtifactMapping = Artifacts.pluginSourcesArtifact(pluginArtifact.name) -> intelliJSourcesArchive
 
         // bundled plugin has the same version as the platform; add sources

@@ -11,10 +11,17 @@ import scala.collection.mutable
 object AttributedClasspathTasks {
 
   import Artifacts.*
-  import Modules.*
 
   private val INTELLIJ_SDK_ARTIFACT_NAME = "INTELLIJ-SDK"
   private val INTELLIJ_SDK_TEST_ARTIFACT_NAME: String = "INTELLIJ-SDK-TEST"
+
+  // These special classifiers have a special handling logic in Scala plugin and DevKit plugin
+  // See org.jetbrains.sbt.project.SbtProjectResolver.IJ_SDK_CLASSIFIERS
+  // See https://youtrack.jetbrains.com/issue/SCL-17415 (though it doesn't have many details)
+  // NOTE: it seems like it's some legacy and DevKit doesn't actually need this, but it's not 100%
+  // same classifier is used for both main and test jars
+  private val IJ_SDK_CLASSIFIER = "IJ-SDK"
+  private val IJ_PLUGIN_CLASSIFIER = "IJ-PLUGIN"
 
   object Artifacts {
     private val intellijMainJarsHashToArtifactSuffix = mutable.Map[Int, String]()
@@ -24,6 +31,9 @@ object AttributedClasspathTasks {
      * (it better shouldn't be so, but it might occur accidentally, e.g., due to misconfiguration)<br>
      * In this case, we want to create different libraries.<br>
      * For this we need unique names
+     *
+     * @return 1. empty string in the simplest case, when all modules depend on the same set of jars from the platform<br>
+     *         2. jars hash code otherwise
      */
     private def getUniqueArtifactSuffix(jars: Seq[File], cache: mutable.Map[Int, String]): String =
       cache.synchronized {
@@ -36,21 +46,26 @@ object AttributedClasspathTasks {
       }
 
     def ideaMainJarsArtifact(intellijMainJarsValue: Seq[File]): Artifact = {
+      //should be empty in simple cases
       val artifactSuffix = getUniqueArtifactSuffix(intellijMainJarsValue, intellijMainJarsHashToArtifactSuffix)
-      Artifact(INTELLIJ_SDK_ARTIFACT_NAME, s"IJ-SDK$artifactSuffix")
+      Artifact(name = INTELLIJ_SDK_ARTIFACT_NAME + artifactSuffix, classifier = IJ_SDK_CLASSIFIER)
     }
 
     val ideaTestArtifact: Artifact =
-      Artifact(INTELLIJ_SDK_TEST_ARTIFACT_NAME, "IJ-SDK-TEST")
+      Artifact(name = INTELLIJ_SDK_TEST_ARTIFACT_NAME, classifier = IJ_SDK_CLASSIFIER)
 
     val ideaSourcesArtifact: Artifact =
-      Artifact(INTELLIJ_SDK_ARTIFACT_NAME, Artifact.SourceType, "zip", "IJ-SDK")
+      Artifact(name = INTELLIJ_SDK_ARTIFACT_NAME, `type` = Artifact.SourceType, extension = "zip", classifier = IJ_SDK_CLASSIFIER)
+
+    val ideaTestSourcesArtifact: Artifact =
+      Artifact(name = INTELLIJ_SDK_TEST_ARTIFACT_NAME, `type` = Artifact.SourceType, extension = "zip", classifier = IJ_SDK_CLASSIFIER)
+
 
     def pluginArtifact(descriptor: PluginDescriptor): Artifact =
-      Artifact(s"IJ-PLUGIN[${descriptor.id}]", "IJ-PLUGIN")
+      Artifact(name = s"IJ-PLUGIN[${descriptor.id}]", classifier = IJ_PLUGIN_CLASSIFIER)
 
     def pluginSourcesArtifact(pluginName: String): Artifact =
-      Artifact(pluginName, Artifact.SourceType, "zip", Artifact.SourceClassifier)
+      Artifact(name = pluginName, `type` = Artifact.SourceType, extension = "zip", classifier = IJ_PLUGIN_CLASSIFIER)
   }
 
   object Modules {
@@ -58,7 +73,7 @@ object AttributedClasspathTasks {
       "org.jetbrains" % INTELLIJ_SDK_ARTIFACT_NAME % buildNumber withSources()
 
     def getIntellijSdkTestModule(buildNumber: String): ModuleID =
-      "org.jetbrains" % INTELLIJ_SDK_TEST_ARTIFACT_NAME % buildNumber % Test
+      "org.jetbrains" % INTELLIJ_SDK_TEST_ARTIFACT_NAME % buildNumber % Test withSources()
   }
 
   //======= ATTRIBUTED CLASSPATH =======
@@ -79,7 +94,7 @@ object AttributedClasspathTasks {
     buildNumber: String
   ): Classpath = {
     val artifact = ideaMainJarsArtifact(jars)
-    val module = getIntellijSdkModule(buildNumber)
+    val module = Modules.getIntellijSdkModule(buildNumber)
     buildAttributedClasspath(jars)(artifact, module, Compile)
   }
 
@@ -88,7 +103,7 @@ object AttributedClasspathTasks {
     buildNumber: String
   ): Classpath = {
     val artifact = ideaTestArtifact
-    val module = getIntellijSdkTestModule(buildNumber)
+    val module = Modules.getIntellijSdkTestModule(buildNumber)
     buildAttributedClasspath(jars)(artifact, module, Test)
   }
 
