@@ -20,11 +20,11 @@ package object sbtImpl {
     }
 
     def key(implicit scalaVersion: ProjectScalaVersion): ModuleKey = {
-      ModuleKeyImpl(
-        moduleId.organization %  (moduleId.name + versionSuffix) % moduleId.revision,
-        moduleId.extraAttributes
-          .map    { case (k, v) => k.stripPrefix("e:") -> v }
-          .filter { case (k, _) => k == "scalaVersion" || k == "sbtVersion" })
+      val moduleIdUpdated = moduleId.withName(moduleId.name + versionSuffix)
+      val attributes = moduleId.extraAttributes
+        .map { case (k, v) => k.stripPrefix("e:") -> v }
+        .filter { case (k, _) => k == "scalaVersion" || k == "sbtVersion" }
+      ModuleKeyImpl(moduleIdUpdated, attributes)
     }
   }
 

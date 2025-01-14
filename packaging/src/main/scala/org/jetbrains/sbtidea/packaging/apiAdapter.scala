@@ -11,7 +11,8 @@ object apiAdapter {
     SbtPackageProjectData(
       thisProject = thisProjectRef.value,
       thisProjectName = name.in(thisProjectRef).value,
-      cp = managedClasspath.in(Compile).value,
+      // note, we intentionally get the runtime classpath here
+      cp = managedClasspath.in(Runtime).value,
       definedDeps = libraryDependencies.in(Compile).value,
       additionalProjects = packageAdditionalProjects.value,
       assembleLibraries = packageAssembleLibraries.value,
@@ -30,7 +31,8 @@ object apiAdapter {
     SbtPackageProjectData(
       thisProject = thisProjectRef.value,
       thisProjectName = name.in(thisProjectRef).value,
-      cp = managedClasspath.in(Compile).value,
+      // note, we intentionally get the runtime classpath here
+      cp = managedClasspath.in(Runtime).value,
       definedDeps = libraryDependencies.in(Compile).value,
       additionalProjects = packageAdditionalProjects.value,
       assembleLibraries = packageAssembleLibraries.value,

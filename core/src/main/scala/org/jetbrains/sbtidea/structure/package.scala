@@ -26,7 +26,6 @@ package object structure {
 
   trait Library {
     def key: ModuleKey
-    def jarFile: File
+    def jarFiles: Seq[File]
   }
-
 }

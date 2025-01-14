@@ -27,6 +27,7 @@ class TransitiveDeps(report: UpdateReport, configuration: String)(implicit scala
 
     def collectTransitiveDeps(moduleID: ModuleKey): Set[ModuleKey] = {
       val deps = structure.getOrElse(moduleID, Seq.empty)
-      (deps ++ deps.flatMap(collectTransitiveDeps) :+ moduleID).toSet
+      val depsWithTransitive = deps ++ deps.flatMap(collectTransitiveDeps)
+      (depsWithTransitive :+ moduleID).toSet
     }
   }

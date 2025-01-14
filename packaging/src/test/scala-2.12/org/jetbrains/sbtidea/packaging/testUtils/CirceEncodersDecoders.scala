@@ -36,7 +36,20 @@ object CirceEncodersDecoders {
   implicit val libraryDecoder: Decoder[Library] = Decoder.instance { cursor => sbtLibraryDecoder(cursor) }
   
   implicit val sbtLibraryEncoder: Encoder[SbtIvyLibrary] = deriveEncoder[SbtIvyLibrary]
-  implicit val sbtLibraryDecoder: Decoder[SbtIvyLibrary] = deriveDecoder[SbtIvyLibrary]
+  implicit val sbtLibraryDecoder: Decoder[SbtIvyLibrary] =
+    Decoder.instance { cursor =>
+      for {
+        key <- cursor.downField("key").as[ModuleKey]
+        jarFilesOpt <- cursor.downField("jarFiles").as[Option[Seq[File]]]
+        sbtLibrary <- jarFilesOpt match {
+          case Some(jarFiles) => Right(SbtIvyLibrary(key, jarFiles))
+          case None =>
+            // Handle old format of SbtIvyLibrary when the field was just a single jar
+            // We need to make updating of test data more convenient
+            cursor.downField("jarFile").as[File].map(jarFile => SbtIvyLibrary(key, Seq(jarFile)))
+        }
+      } yield sbtLibrary
+    }
 
   implicit val mappingKindEncoder: Encoder[MAPPING_KIND.Value] = Encoder.encodeEnumeration(MAPPING_KIND)
   implicit val mappingKindDecoder: Decoder[MAPPING_KIND.Value] = Decoder.decodeEnumeration(MAPPING_KIND)

@@ -1,9 +1,9 @@
 package org.jetbrains.sbtidea.packaging.mappings
 
-import org.jetbrains.sbtidea.PluginLogger
 import org.jetbrains.sbtidea.packaging.structure.{PackagedProjectNode, PackagingMethod}
 import org.jetbrains.sbtidea.packaging.{MAPPING_KIND, Mapping, Mappings}
-import org.jetbrains.sbtidea.structure.{Library, ProjectNode}
+import org.jetbrains.sbtidea.structure.ProjectNode
+import org.jetbrains.sbtidea.{PluginLogger, structure}
 import sbt.*
 
 import scala.collection.mutable
@@ -101,27 +101,43 @@ class LinearMappingsBuilder(override val outputDir: File, log: PluginLogger) ext
   }
 
   private def processLibraries(node: PackagedProjectNode, targetJar: File): Unit = {
-    def mapping(lib: Library, to: File): Mapping =
+    def mapping(jarFile: File, to: File): Mapping =
       if (node.packagingOptions.assembleLibraries)
-        Mapping(lib.jarFile, targetJar, node.mmd.copy(kind = MAPPING_KIND.LIB_ASSEMBLY))
+        Mapping(jarFile, targetJar, node.mmd.copy(kind = MAPPING_KIND.LIB_ASSEMBLY))
       else
-        Mapping(lib.jarFile, to, node.mmd.copy(kind = MAPPING_KIND.LIB))
-    val mappings = node.packagingOptions.libraryMappings.toMap
+        Mapping(jarFile, to, node.mmd.copy(kind = MAPPING_KIND.LIB))
+
+    val mappings: Map[structure.ModuleKey, Option[String]] =
+      node.packagingOptions.libraryMappings.toMap
+
     val invalidMappings = mappings
       .filterNot { case (key, _) =>
-        key.org   == "org.scala-lang.modules" || // filter out default mappings
+        key.org == "org.scala-lang.modules" || // filter out default mappings
           key.org == "org.scala-lang"         || // filter out default mappings
           node.libs.exists(_.key == key)
       }
     invalidMappings.foreach { m =>
       log.fatal(s"No library dependencies match mapping $m in module ${node.name}")
     }
-    node.libs.foreach {
-      case lib if !mappings.contains(lib.key) =>
-        mappingsBuffer += mapping(lib, outputDir / s"${node.packagingOptions.libraryBaseDir}/${lib.jarFile.getName}")
-      case lib if mappings.getOrElse(lib.key, None).isDefined =>
-        mappingsBuffer += mapping(lib, outputDir / mappings(lib.key).get)
-      case _ =>
+
+    for {
+      lib <- node.libs
+      jarFile <- lib.jarFiles
+    } {
+      // ATTENTION!
+      // This code can't handle the case with multiple artifacts in the library with different classifiers
+      // Current mapping can map only the whole module id but not separate artifacts with different classifiers
+      // E.g. if user has ("org.lwjgl" % "lwjgl" % "3.3.6" % Runtime).classifier("natives-windows")
+      // and wants to map only it to `lib/native` using `packageLibraryMappings` it won't work
+      // (see https://github.com/JetBrains/sbt-idea-plugin/issues/135)
+      // But so far it's ok, we don't have real examples when that would be really needed
+      mappings.get(lib.key) match {
+        case Some(None) => // to ignore the artifact, None means "don't package the library"
+        case Some(Some(mappedLocation)) =>
+          mappingsBuffer += mapping(jarFile, outputDir / mappedLocation)
+        case _ =>
+          mappingsBuffer += mapping(jarFile, outputDir / s"${node.packagingOptions.libraryBaseDir}/${jarFile.getName}")
+      }
     }
   }
 

@@ -6,5 +6,5 @@ import java.io.File
 
 case class SbtIvyLibrary(
   override val key: ModuleKey,
-  override val jarFile: File
+  override val jarFiles: Seq[File]
 ) extends Library
