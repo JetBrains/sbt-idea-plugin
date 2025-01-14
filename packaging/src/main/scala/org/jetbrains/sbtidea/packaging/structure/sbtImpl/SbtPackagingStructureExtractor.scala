@@ -61,7 +61,15 @@ class SbtPackagingStructureExtractor(override val rootProject: ProjectRef,
       if (isGroupingWithQualifiedNamesEnabled) extractParentModuleName(data)
       else None
 
-    SbtPackagedProjectNodeImpl(data.thisProject, data.thisProjectName, parentName, null, null, null, null)
+    SbtPackagedProjectNodeImpl(
+      ref = data.thisProject,
+      name = data.thisProjectName,
+      rootProjectName = parentName,
+      parents = null,
+      children = null,
+      libs = null,
+      packagingOptions = null
+    )
   }
 
   override def updateNode(node: SbtPackagedProjectNodeImpl, data: SbtPackageProjectData): SbtPackagedProjectNodeImpl = {

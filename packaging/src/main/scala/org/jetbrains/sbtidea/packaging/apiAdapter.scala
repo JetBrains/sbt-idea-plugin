@@ -9,39 +9,39 @@ object apiAdapter {
 
   def dumpDependencyStructureOffline = Def.task {
     SbtPackageProjectData(
-      thisProjectRef.value,
-      name.in(thisProjectRef).value,
-      managedClasspath.in(Compile).value,
-      libraryDependencies.in(Compile).value,
-      packageAdditionalProjects.value,
-      packageAssembleLibraries.value,
-      productDirectories.in(Compile).value,
-      updateFull.value,
-      packageLibraryMappings.value,
-      packageLibraryBaseDir.value,
-      packageFileMappings.value,
-      packageMethod.value,
-      shadePatterns.value,
-      pathExcludeFilter.value
+      thisProject = thisProjectRef.value,
+      thisProjectName = name.in(thisProjectRef).value,
+      cp = managedClasspath.in(Compile).value,
+      definedDeps = libraryDependencies.in(Compile).value,
+      additionalProjects = packageAdditionalProjects.value,
+      assembleLibraries = packageAssembleLibraries.value,
+      productDirs = productDirectories.in(Compile).value,
+      report = updateFull.value,
+      libMapping = packageLibraryMappings.value,
+      libraryBaseDir = packageLibraryBaseDir.value,
+      additionalMappings = packageFileMappings.value,
+      packageMethod = packageMethod.value,
+      shadePatterns = shadePatterns.value,
+      excludeFilter = pathExcludeFilter.value
     )
   }
 
   def dumpDependencyStructure = Def.task {
     SbtPackageProjectData(
-      thisProjectRef.value,
-      name.in(thisProjectRef).value,
-      managedClasspath.in(Compile).value,
-      libraryDependencies.in(Compile).value,
-      packageAdditionalProjects.value,
-      packageAssembleLibraries.value,
-      products.in(Compile).value,
-      updateFull.value,
-      packageLibraryMappings.value,
-      packageLibraryBaseDir.value,
-      packageFileMappings.value,
-      packageMethod.value,
-      shadePatterns.value,
-      pathExcludeFilter.value
+      thisProject = thisProjectRef.value,
+      thisProjectName = name.in(thisProjectRef).value,
+      cp = managedClasspath.in(Compile).value,
+      definedDeps = libraryDependencies.in(Compile).value,
+      additionalProjects = packageAdditionalProjects.value,
+      assembleLibraries = packageAssembleLibraries.value,
+      productDirs = products.in(Compile).value,
+      report = updateFull.value,
+      libMapping = packageLibraryMappings.value,
+      libraryBaseDir = packageLibraryBaseDir.value,
+      additionalMappings = packageFileMappings.value,
+      packageMethod = packageMethod.value,
+      shadePatterns = shadePatterns.value,
+      excludeFilter = pathExcludeFilter.value
     )
   }
 

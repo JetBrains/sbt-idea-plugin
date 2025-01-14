@@ -21,12 +21,12 @@ object ProjectStructureVisualizerPlugin extends AutoPlugin {
     },
     dumpBuildStructureCore := {
       SbtProjectData(
-        thisProjectRef.value,
-        name.in(thisProjectRef).value,
-        managedClasspath.in(Compile).value,
-        libraryDependencies.in(Compile).value,
-        productDirectories.in(Compile).value,
-        update.value
+        thisProject = thisProjectRef.value,
+        thisProjectName = name.in(thisProjectRef).value,
+        cp = managedClasspath.in(Compile).value,
+        definedDeps = libraryDependencies.in(Compile).value,
+        productDirs = productDirectories.in(Compile).value,
+        report = update.value
       )
     }
   )
