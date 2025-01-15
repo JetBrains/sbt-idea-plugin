@@ -19,11 +19,11 @@ case class ModuleKeyImpl(id: ModuleID, attributes: Map[String, String]) extends 
   // this is a crime against programming, such micro-optimisations are not worth the time spent
   // debugging obscure bugs caused by misbehaving maps and sets
   override def equals(o: scala.Any): Boolean = o match {
-    case ModuleKeyImpl(_id, _attributes) =>
-      id.organization.equals(_id.organization) &&
-        (id.name == _id.name || id.name.matches(_id.name)) &&
-        (id.revision == _id.revision || id.revision.matches(_id.revision)) &&
-        attributes == _attributes
+    case other: ModuleKeyImpl =>
+      org.equals(other.org) &&
+        (name == other.name || name.matches(other.name)) &&
+        (revision == other.revision || revision.matches(other.revision)) &&
+        attributes == other.attributes
     case _ => false
   }
 
