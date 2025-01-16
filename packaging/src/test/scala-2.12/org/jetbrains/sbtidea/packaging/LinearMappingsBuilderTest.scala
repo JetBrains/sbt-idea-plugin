@@ -1,98 +1,64 @@
 package org.jetbrains.sbtidea.packaging
 
+import org.jetbrains.sbtidea.packaging.LinearMappingsBuilderTest.runWithSeparateProdTestSourcesEnabled
+import org.jetbrains.sbtidea.packaging.testUtils.RevisionReference
 import org.scalatest.featurespec.AnyFeatureSpec
 
 class LinearMappingsBuilderTest extends AnyFeatureSpec with MappingsTestBase {
 
-  /**
-   * NOTE: to update test data dump the model from build with `model_dumper_sbt.txt`<br>
-   *
-   * !!!ATTENTION:
-   * Ensure that sbt version in the test repository equals to the sbt version in `build.sbt` in pluginCrossBuild / sbtVersion
-   *
-   * TODO: automate generation of test data?
-   */
-  private val withoutQualifiedNamesGrouping: Seq[RevisionTestDataDescription] = Seq(
-    RevisionTestDataDescription(
-      "scioIdeaPlugin",
-      RevisionReference(
-        "https://github.com/spotify/scio-idea-plugin",
-        "06ed4690",
-        "Rename plugin according to verifier rules (#284)"
-      )
-    ),
-    RevisionTestDataDescription(
-      "sbtIdeaPlugin",
-      RevisionReference(
-        "https://github.com/JetBrains/sbt-idea-plugin",
-        "e56f4bb6",
-        "introduce usingFileSystem to avoid UnsupportedOperationException with default file system close method"
-      )
-    ),
-    // note: zio-intellij was introduced because it contains module dependencies and the difference
-    // between how it works with and without qualified names grouping is visible
-    // (PackagedProjectNode.rootProjectName is not empty with qualified names grouping)
-    RevisionTestDataDescription(
-      "zio-intellij",
-      RevisionReference(
-        "https://github.com/zio/zio-intellij",
-        "99aa4d54",
-        "Initial support for IntelliJ 2024.1"
-      )
-    )
-  )
-  private val withQualifiedNamesGrouping: Seq[RevisionTestDataDescription] = Seq(
-    RevisionTestDataDescription(
-      "scioIdeaPlugin-qualified-names-grouping",
-      RevisionReference(
-        "https://github.com/spotify/scio-idea-plugin",
-        "06ed4690",
-        "Rename plugin according to verifier rules (#284)"
-      )
-    ),
-    RevisionTestDataDescription(
-      "zio-intellij-qualified-names-grouping",
-      RevisionReference(
-        "https://github.com/zio/zio-intellij",
-        "99aa4d54",
-        "Initial support for IntelliJ 2024.1"
-      )
-    )
-  )
-  private val withSeparateProdTestSources: Seq[RevisionTestDataDescription] = Seq(
-    RevisionTestDataDescription(
-      "zio-inteliij-prod-test-sources",
-      RevisionReference(
-        "https://github.com/zio/zio-intellij",
-        "ee40b293",
-        "Test fixtures upgrade"
-      )
-    )
-  )
-
-  runFeatureTest("mappings equality on builds without qualified names grouping", withoutQualifiedNamesGrouping)
-  runFeatureTest("mappings equality on builds with qualified names grouping", withQualifiedNamesGrouping)
-  runFeatureTest("mappings equality on builds with prod/test sources separated", withSeparateProdTestSources, sepProdTest = true)
-
-  private def runFeatureTest(featureDesc: String, revisionTestData: Seq[RevisionTestDataDescription], sepProdTest: Boolean = false): Unit =
-    Feature(featureDesc) {
-      revisionTestData.foreach { rev =>
-        val fileName = rev.testDataFileName
-        Scenario(s"revision: $fileName") {
-          runTestMappings(fileName, sepProdTest)
-        }
+  Feature("mappings equality on builds without qualified names grouping") {
+    LinearMappingsBuilderTest.TestDataDescriptions.foreach { td =>
+      val fileName = td.testDataFileName
+      val separateProductionTestSources = td.useSeparateProductionTestSources
+      Scenario(s"revision: $fileName") {
+        runTestMappings(fileName, sepProdTest = separateProductionTestSources)
       }
     }
+  }
+
+  //TODO: we probably should set some property for qualified names grouping before adding this test data
+  //val withQualifiedNamesGrouping: Seq[TestDataDescription] = Seq(
+  //  TestDataDescription("scioIdeaPlugin-qualified-names-grouping", scio),
+  //  TestDataDescription("zio-intellij-qualified-names-grouping", zioIntellij)
+  //)
+  //runFeatureTest("mappings equality on builds with qualified names grouping", withQualifiedNamesGrouping)
 
   private def runTestMappings(fileName: String, sepProdTest: Boolean = false): Unit =
     if (sepProdTest) {
-      try {
-        System.setProperty(ProdTestSourcesKey, "true")
+      runWithSeparateProdTestSourcesEnabled {
         testMappings(fileName)
-      } finally {
-        System.clearProperty(ProdTestSourcesKey)
       }
     } else {
       testMappings(fileName)
     }
+}
+
+object LinearMappingsBuilderTest {
+
+  case class TestDataDescription(
+    testDataFileName: String,
+    revisionRef: RevisionReference,
+    useSeparateProductionTestSources: Boolean = false
+  )
+
+  def runWithSeparateProdTestSourcesEnabled[T](body: => T): Unit = {
+    try {
+      System.setProperty(ProdTestSourcesKey, "true")
+      body
+    } finally {
+      System.clearProperty(ProdTestSourcesKey)
+    }
+  }
+
+  import org.jetbrains.sbtidea.packaging.testUtils.ReposRevisions.*
+
+  val TestDataDescriptions: Seq[TestDataDescription] = Seq(
+    TestDataDescription("scioIdeaPlugin", scio),
+    TestDataDescription("sbtIdeaPlugin", sbtIdePlugin),
+    // note: zio-intellij was introduced because it contains module dependencies and the difference
+    // between how it works with and without qualified names grouping is visible
+    // (PackagedProjectNode.rootProjectName is not empty with qualified names grouping)
+    TestDataDescription("zio-intellij", zioIntellij),
+    TestDataDescription("zio-intellij-prod-test-sources", zioIntellij, useSeparateProductionTestSources = true)
+  )
 }

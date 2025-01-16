@@ -1,0 +1,1 @@
+Run org.jetbrains.sbtidea.packaging.RegenerateProjectsStructureTestData

@@ -1,9 +1,9 @@
-package org.jetbrains.sbtidea.packaging
+package org.jetbrains.sbtidea.packaging.testUtils
 
 import io.circe.syntax.*
-import org.jetbrains.sbtidea.packaging.MappingsTestBase.Header
-import org.jetbrains.sbtidea.packaging.structure.{PackagedProjectNode, ProjectPackagingOptions}
 import org.jetbrains.sbtidea.packaging.structure.sbtImpl.{SbtPackagedProjectNodeImpl, SbtProjectPackagingOptionsImpl}
+import org.jetbrains.sbtidea.packaging.structure.{PackagedProjectNode, ProjectPackagingOptions}
+import org.jetbrains.sbtidea.packaging.{ExcludeFilter, MAPPING_KIND, Mapping, MappingMetaData, ShadePattern}
 import org.jetbrains.sbtidea.structure.sbtImpl.{ModuleKeyImpl, SbtIvyLibrary}
 import org.jetbrains.sbtidea.structure.{Library, ModuleKey}
 import sbt.ProjectRef
@@ -22,9 +22,6 @@ object CirceEncodersDecoders {
   implicit val fileDecoder: Decoder[File] = Decoder.instance { cursor =>
     cursor.as[String].map(new File(_))
   }
-
-  implicit val headerDecoder: Decoder[Header] = deriveDecoder[Header]
-  implicit val headerEncoder: Encoder[Header] = deriveEncoder[Header]
 
   implicit val mappingEncoder: Encoder[Mapping] = deriveEncoder[Mapping]
   implicit val mappingDecoder: Decoder[Mapping] = deriveDecoder[Mapping]

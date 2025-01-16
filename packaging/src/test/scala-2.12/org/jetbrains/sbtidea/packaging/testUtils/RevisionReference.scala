@@ -1,4 +1,4 @@
-package org.jetbrains.sbtidea.packaging
+package org.jetbrains.sbtidea.packaging.testUtils
 
 case class RevisionReference(
   repositoryUrl: String,
