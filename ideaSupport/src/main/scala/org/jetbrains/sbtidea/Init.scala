@@ -31,7 +31,6 @@ trait Init { this: Keys.type =>
     intellijBuild             := BuildInfo.LATEST_EAP_SNAPSHOT,
     intellijPlatform          := IntelliJPlatform.IdeaCommunity,
     intellijBuildInfo         := BuildInfo(intellijBuild.value, intellijPlatform.value),
-    intellijDownloadSources   := true,
     jbrInfo                   := AutoJbr(),
     intellijPluginDirectory   := homePrefix / s".${intellijPluginName.value.removeSpaces}Plugin${intellijPlatform.value.edition}",
     intellijTestConfigDir     := intellijPluginDirectory.value / "test-config",
@@ -74,7 +73,6 @@ trait Init { this: Keys.type =>
           val runtimePlugins = intellijExtraRuntimePluginsInTests.?.all(ScopeFilter(inAnyProject)).value.flatten.flatten
           (pluginDeps ++ runtimePlugins).distinct
         },
-        intellijDownloadSources.value
       ).update()
       updateFinished = true
     },

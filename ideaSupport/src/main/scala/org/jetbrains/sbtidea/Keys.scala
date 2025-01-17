@@ -27,6 +27,8 @@ object Keys extends Defns with Init with Utils with Quirks {
   lazy val intellijExtraRuntimePluginsInTests = settingKey[Seq[IntellijPlugin]](
     "List of IntelliJ platform plugins to include in tests at runtime")
 
+  @Deprecated(forRemoval = true)
+  @deprecated("The setting is ignored and will be removed in future versions. The sources are always downloaded")
   lazy val intellijDownloadSources = settingKey[Boolean](
     "Flag indicating whether IntelliJ Platform sources should be downloaded too")
 

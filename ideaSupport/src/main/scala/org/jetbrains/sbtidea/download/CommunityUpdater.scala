@@ -14,8 +14,6 @@ class CommunityUpdater(
   ideaBuildInfo: BuildInfo,
   jbrInfo: JbrInfo,
   plugins: Seq[IntellijPlugin],
-  //noinspection ScalaUnusedSymbol (can be used by sbt plugin users)
-  withSources: Boolean = true
 ) {
 
   implicit protected val context: IdeInstallationProcessContext =
