@@ -5,6 +5,6 @@ trait ResolvedArtifact {
 
   protected def usedInstaller: Installer[R]
 
-  def isInstalled(implicit ctx: InstallContext): Boolean   = usedInstaller.isInstalled(this)
-  def install    (implicit ctx: InstallContext): Unit      = usedInstaller.downloadAndInstall(this)
+  def isInstalled(implicit ctx: IdeInstallationContext): Boolean     = usedInstaller.isInstalled(this)
+  def install    (implicit ctx: IdeInstallationProcessContext): Unit = usedInstaller.downloadAndInstall(this)
 }

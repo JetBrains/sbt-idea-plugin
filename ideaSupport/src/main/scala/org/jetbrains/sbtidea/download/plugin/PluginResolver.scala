@@ -10,7 +10,7 @@ import java.net.URL
 class PluginResolver(
   private val processedPlugins: Set[IntellijPlugin] = Set.empty,
   private val resolveSettings: IntellijPlugin.Settings
-)(implicit ctx: InstallContext, repo: PluginRepoApi, localRegistry: LocalPluginRegistryApi) extends Resolver[PluginDependency] {
+)(implicit ctx: IdeInstallationProcessContext, repo: PluginRepoApi, localRegistry: LocalPluginRegistryApi) extends Resolver[PluginDependency] {
 
   //Keeping multiple errors in `Seq[String]` mainly for the case when IntellijPlugin.Id.fallbackDownloadUrl is not empty
   //In that case, we try to resolve the artifact twice and want to report both errors
@@ -116,8 +116,8 @@ class PluginResolver(
       downloadUrl
   }
 
-  private def downloadAndExtractDescriptor(plugin: IntellijPlugin.IdWithDownloadUrl)(implicit ctx: InstallContext): Either[String, PluginDescriptor] = {
-    val downloadedFile = FileDownloader(ctx.downloadDirectory).download(plugin.downloadUrl)
+  private def downloadAndExtractDescriptor(plugin: IntellijPlugin.IdWithDownloadUrl)(implicit ctx: IdeInstallationProcessContext): Either[String, PluginDescriptor] = {
+    val downloadedFile = FileDownloader(ctx).download(plugin.downloadUrl)
     val tmpPluginDir = RepoPluginInstaller.extractPluginToTemporaryDir(
       downloadedFile,
       plugin,

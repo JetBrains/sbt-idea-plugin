@@ -6,7 +6,7 @@ import org.apache.hc.core5.http.ClassicHttpResponse
 import org.apache.hc.core5.http.io.entity.EntityUtils
 import org.jetbrains.sbtidea.Keys.{intellijBaseDirectory, intellijBuild, intellijPlatform}
 import org.jetbrains.sbtidea.download.BuildInfo
-import org.jetbrains.sbtidea.download.api.InstallContext
+import org.jetbrains.sbtidea.download.api.IdeInstallationContext
 import org.jetbrains.sbtidea.download.plugin.LocalPluginRegistry
 import org.jetbrains.sbtidea.{PluginLogger, SbtPluginLogger}
 import sbt.Keys.streams
@@ -24,7 +24,7 @@ class SearchPluginId(
   useRemote: Boolean = true
 ) {
 
-  private val context: InstallContext = InstallContext(baseDirectory = ideaRoot, downloadDirectory = ideaRoot)
+  private val context: IdeInstallationContext = new IdeInstallationContext(ideaRoot)
 
   private def getMarketplaceSearchUrl(query: String, build: String) =
     "https://plugins.jetbrains.com/api/search/plugins?search=%s&build=%s".format(query, build)

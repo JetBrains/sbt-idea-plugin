@@ -2,12 +2,12 @@ package org.jetbrains.sbtidea.download.plugin
 
 import org.jetbrains.sbtidea.IntellijPlugin
 import org.jetbrains.sbtidea.download.*
-import org.jetbrains.sbtidea.download.api.InstallContext
+import org.jetbrains.sbtidea.download.api.IdeInstallationContext
 import sbt.URL
 
 import scala.util.Try
 
-class PluginRepoUtils(implicit ctx: InstallContext) extends PluginRepoApi {
+class PluginRepoUtils(implicit ctx: IdeInstallationContext) extends PluginRepoApi {
 
   override def getRemotePluginXmlDescriptor(idea: BuildInfo, pluginId: String, channel: Option[String]): Either[Throwable, PluginDescriptor] = {
     val url = MerketplaceUrls.pluginsList(pluginId, idea, channel)

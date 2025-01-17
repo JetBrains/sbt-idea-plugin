@@ -10,6 +10,7 @@ import java.nio.file.Path
 
 class CommunityUpdater(
   baseDirectory: Path,
+  artifactsDownloadsDirectory: Path,
   ideaBuildInfo: BuildInfo,
   jbrInfo: JbrInfo,
   plugins: Seq[IntellijPlugin],
@@ -17,10 +18,10 @@ class CommunityUpdater(
   withSources: Boolean = true
 ) {
 
-  implicit protected val context: InstallContext =
-    InstallContext(
+  implicit protected val context: IdeInstallationProcessContext =
+    new IdeInstallationProcessContext(
       baseDirectory = baseDirectory,
-      downloadDirectory = baseDirectory.getParent,
+      artifactsDownloadsDir = artifactsDownloadsDirectory
     )
 
   implicit protected val remoteRepoApi: PluginRepoUtils =

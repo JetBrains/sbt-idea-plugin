@@ -82,14 +82,15 @@ object RunPluginVerifierTask extends SbtIdeaTask[File] {
       options.reportsDir
   }
 
-  private def getOrDownloadVerifier(version: String, downloadDir: File): Path = {
-    val targetFile = downloadDir / "downloads" / s"verifier-cli-$version-all.jar"
+  private def getOrDownloadVerifier(version: String, verifierDir: File): Path = {
+    val downloadsDir = verifierDir / "downloads"
+    val targetFile = downloadsDir / s"verifier-cli-$version-all.jar"
     if (targetFile.exists()) {
       targetFile.toPath
     } else {
       val repoUrl = s"$BASE_URL/org/jetbrains/intellij/plugins/verifier-cli"
       val artifactUrl = s"$repoUrl/$version/verifier-cli-$version-all.jar"
-      new FileDownloader(downloadDir.toPath).download(new URL(artifactUrl))
+      new FileDownloader(downloadsDir.toPath).download(new URL(artifactUrl))
     }
   }
 

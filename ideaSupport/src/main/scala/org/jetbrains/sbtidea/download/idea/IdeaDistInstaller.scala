@@ -10,20 +10,20 @@ import java.nio.file.{Files, Path}
 
 class IdeaDistInstaller(buildInfo: BuildInfo) extends Installer[IdeaDist] {
 
-  override def isInstalled(art: IdeaDist)(implicit ctx: InstallContext): Boolean =
+  override def isInstalled(art: IdeaDist)(implicit ctx: IdeInstallationContext): Boolean =
     IdeaUpdater.isDumbIdea ||
       ctx.baseDirectory.toFile.exists() &&
         ctx.baseDirectory.toFile.listFiles().nonEmpty
 
-  override def downloadAndInstall(art: IdeaDist)(implicit ctx: InstallContext): Unit = {
-    val artifactPath = FileDownloader(ctx.baseDirectory.getParent).download(art.dlUrl)
+  override def downloadAndInstall(art: IdeaDist)(implicit ctx: IdeInstallationProcessContext): Unit = {
+    val artifactPath = FileDownloader(ctx).download(art.dlUrl)
     installDist(artifactPath)
   }
 
-  private def tmpDir(implicit ctx: InstallContext): Path =
+  private def tmpDir(implicit ctx: IdeInstallationProcessContext): Path =
     ctx.baseDirectory.getParent.resolve(s"${buildInfo.edition.name}-${buildInfo.buildNumber}-TMP")
 
-  private[idea] def installDist(artifact: Path)(implicit ctx: InstallContext): Path = {
+  private[idea] def installDist(artifact: Path)(implicit ctx: IdeInstallationProcessContext): Path = {
     import org.jetbrains.sbtidea.Keys.IntelliJPlatform.MPS
 
     import sys.process.*
@@ -63,7 +63,7 @@ class IdeaDistInstaller(buildInfo: BuildInfo) extends Installer[IdeaDist] {
     }
 
     buildInfo.edition match {
-      case MPS if Files.list(tmpDir).count() == 1 => // MPS may add additional folder level to the artifact
+      case MPS if Files.list(tmpDir).count() == 1 => // MPS may add an additional folder level to the artifact
         log.info("MPS detected: applying install dir quirks")
         val actualDir = Files.list(tmpDir).iterator().next()
         Files.move(actualDir, ctx.baseDirectory)

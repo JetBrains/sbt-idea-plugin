@@ -34,10 +34,10 @@ trait Init { this: Keys.type =>
     intellijDownloadSources   := true,
     jbrInfo                   := AutoJbr(),
     intellijPluginDirectory   := homePrefix / s".${intellijPluginName.value.removeSpaces}Plugin${intellijPlatform.value.edition}",
-    intellijBaseDirectory     := intellijDownloadDirectory.value / intellijBuild.value,
-    intellijDownloadDirectory := intellijPluginDirectory.value / "sdk",
     intellijTestConfigDir     := intellijPluginDirectory.value / "test-config",
     intellijTestSystemDir     := intellijPluginDirectory.value / "test-system",
+    intellijBaseDirectory     := intellijPluginDirectory.value / "sdk" / intellijBuild.value,
+    artifactsDownloadsDir     := intellijPluginDirectory.value / "sdk" / "downloads",
     concurrentRestrictions in Global += Tags.limit(Tags.Test, 1), // IDEA tests can't be run in parallel
     bundleScalaLibrary        := !hasPluginsWithScala(intellijPlugins.?.all(ScopeFilter(inAnyProject)).value.flatten.flatten),
     doProjectSetup := Def.taskDyn {
@@ -66,6 +66,7 @@ trait Init { this: Keys.type =>
       PluginLogger.bind(new SbtPluginLogger(streams.value))
       new CommunityUpdater(
         intellijBaseDirectory.value.toPath,
+        artifactsDownloadsDir.value.toPath,
         intellijBuildInfo.value,
         jbrInfo.value,
         {

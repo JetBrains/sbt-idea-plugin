@@ -1,13 +1,13 @@
 package org.jetbrains.sbtidea.download.plugin
 
 import org.jetbrains.sbtidea.download.*
-import org.jetbrains.sbtidea.download.api.InstallContext
+import org.jetbrains.sbtidea.download.api.IdeInstallationContext
 import org.jetbrains.sbtidea.{IntellijPlugin, PathExt, PluginLogger as log}
 import sbt.*
 
 import java.nio.file.{Files, Path}
 
-class LocalPluginRegistry(ctx: InstallContext) extends LocalPluginRegistryApi {
+class LocalPluginRegistry(ctx: IdeInstallationContext) extends LocalPluginRegistryApi {
   import LocalPluginRegistry.*
 
   private val ideaRoot = ctx.baseDirectory

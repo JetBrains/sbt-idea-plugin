@@ -2,7 +2,7 @@ package org.jetbrains.sbtidea.download.plugin
 
 import org.apache.commons.io.FileUtils
 import org.jetbrains.sbtidea.download.BuildInfo
-import org.jetbrains.sbtidea.download.api.InstallContext
+import org.jetbrains.sbtidea.download.api.IdeInstallationProcessContext
 import org.jetbrains.sbtidea.productInfo.{ProductInfo, ProductInfoParser}
 import org.jetbrains.sbtidea.{IntelliJPlatform, IntellijPlugin}
 import org.scalatest.BeforeAndAfterAll
@@ -41,7 +41,7 @@ class PluginRepoUtilsTest extends AnyFeatureSpecLike with BeforeAndAfterAll {
       )
 
       try {
-        val installContext = InstallContext(baseDir, downloadDir)
+        val installContext = new IdeInstallationProcessContext(baseDir, downloadDir)
         val repoUtils = new PluginRepoUtils()(installContext)
         repoUtils.getPluginDownloadURL(buildInfo, pluginInfo).toString
       } finally {

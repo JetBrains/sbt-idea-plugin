@@ -33,7 +33,7 @@ final case class LocalPlugin(
 }
 
 object LocalPluginInstaller extends Installer[LocalPlugin] {
-  override def isInstalled(art: LocalPlugin)(implicit ctx: InstallContext): Boolean = art.root.toFile.exists()
+  override def isInstalled(art: LocalPlugin)(implicit ctx: IdeInstallationContext): Boolean = art.root.toFile.exists()
 
-  override def downloadAndInstall(art: LocalPlugin)(implicit ctx: InstallContext): Unit = ()
+  override def downloadAndInstall(art: LocalPlugin)(implicit ctx: IdeInstallationProcessContext): Unit = ()
 }

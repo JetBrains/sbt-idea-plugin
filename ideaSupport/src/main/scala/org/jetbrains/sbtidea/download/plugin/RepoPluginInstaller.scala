@@ -11,13 +11,13 @@ class RepoPluginInstaller(buildInfo: BuildInfo)
                          (implicit repo: PluginRepoApi, localRegistry: LocalPluginRegistryApi) extends Installer[RemotePluginArtifact] {
   import RepoPluginInstaller.*
 
-  override def isInstalled(art: RemotePluginArtifact)(implicit ctx: InstallContext): Boolean =
+  override def isInstalled(art: RemotePluginArtifact)(implicit ctx: IdeInstallationContext): Boolean =
     !IdeaUpdater.isDumbPlugins &&
       localRegistry.isPluginInstalled(art.caller.plugin) &&
       isInstalledPluginUpToDate(art.caller.plugin)
 
-  override def downloadAndInstall(art: RemotePluginArtifact)(implicit ctx: InstallContext): Unit = {
-    val downloader = FileDownloader(ctx.baseDirectory.getParent)
+  override def downloadAndInstall(art: RemotePluginArtifact)(implicit ctx: IdeInstallationProcessContext): Unit = {
+    val downloader = FileDownloader(ctx)
     val downloadUrl = art.dlUrl
     val dist = try {
       downloader.download(downloadUrl)
@@ -34,21 +34,21 @@ class RepoPluginInstaller(buildInfo: BuildInfo)
     installIdeaPlugin(art.caller.plugin, dist)
   }
 
-  private[plugin] def installIdeaPlugin(plugin: IntellijPlugin, artifact: Path)(implicit ctx: InstallContext): Path = {
+  private[plugin] def installIdeaPlugin(plugin: IntellijPlugin, artifact: Path)(implicit ctx: IdeInstallationContext): Path = {
     val installedPluginRoot = if (!PluginXmlDetector.Default.isPluginJar(artifact)) {
       val tmpPluginDir = extractPluginToTemporaryDir(
         artifact,
         plugin,
         s"${buildInfo.edition.name}-${buildInfo.buildNumber}-plugin"
       )
-      val installDir = pluginsDir.resolve(tmpPluginDir.getFileName)
+      val installDir = ctx.pluginsDir.resolve(tmpPluginDir.getFileName)
       NioUtils.delete(installDir)
       Files.move(tmpPluginDir, installDir)
       NioUtils.delete(tmpPluginDir.getParent)
       log.info(s"Installed plugin '$plugin to $installDir")
       installDir
     } else {
-      val targetJar = pluginsDir.resolve(artifact.getFileName)
+      val targetJar = ctx.pluginsDir.resolve(artifact.getFileName)
       Files.move(artifact, targetJar)
       log.info(s"Installed plugin '$plugin to $targetJar")
       targetJar
@@ -57,7 +57,7 @@ class RepoPluginInstaller(buildInfo: BuildInfo)
     installedPluginRoot
   }
 
-  private[plugin] def isInstalledPluginUpToDate(plugin: IntellijPlugin)(implicit ctx: InstallContext): Boolean = {
+  private[plugin] def isInstalledPluginUpToDate(plugin: IntellijPlugin)(implicit ctx: IdeInstallationContext): Boolean = {
     val pluginRoot = localRegistry.getInstalledPluginRoot(plugin)
     val descriptor = LocalPluginRegistry.extractInstalledPluginDescriptorFileContent(pluginRoot)
     descriptor match {
@@ -99,7 +99,7 @@ class RepoPluginInstaller(buildInfo: BuildInfo)
     }
   }
 
-  private[plugin] def isPluginCompatibleWithIdea(metadata: PluginDescriptor)(implicit ctx: InstallContext): Boolean = {
+  private[plugin] def isPluginCompatibleWithIdea(metadata: PluginDescriptor)(implicit ctx: IdeInstallationContext): Boolean = {
     val lower = metadata.sinceBuild.replaceAll("^.+-", "") // strip IC- / PC- etc. prefixes
     val upper = metadata.untilBuild.replaceAll("^.+-", "")
     val actualIdeaBuild = ctx.productInfo.buildNumber
@@ -107,8 +107,6 @@ class RepoPluginInstaller(buildInfo: BuildInfo)
     val upperValid = compareIdeaVersions(upper, actualIdeaBuild) >= 0
     lowerValid && upperValid
   }
-
-  private def pluginsDir(implicit ctx: InstallContext): Path = ctx.baseDirectory.resolve("plugins")
 }
 
 object RepoPluginInstaller {
@@ -137,7 +135,7 @@ object RepoPluginInstaller {
     pluginZip: Path,
     plugin: IntellijPlugin,
     tempDirectoryName: String
-  )(implicit ctx: InstallContext): Path = {
+  )(implicit ctx: IdeInstallationContext): Path = {
     val extractDir = Files.createTempDirectory(ctx.baseDirectory, tempDirectoryName)
     log.info(s"Extracting plugin '$plugin to $extractDir")
     sbt.IO.unzip(pluginZip.toFile, extractDir.toFile)

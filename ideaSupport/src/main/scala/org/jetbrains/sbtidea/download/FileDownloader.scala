@@ -1,6 +1,7 @@
 package org.jetbrains.sbtidea.download
 
 import org.jetbrains.sbtidea.download.FileDownloader.{DownloadException, ProgressInfo}
+import org.jetbrains.sbtidea.download.api.IdeInstallationProcessContext
 import org.jetbrains.sbtidea.{PluginLogger as log, *}
 
 import java.io.FileOutputStream
@@ -11,13 +12,18 @@ import java.nio.file.{Files, Path, Paths}
 import javax.net.ssl.SSLException
 import scala.concurrent.duration.{Duration, DurationInt, DurationLong}
 
-class FileDownloader(private val baseDirectory: Path) {
+class FileDownloader(private val downloadDirectory: Path) {
 
   private type ProgressCallback = (ProgressInfo, Path) => Unit
 
   private case class RemoteMetaData(length: Long, fileName: String)
 
-  private val downloadDirectory = getOrCreateDLDir()
+  // TODO: add downloading to temp if available
+  locally {
+    if (!downloadDirectory.toFile.exists()) {
+      Files.createDirectories(downloadDirectory)
+    }
+  }
 
   private val FilePartSuffix = ".part"
 
@@ -48,14 +54,6 @@ class FileDownloader(private val baseDirectory: Path) {
     case e: Exception if optional =>
       log.warn(s"Can't download${if (optional) " optional" else ""} $url: $e")
       Paths.get("")
-  }
-
-  // TODO: add downloading to temp if available
-  private def getOrCreateDLDir(): Path = {
-    val dir = baseDirectory.resolve("downloads")
-    if (!dir.toFile.exists())
-      Files.createDirectories(dir)
-    dir
   }
 
   private def SocketConnectionTimeoutMs = getPositiveLongProperty("download.socket.connection.timeout.ms", 5.seconds.toMillis).ensuring(_ <= Int.MaxValue).toInt
@@ -267,7 +265,7 @@ class FileDownloader(private val baseDirectory: Path) {
 object FileDownloader {
   class DownloadException(message: String, val responseCode: Option[Int] = None) extends RuntimeException(message)
 
-  def apply(baseDirectory: Path): FileDownloader = new FileDownloader(baseDirectory)
+  def apply(ctx: IdeInstallationProcessContext): FileDownloader = new FileDownloader(ctx.artifactsDownloadsDir)
 
   case class ProgressInfo(percent: Int, speed: Double, downloaded: Long, total: Long) {
     def renderBar: String = {

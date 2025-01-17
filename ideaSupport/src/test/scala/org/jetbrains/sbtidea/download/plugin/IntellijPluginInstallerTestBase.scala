@@ -1,7 +1,7 @@
 package org.jetbrains.sbtidea.download.plugin
 
 import org.jetbrains.sbtidea.Keys.*
-import org.jetbrains.sbtidea.download.api.InstallContext
+import org.jetbrains.sbtidea.download.api.IdeInstallationProcessContext
 import org.jetbrains.sbtidea.download.idea.IdeaMock
 import org.jetbrains.sbtidea.download.{BuildInfo, NioUtils}
 import org.scalatest.BeforeAndAfter
@@ -32,7 +32,7 @@ trait IntellijPluginInstallerTestBase extends AnyFunSuite with Matchers with Ide
   protected implicit def plugin2PluginArt(pl: IntellijPlugin): RemotePluginArtifact =
     RemotePluginArtifact(pl, new URL("file:"))
 
-  protected implicit def installContext: InstallContext = InstallContext(ideaRoot, ideaRoot.getParent)
+  protected implicit def installContext: IdeInstallationProcessContext = new IdeInstallationProcessContext(ideaRoot, ideaRoot.getParent)
 
   before {
     val mockInstallation = installIdeaMock

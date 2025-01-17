@@ -1,7 +1,7 @@
 package org.jetbrains.sbtidea.download.jbr
 
 import org.jetbrains.sbtidea.TmpDirUtils
-import org.jetbrains.sbtidea.download.api.InstallContext
+import org.jetbrains.sbtidea.download.api.IdeInstallationProcessContext
 import org.jetbrains.sbtidea.download.idea.IdeaMock
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -23,7 +23,7 @@ class JbrInstallerTest extends AnyFunSuite with Matchers with IdeaMock with TmpD
 
   test("detect jbr is not installed") {
     val ideaRoot = installIdeaMock
-    implicit val ctx: InstallContext = InstallContext(ideaRoot, ideaRoot / "downloads")
+    implicit val ctx: IdeInstallationProcessContext = new IdeInstallationProcessContext(ideaRoot, ideaRoot / "downloads")
     val jbrArtifact = JbrArtifact(JbrDependency.apply(ideaRoot,IDEA_BUILDINFO, JBR_INFO), new URL("file:"))
     val installer = new JbrInstaller
     installer.isInstalled(jbrArtifact) shouldBe false
@@ -32,7 +32,7 @@ class JbrInstallerTest extends AnyFunSuite with Matchers with IdeaMock with TmpD
   test("detect jbr is installed") {
     val ideaRoot = installIdeaMock
     Files.createDirectory(ideaRoot / "jbr")
-    implicit val ctx: InstallContext = InstallContext(ideaRoot, ideaRoot / "downloads")
+    implicit val ctx: IdeInstallationProcessContext = new IdeInstallationProcessContext(ideaRoot, ideaRoot / "downloads")
     val jbrArtifact = JbrArtifact(JbrDependency.apply(ideaRoot,IDEA_BUILDINFO, JBR_INFO), new URL("file:"))
     val installer = new JbrInstaller
     installer.isInstalled(jbrArtifact) shouldBe true
@@ -40,7 +40,7 @@ class JbrInstallerTest extends AnyFunSuite with Matchers with IdeaMock with TmpD
 
   test("jbr is installed") {
     val ideaRoot = installIdeaMock
-    implicit val ctx: InstallContext = InstallContext(ideaRoot, ideaRoot / "downloads")
+    implicit val ctx: IdeInstallationProcessContext = new IdeInstallationProcessContext(ideaRoot, ideaRoot / "downloads")
     val installer = new JbrInstaller
     installer.install(getMockJbrCopy)
     ideaRoot.toFile.list should contain ("jbr")

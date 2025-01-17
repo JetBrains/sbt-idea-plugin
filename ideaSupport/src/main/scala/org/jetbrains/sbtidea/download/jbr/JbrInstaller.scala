@@ -13,15 +13,15 @@ import scala.util.Using
 class JbrInstaller extends Installer[JbrArtifact] {
   import JbrInstaller.*
 
-  override def isInstalled(art: JbrArtifact)(implicit ctx: InstallContext): Boolean =
+  override def isInstalled(art: JbrArtifact)(implicit ctx: IdeInstallationContext): Boolean =
     (ctx.baseDirectory / JBR_DIR_NAME).exists && isSameJbr(art)
 
-  override def downloadAndInstall(art: JbrArtifact)(implicit ctx: InstallContext): Unit = {
-    val file = FileDownloader(ctx.downloadDirectory).download(art.dlUrl)
+  override def downloadAndInstall(art: JbrArtifact)(implicit ctx: IdeInstallationProcessContext): Unit = {
+    val file = FileDownloader(ctx).download(art.dlUrl)
     install(file)
   }
 
-  private def isSameJbr(art: JbrArtifact)(implicit ctx: InstallContext): Boolean = {
+  private def isSameJbr(art: JbrArtifact)(implicit ctx: IdeInstallationContext): Boolean = {
     val releaseFile = ctx.baseDirectory / JBR_DIR_NAME / "release"
     val props = new Properties()
     try {
@@ -45,7 +45,7 @@ class JbrInstaller extends Installer[JbrArtifact] {
     }
   }
 
-  private[jbr] def install(dist: Path)(implicit ctx: InstallContext): Unit = {
+  private[jbr] def install(dist: Path)(implicit ctx: IdeInstallationProcessContext): Unit = {
     val archiver = ArchiverFactory.createArchiver(ArchiveFormat.TAR, CompressionType.GZIP)
     val tmpDir = Files.createTempDirectory(ctx.baseDirectory, "jbr-extract")
     log.info(s"extracting jbr to $tmpDir")

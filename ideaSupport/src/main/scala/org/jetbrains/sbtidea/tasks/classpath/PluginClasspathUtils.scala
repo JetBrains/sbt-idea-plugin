@@ -1,7 +1,7 @@
 package org.jetbrains.sbtidea.tasks.classpath
 
 import org.jetbrains.sbtidea.download.BuildInfo
-import org.jetbrains.sbtidea.download.api.InstallContext
+import org.jetbrains.sbtidea.download.api.{IdeInstallationContext, IdeInstallationProcessContext}
 import org.jetbrains.sbtidea.download.plugin.*
 import org.jetbrains.sbtidea.{IntellijPlugin, PluginJars, PluginLogger}
 import sbt.*
@@ -53,7 +53,12 @@ object PluginClasspathUtils {
     log: PluginLogger,
     moduleNameHint: String = ""
   ): Seq[(PluginDescriptor, Path)] = {
-    implicit val context: InstallContext = InstallContext(baseDirectory = ideaBaseDir, downloadDirectory = ideaBaseDir)
+    implicit val context: IdeInstallationProcessContext = new IdeInstallationProcessContext(
+      baseDirectory = ideaBaseDir,
+      // We rely on that the plugins are already downloaded and this directory won't be actually used
+      // (Don't want to pass the value of org.jetbrains.sbtidea.Keys.artifactsDownloadsDir here)
+      artifactsDownloadsDir = ideaBaseDir.getParent / "downloads"
+    )
     implicit val remoteRepoApi: PluginRepoUtils = new PluginRepoUtils
     implicit val localRegistry: LocalPluginRegistry = new LocalPluginRegistry(context)
 

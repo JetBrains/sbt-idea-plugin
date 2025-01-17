@@ -2,7 +2,7 @@ package org.jetbrains.sbtidea.download.idea
 
 import org.jetbrains.sbtidea.CapturingLogger.captureLog
 import org.jetbrains.sbtidea.download.IdeaUpdater.{DUMB_KEY, DUMB_KEY_IDEA, DUMB_KEY_JBR, DUMB_KEY_PLUGINS}
-import org.jetbrains.sbtidea.download.api.InstallContext
+import org.jetbrains.sbtidea.download.api.{IdeInstallationContext, IdeInstallationProcessContext}
 import org.jetbrains.sbtidea.{PathExt, TmpDirUtils}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -12,9 +12,9 @@ class IdeaInstallerTest extends AnyFunSuite with Matchers with IdeaMock with Tmp
 
   private def createInstaller = new IdeaDistInstaller(IDEA_BUILDINFO)
 
-  private implicit val installContext: InstallContext = {
+  private implicit val installContext: IdeInstallationProcessContext = {
     val tmpDir = newTmpDir
-    InstallContext(tmpDir / IDEA_BUILDINFO.buildNumber, tmpDir)
+    new IdeInstallationProcessContext(tmpDir / IDEA_BUILDINFO.buildNumber, tmpDir)
   }
 
   test("dumb mode settings are honored") {

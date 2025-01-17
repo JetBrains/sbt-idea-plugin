@@ -21,9 +21,6 @@ object Keys extends Defns with Init with Utils with Quirks {
   lazy val jbrInfo = settingKey[JbrInfo](
     "Version and variant of JetBrains Runtime to download and install")
 
-  lazy val intellijDownloadDirectory = settingKey[File](
-    "Directory where IntelliJ Platform binaries and sources are downloaded")
-
   lazy val intellijPlugins = settingKey[Seq[IntellijPlugin]](
     "List of IntelliJ platform plugin to depend on")
 
@@ -35,7 +32,6 @@ object Keys extends Defns with Init with Utils with Quirks {
 
   lazy val intellijAttachSources = settingKey[Boolean](
     "Flag indicating whether to add sources to IntelliJ Platform SDK libraries")
-
 
   lazy val searchPluginId = inputKey[Map[String, (String, Boolean)]](
     "Search for plugin ID by plugin name or description")
@@ -58,6 +54,8 @@ object Keys extends Defns with Init with Utils with Quirks {
   lazy val intellijBaseDirectory = settingKey[File](
     "Directory where downloaded IntelliJ Platform binaries and sources are unpacked")
 
+  lazy val artifactsDownloadsDir = settingKey[File](
+    "Directory where temporary artifacts are downloaded to before installing (usually .zip, .jar files").withRank(sbt.KeyRanks.Invisible)
 
   lazy val productInfo = taskKey[ProductInfo](
     "Information about IntelliJ distribution extracted from product-info.json file from IntelliJ Platform root directory")

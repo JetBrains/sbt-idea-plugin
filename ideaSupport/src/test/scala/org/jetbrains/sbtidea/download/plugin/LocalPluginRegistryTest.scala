@@ -4,7 +4,7 @@ import org.jetbrains.sbtidea.CapturingLogger.captureLog
 import org.jetbrains.sbtidea.Keys.String2Plugin
 import org.jetbrains.sbtidea.PathExt
 import org.jetbrains.sbtidea.download.NioUtils
-import org.jetbrains.sbtidea.download.api.InstallContext
+import org.jetbrains.sbtidea.download.api.IdeInstallationProcessContext
 import org.jetbrains.sbtidea.download.idea.IdeaMock
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -25,7 +25,7 @@ final class LocalPluginRegistryTest
     with BeforeAndAfter {
 
   private val ideaRoot = installIdeaMock
-  protected val installContext: InstallContext = InstallContext(ideaRoot, ideaRoot.getParent)
+  protected val installContext: IdeInstallationProcessContext = new IdeInstallationProcessContext(ideaRoot, ideaRoot.getParent)
   private def newLocalPluginRegistry: LocalPluginRegistry = new LocalPluginRegistry(installContext)
 
   private val pluginsFolder = ideaRoot / "plugins"
