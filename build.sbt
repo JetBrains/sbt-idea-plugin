@@ -42,6 +42,7 @@ lazy val commonSettings: Seq[Setting[?]] = Seq(
 lazy val core = (project in file("core"))
   .enablePlugins(SbtPlugin)
   .settings(commonSettings)
+  .dependsOn(testUtils)
   .settings(
     name := "sbt-declarative-core"
   )
@@ -60,7 +61,7 @@ val circeVersion = "0.14.10"
 lazy val packaging = (project in file("packaging"))
   .enablePlugins(SbtPlugin)
   .settings(commonSettings)
-  .dependsOn(core)
+  .dependsOn(core, testUtils % "test->test")
   .settings(
     name := "sbt-declarative-packaging",
     libraryDependencies ++= Seq(
@@ -74,7 +75,7 @@ lazy val packaging = (project in file("packaging"))
 lazy val ideaSupport = (project in file("ideaSupport"))
   .enablePlugins(SbtPlugin)
   .settings(commonSettings)
-  .dependsOn(core, packaging, visualizer)
+  .dependsOn(core, packaging, visualizer, testUtils % "test->test")
   .settings(
     name := "sbt-idea-plugin",
     libraryDependencies ++= Seq(
@@ -88,10 +89,25 @@ lazy val ideaSupport = (project in file("ideaSupport"))
 
       //for file utils in tests (create/delete cerucsively/write string)
       "commons-io" % "commons-io" % "2.15.1" % Test
+    ),
+  )
+
+lazy val testUtils = (project in file("testUtils"))
+  .settings(commonSettings)
+  .settings(
+    name := "test-utils",
+    scalacOptions ++= Seq(
+      "-Xsource:3"
     )
   )
 
 lazy val sbtIdeaPlugin = (project in file("."))
   .settings(commonSettings)
-  .settings(publish / skip := true)
-  .aggregate(core, packaging, ideaSupport, visualizer)
+  .settings(
+    publish / skip := true,
+    ideExcludedDirectories := Seq(
+      file("tempProjects"),
+      file("tempIntellijSdks"),
+    )
+  )
+  .aggregate(core, packaging, ideaSupport, visualizer, testUtils)

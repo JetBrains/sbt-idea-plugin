@@ -1,8 +1,0 @@
-# check if everything is downloaded
-> updateIdea
-$ exists idea/sdk
-$ exists idea/sdk/15.0
-$ exists idea/sdk/15.0/lib
-$ exists idea/sdk/15.0/plugins
-$ absent idea/sdk/15.0/sources.zip
-$ absent idea/sdk/15.0/externalPlugins

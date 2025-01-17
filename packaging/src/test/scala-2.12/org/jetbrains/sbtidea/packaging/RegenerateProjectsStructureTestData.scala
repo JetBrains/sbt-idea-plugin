@@ -8,21 +8,19 @@ import org.jetbrains.sbtidea.packaging.mappings.LinearMappingsBuilder
 import org.jetbrains.sbtidea.packaging.structure.sbtImpl.SbtPackagedProjectNodeImpl
 import org.jetbrains.sbtidea.packaging.testUtils.CirceEncodersDecoders.*
 import org.jetbrains.sbtidea.packaging.testUtils.{JsonUtils, RevisionReference, TestDataDir}
+import org.jetbrains.sbtidea.testUtils.IoUtils.*
+import org.jetbrains.sbtidea.testUtils.{CurrentEnvironmentUtils, SbtProjectFilesUtils}
 import sbt.fileToRichFile
 
-import java.io.{File, FileInputStream, ObjectInputStream}
-import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path, StandardCopyOption, StandardOpenOption}
-import scala.jdk.CollectionConverters.asScalaBufferConverter
+import java.io.File
+import java.nio.file.{Files, StandardCopyOption}
 import scala.util.chaining.scalaUtilChainingOps
 
 object RegenerateProjectsStructureTestData {
 
-  import RegenerateProjectsStructureTestData.IoUtils.*
-
   private val CurrentWorkingDir = new File(".").getCanonicalFile
   private val CurrentJavaHome = System.getProperty("java.home")
-  private val CurrentPluginVersion = publishCurrentSbtIdeaPluginToLocalRepoAndGetVersions
+  private val CurrentPluginVersion = CurrentEnvironmentUtils.publishCurrentSbtIdeaPluginToLocalRepoAndGetVersions
   private val CurrentSbtVersion = getSbtVersionFromClasspath
 
   locally {
@@ -33,42 +31,10 @@ object RegenerateProjectsStructureTestData {
   }
 
   /**
-   * @return version of the locally-published plugin
-   */
-  //noinspection ScalaUnusedSymbol
-  private def publishCurrentSbtIdeaPluginToLocalRepoAndGetVersions: String = {
-    println("Publishing sbt-idea-plugin to local repository...")
-
-    val process = new ProcessBuilder("sbt", "compile ; publishLocal ; show core / version")
-      .directory(CurrentWorkingDir)
-      .redirectErrorStream(true)
-      .start()
-
-    val outputLines = scala.io.Source.fromInputStream(process.getInputStream).getLines().map { line =>
-      println(line)
-      line
-    }.toList
-
-    process.waitFor()
-
-    val exitCode = process.exitValue()
-    if (exitCode != 0)
-      throw new RuntimeException(s"Failed to execute sbt command to detect current sbt-idea-plugin version (exit code: $exitCode)")
-
-    val printedVersion = outputLines
-      .collect { case line if line.startsWith("[info]") => line.stripPrefix("[info]").trim }
-      .lastOption
-      .getOrElse {
-        "Failed to retrieve both plugin and sbt versions from the sbt process output."
-      }
-    printedVersion
-  }
-
-  /**
    * Determines the version of SBT on the current classpath by reading it from the jar manifest.
    * Uses the jar containing `sbt.Keys` to retrieve the version.
    *
-   * @return The SBT version or throws exception
+   * @return The SBT version if it can be detected or throws an exception
    */
   def getSbtVersionFromClasspath: String = {
     val sbtLibJarFile = new File(sbt.Keys.getClass.getProtectionDomain.getCodeSource.getLocation.getPath)
@@ -127,12 +93,12 @@ object RegenerateProjectsStructureTestData {
     println("Dump structure END")
 
     val structureBinaryFile = new File(result.structureFilePath)
-    // ATTENTION: to correctly deserialize the object we need to ensure that
-    // same environment is used in current process and in the SBT process that generated the structure.
+    // ATTENTION: to correctly deserialize the object, we need to ensure that
+    // the same environment is used in the current process and in the SBT process that generated the structure.
     // This environment includes:
-    // 1. Same JVM version (some of the serialised classes come from the JVM)
-    // 2. Same SBT version (to ensure that same classes have same serialization format)
-    //    For example sbt.librarymanagement.CrossVersion is different in sbt 1.4 and 1.10
+    // 1. The same JVM version (some of the serialized classes come from the JVM)
+    // 2. The same SBT version (to ensure that the same classes have the same serialization format)
+    //    For example, sbt.librarymanagement.CrossVersion is different in sbt 1.4 and 1.10
     val structureOriginal = readBinaryData[Seq[SbtPackagedProjectNodeImpl]](structureBinaryFile)
     // It was a temp file to get the object in memory, delete it
     structureBinaryFile.delete()
@@ -185,7 +151,7 @@ object RegenerateProjectsStructureTestData {
     val userHomePath = paths.userHome.getPath
     val pluginOutputPath = paths.pluginOutputDir.getPath
 
-    // NOTE: we need to process it in this order because each next substitution is shorter than previous,
+    // NOTE: we need to process it in this order because each next substitution is shorter than the previous,
     // so moving it first could replace less text than needed
     if (path.contains(pluginOutputPath)) {
       path.replace(projectPath, PathMacroKeys.PluginOutput)
@@ -212,7 +178,7 @@ object RegenerateProjectsStructureTestData {
   /**
    * @return the generated structure file path
    * @note don't confuse with logic related to sbt-structure plugin
-   *       it's completely independent thing, just some similar method name
+   *       it's a completely independent thing, just some similar method name
    */
   private def dumpStructure(
     td: TestDataDescription,
@@ -241,14 +207,14 @@ object RegenerateProjectsStructureTestData {
       .start()
     cleanProcess.waitFor()
 
-    // Checkout the specified revision
+    // Check out the specified revision
     val checkoutProcess = new ProcessBuilder("git", "checkout", revisionDetails.revision)
       .directory(repoDir)
       .inheritIO()
       .start()
     checkoutProcess.waitFor()
 
-    updateSbtIdeaPluginToVersion(repoDir, CurrentPluginVersion)
+    SbtProjectFilesUtils.updateSbtIdeaPluginToVersion(repoDir, CurrentPluginVersion)
 
     // Copy `structureDumper.txt` to the repository plugins directory and rename to `structureDumper.sbt`
     val structureDumperFileName = "_structureDumper.sbt"
@@ -258,8 +224,9 @@ object RegenerateProjectsStructureTestData {
       StandardCopyOption.REPLACE_EXISTING
     )
 
-    // Ensure that sbt version in the test repository equals to the sbt version in `build.sbt` in pluginCrossBuild / sbtVersion
-    updateSbtVersion(repoDir, CurrentSbtVersion)
+    // Ensure that the sbt version in the test repository
+    // equals to the sbt version in `build.sbt` in pluginCrossBuild / sbtVersion
+    SbtProjectFilesUtils.updateSbtVersion(repoDir, CurrentSbtVersion)
 
     // Run sbt process to call `dumpStructure` task
     baseTargetStructuresDir.mkdirs()
@@ -269,7 +236,7 @@ object RegenerateProjectsStructureTestData {
       .redirectErrorStream(true)
       .tap { pb =>
         val env = pb.environment()
-        // Ensure the sbt process uses the same JVM that is used in current app to ensure correct serialization/deserialization
+        // Ensure the sbt process uses the same JVM that is used in the current app to ensure correct serialization
         env.put("JAVA_HOME", CurrentJavaHome)
 
         if (td.useSeparateProductionTestSources) {
@@ -280,7 +247,7 @@ object RegenerateProjectsStructureTestData {
 
     val outputLinesBuffer = scala.collection.mutable.ListBuffer[String]()
     val outputLines = scala.io.Source.fromInputStream(sbtProcess.getInputStream).getLines().map { line =>
-      // We want collect the output to get the output structure file and print the output to the console
+      // We want to collect the output to get the output structure file and print the output to the console
       println(line)
       outputLinesBuffer += line
       line
@@ -304,50 +271,6 @@ object RegenerateProjectsStructureTestData {
       packageOutputDirPath,
     )
   }
-
-  private def updateSbtVersion(repoDir: File, newSbtVersion: String): Unit = {
-    val sbtPropertiesFile = repoDir / "project" / "build.properties"
-    assert(sbtPropertiesFile.exists())
-    val sbtVersionInRepo = readLines(sbtPropertiesFile)
-      .find(_.startsWith("sbt.version"))
-      .map(_.split("=").apply(1).trim)
-      .get
-
-    val updatedContent = s"sbt.version=$newSbtVersion"
-    writeStringToFile(sbtPropertiesFile, updatedContent)
-    println(s"Updated sbt.version: $sbtVersionInRepo -> $newSbtVersion")
-  }
-
-  private def updateSbtIdeaPluginToVersion(repoDir: File, sbtIdePluginVersion: String): Path = {
-    val pluginsSbtFile = repoDir / "project" / "plugins.sbt"
-    val contentExisting = readLines(pluginsSbtFile)
-    val contentExistingFiltered = contentExisting
-      .filterNot(_.contains("""addSbtPlugin("org.jetbrains" % "sbt-idea-plugin""""))
-      .mkString("\n")
-    val contentUpdated =
-      s"""$contentExistingFiltered
-         |addSbtPlugin("org.jetbrains" % "sbt-idea-plugin" % "$sbtIdePluginVersion")
-         |""".stripMargin
-    writeStringToFile(pluginsSbtFile, contentUpdated)
-  }
-
-  private object IoUtils {
-    def readLines(file: File): Iterable[String] =
-      Files.readAllLines(file.toPath, StandardCharsets.UTF_8).asScala
-
-    def writeStringToFile(file: File, content: String): Path = {
-      Files.write(file.toPath, content.getBytes(StandardCharsets.UTF_8), StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE)
-    }
-
-    def readBinaryData[T](file: File): T = {
-      val stream = new FileInputStream(file)
-      val reader = new ObjectInputStream(stream)
-      val data = reader.readObject().asInstanceOf[T]
-      reader.close()
-      data
-    }
-  }
-
 
   private case class MyTestDataPaths private(
     buildDir: File,
