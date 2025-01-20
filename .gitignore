@@ -3,9 +3,11 @@
 !.idea/codeStyles
 !.idea/vcs.xml
 .bsp
+.bloop
 # contains temporary cloned github projects to regenerate test data
 tempProjects
 # contains intellij sdk downloaded during integration tests run
 tempIntellijSdks
 tempIntellijArtifactsDownloads
-tempIntellijArtifactsDownloads
+# can be generated in project/* subdirectories by metals
+metals.sbt
