@@ -39,7 +39,7 @@ class SbtIdeaPluginIntegrationTest
     val intellijSdkRoot = runUpdateIntellijCommand("simple-with-plugin")
 
     doCommonAssertions(intellijSdkRoot)
-    assertFileExists(intellijSdkRoot / "plugins" / "scala")
+    assertFileExists(intellijSdkRoot / "plugins" / "Scala")
     new IdeInstallationContext(intellijSdkRoot.toPath).productInfo.productCode shouldBe "IC"
   }
 

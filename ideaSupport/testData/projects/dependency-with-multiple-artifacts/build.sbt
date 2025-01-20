@@ -22,5 +22,8 @@ lazy val myAwesomeFramework =
           .classifier("natives-linux")
           .classifier("natives-macos")
           .classifier("natives-macos-arm64"),
+        ("org.lwjgl" % "lwjgl-vulkan" % "3.3.6" % Runtime)
+          .classifier("natives-macos")
+          .classifier("natives-macos-arm64")
       ),
     )
