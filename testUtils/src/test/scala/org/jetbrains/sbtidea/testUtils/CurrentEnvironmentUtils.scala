@@ -1,7 +1,8 @@
 package org.jetbrains.sbtidea.testUtils
 
+import org.jetbrains.sbtidea.testUtils.SbtProjectFilesUtils.IoMode.PrintAndCollectOutput
+
 import java.io.File
-import scala.util.Using
 
 object CurrentEnvironmentUtils {
 
@@ -15,23 +16,11 @@ object CurrentEnvironmentUtils {
   def publishCurrentSbtIdeaPluginToLocalRepoAndGetVersions: String = {
     println("Publishing sbt-idea-plugin to local repository and getting it's version")
 
-    val process = new ProcessBuilder("sbt", "compile ; publishLocal ; show core / version")
-      .directory(CurrentWorkingDir)
-      .redirectErrorStream(true)
-      .start()
-
-    val outputLines = Using.resource(scala.io.Source.fromInputStream(process.getInputStream)) { source =>
-      source.getLines().map { line =>
-       println(line)
-       line
-     }.toArray.toSeq
-    }
-
-    process.waitFor()
-
-    val exitCode = process.exitValue()
-    if (exitCode != 0)
-      throw new RuntimeException(s"Failed to execute sbt command to detect current sbt-idea-plugin version (exit code: $exitCode)")
+    val outputLines = SbtProjectFilesUtils.runSbtProcess(
+      Seq("compile ; publishLocal ; show core / version"),
+      CurrentWorkingDir,
+      ioMode = PrintAndCollectOutput,
+    ).outputLines.get
 
     val infoLines = outputLines
       .map(_.trim)
@@ -44,12 +33,12 @@ object CurrentEnvironmentUtils {
         val DebugInfo = if (infoLines.nonEmpty)
           s"""Last $TaleLastLinesNumber info lines:
              |  ## ${infoLines.takeRight(TaleLastLinesNumber).mkString("\n  ## ")}"""
-        else if (outputLines.nonEmpty) {
+        else if (outputLines.nonEmpty)
           s"""Last $TaleLastLinesNumber output lines:
              |  ## ${outputLines.takeRight(TaleLastLinesNumber).mkString("\n  ## ")}"""
-        } else {
+        else
           "!!! No output lines !!!"
-        }
+
         throw new RuntimeException(
           s"""Failed to retrieve plugin version from the sbt process output.
              |$DebugInfo""".stripMargin)

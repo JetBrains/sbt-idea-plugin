@@ -9,6 +9,7 @@ import org.jetbrains.sbtidea.packaging.structure.sbtImpl.SbtPackagedProjectNodeI
 import org.jetbrains.sbtidea.packaging.testUtils.CirceEncodersDecoders.*
 import org.jetbrains.sbtidea.packaging.testUtils.{JsonUtils, RevisionReference, TestDataDir}
 import org.jetbrains.sbtidea.testUtils.IoUtils.*
+import org.jetbrains.sbtidea.testUtils.SbtProjectFilesUtils.IoMode.PrintAndCollectOutput
 import org.jetbrains.sbtidea.testUtils.{CurrentEnvironmentUtils, SbtProjectFilesUtils}
 import sbt.fileToRichFile
 
@@ -241,8 +242,7 @@ object RegenerateProjectsStructureTestData {
     val outputLines = SbtProjectFilesUtils.runSbtProcess(
       Seq(s"dumpStructureToFile $baseTargetStructuresDir"),
       repoDir,
-      inheritIO = false,
-      printAndCollectOutput = true,
+      ioMode = PrintAndCollectOutput,
       //ensure we reuse downloaded artifacts between tests if they need the same artifacts
       vmOptions = vmOptions,
       // Ensure the sbt process uses the same JVM that is used in the current app to ensure correct serialization

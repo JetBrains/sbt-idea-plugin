@@ -58,8 +58,7 @@ object SbtProjectFilesUtils {
   def runSbtProcess(
     sbtArguments: Seq[String],
     workingDir: File,
-    inheritIO: Boolean = true,
-    printAndCollectOutput: Boolean = false,
+    ioMode: IoMode = IoMode.Inherit,
     vmOptions: Seq[String] = Seq.empty,
     envVars: Map[String, String] = Map.empty,
   ): ProcessRunResult = {
@@ -69,28 +68,32 @@ object SbtProjectFilesUtils {
     runProcess(
       // Disable colors to avoid escape sequences in the output
       // This is needed to parse the output of the test reliably
-      "sbt" +: "-no-colors" +: sbtArguments,
+      Seq("sbt", "-no-colors") ++ sbtArguments,
       workingDir,
-      inheritIO = inheritIO,
-      printAndCollectOutput = printAndCollectOutput,
+      ioMode = ioMode,
       envVars = envVarsUpdated,
     )
   }
 
   case class ProcessRunResult(outputLines: Option[Seq[String]])
 
+  sealed trait IoMode
+  object IoMode {
+    object Inherit extends IoMode
+    object PrintAndCollectOutput extends IoMode
+  }
+
   def runProcess(
     command: Seq[String],
     workingDir: File,
-    inheritIO: Boolean = true,
-    printAndCollectOutput: Boolean = false,
+    ioMode: IoMode = IoMode.Inherit,
     envVars: Map[String, String] = Map.empty
   ): ProcessRunResult = {
     val pb = new ProcessBuilder(command *)
     pb.directory(workingDir)
     pb.redirectErrorStream(true)
 
-    if (inheritIO) {
+    if (ioMode == IoMode.Inherit) {
       pb.inheritIO()
     }
 
@@ -100,7 +103,7 @@ object SbtProjectFilesUtils {
 
     val process = pb.start()
 
-    val outputLines: Option[Seq[String]] = if (printAndCollectOutput) {
+    val outputLines: Option[Seq[String]] = if (ioMode == IoMode.PrintAndCollectOutput) {
       Some(Using.resource(Source.fromInputStream(process.getInputStream)) { source =>
         source.getLines.map { line =>
           println(line)
