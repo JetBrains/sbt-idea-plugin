@@ -12,7 +12,7 @@ object CurrentEnvironmentUtils {
    */
   //noinspection ScalaUnusedSymbol
   def publishCurrentSbtIdeaPluginToLocalRepoAndGetVersions: String = {
-    println("Publishing sbt-idea-plugin to local repository...")
+    println("Publishing sbt-idea-plugin to local repository and getting it's version")
 
     val process = new ProcessBuilder("sbt", "compile ; publishLocal ; show core / version")
       .directory(CurrentWorkingDir)
@@ -30,11 +30,18 @@ object CurrentEnvironmentUtils {
     if (exitCode != 0)
       throw new RuntimeException(s"Failed to execute sbt command to detect current sbt-idea-plugin version (exit code: $exitCode)")
 
-    val printedVersion = outputLines
-      .collect { case line if line.startsWith("[info]") => line.stripPrefix("[info]").trim }
+    val infoLines = outputLines
+      .map(_.trim)
+      .filter(_.startsWith("[info]"))
+    val printedVersion = infoLines
+      .map(_.stripPrefix("[info]").trim)
       .lastOption
       .getOrElse {
-        "Failed to retrieve both plugin and sbt versions from the sbt process output."
+        val LastInfoLinesNumber = 10
+        throw new RuntimeException(
+          s"""Failed to retrieve plugin version from the sbt process output.
+             |Last $LastInfoLinesNumber info lines:
+             |  ${infoLines.takeRight(LastInfoLinesNumber).mkString("\n  ")}""".stripMargin)
       }
     printedVersion
   }
