@@ -1,7 +1,7 @@
 package org.jetbrains.sbtidea.integrationTests
 
 import org.jetbrains.sbtidea.download.api.IdeInstallationContext
-import org.jetbrains.sbtidea.testUtils.SbtProjectFilesUtils.runProcess
+import org.jetbrains.sbtidea.testUtils.SbtProjectFilesUtils.{runProcess, runSbtProcess}
 import org.jetbrains.sbtidea.testUtils.{CurrentEnvironmentUtils, FileAssertions, SbtProjectFilesUtils}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -56,7 +56,7 @@ class SbtIdeaPluginIntegrationTest
     val projectDir = TestProjectsDir / "dependency-with-multiple-artifacts"
     runUpdateIntellijCommand(projectDir)
 
-    runProcess(Seq("sbt", "packageArtifact"), projectDir)
+    runSbtProcess(Seq("packageArtifact"), projectDir)
 
     val dumpedFileTree = dumpFileStructure(projectDir / "target" / "plugin")
     val expectedFileTree =
@@ -115,11 +115,11 @@ class SbtIdeaPluginIntegrationTest
 
     val intellijSdkRoot = SbtProjectFilesUtils.injectExtraSbtFileWithIntelliJSdkTargetDirSettings(projectDir, IntellijSdksBaseDir)
 
-    runProcess(
-      Seq("sbt", "updateIntellij"),
+    runSbtProcess(
+      Seq("updateIntellij"),
       projectDir,
       //ensure we reuse downloaded artifacts between tests if they need the same artifacts
-      envVars = Map("JAVA_OPTS" -> "-Dsbt.idea.plugin.keep.downloaded.files=true")
+      vmOptions = Seq("-Dsbt.idea.plugin.keep.downloaded.files=true"),
     )
 
     intellijSdkRoot / "sdk" / CommonIntellijBuild

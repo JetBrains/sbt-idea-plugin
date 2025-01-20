@@ -14,8 +14,6 @@ import sbt.fileToRichFile
 
 import java.io.File
 import java.nio.file.{Files, StandardCopyOption}
-import scala.collection.mutable
-import scala.util.chaining.scalaUtilChainingOps
 
 /**
  * Regenerates test data for [[MappingsTestBase]] tests
@@ -237,38 +235,25 @@ object RegenerateProjectsStructureTestData {
     // Run sbt process to call `dumpStructure` task
     baseTargetStructuresDir.mkdirs()
 
-    val sbtProcess = new ProcessBuilder("sbt", s"dumpStructureToFile $baseTargetStructuresDir")
-      .directory(repoDir)
-      .redirectErrorStream(true)
-      .tap { pb =>
-        val env = pb.environment()
-        // Ensure the sbt process uses the same JVM that is used in the current app to ensure correct serialization
-        env.put("JAVA_HOME", CurrentEnvironmentUtils.CurrentJavaHome)
+    val vmOptions = Seq("-Dsbt.idea.plugin.keep.downloaded.files=true") ++
+      (if (td.useSeparateProductionTestSources) Seq(s"-D${org.jetbrains.sbtidea.packaging.ProdTestSourcesKey}=true") else Seq.empty)
 
-        val vmOptions = mutable.ArrayBuffer[String]()
-        vmOptions += "-Dsbt.idea.plugin.keep.downloaded.files=true"
-        if (td.useSeparateProductionTestSources) {
-          vmOptions += s"-D${org.jetbrains.sbtidea.packaging.ProdTestSourcesKey}=true"
-        }
-        //ensure we reuse downloaded artifacts between tests if they need the same artifacts
-        env.put("JAVA_OPTS", vmOptions.mkString(" "))
-      }
-      .start()
-
-    val outputLinesBuffer = scala.collection.mutable.ListBuffer[String]()
-    val outputLines = scala.io.Source.fromInputStream(sbtProcess.getInputStream).getLines().map { line =>
-      // We want to collect the output to get the output structure file and print the output to the console
-      println(line)
-      outputLinesBuffer += line
-      line
-    }.toList
-    sbtProcess.waitFor()
+    val outputLines = SbtProjectFilesUtils.runSbtProcess(
+      Seq(s"dumpStructureToFile $baseTargetStructuresDir"),
+      repoDir,
+      inheritIO = false,
+      printAndCollectOutput = true,
+      //ensure we reuse downloaded artifacts between tests if they need the same artifacts
+      vmOptions = vmOptions,
+      // Ensure the sbt process uses the same JVM that is used in the current app to ensure correct serialization
+      envVars = Map("JAVA_HOME" -> CurrentEnvironmentUtils.CurrentJavaHome)
+    ).outputLines.get
 
     // See sources of _structureDumper.sbt
     val StructureWrittenPrefix = "Structure written to:"
     val PackageOutputDirPrefix = "Package output directory:"
 
-    def extractPathFromOutput(outputLines: List[String], prefix: String, errorMessagePart: String): String =
+    def extractPathFromOutput(outputLines: Seq[String], prefix: String, errorMessagePart: String): String =
       outputLines.find(_.contains(prefix))
         .map(_.stripPrefix(prefix).trim)
         .getOrElse(throw new RuntimeException(s"Failed to detect the $errorMessagePart from process output"))

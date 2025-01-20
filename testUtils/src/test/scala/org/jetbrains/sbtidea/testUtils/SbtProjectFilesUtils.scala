@@ -4,7 +4,8 @@ import sbt.fileToRichFile
 
 import java.io.File
 import java.nio.file.Path
-import scala.util.chaining.scalaUtilChainingOps
+import scala.io.Source
+import scala.util.Using
 
 object SbtProjectFilesUtils {
 
@@ -45,15 +46,6 @@ object SbtProjectFilesUtils {
 
   def cleanUntrackedVcsFiles(projectDir: File): Unit = {
     runProcess(Seq("git", "clean", "-fdx"), projectDir)
-
-    //TODO: it seems it's not needed as "x" argument in "git clean -fdx" already does the job
-    // remove all sbt "target" directories or empty directories (left after git restore)
-//    Files.walk(projectDir.toPath)
-//      .filter { path =>
-//        Files.isDirectory(path) && path.getFileName.toString == "target" ||
-//          Files.isDirectory(path) && Files.list(path).count() == 0
-//      }
-//      .forEach(path => deleteRecursively(path.toFile))
   }
 
   def deleteRecursively(file: File): Unit = {
@@ -63,38 +55,68 @@ object SbtProjectFilesUtils {
     file.delete()
   }
 
-
-  def runProcess(
-    command: Seq[String],
+  def runSbtProcess(
+    sbtArguments: Seq[String],
     workingDir: File,
-    envVars: Map[String, String] = Map.empty // Add envVars parameter with a default value
-  ): Unit = {
-    val process = new ProcessBuilder(command *)
-      .directory(workingDir)
-      .inheritIO()
-      .redirectErrorStream(true)
-      .tap(pb => envVars.foreach { case (key, value) => pb.environment().put(key, value) }) // Use .tap to set env variables
-      .start()
+    inheritIO: Boolean = true,
+    printAndCollectOutput: Boolean = false,
+    vmOptions: Seq[String] = Seq.empty,
+    envVars: Map[String, String] = Map.empty,
+  ): ProcessRunResult = {
+    val javaOptions = if (vmOptions.nonEmpty) Map("JAVA_OPTS" -> vmOptions.mkString(" ")) else Map.empty
+    val envVarsUpdated = envVars ++ javaOptions
 
-    val exitCode = process.waitFor()
-    if (exitCode != 0) {
-      throw new RuntimeException(s"Command '$command' failed with exit code $exitCode")
-    }
+    runProcess(
+      // Disable colors to avoid escape sequences in the output
+      // This is needed to parse the output of the test reliably
+      "sbt" +: "-no-colors" +: sbtArguments,
+      workingDir,
+      inheritIO = inheritIO,
+      printAndCollectOutput = printAndCollectOutput,
+      envVars = envVarsUpdated,
+    )
   }
+
+  case class ProcessRunResult(outputLines: Option[Seq[String]])
+
   def runProcess(
     command: Seq[String],
     workingDir: File,
-  ): Unit = {
-    val process = new ProcessBuilder(command *)
-      .directory(workingDir)
-      .inheritIO()
-      .redirectErrorStream(true)
-      .start()
+    inheritIO: Boolean = true,
+    printAndCollectOutput: Boolean = false,
+    envVars: Map[String, String] = Map.empty
+  ): ProcessRunResult = {
+    val pb = new ProcessBuilder(command *)
+    pb.directory(workingDir)
+    pb.redirectErrorStream(true)
+
+    if (inheritIO) {
+      pb.inheritIO()
+    }
+
+    envVars.foreach { case (key, value) =>
+      pb.environment().put(key, value)
+    }
+
+    val process = pb.start()
+
+    val outputLines: Option[Seq[String]] = if (printAndCollectOutput) {
+      Some(Using.resource(Source.fromInputStream(process.getInputStream)) { source =>
+        source.getLines.map { line =>
+          println(line)
+          line
+        }.toArray.toSeq
+      })
+    } else {
+      None
+    }
 
     val exitCode = process.waitFor()
     if (exitCode != 0) {
       throw new RuntimeException(s"Command '$command' failed with exit code $exitCode")
     }
+
+    ProcessRunResult(outputLines)
   }
 
   /**
