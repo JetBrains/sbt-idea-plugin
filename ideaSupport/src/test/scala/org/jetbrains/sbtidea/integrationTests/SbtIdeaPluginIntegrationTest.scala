@@ -71,7 +71,8 @@ class SbtIdeaPluginIntegrationTest
         |      lwjgl-3.3.6.jar
         |      lwjgl-jawt-3.3.5.jar
         |      lwjgl-opengl-3.3.6.jar
-        |      lwjgl-vulkan-3.3.5-natives-macos-arm64.jar
+        |      lwjgl-vulkan-3.3.6-natives-macos-arm64.jar
+        |      lwjgl-vulkan-3.3.6-natives-macos.jar
         |      lwjgl3-awt-0.2.3.jar
         |      myAwesomeFramework.jar
         |      scala-library-2.13.15.jar
