@@ -1,6 +1,7 @@
 package org.jetbrains.sbtidea.testUtils
 
 import java.io.File
+import scala.util.Using
 
 object CurrentEnvironmentUtils {
 
@@ -19,10 +20,12 @@ object CurrentEnvironmentUtils {
       .redirectErrorStream(true)
       .start()
 
-    val outputLines = scala.io.Source.fromInputStream(process.getInputStream).getLines().map { line =>
-      println(line)
-      line
-    }.toList
+    val outputLines = Using.resource(scala.io.Source.fromInputStream(process.getInputStream)) { source =>
+      source.getLines().map { line =>
+       println(line)
+       line
+     }.toArray.toSeq
+    }
 
     process.waitFor()
 
@@ -37,11 +40,19 @@ object CurrentEnvironmentUtils {
       .map(_.stripPrefix("[info]").trim)
       .lastOption
       .getOrElse {
-        val LastInfoLinesNumber = 10
+        val TaleLastLinesNumber = 10
+        val DebugInfo = if (infoLines.nonEmpty)
+          s"""Last $TaleLastLinesNumber info lines:
+             |  ## ${infoLines.takeRight(TaleLastLinesNumber).mkString("\n  ## ")}"""
+        else if (outputLines.nonEmpty) {
+          s"""Last $TaleLastLinesNumber output lines:
+             |  ## ${outputLines.takeRight(TaleLastLinesNumber).mkString("\n  ## ")}"""
+        } else {
+          "!!! No output lines !!!"
+        }
         throw new RuntimeException(
           s"""Failed to retrieve plugin version from the sbt process output.
-             |Last $LastInfoLinesNumber info lines:
-             |  ${infoLines.takeRight(LastInfoLinesNumber).mkString("\n  ")}""".stripMargin)
+             |$DebugInfo""".stripMargin)
       }
     printedVersion
   }
