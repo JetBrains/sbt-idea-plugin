@@ -65,7 +65,9 @@ object SbtProjectFilesUtils {
     val javaOptions = if (vmOptions.nonEmpty) Map("JAVA_OPTS" -> vmOptions.mkString(" ")) else Map.empty
     val envVarsUpdated = envVars ++ javaOptions
 
-    val sbtExecutablePath = System.getProperty("sbt.executable.path", "sbt")
+    val sbtExecutablePath = sys.env.get("SBT_PATH")
+      .orElse(Option(System.getProperty("sbt.executable.path")))
+      .getOrElse("sbt")
     runProcess(
       // Disable colors to avoid escape sequences in the output
       // This is needed to parse the output of the test reliably
