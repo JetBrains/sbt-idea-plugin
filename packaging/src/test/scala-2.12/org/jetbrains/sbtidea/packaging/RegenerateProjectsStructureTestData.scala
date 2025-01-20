@@ -16,6 +16,9 @@ import java.io.File
 import java.nio.file.{Files, StandardCopyOption}
 import scala.util.chaining.scalaUtilChainingOps
 
+/**
+ * Regenerates test data for [[MappingsTestBase]] tests
+ */
 object RegenerateProjectsStructureTestData {
 
   private val CurrentWorkingDir = new File(".").getCanonicalFile

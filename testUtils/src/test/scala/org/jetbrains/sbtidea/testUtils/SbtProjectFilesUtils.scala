@@ -43,7 +43,7 @@ object SbtProjectFilesUtils {
     println(s"Updated sbt.version: $sbtVersionInRepo -> $newSbtVersion")
   }
 
-  def gitCleanUntrackedFiles(projectDir: File): Unit = {
+  def cleanUntrackedVcsFiles(projectDir: File): Unit = {
     runProcess(Seq("git", "clean", "-fdx"), projectDir)
 
     //TODO: it seems it's not needed as "x" argument in "git clean -fdx" already does the job

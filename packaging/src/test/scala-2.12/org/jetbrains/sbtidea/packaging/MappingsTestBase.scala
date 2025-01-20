@@ -16,6 +16,10 @@ import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 
+/**
+ * @note to regenerate test data to the most up-to-date model please use [[RegenerateProjectsStructureTestData]]
+ * @note for end-to-end integration tests see SbtIdeaPluginIntegrationTest
+ */
 trait MappingsTestBase extends Matchers {
 
   private def loadTestData[T : Decoder](revision: String, suffix: String): T = {
