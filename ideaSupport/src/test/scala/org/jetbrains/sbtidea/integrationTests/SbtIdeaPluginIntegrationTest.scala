@@ -2,12 +2,10 @@ package org.jetbrains.sbtidea.integrationTests
 
 import org.jetbrains.sbtidea.download.api.IdeInstallationContext
 import org.jetbrains.sbtidea.testUtils.SbtProjectFilesUtils.runProcess
-import org.jetbrains.sbtidea.testUtils.{CurrentEnvironmentUtils, FileAssertions, IoUtils, SbtProjectFilesUtils}
+import org.jetbrains.sbtidea.testUtils.{CurrentEnvironmentUtils, FileAssertions, SbtProjectFilesUtils}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import sbt.{File, fileToRichFile}
-
-import java.nio.file.Path
 
 /**
  * This test is designed to test twe work of sbt-idea-plugin as a whole, in real projects.

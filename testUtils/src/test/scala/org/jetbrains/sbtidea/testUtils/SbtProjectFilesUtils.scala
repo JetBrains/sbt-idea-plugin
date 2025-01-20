@@ -103,12 +103,12 @@ object SbtProjectFilesUtils {
    */
   def injectExtraSbtFileWithIntelliJSdkTargetDirSettings(
     projectDir: File,
-    sdksBaseDir: File
+    sdksBaseDir: File,
   ): File = {
     // Use subdirectory with same name as the original project
     val intellijSdkRoot = sdksBaseDir / projectDir.getName
     // Store downloads in the same dir for all projects as a cache when the same artifacts are used in the tests
-    val intellijSdkDownloadDir = sdksBaseDir / "downloads"
+    val intellijSdkDownloadDir = CurrentEnvironmentUtils.CurrentWorkingDir / "tempIntellijArtifactsDownloads"
     println(
       s"""Intellij SDK root: $intellijSdkRoot
          |Intellij SDK download dir: $intellijSdkDownloadDir

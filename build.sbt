@@ -108,6 +108,7 @@ lazy val sbtIdeaPlugin = (project in file("."))
     ideExcludedDirectories := Seq(
       file("tempProjects"),
       file("tempIntellijSdks"),
+      file("tempIntellijArtifactsDownloads"),
     )
   )
   .aggregate(core, packaging, ideaSupport, visualizer, testUtils)

@@ -4,6 +4,9 @@ import java.io.File
 
 object CurrentEnvironmentUtils {
 
+  val CurrentWorkingDir: File = new File(".").getCanonicalFile
+  val CurrentJavaHome: String = System.getProperty("java.home")
+
   /**
    * @return version of the locally-published plugin
    */
@@ -11,9 +14,8 @@ object CurrentEnvironmentUtils {
   def publishCurrentSbtIdeaPluginToLocalRepoAndGetVersions: String = {
     println("Publishing sbt-idea-plugin to local repository...")
 
-    val workingDir = new File(".").getCanonicalFile
     val process = new ProcessBuilder("sbt", "compile ; publishLocal ; show core / version")
-      .directory(workingDir)
+      .directory(CurrentWorkingDir)
       .redirectErrorStream(true)
       .start()
 

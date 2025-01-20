@@ -22,9 +22,7 @@ import scala.util.chaining.scalaUtilChainingOps
  */
 object RegenerateProjectsStructureTestData {
 
-  private val CurrentWorkingDir = new File(".").getCanonicalFile
-  private val TempProjectsRootDir = CurrentWorkingDir / "tempProjects"
-  private val CurrentJavaHome = System.getProperty("java.home")
+  private val TempProjectsRootDir = CurrentEnvironmentUtils.CurrentWorkingDir / "tempProjects"
   private val CurrentPluginVersion = CurrentEnvironmentUtils.publishCurrentSbtIdeaPluginToLocalRepoAndGetVersions
   private val CurrentSbtVersion = getSbtVersionFromClasspath
 
@@ -54,8 +52,8 @@ object RegenerateProjectsStructureTestData {
   def main(args: Array[String]): Unit = {
     println(s"#########")
     println(s"Regenerating projects structure test data")
-    println(s"JVM home       : $CurrentJavaHome")
-    println(s"Working dir    : ${CurrentWorkingDir.getAbsolutePath}")
+    println(s"JVM home       : ${CurrentEnvironmentUtils.CurrentJavaHome}")
+    println(s"Working dir    : ${CurrentEnvironmentUtils.CurrentWorkingDir.getAbsolutePath}")
     println(s"Plugin version : $CurrentPluginVersion")
     println(s"SBT version    : $CurrentSbtVersion")
     println(s"#########")
@@ -245,7 +243,7 @@ object RegenerateProjectsStructureTestData {
       .tap { pb =>
         val env = pb.environment()
         // Ensure the sbt process uses the same JVM that is used in the current app to ensure correct serialization
-        env.put("JAVA_HOME", CurrentJavaHome)
+        env.put("JAVA_HOME", CurrentEnvironmentUtils.CurrentJavaHome)
 
         val vmOptions = mutable.ArrayBuffer[String]()
         vmOptions += "-Dsbt.idea.plugin.keep.downloaded.files=true"

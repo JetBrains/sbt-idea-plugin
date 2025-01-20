@@ -7,3 +7,5 @@
 tempProjects
 # contains intellij sdk downloaded during integration tests run
 tempIntellijSdks
+tempIntellijArtifactsDownloads
+tempIntellijArtifactsDownloads
