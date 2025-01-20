@@ -7,6 +7,8 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import sbt.{File, fileToRichFile}
 
+import java.nio.file.Path
+
 /**
  * This test is designed to test twe work of sbt-idea-plugin as a whole, in real projects.
  * The plugin is substituted to sbt projects, then you can run arbitrary command
@@ -113,7 +115,7 @@ class SbtIdeaPluginIntegrationTest
     SbtProjectFilesUtils.cleanUntrackedVcsFiles(projectDir)
     SbtProjectFilesUtils.updateSbtIdeaPluginToVersion(projectDir, PluginVersion)
 
-    val intellijSdkRoot = injectExtraSbtFileWithPathsSettings(projectDir)
+    val intellijSdkRoot = SbtProjectFilesUtils.injectExtraSbtFileWithIntelliJSdkTargetDirSettings(projectDir, IntellijSdksBaseDir)
 
     runProcess(
       Seq("sbt", "updateIntellij"),
@@ -123,30 +125,5 @@ class SbtIdeaPluginIntegrationTest
     )
 
     intellijSdkRoot / "sdk" / CommonIntellijBuild
-  }
-
-  /**
-   * Add an `extra.sbt` file to the project.<br>
-   * Inside, we inject the location of the downloaded sdk & temp downloads directory
-   */
-  private def injectExtraSbtFileWithPathsSettings(projectDir: File): File = {
-    // Use subdirectory with same name as the original project
-    val intellijSdkRoot = IntellijSdksBaseDir / projectDir.getName
-    // Store downloads in the same dir for all projects as a cache when the same artifacts are used in the tests
-    val intellijSdkDownloadDir = IntellijSdksBaseDir / "downloads"
-    println(
-      s"""Intellij SDK root: $intellijSdkRoot
-         |Intellij SDK download dir: $intellijSdkDownloadDir
-         |""".stripMargin.trim
-    )
-    IoUtils.writeStringToFile(
-      projectDir / "extra.sbt",
-      s"""import org.jetbrains.sbtidea.Keys._
-         |
-         |ThisBuild / intellijPluginDirectory := file("$intellijSdkRoot")
-         |ThisBuild / artifactsDownloadsDir   := file("$intellijSdkDownloadDir")
-         |""".stripMargin
-    )
-    intellijSdkRoot
   }
 }

@@ -96,4 +96,32 @@ object SbtProjectFilesUtils {
       throw new RuntimeException(s"Command '$command' failed with exit code $exitCode")
     }
   }
+
+  /**
+   * Add an `extra.sbt` file to the project.<br>
+   * Inside, we inject the location of the downloaded sdk & temp downloads directory
+   */
+  def injectExtraSbtFileWithIntelliJSdkTargetDirSettings(
+    projectDir: File,
+    sdksBaseDir: File
+  ): File = {
+    // Use subdirectory with same name as the original project
+    val intellijSdkRoot = sdksBaseDir / projectDir.getName
+    // Store downloads in the same dir for all projects as a cache when the same artifacts are used in the tests
+    val intellijSdkDownloadDir = sdksBaseDir / "downloads"
+    println(
+      s"""Intellij SDK root: $intellijSdkRoot
+         |Intellij SDK download dir: $intellijSdkDownloadDir
+         |""".stripMargin.trim
+    )
+    IoUtils.writeStringToFile(
+      projectDir / "extra.sbt",
+      s"""import org.jetbrains.sbtidea.Keys._
+         |
+         |ThisBuild / intellijPluginDirectory := file("$intellijSdkRoot")
+         |ThisBuild / artifactsDownloadsDir   := file("$intellijSdkDownloadDir")
+         |""".stripMargin
+    )
+    intellijSdkRoot
+  }
 }

@@ -14,6 +14,7 @@ import sbt.fileToRichFile
 
 import java.io.File
 import java.nio.file.{Files, StandardCopyOption}
+import scala.collection.mutable
 import scala.util.chaining.scalaUtilChainingOps
 
 /**
@@ -22,6 +23,7 @@ import scala.util.chaining.scalaUtilChainingOps
 object RegenerateProjectsStructureTestData {
 
   private val CurrentWorkingDir = new File(".").getCanonicalFile
+  private val TempProjectsRootDir = CurrentWorkingDir / "tempProjects"
   private val CurrentJavaHome = System.getProperty("java.home")
   private val CurrentPluginVersion = CurrentEnvironmentUtils.publishCurrentSbtIdeaPluginToLocalRepoAndGetVersions
   private val CurrentSbtVersion = getSbtVersionFromClasspath
@@ -85,7 +87,7 @@ object RegenerateProjectsStructureTestData {
     // in: https://github.com/spotify/scio-idea-plugin
     // out: scio-idea-plugin
     val repoName = revisionRef.repositoryUrl.split('/').last
-    val repoDir = CurrentWorkingDir / "tempProjects" / (repoName + "-" + revisionRef.revision.take(6))
+    val repoDir = TempProjectsRootDir / (repoName + "-" + revisionRef.revision.take(6))
     println("Dump structure START")
     val result = dumpStructure(
       td,
@@ -231,6 +233,9 @@ object RegenerateProjectsStructureTestData {
     // equals to the sbt version in `build.sbt` in pluginCrossBuild / sbtVersion
     SbtProjectFilesUtils.updateSbtVersion(repoDir, CurrentSbtVersion)
 
+    // Place downloaded SDKs not in the user home but in the temp directory in the project, also cache downloads
+    SbtProjectFilesUtils.injectExtraSbtFileWithIntelliJSdkTargetDirSettings(repoDir, TempProjectsRootDir / "_sdks")
+
     // Run sbt process to call `dumpStructure` task
     baseTargetStructuresDir.mkdirs()
 
@@ -242,9 +247,13 @@ object RegenerateProjectsStructureTestData {
         // Ensure the sbt process uses the same JVM that is used in the current app to ensure correct serialization
         env.put("JAVA_HOME", CurrentJavaHome)
 
+        val vmOptions = mutable.ArrayBuffer[String]()
+        vmOptions += "-Dsbt.idea.plugin.keep.downloaded.files=true"
         if (td.useSeparateProductionTestSources) {
-          env.put("JAVA_OPTS", s"-D${org.jetbrains.sbtidea.packaging.ProdTestSourcesKey}=true")
+          vmOptions += s"-D${org.jetbrains.sbtidea.packaging.ProdTestSourcesKey}=true"
         }
+        //ensure we reuse downloaded artifacts between tests if they need the same artifacts
+        env.put("JAVA_OPTS", vmOptions.mkString(" "))
       }
       .start()
 
