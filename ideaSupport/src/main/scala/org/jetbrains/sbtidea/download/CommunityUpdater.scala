@@ -16,6 +16,24 @@ class CommunityUpdater(
   plugins: Seq[IntellijPlugin],
 ) {
 
+  @deprecated("Use the other constructor", "4.1.1")
+  def this(
+    baseDirectory: Path,
+    ideaBuildInfo: BuildInfo,
+    jbrInfo: JbrInfo,
+    plugins: Seq[IntellijPlugin],
+    //noinspection ScalaUnusedSymbol
+    withSources_Ignored: Boolean = true
+  ) {
+    this(
+      baseDirectory,
+      baseDirectory.resolve("../downloads"),
+      ideaBuildInfo,
+      jbrInfo,
+      plugins
+    )
+  }
+
   implicit protected val context: IdeInstallationProcessContext =
     new IdeInstallationProcessContext(
       baseDirectory = baseDirectory,
