@@ -10,7 +10,7 @@ import java.nio.file.Path
  *
  * @param baseDirectory represents a root directory for the ide installation (already installed or which is being installed)
  */
-private[sbtidea] sealed class IdeInstallationContext(
+sealed class IdeInstallationContext(
   val baseDirectory: Path
 ) {
   lazy val productInfo: ProductInfo = {
@@ -28,7 +28,7 @@ private[sbtidea] sealed class IdeInstallationContext(
  * @param artifactsDownloadsDir Directory where temporary artifacts are downloaded to before installing (usually .zip, .jar files)<br>
  *                              See [[org.jetbrains.sbtidea.Keys.artifactsDownloadsDir]]
  */
-private[sbtidea] final class IdeInstallationProcessContext(
+final class IdeInstallationProcessContext(
   baseDirectory: Path,
   val artifactsDownloadsDir: Path
 ) extends IdeInstallationContext(baseDirectory)
