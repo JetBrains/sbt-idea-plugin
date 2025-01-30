@@ -4,7 +4,7 @@ import org.jetbrains.sbtidea.download.FileDownloader.{DownloadException, Progres
 import org.jetbrains.sbtidea.download.api.IdeInstallationProcessContext
 import org.jetbrains.sbtidea.{PluginLogger as log, *}
 
-import java.io.FileOutputStream
+import java.io.{File, FileOutputStream}
 import java.net.{SocketTimeoutException, URL}
 import java.nio.ByteBuffer
 import java.nio.channels.{Channels, ReadableByteChannel}
@@ -12,6 +12,17 @@ import java.nio.file.{Files, Path, Paths}
 import javax.net.ssl.SSLException
 import scala.concurrent.duration.{Duration, DurationInt, DurationLong}
 
+/**
+ * The directory to which the temporary files are downloaded.<br>
+ * By default, the layout looks like this {{{
+ *   - .MyPlugin
+ *     - sdk
+ *        - downloads
+ *        - 243.23654.117
+ * }}}
+ *
+ * @see [[org.jetbrains.sbtidea.Init.buildSettings]]
+ */
 class FileDownloader(private val downloadDirectory: Path) {
 
   private type ProgressCallback = (ProgressInfo, Path) => Unit
