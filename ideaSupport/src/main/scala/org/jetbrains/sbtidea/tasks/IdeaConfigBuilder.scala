@@ -1,6 +1,7 @@
 package org.jetbrains.sbtidea.tasks
 
 import coursier.{Dependency, Fetch, Module, ModuleName, Organization}
+import org.jetbrains.sbtidea.IdeaConfigBuildingOptions.AdditionalRunConfigData
 import org.jetbrains.sbtidea.Keys.IdeaConfigBuildingOptions
 import org.jetbrains.sbtidea.packaging.hasProdTestSeparationEnabled
 import org.jetbrains.sbtidea.productInfo.ProductInfoExtraDataProvider
@@ -39,8 +40,14 @@ class IdeaConfigBuilder(
 
   def build(): Unit = {
     if (options.generateDefaultRunConfig) {
-      val content = buildRunConfigurationXML(artifactName, intellijVMOptions)
-      writeToFile(runConfigDir / s"$artifactName.xml", content)
+      val configurationName = artifactName
+      val content = buildRunConfigurationXML(configurationName, intellijVMOptions)
+      writeToFile(runConfigDir / s"$configurationName.xml", content)
+    }
+    options.additionalRunConfigs.foreach { data: AdditionalRunConfigData =>
+      val configurationName = artifactName + data.configurationNameSuffix
+      val content = buildRunConfigurationXML(configurationName, intellijVMOptions.withOptions(data.extraVmOptions))
+      writeToFile(runConfigDir / s"$configurationName.xml", content)
     }
     if (options.generateJUnitTemplate)
       writeToFile(runConfigDir / "_template__of_JUnit.xml", buildJUnitTemplate)
