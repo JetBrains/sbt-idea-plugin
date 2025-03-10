@@ -17,8 +17,15 @@ import java.util.regex.Pattern
 import scala.annotation.tailrec
 
 /**
-  * @param testPluginRoots contains only those plugins which are listed in the project IntelliJ plugin dependencies and their transitive dependencies
-  */
+ * The class is responsible to create all run configurations for plugin development.
+ * That includes:
+ *  - main configuration to run development instance of IDE
+ *  - extra configurations to run development instance of IDE with additional parameters (VM options, arguments, etc.)
+ *  - configuration template for JUnit tests
+ *
+ * @param testPluginRoots contains only those plugins which are listed in the project IntelliJ plugin dependencies and their transitive dependencies
+ * @param dataDir         base directory of IntelliJ Platform config and system directories for this plugin
+ */
 class IdeaConfigBuilder(
   projectName: String,
   intellijVMOptions: IntellijVMOptions,
@@ -41,16 +48,78 @@ class IdeaConfigBuilder(
   def build(): Unit = {
     if (options.generateDefaultRunConfig) {
       val configurationName = artifactName
-      val content = buildRunConfigurationXML(configurationName, intellijVMOptions)
+      val content = buildRunConfigurationXML(
+        configurationName,
+        intellijVMOptions,
+        options.programParams,
+        options.ideaRunEnv
+      )
       writeToFile(runConfigDir / s"$configurationName.xml", content)
     }
     options.additionalRunConfigs.foreach { data: AdditionalRunConfigData =>
       val configurationName = artifactName + data.configurationNameSuffix
-      val content = buildRunConfigurationXML(configurationName, intellijVMOptions.withOptions(data.extraVmOptions))
+      val content = buildRunConfigurationXML(
+        configurationName,
+        intellijVMOptions.withOptions(data.extraVmOptions),
+        options.programParams,
+        options.ideaRunEnv
+      )
       writeToFile(runConfigDir / s"$configurationName.xml", content)
     }
+
+    if (options.generateRunConfigForSplitMode) {
+      val configurationName = artifactName + " (split mode)"
+      buildSplitModeRunConfigurationXml(configurationName) match {
+        case Right(content) =>
+          writeToFile(runConfigDir / s"$configurationName.xml", content)
+        case Left(error) =>
+          log.warn(s"Can't generate run configuration for split mode: $error")
+      }
+    }
+
     if (options.generateJUnitTemplate)
       writeToFile(runConfigDir / "_template__of_JUnit.xml", buildJUnitTemplate)
+  }
+
+  // NOTE: most client-specific parameters are hardcoded
+  // (like client debug port, client system/config paths, client properties location)
+  // We might consider parametrizing them once this configuration generation is +- stable
+  private def buildSplitModeRunConfigurationXml(configurationName: String): Either[String, String] = {
+    val programParams = s"${options.programParams} splitMode"
+
+    // TODO: We should take all these VM options from "additional VM properties" from product-info.json (SCL-23540)
+    //  We should replace APP_PACKAGE with proper path
+    val modulesDescriptorsJar = intellijBaseDir / "modules" / "module-descriptors.jar"
+    val vmOptions = intellijVMOptions.withOptions(Seq(
+      s"-Dintellij.platform.runtime.repository.path=&quot;${modulesDescriptorsJar.getCanonicalPath}&quot;",
+      "--add-opens=java.desktop/com.sun.java.swing=ALL-UNNAMED",
+      "--add-opens=java.management/sun.management=ALL-UNNAMED"
+    ))
+
+    val bundledJre = IntellijAwareRunner.getBundledJRE(intellijBaseDir.toPath).getOrElse {
+      return Left(s"Can't detect bundled JRE path in $intellijBaseDir required for IDE client")
+    }
+
+    // NOTE: writing client properties to the run configuration directory just for simplicity,
+    // to keep related configurations close to each other
+    val ideClientPropertiesFile = runConfigDir / "idea_client.properties"
+    val envVars = options.ideaRunEnv ++ Map(
+      "JETBRAINS_CLIENT_JDK" -> s"${bundledJre.root}",
+      "JETBRAINS_CLIENT_PROPERTIES" -> s"$ideClientPropertiesFile"
+    )
+
+    //TODO: also configure location for logs & plugins
+    val clientSystemPath = s"$dataDir/system_client"
+    val clientConfigPath = s"""$dataDir/config_client"""
+    val clientDebugPort = "7777"
+    writeToFile(ideClientPropertiesFile,
+      s"""-Didea.system.path=$clientSystemPath
+         |-Didea.config.path=$clientConfigPath
+         |-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:$clientDebugPort
+         |""".stripMargin
+    )
+
+    Right(buildRunConfigurationXML(configurationName, vmOptions, programParams, envVars))
   }
 
   private def writeToFile(file: File, content: =>String): Unit = {
@@ -64,13 +133,13 @@ class IdeaConfigBuilder(
     }
   }
 
-  private def getExplicitIDEARoot:Option[Path] = sys.props.get(IDEA_ROOT_KEY).map(Paths.get(_))
+  private def getExplicitIDEARoot: Option[Path] = sys.props.get(IDEA_ROOT_KEY).map(Paths.get(_))
 
   /**
-    * Tries to locate IJ installation root. The one with the "lib", "bin", "plugins", etc. folders.
-    * Implementation is wonky since it relies on folder naming a lot, which is prone to changes.
-    * TODO: ask toolbox team how to do this properly
-    */
+   * Tries to locate IJ installation root. The one with the "lib", "bin", "plugins", etc. folders.
+   * Implementation is wonky since it relies on folder naming a lot, which is prone to changes.
+   * TODO: ask toolbox team how to do this properly
+   */
   @tailrec
   private def scanForIDEARoot(current: Path): Option[Path] = {
     val isToolboxPluginsFolder  = current.getFileName != null && pluginsPattern.matcher(current.getFileName.toString).matches() && (current / "Scala" / "lib").exists
@@ -94,18 +163,18 @@ class IdeaConfigBuilder(
   }
 
   /**
-    * Attempts to detect jars of '''currently running''' IJ instance to pass ij-junit runtime jars to the
-    * generated junit run configuration template.<br>
-    * This is required because in order to get test progress and overall
-    * communicate with the test framework IJ injects its own classes into your tests classpath and uses a custom junit
-    * runner to start the tests, which is distributed with the IJ itself by adding them to the classpath dynamically
-    * when starting the tests run configuration.<br>
-    * And since we have to statically set the whole classpath in advance while generating the run configuration template
-    * xmls, the required jars have to be found using MAGIC(heuristics). To do this we assume that during an sbt import
-    * process sbt-launch.jar(which should appear on the java's cmdline) is the one we distribute with the Scala plugin
-    * and thereby, resides somewhere close to the IJ core libraries.
-    * @return
-    */
+   * Attempts to detect jars of '''currently running''' IJ instance to pass ij-junit runtime jars to the
+   * generated junit run configuration template.<br>
+   * This is required because in order to get test progress and overall
+   * communicate with the test framework IJ injects its own classes into your tests classpath and uses a custom junit
+   * runner to start the tests, which is distributed with the IJ itself by adding them to the classpath dynamically
+   * when starting the tests run configuration.<br>
+   * And since we have to statically set the whole classpath in advance while generating the run configuration template
+   * xmls, the required jars have to be found using MAGIC(heuristics). To do this we assume that during an sbt import
+   * process sbt-launch.jar(which should appear on the java's cmdline) is the one we distribute with the Scala plugin
+   * and thereby, resides somewhere close to the IJ core libraries.
+   * @return
+   */
   private def guessIJRuntimeJarsForJUnitTemplate(): Seq[Path] =
     getExplicitIDEARoot
       .orElse(getCurrentLaunchPath.flatMap(scanForIDEARoot)) match {
@@ -115,10 +184,10 @@ class IdeaConfigBuilder(
           ijRoot / "lib" / "idea_rt.jar",
           ijRoot / "plugins" / "junit" / "lib" / "junit5-rt.jar",
           ijRoot / "plugins" / "junit" / "lib" / "junit-rt.jar")
-       case None =>
-         log.error(s"Unable to detect IDEA installation root, JUnit template may fail")
-         Seq.empty
-      }
+      case None =>
+        log.error(s"Unable to detect IDEA installation root, JUnit template may fail")
+        Seq.empty
+    }
 
   private def resolveJUnitJupiterRuntime(testClasspath: Seq[Path]): Seq[Path] = {
     val toResolve = computeJupiterRuntimeDependencies(testClasspath)
@@ -160,10 +229,10 @@ class IdeaConfigBuilder(
     }
   }
 
-  private def mkEnv(env: Map[String, String]): String = {
-      val elems = env
-        .map { case (k, v) => s"""<env name="$k" value="$v" />"""}
-        .mkString("\n")
+  private def createEnvironmentVariablesSection(env: Map[String, String]): String = {
+    val elems = env
+      .map { case (k, v) => s"""<env name="$k" value="$v" />"""}
+      .mkString("\n")
     if (elems.nonEmpty)
       s"""<envs>
          |     $elems
@@ -172,8 +241,13 @@ class IdeaConfigBuilder(
     else ""
   }
 
-  private def buildRunConfigurationXML(configurationName: String, vmOptions: IntellijVMOptions): String = {
-    val env = mkEnv(options.ideaRunEnv)
+  private def buildRunConfigurationXML(
+    configurationName: String,
+    vmOptions: IntellijVMOptions,
+    programParams: String,
+    envVars: Map[String, String]
+  ): String = {
+    val envVarsSection = createEnvironmentVariablesSection(envVars)
     val vmOptionsStr = buildRunVmOptionsString(vmOptions)
     val moduleName = generateModuleName(sourceSetModuleSuffix =  "main")
 
@@ -190,12 +264,12 @@ class IdeaConfigBuilder(
        |      <option name="TRANSPORT" value="0" />
        |      <option name="LOCAL" value="true" />
        |    </RunnerSettings>
-       |    <option name="PROGRAM_PARAMETERS" value="${options.programParams}" />
+       |    <option name="PROGRAM_PARAMETERS" value="$programParams" />
        |    <RunnerSettings RunnerId="Profile " />
        |    <RunnerSettings RunnerId="Run" />
        |    <ConfigurationWrapper RunnerId="Debug" />
        |    <ConfigurationWrapper RunnerId="Run" />
-       |    $env
+       |    $envVarsSection
        |    <method v="2">
        |      <option name="Make" enabled="true" />
        |      <option name="BuildArtifacts" enabled="true">
@@ -245,15 +319,15 @@ class IdeaConfigBuilder(
     else projectName
 
   private def buildJUnitTemplate: String = {
-    val env = mkEnv(options.ideaTestEnv)
+    val env = createEnvironmentVariablesSection(options.ideaTestEnv)
     val vmOptionsStr = buildTestVmOptionsString
     val moduleName = generateModuleName(sourceSetModuleSuffix = "test")
 
     val searchScope = if (options.testSearchScope.nonEmpty)
       s"""<option name="TEST_SEARCH_SCOPE">
-        |      <value defaultName="${options.testSearchScope}" />
-        |    </option>""".stripMargin
-      else ""
+         |      <value defaultName="${options.testSearchScope}" />
+         |    </option>""".stripMargin
+    else ""
 
     s"""<component name="ProjectRunConfigurationManager">
        |  <configuration default="true" type="JUnit" factoryName="JUnit">

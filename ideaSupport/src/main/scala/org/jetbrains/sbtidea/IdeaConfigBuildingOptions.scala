@@ -8,6 +8,7 @@ import scala.annotation.nowarn
 case class IdeaConfigBuildingOptions(
   generateDefaultRunConfig: Boolean = true,
   additionalRunConfigs: Seq[AdditionalRunConfigData] = Seq.empty,
+  generateRunConfigForSplitMode: Boolean = false,
   generateJUnitTemplate: Boolean = true,
   programParams: String = "",
   ideaRunEnv: Map[String, String] = Map.empty,
@@ -25,10 +26,8 @@ object IdeaConfigBuildingOptions {
    * @param configurationNameSuffix the suffix that will be added to the default run configuration name.<br>
    *                                Examples: {{{
    *                                  default configuration name: "scalaCommunity"
-   *                                  suffix: "-FUS"
-   *                                  additional configuration name: "scalaCommunity-FUS"
-   *                                  suffix: " (split mode)"
-   *                                  additional configuration name: "scalaCommunity (split mode)"
+   *                                  suffix: " (FUS)"
+   *                                  additional configuration name: "scalaCommunity (FUS)"
    *                                }}}
    * @param extraVmOptions          additional vm options that will be appended on top of the default vm options
    */
