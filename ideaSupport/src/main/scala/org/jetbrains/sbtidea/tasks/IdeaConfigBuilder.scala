@@ -321,6 +321,12 @@ class IdeaConfigBuilder(
   private def buildJUnitTemplate: String = {
     val env = createEnvironmentVariablesSection(options.ideaTestEnv)
     val vmOptionsStr = buildTestVmOptionsString
+
+    val argFilePath = runConfigDir / "junit_template_argfile.txt"
+    writeToFile(argFilePath, vmOptionsStr)
+
+    val vmOptionsStrArgfile = s"@${argFilePath.getAbsolutePath}"
+
     val moduleName = generateModuleName(sourceSetModuleSuffix = "test")
 
     val searchScope = if (options.testSearchScope.nonEmpty)
@@ -329,6 +335,11 @@ class IdeaConfigBuilder(
          |    </option>""".stripMargin
     else ""
 
+    // The VM_PARAMETERS option must contain a fake -cp option (with an empty string as a classpath),
+    // otherwise the platform will enforce the module classpath on our tests
+    // and completely disregard our classpath vm options.
+    // We then "override" this fake -cp argument with the -cp argument
+    // written to the argfile and we pass the whole argfile to java using the @argfile syntax.
     s"""<component name="ProjectRunConfigurationManager">
        |  <configuration default="true" type="JUnit" factoryName="JUnit">
        |    <useClassPathOnly />
@@ -337,7 +348,7 @@ class IdeaConfigBuilder(
        |    <option name="METHOD_NAME" value="" />
        |    <option name="TEST_OBJECT" value="class" />
        |    <module name="$moduleName" />
-       |    <option name="VM_PARAMETERS" value="$vmOptionsStr" />
+       |    <option name="VM_PARAMETERS" value="-cp &quot;&quot; $vmOptionsStrArgfile" />
        |    <option name="WORKING_DIRECTORY" value="${options.workingDir}" />
        |    $searchScope
        |    <RunnerSettings RunnerId="Profile " />
@@ -354,11 +365,14 @@ class IdeaConfigBuilder(
        |</component>""".stripMargin
   }
 
+  private def escapeBackslash(s: String): String = s.replace("\\", "\\\\")
+
   private def buildTestVmOptionsString: String = {
     val testVMOptions = intellijVMOptions.copy(test = true)
     val classPathEntries = buildTestClasspath
-    val classpathStr = classPathEntries.mkString(File.pathSeparator)
-    s"-cp &quot;$classpathStr&quot; ${testVMOptions.asSeq(quoteValues = true).mkString(" ")}"
+    val classpathStr = escapeBackslash(classPathEntries.mkString(File.pathSeparator))
+    val quotedClasspathStr = "\"" + classpathStr + "\""
+    (Seq("-cp", quotedClasspathStr) ++ testVMOptions.asSeqQuotedNoEscapeXml.map(escapeBackslash)).mkString(System.lineSeparator())
   }
 }
 

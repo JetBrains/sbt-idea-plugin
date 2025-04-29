@@ -40,10 +40,14 @@ object IntellijVMOptions {
   implicit class VMOptionOps(val options: IntellijVMOptions) extends AnyVal {
     import options.*
 
-    private def build(quoteValues: Boolean): Seq[String] = {
+    private def build(quoteValues: Boolean, escapeXml: Boolean): Seq[String] = {
       val intellijVersion = IntelliJVersionDetector.detectIntellijVersion(intellijDirectory.toFile)
 
-      def OQ(str: String): String = if (quoteValues) str.xmlQuote else str
+      def OQ(str: String): String =
+        if (quoteValues) {
+          if (escapeXml) str.xmlQuote else "\"" + str + "\""
+        } else str
+
       val buffer = new mutable.ArrayBuffer[String]()
       buffer ++= defaultOptions
 
@@ -92,7 +96,8 @@ object IntellijVMOptions {
     def add(opts: Seq[String]): IntellijVMOptions = copy(defaultOptions = defaultOptions ++ opts)
     def add(opt: String): IntellijVMOptions = copy(defaultOptions = defaultOptions :+ opt)
 
-    def asSeq(quoteValues: Boolean = false): Seq[String] = build(quoteValues).filter(_.nonEmpty)
+    def asSeq(quoteValues: Boolean = false): Seq[String] = build(quoteValues, escapeXml = true).filter(_.nonEmpty)
+    def asSeqQuotedNoEscapeXml: Seq[String] = build(quoteValues = true, escapeXml = false).filter(_.nonEmpty)
     def asJava(quoteValues: Boolean = false): java.util.List[String] = asSeq(quoteValues).asJava
   }
 
