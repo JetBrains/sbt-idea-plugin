@@ -47,6 +47,7 @@ object Utils {
     """org.intellij.scala:2023.3.6""",
     """org.intellij.scala:2023.3.6:Eap""",
     """org.intellij.scala:2023.3.6:Nightly""",
+    """org.jetbrains.bazel::super-early-bird""",
     """org.custom.plugin""",
     """org.custom.plugin:2022.1.1""",
     """org.custom.plugin:https://org.example/path/to/your/plugin.zip""",
@@ -60,7 +61,7 @@ object Utils {
    *  - plugin-id:2023.3.1
    *  - plugin-id:2023.3.1:eap
    */
-  private val IdRegex: Regex = "^([^:]+):?([\\w.-]+)?:?(\\w+)?$".r
+  private val IdRegex: Regex = "^([^:]+):?([\\w.-]+)?:?([\\w.-]+)?$".r
 
   /**
    * id:[channel]:url
