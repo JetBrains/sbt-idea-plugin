@@ -31,7 +31,7 @@ lazy val commonSettings: Seq[Setting[?]] = Seq(
   Compile / scalacOptions ++= Seq("-release", "11"),
 
   Test / classLoaderLayeringStrategy := ClassLoaderLayeringStrategy.Flat,
-  
+
   libraryDependencies ++= Seq(
     "org.scalatest" %% "scalatest" % "3.2.19" % Test,
     // Use latest version of sbt in tests to test against latest versions of projects using this plugin
@@ -86,9 +86,7 @@ lazy val ideaSupport = (project in file("ideaSupport"))
       "org.rauschig" % "jarchivelib" % "1.2.0",
       "org.ow2.asm" % "asm" % "9.6",
       "io.get-coursier" %% "coursier" % "2.1.10",
-
-      //for file utils in tests (create/delete cerucsively/write string)
-      "commons-io" % "commons-io" % "2.15.1" % Test
+      "commons-io" % "commons-io" % "2.19.0",
     ),
   )
 

@@ -123,6 +123,11 @@ object Keys extends Defns with Init with Utils with Quirks {
   lazy val pluginVerifierOptions = settingKey[PluginVerifierOptions](
     "Options for the IntelliJ Plugin Verifier tool")
 
+  // Should be in sync with `org.jetbrains.sbtidea.download.sdkCleanup.OldSdkCleanup.SbtKeyName`
+  lazy val autoRemoveOldCachedIntelliJSDK = settingKey[Boolean](
+    "If set to true, it will try to detect old cached IntelliJ SDK and automatically remove them. For more details see `org.jetbrains.sbtidea.download.sdkCleanup.OldSdkDetector.detectOldSdks`"
+  )
+
   /* Utility tasks */
 
   lazy val doPatchPluginXml           = taskKey[Unit]("").withRank(sbt.KeyRanks.Invisible)

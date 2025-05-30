@@ -37,6 +37,7 @@ trait Init { this: Keys.type =>
     intellijTestSystemDir     := intellijPluginDirectory.value / "test-system",
     intellijBaseDirectory     := intellijPluginDirectory.value / "sdk" / intellijBuild.value,
     artifactsDownloadsDir     := intellijPluginDirectory.value / "sdk" / "downloads",
+    autoRemoveOldCachedIntelliJSDK := false,
     concurrentRestrictions in Global += Tags.limit(Tags.Test, 1), // IDEA tests can't be run in parallel
     bundleScalaLibrary        := !hasPluginsWithScala(intellijPlugins.?.all(ScopeFilter(inAnyProject)).value.flatten.flatten),
     doProjectSetup := Def.taskDyn {
@@ -63,16 +64,18 @@ trait Init { this: Keys.type =>
     },
     updateIntellij := {
       PluginLogger.bind(new SbtPluginLogger(streams.value))
+      val plugins = {
+        val pluginDeps = intellijPlugins.?.all(ScopeFilter(inAnyProject)).value.flatten.flatten
+        val runtimePlugins = intellijExtraRuntimePluginsInTests.?.all(ScopeFilter(inAnyProject)).value.flatten.flatten
+        (pluginDeps ++ runtimePlugins).distinct
+      }
       new CommunityUpdater(
         intellijBaseDirectory.value.toPath,
         artifactsDownloadsDir.value.toPath,
         intellijBuildInfo.value,
         jbrInfo.value,
-        {
-          val pluginDeps = intellijPlugins.?.all(ScopeFilter(inAnyProject)).value.flatten.flatten
-          val runtimePlugins = intellijExtraRuntimePluginsInTests.?.all(ScopeFilter(inAnyProject)).value.flatten.flatten
-          (pluginDeps ++ runtimePlugins).distinct
-        },
+        plugins,
+        autoRemoveOldIntellijSdk = autoRemoveOldCachedIntelliJSDK.value
       ).update()
       updateFinished = true
     },
