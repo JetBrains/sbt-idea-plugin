@@ -10,7 +10,7 @@ import scala.util.Try
 class PluginRepoUtils(implicit ctx: IdeInstallationContext) extends PluginRepoApi {
 
   override def getRemotePluginXmlDescriptor(idea: BuildInfo, pluginId: String, channel: Option[String]): Either[Throwable, PluginDescriptor] = {
-    val url = MerketplaceUrls.pluginsList(pluginId, idea, channel)
+    val url = MarketplaceUrls.pluginsList(pluginId, idea, channel)
     val result = Try(PluginDescriptor.load(url))
     result.toEither
   }
@@ -18,12 +18,12 @@ class PluginRepoUtils(implicit ctx: IdeInstallationContext) extends PluginRepoAp
   override def getPluginDownloadURL(idea: BuildInfo, pluginInfo: IntellijPlugin.Id): URL =
     pluginInfo match {
       case IntellijPlugin.Id(id, Some(version), channel, _) =>
-        MerketplaceUrls.download(id, version, channel)
+        MarketplaceUrls.download(id, version, channel)
       case IntellijPlugin.Id(id, None, channel, _) =>
-        MerketplaceUrls.downloadViaPluginManager(id, idea, channel)
+        MarketplaceUrls.downloadViaPluginManager(id, idea, channel)
     }
 
-  private object MerketplaceUrls {
+  private object MarketplaceUrls {
     private val BaseUrl = "https://plugins.jetbrains.com"
 
     def pluginsList(id: String, buildInfo: BuildInfo, channel: Option[String]): URL = {
