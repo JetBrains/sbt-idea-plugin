@@ -8,7 +8,7 @@ import sbt.*
 import java.lang.ProcessBuilder as JProcessBuilder
 import java.nio.file.Files.newInputStream
 import java.nio.file.{Files, Path, Paths}
-import java.util.{Locale, Properties}
+import java.util.Properties
 import scala.collection.JavaConverters.*
 import scala.util.Using
 
@@ -82,17 +82,10 @@ abstract class IntellijAwareRunner(intellijBaseDirectory: Path, blocking: Boolea
 
 object IntellijAwareRunner {
   def getBundledJRE(intellijBaseDirectory: Path): Option[JRE] = {
-    val maybeJre: Option[Path] = sys.props.get("os.name").map { osName =>
-      if (osName.toLowerCase(Locale.ENGLISH).startsWith("mac"))
-        intellijBaseDirectory / JbrInstaller.JBR_DIR_NAME / "Contents" / "Home"
-      else
-        intellijBaseDirectory / "jbr"
-    }
+    val jbrHome = JbrInstaller.getJbrHome(intellijBaseDirectory)
 
-    maybeJre.flatMap { root =>
-      extractJBRVersion(root)
-        .map(JRE(root, _))
-    }
+    val jbrVersion = extractJBRVersion(jbrHome)
+    jbrVersion.map(JRE(jbrHome, _))
   }
 
   private def extractJBRVersion(home: Path): Option[Int] = try {

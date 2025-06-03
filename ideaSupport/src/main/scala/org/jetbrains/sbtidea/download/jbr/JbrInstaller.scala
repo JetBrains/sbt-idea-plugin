@@ -7,7 +7,7 @@ import org.rauschig.jarchivelib.{ArchiveFormat, ArchiverFactory, CompressionType
 import sbt.*
 
 import java.nio.file.{Files, Path}
-import java.util.Properties
+import java.util.{Locale, Properties}
 import scala.util.Using
 
 class JbrInstaller extends Installer[JbrArtifact] {
@@ -22,7 +22,7 @@ class JbrInstaller extends Installer[JbrArtifact] {
   }
 
   private def isSameJbr(art: JbrArtifact)(implicit ctx: IdeInstallationContext): Boolean = {
-    val releaseFile = ctx.baseDirectory / JBR_DIR_NAME / "release"
+    val releaseFile = getJbrHome(ctx.baseDirectory) / "release"
     val props = new Properties()
     try {
       val jbrInfo = art.caller.jbrInfo
@@ -32,9 +32,9 @@ class JbrInstaller extends Installer[JbrArtifact] {
         .lift2Option
         .exists(value => {
           val sameJbr =
-             value.contains(jbrInfo.version.major.replace('_', '.')) && // release file has dot major version separators
-             value.contains(jbrInfo.version.minor) &&
-             value.contains(jbrInfo.kind.value.replace("jbr_", "")) // release file has no "jbr_" prefix
+            value.contains(jbrInfo.version.major.replace('_', '.')) && // release file has dot major version separators
+              value.contains(jbrInfo.version.minor) &&
+              value.contains(jbrInfo.kind.value.replace("jbr_", "")) // release file has no "jbr_" prefix
           if (!sameJbr) log.info(s"New JBR is different from installed: $jbrInfo != $value")
           sameJbr
         })
@@ -64,5 +64,13 @@ class JbrInstaller extends Installer[JbrArtifact] {
 }
 
 object JbrInstaller {
-  val JBR_DIR_NAME    = "jbr"
+  val JBR_DIR_NAME = "jbr"
+
+  def getJbrHome(intellijBaseDirectory: Path): Path = {
+    val isMacOS = sys.props("os.name").toLowerCase(Locale.ENGLISH).contains("mac")
+    if (isMacOS)
+      intellijBaseDirectory / JbrInstaller.JBR_DIR_NAME / "Contents" / "Home"
+    else
+      intellijBaseDirectory / JbrInstaller.JBR_DIR_NAME
+  }
 }
