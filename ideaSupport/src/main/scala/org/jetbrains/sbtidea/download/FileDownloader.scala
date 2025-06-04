@@ -1,10 +1,10 @@
 package org.jetbrains.sbtidea.download
 
-import org.jetbrains.sbtidea.download.FileDownloader.{DownloadException, ProgressInfo}
+import org.jetbrains.sbtidea.download.FileDownloader.{DownloadException, ProgressInfo, fetchRemoteMetaData}
 import org.jetbrains.sbtidea.download.api.IdeInstallationProcessContext
 import org.jetbrains.sbtidea.{PluginLogger as log, *}
 
-import java.io.{File, FileOutputStream}
+import java.io.FileOutputStream
 import java.net.{SocketTimeoutException, URL}
 import java.nio.ByteBuffer
 import java.nio.channels.{Channels, ReadableByteChannel}
@@ -26,8 +26,6 @@ import scala.concurrent.duration.{Duration, DurationInt, DurationLong}
 class FileDownloader(private val downloadDirectory: Path) {
 
   private type ProgressCallback = (ProgressInfo, Path) => Unit
-
-  private case class RemoteMetaData(length: Long, fileName: String)
 
   // TODO: add downloading to temp if available
   locally {
@@ -126,7 +124,7 @@ class FileDownloader(private val downloadDirectory: Path) {
     connection.setConnectTimeout(SocketConnectionTimeoutMs)
     connection.setReadTimeout(SocketReadTimeoutMs)
 
-    val remoteMetaData = getRemoteMetaData(url)
+    val remoteMetaData = fetchRemoteMetaData(url)
     val fileNameWithoutPartSuffix =
       if (remoteMetaData.fileName.nonEmpty)
         remoteMetaData.fileName
@@ -196,34 +194,6 @@ class FileDownloader(private val downloadDirectory: Path) {
     try   { connection.getResponseCode != 206 }
     catch { case e: Exception => log.warn(s"Error checking for a resumed download: ${e.getMessage}"); false }
   }
-
-  private def getRemoteMetaData(url: URL): RemoteMetaData = withConnection(url) { connection =>
-    connection.setRequestMethod("HEAD")
-    val responseCode = connection.getResponseCode
-    if (responseCode >= 400) {
-      val message = connection.getResponseMessage
-      throw new DownloadException(s"$message ($responseCode): $url", Some(responseCode))
-    }
-    val contentLength = connection.getContentLengthLong
-    val nameFromHeader = java.net.URLDecoder
-      .decode(
-        connection
-          .getHeaderField("Content-Disposition")
-          .lift2Option
-          .map(_.replaceFirst("(?i)^.*filename=\"?([^\"]+)\"?.*$", "$1"))
-          .getOrElse(""),
-        "ISO-8859-1")
-    val nameFromURL = url.toString.split("/").lastOption.getOrElse("")
-    val name =
-      if (nameFromHeader.nonEmpty)
-        nameFromHeader
-      else if (nameFromURL.isValidFileName)
-        nameFromURL
-      else
-        Math.abs(url.hashCode()).toString
-    RemoteMetaData(if (contentLength != 0) contentLength else -1, name)
-  }
-
 
   class RBCWrapper(rbc: ReadableByteChannel, expectedSize: Long, alreadyDownloaded: Long, progressCallback: ProgressCallback, target: Path) extends ReadableByteChannel {
     private var readSoFar       = alreadyDownloaded
@@ -315,5 +285,34 @@ object FileDownloader {
     def renderAll: String = s"$percent%$space $renderBar @ $renderText"
 
     def done: Boolean = downloaded == total
+  }
+
+  case class RemoteMetaData(length: Long, fileName: String)
+
+  private def fetchRemoteMetaData(url: URL): RemoteMetaData = withConnection(url) { connection =>
+    connection.setRequestMethod("HEAD")
+    val responseCode = connection.getResponseCode
+    if (responseCode >= 400) {
+      val message = connection.getResponseMessage
+      throw new DownloadException(s"$message ($responseCode): $url", Some(responseCode))
+    }
+    val contentLength = connection.getContentLengthLong
+    val nameFromHeader = java.net.URLDecoder
+      .decode(
+        connection
+          .getHeaderField("Content-Disposition")
+          .lift2Option
+          .map(_.replaceFirst("(?i)^.*filename=\"?([^\"]+)\"?.*$", "$1"))
+          .getOrElse(""),
+        "ISO-8859-1")
+    val nameFromURL = url.toString.split("/").lastOption.getOrElse("")
+    val name =
+      if (nameFromHeader.nonEmpty)
+        nameFromHeader
+      else if (nameFromURL.isValidFileName)
+        nameFromURL
+      else
+        Math.abs(url.hashCode()).toString
+    RemoteMetaData(if (contentLength != 0) contentLength else -1, name)
   }
 }

@@ -26,11 +26,24 @@ class LocalPluginRegistry(ctx: IdeInstallationContext) extends LocalPluginRegist
 
   override def getAllDescriptors: Seq[PluginDescriptor] = index.getAllDescriptors
 
-  override def markPluginInstalled(ideaPlugin: IntellijPlugin, to: Path): Unit = {
+  override def getDownloadedPluginFileName(ideaPlugin: IntellijPlugin): Option[String] = ideaPlugin match {
+    case idOwner: IntellijPlugin.WithKnownId =>
+      index.getDownloadedPluginFileName(idOwner.id)
+    case _ =>
+      None
+  }
+
+  override def isDownloadedPlugin(ideaPlugin: IntellijPlugin): Boolean =
+    getDownloadedPluginFileName(ideaPlugin).isDefined
+
+  override def markPluginInstalled(ideaPlugin: IntellijPlugin, to: Path): Unit =
+    markPluginInstalled(ideaPlugin, to, None)
+
+  override def markPluginInstalled(ideaPlugin: IntellijPlugin, to: Path, downloadedPluginFileName: Option[String]): Unit = {
     val descriptor = extractPluginMetaData(to)
     descriptor match {
       case Right(value) =>
-        index.put(value, to)
+        index.put(value, to, downloadedPluginFileName)
       case Left(error) =>
         log.error(s"Failed to mark plugin installed, can't get plugin descriptor: $error")
     }

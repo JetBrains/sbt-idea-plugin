@@ -2,7 +2,7 @@ package org.jetbrains.sbtidea.download.plugin
 
 import org.jetbrains.sbtidea.download.FileDownloader.DownloadException
 import org.jetbrains.sbtidea.download.api.*
-import org.jetbrains.sbtidea.download.{BuildInfo, FileDownloader, IdeaUpdater, NioUtils, NotFoundHttpResponseCode, PluginXmlDetector, VersionComparatorUtil}
+import org.jetbrains.sbtidea.download.*
 import org.jetbrains.sbtidea.{IntellijPlugin, PluginLogger as log}
 
 import java.nio.file.{Files, Path}
@@ -31,10 +31,17 @@ class RepoPluginInstaller(buildInfo: BuildInfo)
             throw de
         }
     }
-    installIdeaPlugin(art.caller.plugin, dist)
+    // Get the file name from the downloaded artifact
+    val downloadedPluginFileName = dist.getFileName.toString
+    installIdeaPlugin(art.caller.plugin, dist, Some(downloadedPluginFileName))
   }
 
-  private[plugin] def installIdeaPlugin(plugin: IntellijPlugin, artifact: Path)(implicit ctx: IdeInstallationContext): Path = {
+  private[plugin] def installIdeaPlugin(
+    plugin: IntellijPlugin,
+    artifact: Path,
+    downloadedPluginFileName: Option[String] = None
+  )(implicit ctx: IdeInstallationContext): Path = {
+    val downloadedPluginFileNameHint = downloadedPluginFileName.fold("")(name => s" ($name)")
     val installedPluginRoot = if (!PluginXmlDetector.Default.isPluginJar(artifact)) {
       val tmpPluginDir = extractPluginToTemporaryDir(
         artifact,
@@ -45,15 +52,15 @@ class RepoPluginInstaller(buildInfo: BuildInfo)
       NioUtils.delete(installDir)
       Files.move(tmpPluginDir, installDir)
       NioUtils.delete(tmpPluginDir.getParent)
-      log.info(s"Installed plugin '$plugin to $installDir")
+      log.info(s"Installed plugin '$plugin'$downloadedPluginFileNameHint to $installDir")
       installDir
     } else {
       val targetJar = ctx.pluginsDir.resolve(artifact.getFileName)
       Files.move(artifact, targetJar)
-      log.info(s"Installed plugin '$plugin to $targetJar")
+      log.info(s"Installed plugin '$plugin'$downloadedPluginFileNameHint to $targetJar")
       targetJar
     }
-    localRegistry.markPluginInstalled(plugin, installedPluginRoot)
+    localRegistry.markPluginInstalled(plugin, installedPluginRoot, downloadedPluginFileName)
     installedPluginRoot
   }
 
@@ -89,7 +96,8 @@ class RepoPluginInstaller(buildInfo: BuildInfo)
   }
 
   private[plugin] def getMoreUpToDateVersion(descriptor: PluginDescriptor, channel: Option[String]): Option[String] = {
-    repo.getLatestPluginVersion(buildInfo, descriptor.id, channel) match {
+    val latestPluginVersion = repo.getLatestPluginVersion(buildInfo, descriptor.id, channel)
+    latestPluginVersion match {
       case Right(version) if VersionComparatorUtil.compare(descriptor.version, version) < 0 =>
         Some(version)
       case Left(error) =>
@@ -101,10 +109,11 @@ class RepoPluginInstaller(buildInfo: BuildInfo)
 
   private[plugin] def isPluginCompatibleWithIdea(metadata: PluginDescriptor)(implicit ctx: IdeInstallationContext): Boolean = {
     val lower = metadata.sinceBuild.replaceAll("^.+-", "") // strip IC- / PC- etc. prefixes
-    val upper = metadata.untilBuild.replaceAll("^.+-", "")
+    //empty "upper" means "no upper bound
+    val upper = Option(metadata.untilBuild.replaceAll("^.+-", "")).filter(_.nonEmpty)
     val actualIdeaBuild = ctx.productInfo.buildNumber
     val lowerValid = compareIdeaVersions(lower, actualIdeaBuild) <= 0
-    val upperValid = compareIdeaVersions(upper, actualIdeaBuild) >= 0
+    val upperValid = upper.forall(compareIdeaVersions(_, actualIdeaBuild) >= 0)
     lowerValid && upperValid
   }
 }
@@ -137,11 +146,10 @@ object RepoPluginInstaller {
     tempDirectoryName: String
   )(implicit ctx: IdeInstallationContext): Path = {
     val extractDir = Files.createTempDirectory(ctx.baseDirectory, tempDirectoryName)
-    log.info(s"Extracting plugin '$plugin to $extractDir")
+    log.info(s"Extracting plugin '$plugin' (${pluginZip.toFile.getName}) to $extractDir")
     sbt.IO.unzip(pluginZip.toFile, extractDir.toFile)
     assert(Files.list(extractDir).count() == 1, s"Expected only single plugin folder in extracted archive, got: ${extractDir.toFile.list().mkString}")
     val tmpPluginDir = Files.list(extractDir).findFirst().get()
     tmpPluginDir
   }
 }
-

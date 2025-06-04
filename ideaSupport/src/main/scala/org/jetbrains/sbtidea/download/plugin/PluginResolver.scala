@@ -6,6 +6,7 @@ import org.jetbrains.sbtidea.download.api.*
 import org.jetbrains.sbtidea.{IntellijPlugin, PluginLogger as log}
 
 import java.net.URL
+import scala.collection.mutable
 
 class PluginResolver(
   private val processedPlugins: Set[IntellijPlugin] = Set.empty,
@@ -25,10 +26,10 @@ class PluginResolver(
         Left(Nil)
       }
       else if (localRegistry.isPluginInstalled(plugin))
-        resolveInstalledPluginPlugin(pluginDependency, plugin)
+        resolveInstalledPluginPlugin(pluginDependency)
       else plugin match {
         case key: IntellijPlugin.WithKnownId =>
-          resolvePluginById(pluginDependency ,key)
+          resolvePluginById(pluginDependency, key)
         case key: IntellijPlugin.BundledFolder =>
           Left(Seq(s"Cannot find bundled plugin root for folder name: ${key.name}"))
       }
@@ -109,13 +110,6 @@ class PluginResolver(
     }
   }
 
-  private def getPluginDownloadUrl(plugin: PluginDependency, key: IntellijPlugin.WithKnownId): URL = key match {
-    case key: IntellijPlugin.Id =>
-      repo.getPluginDownloadURL(plugin.buildInfo, key)
-    case IntellijPlugin.IdWithDownloadUrl(_, downloadUrl) =>
-      downloadUrl
-  }
-
   private def downloadAndExtractDescriptor(plugin: IntellijPlugin.IdWithDownloadUrl)(implicit ctx: IdeInstallationProcessContext): Either[String, PluginDescriptor] = {
     val downloadedFile = FileDownloader(ctx).download(plugin.downloadUrl)
     val tmpPluginDir = RepoPluginInstaller.extractPluginToTemporaryDir(
@@ -127,15 +121,45 @@ class PluginResolver(
     pluginDescriptor.right.map(_.content).map(PluginDescriptor.load)
   }
 
-  private def resolveInstalledPluginPlugin(plugin: PluginDependency, key: IntellijPlugin): PluginDescriptorAndArtifactResolveResult = {
-    val descriptor = localRegistry.getPluginDescriptor(key)
+  private def resolveInstalledPluginPlugin(pluginDependency: PluginDependency): PluginDescriptorAndArtifactResolveResult = {
+    val pluginKey = pluginDependency.plugin
+    val descriptor = localRegistry.getPluginDescriptor(pluginKey)
     descriptor match {
       case Right(descriptor) =>
-        val root = localRegistry.getInstalledPluginRoot(key)
-        val artifact = LocalPlugin(plugin, descriptor, root)
-        Right((descriptor, artifact))
+        pluginKey match {
+          case withId: IntellijPlugin.WithKnownId if localRegistry.isDownloadedPlugin(withId) =>
+            val downloadUrl = getPluginDownloadUrl(pluginDependency, withId)
+            // reminder: remote plugins will be checked for actuality - it will check if there is a newer version at marketplace
+            // (see org.jetbrains.sbtidea.download.plugin.RepoPluginInstaller.isInstalledPluginUpToDate)
+            val artifact = RemotePluginArtifact(pluginDependency, downloadUrl)
+            Right((descriptor, artifact))
+          case _ =>
+            val root = localRegistry.getInstalledPluginRoot(pluginKey)
+            val artifact = LocalPlugin(pluginDependency, descriptor, root)
+            Right((descriptor, artifact))
+        }
       case Left(error) =>
-        Left(Seq(s"Cannot find installed plugin descriptor $plugin: $error"))
+        Left(Seq(s"Cannot find installed plugin descriptor $pluginDependency: $error"))
     }
   }
+
+  private def getPluginDownloadUrl(plugin: PluginDependency, key: IntellijPlugin.WithKnownId): URL = key match {
+    case key: IntellijPlugin.Id =>
+      repo.getPluginDownloadURL(plugin.buildInfo, key)
+    case IntellijPlugin.IdWithDownloadUrl(_, downloadUrl) =>
+      downloadUrl
+  }
+}
+
+object PluginResolver {
+  /**
+   * This marker set is needed to avoid accessing remote plugin metadata for the same plugin multiple times during import.
+   *
+   * The same plugin can be resolved multiple times during import as it can also be a dependency of other plugins or modules.
+   * Each dependency is resolved independently.
+   * But we can be sure that if the plugin artifact was not changed for the plugin, then we don't need to check it again.
+   *
+   * Yes, using a global state is not very nice, but it should be enough for our purposes
+   */
+  private val PluginsWithAlreadyCheckedFileNameOnRemote = mutable.Set.empty[IntellijPlugin.WithKnownId]
 }

@@ -45,9 +45,17 @@ abstract class IntellijPluginResolverTestBase extends IntellijPluginInstallerTes
     }
 
     override def getAllDescriptors: Seq[PluginDescriptor] = descriptorMap.values.toSeq
+
     override def markPluginInstalled(ideaPlugin: IntellijPlugin, to: Path): Unit = ()
+
+    override def markPluginInstalled(ideaPlugin: IntellijPlugin, to: Path, downloadedPluginFileName: Option[String]): Unit = ()
+
     override def getInstalledPluginRoot(ideaPlugin: IntellijPlugin): Path =
       Paths.get("INVALID")
+
+    override def getDownloadedPluginFileName(ideaPlugin: IntellijPlugin): Option[String] = None
+
+    override def isDownloadedPlugin(ideaPlugin: IntellijPlugin): Boolean = false
   }
 
   override protected implicit def repoAPI: PluginRepoApi = new TestPluginRepoApi
