@@ -1,11 +1,10 @@
 package org.jetbrains.sbtidea.download.plugin
 
 import org.jetbrains.annotations.TestOnly
-import org.jetbrains.sbtidea.download.plugin.LocalPluginRegistry.extractPluginMetaData
+import org.jetbrains.sbtidea.download.plugin.serialization.{PluginIndexSerializer, XmlPluginIndexSerializer}
 import org.jetbrains.sbtidea.{PathExt, PluginLogger as log}
 import sbt.*
 
-import java.io.*
 import java.nio.file.{Files, Path}
 import java.util.stream.Collectors
 import scala.jdk.CollectionConverters.asScalaBufferConverter
@@ -15,13 +14,11 @@ class PluginIndexImpl(ideaRoot: Path) extends PluginIndex {
 
   import PluginIndexImpl.*
 
-  private case class PluginInfo(installPath: Path, descriptor: PluginDescriptor, downloadedFileName: Option[String])
-  
   private type PluginId = String
   private type ReprMutable = scala.collection.mutable.HashMap[PluginId, PluginInfo]
   private type Repr = scala.collection.Map[PluginId, PluginInfo]
 
-  private val indexFile: Path = ideaRoot / INDEX_FILENAME
+  private val indexFile: Path = ideaRoot / PluginsIndexFilename
 
   private lazy val index: ReprMutable = {
     val result = initIndex
@@ -34,7 +31,7 @@ class PluginIndexImpl(ideaRoot: Path) extends PluginIndex {
   private def initIndex: Repr = {
     if (indexFile.exists) {
       try {
-        loadFromFile()
+        loadFromFile(indexFile)
       } catch {
         case e: Throwable =>
           log.warn(s"Failed to load plugin index from disk: $e")
@@ -53,7 +50,7 @@ class PluginIndexImpl(ideaRoot: Path) extends PluginIndex {
         .filter(_.trim.nonEmpty) // for some reason, there is some empty id
         .sorted
         .mkString(", ")
-      log.info(s"Plugin ids from $INDEX_FILENAME: $pluginIds")
+      log.info(s"Plugin ids from $PluginsIndexFilename: $pluginIds")
 
       saveToFile(plugins)
     } catch {
@@ -82,53 +79,27 @@ class PluginIndexImpl(ideaRoot: Path) extends PluginIndex {
 
   override def getAllDescriptors: Seq[PluginDescriptor] = index.values.map(_.descriptor).toSeq
 
-  private def loadFromFile(): ReprMutable = {
-    import PluginDescriptor.*
+  private def loadFromFile(file: Path): ReprMutable = {
     val buffer = new ReprMutable
-    Using.resource(new FileInputStream(indexFile.toFile)) { fis =>
-      Using.resource(new ObjectInputStream(new BufferedInputStream(fis))) { stream =>
-        val version = stream.readInt()
-        val size = stream.readInt()
-        if (version != INDEX_VERSION)
-          throw new WrongIndexVersionException(version)
-        val paths = stream.readObject().asInstanceOf[Array[String]]
-        val descriptors = stream.readObject().asInstanceOf[Array[String]]
-        val fileNames = if (version >= FILE_NAMES_SUPPORT_VERSION) stream.readObject().asInstanceOf[Array[Option[String]]] else Array.fill(size)(None)
-        assert(paths.length == descriptors.length && paths.length == size,
-          s"Data size mismatch: ${paths.length} - ${descriptors.length} $size")
-        val data = paths
-          .zip(descriptors)
-          .zipWithIndex
-          .map { case ((path, str), idx) => (path, load(str), fileNames(idx)) }
-          .map { case (path, descriptor, fileName)  => descriptor.id -> PluginInfo(ideaRoot / path, descriptor, fileName) }
-          .toMap
-        buffer ++= data
-        buffer
-      }
-    }
+    val data = IndexSerializer.load(file)
+    val dataWithAbsolutePaths = data.mapValues(_.withAbsoluteInstallPath(ideaRoot))
+    buffer ++= dataWithAbsolutePaths
+    buffer
   }
 
   private def saveToFile(idx: Repr): Unit = {
-    Using.resource(new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(indexFile.toFile)))) { stream =>
-      stream.writeInt(INDEX_VERSION)
-      stream.writeInt(idx.size)
-      val values = idx.values
-      val paths           = values.map(x => ideaRoot.relativize(x.installPath).toString).toArray
-      val descriptorsStr  = values.map(_.descriptor.toXMLStr).toArray
-      val fileNames       = values.map(_.downloadedFileName).toArray
-      stream.writeObject(paths)
-      stream.writeObject(descriptorsStr)
-      stream.writeObject(fileNames)
-    }
+    val dataWithRelativePaths = idx.mapValues(_.withRelativeInstallPath(ideaRoot))
+    IndexSerializer.save(indexFile, dataWithRelativePaths)
   }
 
   private def buildFromPluginsDir: Map[PluginId, PluginInfo] = {
-    val pluginDirs = Files.list(ideaRoot.resolve("plugins")).collect(Collectors.toList[Path]).asScala.filter { file =>
+    val allFilesInPluginsDir = Using.resource(Files.list(ideaRoot.resolve("plugins")))(_.collect(Collectors.toList[Path]).asScala)
+    val pluginDirsOfJarFiles = allFilesInPluginsDir.filter { file =>
       //extra filtering of unexpected extensions (e.g., some strange file plugin-classpath.txt)
       file.isDir || file.toString.endsWith(".jar")
     }
-    pluginDirs.flatMap { pluginDir =>
-      val pluginMetaData = extractPluginMetaData(pluginDir)
+    pluginDirsOfJarFiles.flatMap { pluginDir =>
+      val pluginMetaData = LocalPluginRegistry.extractPluginMetaData(pluginDir)
       pluginMetaData match {
         case Left(error) =>
           log.warn(s"Failed to add plugin to index: $error")
@@ -141,11 +112,26 @@ class PluginIndexImpl(ideaRoot: Path) extends PluginIndex {
 }
 
 object PluginIndexImpl {
+  private val IndexSerializer: PluginIndexSerializer = XmlPluginIndexSerializer
 
-  private class WrongIndexVersionException(fileIndex: Int)
-    extends RuntimeException(s"Index version in file $fileIndex is different from current $INDEX_VERSION")
+  @TestOnly val PluginsIndexFilename = "plugins_index.xml"
 
-  @TestOnly val INDEX_FILENAME = "plugins.idx"
-  private val INDEX_VERSION = 3
-  private val FILE_NAMES_SUPPORT_VERSION = 3
+  /**
+   * Represents information about a plugin in the plugin index.
+   *
+   * @param installPath        the path where the plugin is installed
+   * @param descriptor         the plugin descriptor
+   * @param downloadedFileName the name of the downloaded plugin file, if the plugin was downloaded
+   */
+  case class PluginInfo(
+    installPath: Path,
+    descriptor: PluginDescriptor,
+    downloadedFileName: Option[String]
+  ) {
+    def withAbsoluteInstallPath(ideaRoot: Path): PluginInfo =
+      copy(installPath = ideaRoot.resolve(installPath))
+
+    def withRelativeInstallPath(ideaRoot: Path): PluginInfo =
+      copy(installPath = ideaRoot.relativize(installPath))
+  }
 }

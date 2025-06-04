@@ -1,5 +1,6 @@
 package org.jetbrains.sbtidea.download.plugin
 
+import org.apache.commons.io.FileUtils
 import org.jetbrains.sbtidea.CapturingLogger.captureLog
 import org.jetbrains.sbtidea.Keys.String2Plugin
 import org.jetbrains.sbtidea.PathExt
@@ -12,6 +13,7 @@ import org.scalatest.{BeforeAndAfter, Inspectors}
 import sbt.*
 
 import java.io.OutputStreamWriter
+import java.nio.charset.StandardCharsets
 import java.nio.file.{FileSystems, Files}
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.util.Using
@@ -26,10 +28,11 @@ final class LocalPluginRegistryTest
 
   private val ideaRoot = installIdeaMock
   protected val installContext: IdeInstallationProcessContext = new IdeInstallationProcessContext(ideaRoot, ideaRoot.getParent)
+
   private def newLocalPluginRegistry: LocalPluginRegistry = new LocalPluginRegistry(installContext)
 
   private val pluginsFolder = ideaRoot / "plugins"
-  private val pluginsIndex = ideaRoot / PluginIndexImpl.INDEX_FILENAME
+  private val pluginsIndex = ideaRoot / PluginIndexImpl.PluginsIndexFilename
 
   private val hoconXML =
     """
@@ -53,7 +56,7 @@ final class LocalPluginRegistryTest
     Files.createDirectories(pluginJar.getParent)
     val isWindows = System.getProperty("os.name").toLowerCase.contains("win")
     val jarUri = new URI(s"jar:file:${if (isWindows) "/" else ""}" + pluginJar.toString.replace("\\", "/"))
-    Using.resource(FileSystems.newFileSystem(jarUri, options)) {fs =>
+    Using.resource(FileSystems.newFileSystem(jarUri, options)) { fs =>
       val jarXml = fs.getPath("META-INF", "plugin.xml")
       Files.createDirectories(jarXml.getParent)
       Files.write(jarXml, pluginXml.getBytes())
@@ -74,16 +77,17 @@ final class LocalPluginRegistryTest
     val registry = newLocalPluginRegistry
 
     for (plugin <- bundledPlugins) {
-      withClue(s"checking $plugin")
-        { registry.isPluginInstalled(plugin) shouldBe true }
+      withClue(s"checking $plugin") {
+        registry.isPluginInstalled(plugin) shouldBe true
+      }
     }
   }
 
-
   test("LocalPluginRegistry extracts plugin descriptor from ") {
     for (root <- pluginsFolder.list) {
-      withClue(s"checking $root")
-        { LocalPluginRegistry.extractPluginMetaData(root) shouldBe 'right }
+      withClue(s"checking $root") {
+        LocalPluginRegistry.extractPluginMetaData(root) shouldBe 'right
+      }
     }
   }
 
@@ -109,15 +113,14 @@ final class LocalPluginRegistryTest
   }
 
   test("LocalPluginRegistry detects plugin roots") {
-    val registry      = newLocalPluginRegistry
-    val actualRoots   = pluginsFolder.list
+    val registry = newLocalPluginRegistry
+    val actualRoots = pluginsFolder.list
     val detectedRoots =
       for {plugin <- bundledPlugins}
         yield registry.getInstalledPluginRoot(plugin)
 
     detectedRoots should contain allElementsOf actualRoots
   }
-
 
   test("LocalPluginRegistry fails when no descriptor was found") {
     val fakePluginRoot = pluginsFolder / "fakePlugin"
@@ -169,11 +172,24 @@ final class LocalPluginRegistryTest
 
     val newRegistry = newLocalPluginRegistry
 
-    val messages = captureLog {
+    val messages: Seq[String] = captureLog {
       newRegistry.isPluginInstalled(newPlugin) shouldBe false // deleted plugin is not re-indexed
-      forAll (bundledPlugins) { newRegistry.isPluginInstalled(_) shouldBe true }
+      forAll(bundledPlugins) {
+        newRegistry.isPluginInstalled(_) shouldBe true
+      }
     }
-    messages should contain("[warn] Failed to load plugin index from disk: java.io.EOFException")
+
+
+    def assertContainsMessageStartingWith(messages: Seq[String], prefix: String): Unit = {
+      assert(
+        messages.exists(_.startsWith(prefix)),
+        s"""No message starting with: '$prefix'
+           |Available messages:
+           |${messages.mkString("\n")}""".stripMargin
+      )
+    }
+
+    assertContainsMessageStartingWith(messages, "[warn] Failed to load plugin index from disk: ")
   }
 
   test("irrelevant files and folders are ignored when building index") {
@@ -199,5 +215,111 @@ final class LocalPluginRegistryTest
     //NOTE: non ".jar" and non-directories are silently ignored
     //assertHasMatchingMessage("""\[warn\] Failed to add plugin to index: Couldn't find plugin.xml in .+\.DS_Store""")
     assertHasMatchingMessage("""\[warn\] Failed to add plugin to index: Plugin root .+NON-PLUGIN has no lib directory""")
+  }
+
+  private val PluginIndexXmlFileContent: String =
+    """<pluginIndex>
+      |  <version>1</version>
+      |  <plugins>
+      |    <plugin>
+      |      <id>com.jetbrains.codeWithMe</id>
+      |      <path>plugins/cwm-plugin</path>
+      |      <descriptor>
+      |        <idea-plugin>
+      |          <name>Code With Me</name>
+      |          <vendor>JetBrains</vendor>
+      |          <id>com.jetbrains.codeWithMe</id>
+      |          <version>232.3318</version>
+      |          <idea-version since-build="232.3318" until-build="232.3318"/>
+      |          <depends optional="false">com.intellij.modules.platform</depends>
+      |          <depends optional="false">com.jetbrains.projector.libs</depends>
+      |          <depends optional="true">org.jetbrains.plugins.terminal</depends>
+      |          <depends optional="true">com.intellij.java</depends>
+      |          <depends optional="true">Pythonid</depends>
+      |        </idea-plugin>
+      |      </descriptor>
+      |    </plugin>
+      |    <plugin>
+      |      <id>org.jetbrains.plugins.yaml</id>
+      |      <path>plugins/yaml.jar</path>
+      |      <descriptor>
+      |        <idea-plugin>
+      |          <name>YAML</name>
+      |          <vendor>JetBrains</vendor>
+      |          <id>org.jetbrains.plugins.yaml</id>
+      |          <version>211.5538.2</version>
+      |          <idea-version since-build="211.5538.2" until-build="211.5538.2"/>
+      |          <depends optional="false">com.intellij.modules.lang</depends>
+      |        </idea-plugin>
+      |      </descriptor>
+      |    </plugin>
+      |    <plugin>
+      |      <id>com.intellij.properties</id>
+      |      <path>plugins/properties</path>
+      |      <descriptor>
+      |        <idea-plugin>
+      |          <name>Properties</name>
+      |          <vendor>JetBrains</vendor>
+      |          <id>com.intellij.properties</id>
+      |          <version>242.14146.5</version>
+      |          <idea-version since-build="242.14146.5" until-build="242.14146.5"/>
+      |        </idea-plugin>
+      |      </descriptor>
+      |    </plugin>
+      |  </plugins>
+      |</pluginIndex>""".stripMargin.trim
+
+  test("check plugin index file content") {
+    val pluginIndex = new PluginIndexImpl(ideaRoot)
+
+    // This triggers index initialization and creation of plugin index file
+    pluginIndex.getAllDescriptors
+
+    pluginsIndex.toFile should exist
+
+    val content = FileUtils.readFileToString(pluginsIndex.toFile, StandardCharsets.UTF_8)
+    content shouldBe PluginIndexXmlFileContent
+  }
+
+  test("check plugin index file deserialisation") {
+    Files.write(pluginsIndex, PluginIndexXmlFileContent.getBytes(StandardCharsets.UTF_8))
+
+    val pluginIndex = new PluginIndexImpl(ideaRoot)
+
+    val descriptors = pluginIndex.getAllDescriptors
+
+    descriptors.size shouldBe 3
+
+    // Verify the plugin descriptors
+    val cwmPlugin = descriptors.find(_.id == "com.jetbrains.codeWithMe").get
+    cwmPlugin.id shouldBe "com.jetbrains.codeWithMe"
+    cwmPlugin.vendor shouldBe "JetBrains"
+    cwmPlugin.name shouldBe "Code With Me"
+    cwmPlugin.version shouldBe "232.3318"
+    cwmPlugin.sinceBuild shouldBe "232.3318"
+    cwmPlugin.untilBuild shouldBe "232.3318"
+    cwmPlugin.dependsOn should contain(PluginDescriptor.Dependency("com.intellij.modules.platform", optional = false))
+    cwmPlugin.dependsOn should contain(PluginDescriptor.Dependency("com.jetbrains.projector.libs", optional = false))
+    cwmPlugin.dependsOn should contain(PluginDescriptor.Dependency("org.jetbrains.plugins.terminal", optional = true))
+    cwmPlugin.dependsOn should contain(PluginDescriptor.Dependency("com.intellij.java", optional = true))
+    cwmPlugin.dependsOn should contain(PluginDescriptor.Dependency("Pythonid", optional = true))
+
+    val yamlPlugin = descriptors.find(_.id == "org.jetbrains.plugins.yaml").get
+    yamlPlugin.id shouldBe "org.jetbrains.plugins.yaml"
+    yamlPlugin.vendor shouldBe "JetBrains"
+    yamlPlugin.name shouldBe "YAML"
+    yamlPlugin.version shouldBe "211.5538.2"
+    yamlPlugin.sinceBuild shouldBe "211.5538.2"
+    yamlPlugin.untilBuild shouldBe "211.5538.2"
+    yamlPlugin.dependsOn should contain(PluginDescriptor.Dependency("com.intellij.modules.lang", optional = false))
+
+    val propertiesPlugin = descriptors.find(_.id == "com.intellij.properties").get
+    propertiesPlugin.id shouldBe "com.intellij.properties"
+    propertiesPlugin.vendor shouldBe "JetBrains"
+    propertiesPlugin.name shouldBe "Properties"
+    propertiesPlugin.version shouldBe "242.14146.5"
+    propertiesPlugin.sinceBuild shouldBe "242.14146.5"
+    propertiesPlugin.untilBuild shouldBe "242.14146.5"
+    propertiesPlugin.dependsOn shouldBe empty
   }
 }

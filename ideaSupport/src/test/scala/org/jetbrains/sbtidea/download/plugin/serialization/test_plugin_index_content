@@ -1,0 +1,2391 @@
+<pluginIndex>
+  <version>1</version>
+  <plugins>
+    <plugin>
+      <id>intellij.webpack</id>
+      <path>plugins/webpack</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Webpack</name>
+          <vendor>JetBrains</vendor>
+          <id>intellij.webpack</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.jetbrains.debugger.streams</id>
+      <path>plugins/java-debugger-streams</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Java Stream Debugger</name>
+          <vendor>JetBrains</vendor>
+          <id>org.jetbrains.debugger.streams</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.jetbrains.sh</id>
+      <path>plugins/sh</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Shell Script</name>
+          <vendor>JetBrains</vendor>
+          <id>com.jetbrains.sh</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.intellij.groovy</id>
+      <path>plugins/Groovy</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Groovy</name>
+          <vendor>JetBrains</vendor>
+          <id>org.intellij.groovy</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="true">com.intellij.copyright</depends>
+          <depends optional="true">org.intellij.intelliLang</depends>
+          <depends optional="true">com.intellij.modules.ultimate</depends>
+          <depends optional="true">com.intellij.modules.duplicatesDetector</depends>
+          <depends optional="true">com.intellij.modules.structuralsearch</depends>
+          <depends optional="true">JUnit</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.stylelint</id>
+      <path>plugins/stylelint</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Stylelint</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.stylelint</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.jetbrains.plugins.gradle.maven</id>
+      <path>plugins/gradle-java-maven</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Gradle-Maven</name>
+          <vendor>JetBrains</vendor>
+          <id>org.jetbrains.plugins.gradle.maven</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">org.intellij.groovy</depends>
+          <depends optional="false">org.jetbrains.idea.maven</depends>
+          <depends optional="false">org.jetbrains.plugins.gradle</depends>
+          <depends optional="false">org.jetbrains.idea.reposearch</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.intellij.intelliLang</id>
+      <path>plugins/platform-langInjection</path>
+      <descriptor>
+        <idea-plugin>
+          <name>IntelliLang</name>
+          <vendor>JetBrains</vendor>
+          <id>org.intellij.intelliLang</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="true">XPathView</depends>
+          <depends optional="true">com.intellij.modules.java</depends>
+          <depends optional="true">com.intellij.modules.xml</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.LineProfiler</id>
+      <path>plugins/profiler-lineProfiler</path>
+      <descriptor>
+        <idea-plugin>
+          <name>In-Editor Performance Hints</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.LineProfiler</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.java-i18n</id>
+      <path>plugins/java-i18n</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Java Internationalization</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.java-i18n</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.properties</depends>
+          <depends optional="false">com.intellij.modules.java</depends>
+          <depends optional="false">com.intellij.modules.platform</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.ko</id>
+      <path>plugins/localization-ko</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Korean Language Pack / 한국어 언어 팩</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.ko</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.modules.platform</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.jetbrains.idea.maven.server.api</id>
+      <path>plugins/maven-server</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Maven server api classes</name>
+          <vendor>JetBrains</vendor>
+          <id>org.jetbrains.idea.maven.server.api</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">org.jetbrains.idea.maven.model</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.reactivestreams</id>
+      <path>plugins/reactivestreams-core</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Reactive Streams</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.reactivestreams</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+          <depends optional="true">org.jetbrains.plugins.gradle</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.flyway</id>
+      <path>plugins/flyway</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Flyway</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.flyway</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.plugins.webcomponents</id>
+      <path>plugins/webComponents</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Polymer &amp; Web Components</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.plugins.webcomponents</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.modules.xml</depends>
+          <depends optional="false">JavaScript</depends>
+          <depends optional="true">com.intellij.css</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.tasks.timeTracking</id>
+      <path>plugins/tasks-timeTracking</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Time Tracking</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.tasks.timeTracking</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>intellij.git.commit.modal</id>
+      <path>plugins/vcs-git-commit-modal</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Modal Commit Interface</name>
+          <vendor>JetBrains</vendor>
+          <id>intellij.git.commit.modal</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.plugins.netbeanskeymap</id>
+      <path>plugins/keymap-netbeans</path>
+      <descriptor>
+        <idea-plugin>
+          <name>NetBeans Keymap</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.plugins.netbeanskeymap</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.modules.lang</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>TestNG-J</id>
+      <path>plugins/testng</path>
+      <descriptor>
+        <idea-plugin>
+          <name>TestNG</name>
+          <vendor>JetBrains</vendor>
+          <id>TestNG-J</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.modules.java</depends>
+          <depends optional="true">org.intellij.intelliLang</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.jetbrains.idea.reposearch</id>
+      <path>plugins/repository-search</path>
+      <descriptor>
+        <idea-plugin>
+          <name>JetBrains Repository Search</name>
+          <vendor>JetBrains</vendor>
+          <id>org.jetbrains.idea.reposearch</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.jetbrains.plugins.terminal</id>
+      <path>plugins/terminal</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Terminal</name>
+          <vendor>JetBrains</vendor>
+          <id>org.jetbrains.plugins.terminal</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>JavaScript</id>
+      <path>plugins/javascript-plugin</path>
+      <descriptor>
+        <idea-plugin>
+          <name>JavaScript and TypeScript</name>
+          <vendor>JetBrains</vendor>
+          <id>JavaScript</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+          <depends optional="false">com.intellij.modules.ultimate</depends>
+          <depends optional="false">com.intellij.modules.xml</depends>
+          <depends optional="false">com.intellij.modules.json</depends>
+          <depends optional="true">com.intellij.completion.ml.ranking</depends>
+          <depends optional="true">com.intellij.plugins.watcher</depends>
+          <depends optional="true">com.jetbrains.performancePlugin</depends>
+          <depends optional="true">org.intellij.intelliLang</depends>
+          <depends optional="true">com.intellij.copyright</depends>
+          <depends optional="true">org.jetbrains.plugins.terminal</depends>
+          <depends optional="true">com.intellij.modules.coverage</depends>
+          <depends optional="true">com.intellij.modules.coverage</depends>
+          <depends optional="true">tanvd.grazi</depends>
+          <depends optional="true">com.intellij.modules.duplicatesDetector</depends>
+          <depends optional="true">com.jetbrains.performancePlugin</depends>
+          <depends optional="true">org.intellij.plugins.markdown</depends>
+          <depends optional="true">org.intellij.intelliLang</depends>
+          <depends optional="true">training</depends>
+          <depends optional="true">Git4Idea</depends>
+          <depends optional="true">com.intellij.modules.webstorm</depends>
+          <depends optional="false">com.intellij.css</depends>
+          <depends optional="false">com.intellij.css</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.jetbrains.plugins.remote-run</id>
+      <path>plugins/remoteRun</path>
+      <descriptor>
+        <idea-plugin>
+          <name>SSH Remote Run</name>
+          <vendor>JetBrains</vendor>
+          <id>org.jetbrains.plugins.remote-run</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.toml.lang</id>
+      <path>plugins/toml</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Toml</name>
+          <vendor>JetBrains</vendor>
+          <id>org.toml.lang</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>hg4idea</id>
+      <path>plugins/vcs-hg</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Mercurial</name>
+          <vendor>JetBrains</vendor>
+          <id>hg4idea</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.modules.vcs</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>Karma</id>
+      <path>plugins/karma</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Karma</name>
+          <vendor>JetBrains</vendor>
+          <id>Karma</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.modules.lang</depends>
+          <depends optional="false">com.intellij.modules.javascript</depends>
+          <depends optional="true">JavaScriptDebugger</depends>
+          <depends optional="true">com.intellij.modules.coverage</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.jetbrains.plugins.gradle.analysis</id>
+      <path>plugins/gradle-analysis</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Gradle-Java-Analysis</name>
+          <vendor>JetBrains</vendor>
+          <id>org.jetbrains.plugins.gradle.analysis</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">org.jetbrains.plugins.gradle</depends>
+          <depends optional="false">org.jetbrains.idea.gradle.dsl</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.marketplace.ml</id>
+      <path>plugins/marketplaceMl</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Machine Learning in Marketplace</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.marketplace.ml</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.spring.cloud</id>
+      <path>plugins/spring-boot-cloud</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Spring Cloud</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.spring.cloud</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.jsp</id>
+      <path>plugins/javaee-jsp-base-impl</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Jakarta EE: Server Pages (JSP)</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.jsp</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>JavaScriptDebugger</id>
+      <path>plugins/javascript-debugger</path>
+      <descriptor>
+        <idea-plugin>
+          <name>JavaScript Debugger</name>
+          <vendor>JetBrains</vendor>
+          <id>JavaScriptDebugger</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+          <depends optional="true">com.jetbrains.plugins.webDeployment</depends>
+          <depends optional="true">com.intellij.modules.coverage</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.jetbrains.kotlin</id>
+      <path>plugins/Kotlin</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Kotlin</name>
+          <vendor>JetBrains</vendor>
+          <id>org.jetbrains.kotlin</id>
+          <version>251.26094.105-IJ</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.turboComplete</id>
+      <path>plugins/turboComplete</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Turbo Complete</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.turboComplete</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.liquibase</id>
+      <path>plugins/liquibase</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Liquibase</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.liquibase</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.spring</id>
+      <path>plugins/Spring</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Spring</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.spring</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.diagram</id>
+      <path>plugins/uml</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Diagrams</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.diagram</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.plugins.visualstudiokeymap</id>
+      <path>plugins/keymap-visualStudio</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Visual Studio Keymap</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.plugins.visualstudiokeymap</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.modules.lang</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.configurationScript</id>
+      <path>plugins/configurationScript</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Configuration Script</name>
+          <vendor>JetBrainsJetBrains</vendor>
+          <id>com.intellij.configurationScript</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.java.ide</id>
+      <path>plugins/java-ide-customization</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Java IDE Customization</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.java.ide</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.java</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>intellij.prettierJS</id>
+      <path>plugins/prettierJS</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Prettier</name>
+          <vendor>JetBrains</vendor>
+          <id>intellij.prettierJS</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.modules.javascript</depends>
+          <depends optional="false">com.intellij.modules.platform</depends>
+          <depends optional="false">com.intellij.modules.json</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.thymeleaf</id>
+      <path>plugins/thymeleaf</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Thymeleaf</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.thymeleaf</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.spring.data</id>
+      <path>plugins/spring-data</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Spring Data</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.spring.data</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.spring.boot.initializr</id>
+      <path>plugins/spring-boot-initializr</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Spring Initializr</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.spring.boot.initializr</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+          <depends optional="true">com.jetbrains.performancePlugin</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.jetbrains.idea.eclipse</id>
+      <path>plugins/eclipse</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Eclipse Interoperability</name>
+          <vendor>JetBrains</vendor>
+          <id>org.jetbrains.idea.eclipse</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.modules.java</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.javaee.app.servers.integration</id>
+      <path>plugins/javaee-app-servers-impl</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Jakarta EE: Application Servers</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.javaee.app.servers.integration</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>JSIntentionPowerPack</id>
+      <path>plugins/javascript-intentions</path>
+      <descriptor>
+        <idea-plugin>
+          <name>JavaScript Intention Power Pack</name>
+          <vendor>JetBrains</vendor>
+          <id>JSIntentionPowerPack</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">JavaScript</depends>
+          <depends optional="false">com.intellij.modules.xml</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.jetbrains.plugins.vue</id>
+      <path>plugins/vuejs</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Vue.js</name>
+          <vendor>JetBrains</vendor>
+          <id>org.jetbrains.plugins.vue</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="true">JavaScriptDebugger</depends>
+          <depends optional="true">org.intellij.plugins.markdown</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.jetbrains.plugins.gradle</id>
+      <path>plugins/gradle-java</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Gradle-Java</name>
+          <vendor>JetBrains</vendor>
+          <id>org.jetbrains.plugins.gradle</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.java</depends>
+          <depends optional="false">com.intellij.gradle</depends>
+          <depends optional="true">org.jetbrains.idea.maven</depends>
+          <depends optional="true">Coverage</depends>
+          <depends optional="true">org.intellij.groovy</depends>
+          <depends optional="true">com.intellij.properties</depends>
+          <depends optional="true">org.toml.lang</depends>
+          <depends optional="true">com.jetbrains.performancePlugin</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>Lombook Plugin</id>
+      <path>plugins/lombok</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Lombok</name>
+          <vendor>JetBrains</vendor>
+          <id>Lombook Plugin</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.modules.lang</depends>
+          <depends optional="false">com.intellij.modules.platform</depends>
+          <depends optional="false">com.intellij.modules.java</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.micronaut</id>
+      <path>plugins/micronaut</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Micronaut</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.micronaut</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>Coverage</id>
+      <path>plugins/java-coverage</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Code Coverage for Java</name>
+          <vendor>JetBrains</vendor>
+          <id>Coverage</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="true">TestNG-J</depends>
+          <depends optional="true">JUnit</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.completion.evaluation</id>
+      <path>plugins/evaluationPlugin</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Evaluation Plugin</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.completion.evaluation</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.tasks</id>
+      <path>plugins/tasks</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Task Management</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.tasks</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="true">com.intellij.modules.java</depends>
+          <depends optional="true">XPathView</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.modules.json</id>
+      <path>plugins/json</path>
+      <descriptor>
+        <idea-plugin>
+          <name>JSON</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.modules.json</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.cron</id>
+      <path>plugins/cron</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Cron Expressions</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.cron</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>training</id>
+      <path>plugins/featuresTrainer</path>
+      <descriptor>
+        <idea-plugin>
+          <name>IDE Features Trainer</name>
+          <vendor>JetBrains</vendor>
+          <id>training</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.searcheverywhere.ml</id>
+      <path>plugins/searchEverywhereMl</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Machine Learning in Search Everywhere</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.searcheverywhere.ml</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.platform.images</id>
+      <path>plugins/platform-images</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Images</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.platform.images</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.jetbrains.idea.maven.model</id>
+      <path>plugins/maven-model</path>
+      <descriptor>
+        <idea-plugin>
+          <name>JetBrains maven model api classes</name>
+          <vendor>JetBrains</vendor>
+          <id>org.jetbrains.idea.maven.model</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.jetbrains.plugins.webDeployment</id>
+      <path>plugins/webDeployment</path>
+      <descriptor>
+        <idea-plugin>
+          <name>FTP/SFTP/WebDAV Connectivity</name>
+          <vendor>JetBrains</vendor>
+          <id>com.jetbrains.plugins.webDeployment</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.intellij.plugins.markdown</id>
+      <path>plugins/markdown</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Markdown</name>
+          <vendor>JetBrains</vendor>
+          <id>org.intellij.plugins.markdown</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>intellij.indexing.shared</id>
+      <path>plugins/indexing-shared-ultimate-plugin-bundled</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Shared Project Indexes</name>
+          <vendor>JetBrains</vendor>
+          <id>intellij.indexing.shared</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.css</id>
+      <path>plugins/css-impl</path>
+      <descriptor>
+        <idea-plugin>
+          <name>CSS</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.css</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+          <depends optional="false">com.intellij.platform.images</depends>
+          <depends optional="false">com.intellij.modules.xml</depends>
+          <depends optional="false">com.intellij.modules.ultimate</depends>
+          <depends optional="true">com.intellij.copyright</depends>
+          <depends optional="true">com.intellij.plugins.watcher</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.jetbrains.plugins.gradle.dependency.updater</id>
+      <path>plugins/gradle-dependencyUpdater</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Gradle Dependency Updater Implementation</name>
+          <vendor>JetBrains</vendor>
+          <id>org.jetbrains.plugins.gradle.dependency.updater</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.gradle</depends>
+          <depends optional="false">org.jetbrains.idea.gradle.dsl</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.spring.boot</id>
+      <path>plugins/spring-boot-core</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Spring Boot</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.spring.boot</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.jetbrains.idea.gradle.dsl</id>
+      <path>plugins/android-gradle-dsl</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Gradle DSL API</name>
+          <vendor>JetBrains, Google</vendor>
+          <id>org.jetbrains.idea.gradle.dsl</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.ml.llm</id>
+      <path>plugins/ml-llm</path>
+      <descriptor>
+        <idea-plugin>
+          <name>JetBrains AI Assistant</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.ml.llm</id>
+          <version>251.26094.80.11</version>
+          <idea-version since-build="251.25410.1" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>JUnit</id>
+      <path>plugins/junit</path>
+      <descriptor>
+        <idea-plugin>
+          <name>JUnit</name>
+          <vendor>JetBrains</vendor>
+          <id>JUnit</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.java</depends>
+          <depends optional="true">com.intellij.properties</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.kubernetes</id>
+      <path>plugins/clouds-kubernetes</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Kubernetes</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.kubernetes</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>intellij.platform.ijent.impl</id>
+      <path>plugins/platform-ijent-impl</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Remote Execution Agent</name>
+          <vendor>JetBrains</vendor>
+          <id>intellij.platform.ijent.impl</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>intellij.grid.plugin</id>
+      <path>plugins/grid-plugin</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Data Editor Support</name>
+          <vendor>JetBrains</vendor>
+          <id>intellij.grid.plugin</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.jsonpath</id>
+      <path>plugins/jsonpath</path>
+      <descriptor>
+        <idea-plugin>
+          <name>JSONPath</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.jsonpath</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.jetbrains.restWebServices</id>
+      <path>plugins/javaee-jax-rs</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Jakarta EE: RESTful Web Services (JAX-RS)</name>
+          <vendor>JetBrains</vendor>
+          <id>com.jetbrains.restWebServices</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.javaee.jakarta.data</id>
+      <path>plugins/javaee-jakarta-data</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Jakarta EE: Data</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.javaee.jakarta.data</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.jetbrains.plugins.sass</id>
+      <path>plugins/sass</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Sass</name>
+          <vendor>JetBrains</vendor>
+          <id>org.jetbrains.plugins.sass</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.css</depends>
+          <depends optional="false">com.intellij.modules.lang</depends>
+          <depends optional="true">com.intellij.plugins.watcher</depends>
+          <depends optional="true">com.intellij.copyright</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.javaee</id>
+      <path>plugins/JavaEE</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Jakarta EE Platform</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.javaee</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>NodeJS</id>
+      <path>plugins/nodeJS</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Node.js</name>
+          <vendor>JetBrains</vendor>
+          <id>NodeJS</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.modules.javascript</depends>
+          <depends optional="false">JavaScriptDebugger</depends>
+          <depends optional="false">com.intellij.modules.lang</depends>
+          <depends optional="true">com.intellij.modules.coverage</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>tanvd.grazi</id>
+      <path>plugins/grazie</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Grazie Lite</name>
+          <vendor>JetBrains</vendor>
+          <id>tanvd.grazi</id>
+          <version>251.26094.37</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.completion.ml.ranking</id>
+      <path>plugins/completionMlRanking</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Machine Learning Code Completion</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.completion.ml.ranking</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.beanValidation</id>
+      <path>plugins/javaee-beanValidation</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Jakarta EE: Bean Validation</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.beanValidation</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.microservices.jvm</id>
+      <path>plugins/microservices-jvm</path>
+      <descriptor>
+        <idea-plugin>
+          <name>JVM Microservices Frameworks</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.microservices.jvm</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>idea.plugin.protoeditor</id>
+      <path>plugins/protoeditor</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Protocol Buffers</name>
+          <vendor>JetBrains</vendor>
+          <id>idea.plugin.protoeditor</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.swagger</id>
+      <path>plugins/swagger</path>
+      <descriptor>
+        <idea-plugin>
+          <name>OpenAPI Specifications</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.swagger</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.jetbrains.completion.full.line</id>
+      <path>plugins/fullLine</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Full Line Code Completion</name>
+          <vendor>JetBrains</vendor>
+          <id>org.jetbrains.completion.full.line</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.jetbrains.plugins.wsl.remoteSdk</id>
+      <path>plugins/wsl-remoteSdk</path>
+      <descriptor>
+        <idea-plugin>
+          <name>WSL Support Framework</name>
+          <vendor>JetBrains</vendor>
+          <id>org.jetbrains.plugins.wsl.remoteSdk</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.jetbrains.gateway.terminal</id>
+      <path>plugins/gateway-terminal</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Terminal for Gateway</name>
+          <vendor>JetBrains</vendor>
+          <id>com.jetbrains.gateway.terminal</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.jetbrains.gateway</depends>
+          <depends optional="false">com.intellij.modules.ssh</depends>
+          <depends optional="false">org.jetbrains.plugins.terminal</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.database</id>
+      <path>plugins/DatabaseTools</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Database Tools and SQL</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.database</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="true">JavaScript</depends>
+          <depends optional="true">org.intellij.intelliLang</depends>
+          <depends optional="true">com.intellij.copyright</depends>
+          <depends optional="true">com.intellij.completion.ml.ranking</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.javaee.el</id>
+      <path>plugins/javaee-el-core</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Jakarta EE: Expression Language (EL)</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.javaee.el</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.jetbrains.plugins.yaml</id>
+      <path>plugins/yaml</path>
+      <descriptor>
+        <idea-plugin>
+          <name>YAML</name>
+          <vendor>JetBrains</vendor>
+          <id>org.jetbrains.plugins.yaml</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.zh</id>
+      <path>plugins/localization-zh</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Chinese (Simplified) Language Pack / 中文语言包</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.zh</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.modules.platform</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.velocity</id>
+      <path>plugins/velocity</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Apache Velocity</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.velocity</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.jetbrains.gateway</id>
+      <path>plugins/gateway-plugin</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Remote Development Gateway</name>
+          <vendor>JetBrains</vendor>
+          <id>com.jetbrains.gateway</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.modules.platform</depends>
+          <depends optional="false">com.intellij.modules.ssh</depends>
+          <depends optional="false">com.intellij.modules.ultimate</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.jetbrains.plugins.textmate</id>
+      <path>plugins/textmate</path>
+      <descriptor>
+        <idea-plugin>
+          <name>TextMate Bundles</name>
+          <vendor>JetBrains</vendor>
+          <id>org.jetbrains.plugins.textmate</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.modules.lang</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>intellij.charts</id>
+      <path>plugins/charts</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Charts Support</name>
+          <vendor>JetBrains</vendor>
+          <id>intellij.charts</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.java</id>
+      <path>plugins/java</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Java</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.java</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="true">com.intellij.copyright</depends>
+          <depends optional="true">com.intellij.platform.images</depends>
+          <depends optional="true">com.intellij.modules.idea.community</depends>
+          <depends optional="true">com.intellij.modules.remoteServers</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>Git4Idea</id>
+      <path>plugins/vcs-git</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Git</name>
+          <vendor>JetBrains</vendor>
+          <id>Git4Idea</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="true">com.jetbrains.performancePlugin</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>tslint</id>
+      <path>plugins/tslint</path>
+      <descriptor>
+        <idea-plugin>
+          <name>TSLint</name>
+          <vendor>JetBrains</vendor>
+          <id>tslint</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">JavaScript</depends>
+          <depends optional="false">com.intellij.modules.platform</depends>
+          <depends optional="false">com.intellij.modules.json</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>XPathView</id>
+      <path>plugins/xpath</path>
+      <descriptor>
+        <idea-plugin>
+          <name>XPathView + XSLT</name>
+          <vendor>JetBrains</vendor>
+          <id>XPathView</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.modules.xml</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>HtmlTools</id>
+      <path>plugins/html-tools</path>
+      <descriptor>
+        <idea-plugin>
+          <name>HTML Tools</name>
+          <vendor>JetBrains</vendor>
+          <id>HtmlTools</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.modules.xml</depends>
+          <depends optional="false">com.intellij.platform.images</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.persistence</id>
+      <path>plugins/javaee-persistence-impl</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Persistence Frameworks</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.persistence</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.jetbrains.plugins.javaFX</id>
+      <path>plugins/javaFX</path>
+      <descriptor>
+        <idea-plugin>
+          <name>JavaFX</name>
+          <vendor>JetBrains</vendor>
+          <id>org.jetbrains.plugins.javaFX</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.jetbrains.performancePlugin</id>
+      <path>plugins/performanceTesting</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Performance Testing</name>
+          <vendor>JetBrains</vendor>
+          <id>com.jetbrains.performancePlugin</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.intellij.plugins.postcss</id>
+      <path>plugins/postcss</path>
+      <descriptor>
+        <idea-plugin>
+          <name>PostCSS</name>
+          <vendor>JetBrains</vendor>
+          <id>org.intellij.plugins.postcss</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>intellij.nextjs</id>
+      <path>plugins/nextjs</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Next.js</name>
+          <vendor>JetBrains</vendor>
+          <id>intellij.nextjs</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.modules.platform</depends>
+          <depends optional="false">JavaScript</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.jetbrains.bazel</id>
+      <path>plugins/plugin-bazel</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Bazel (EAP)</name>
+          <vendor>JetBrains</vendor>
+          <id>org.jetbrains.bazel</id>
+          <version>2025.1.8.1</version>
+          <idea-version since-build="251.23774.435"/>
+          <depends optional="false">com.intellij.modules.lang</depends>
+          <depends optional="false">com.intellij.modules.platform</depends>
+          <depends optional="true">com.jetbrains.codeWithMe</depends>
+          <depends optional="true">com.intellij.modules.coverage</depends>
+          <depends optional="true">com.intellij.clion</depends>
+          <depends optional="true">DevKit</depends>
+          <depends optional="true">org.jetbrains.plugins.go</depends>
+          <depends optional="true">com.jetbrains.performancePlugin</depends>
+          <depends optional="true">com.intellij.modules.java</depends>
+          <depends optional="true">JUnit</depends>
+          <depends optional="true">org.jetbrains.kotlin</depends>
+          <depends optional="true">com.intellij.modules.python</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.jetbrains.java.decompiler</id>
+      <path>plugins/java-decompiler</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Java Bytecode Decompiler</name>
+          <vendor>JetBrains</vendor>
+          <id>org.jetbrains.java.decompiler</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.modules.java</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.jetbrains.idea.maven.ext</id>
+      <path>plugins/maven-ext</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Maven Extension</name>
+          <vendor>JetBrains</vendor>
+          <id>org.jetbrains.idea.maven.ext</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.jetbrains.plugins.emojipicker</id>
+      <path>plugins/emojipicker</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Emoji Picker</name>
+          <vendor>JetBrains</vendor>
+          <id>org.jetbrains.plugins.emojipicker</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.modules.platform</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>intellij.webp</id>
+      <path>plugins/webp</path>
+      <descriptor>
+        <idea-plugin>
+          <name>WebP Support</name>
+          <vendor>JetBrains</vendor>
+          <id>intellij.webp</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.modules.lang</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.javaee.jpa</id>
+      <path>plugins/JPA</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Jakarta EE: Persistence (JPA)</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.javaee.jpa</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>AngularJS</id>
+      <path>plugins/angular</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Angular</name>
+          <vendor>JetBrains</vendor>
+          <id>AngularJS</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">JavaScript</depends>
+          <depends optional="false">com.intellij.modules.platform</depends>
+          <depends optional="false">HtmlTools</depends>
+          <depends optional="true">com.intellij.css</depends>
+          <depends optional="true">tslint</depends>
+          <depends optional="false">intellij.webpack</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.jetbrains.plugins.kotlin.jupyter</id>
+      <path>plugins/kotlin-jupyter-plugin</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Kotlin Notebook</name>
+          <vendor>JetBrains</vendor>
+          <id>org.jetbrains.plugins.kotlin.jupyter</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.jetbrains.plugins.node-remote-interpreter</id>
+      <path>plugins/nodeJS-remoteInterpreter</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Node.js Remote Interpreter</name>
+          <vendor>JetBrains</vendor>
+          <id>org.jetbrains.plugins.node-remote-interpreter</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.intellij.qodana</id>
+      <path>plugins/qodana</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Qodana</name>
+          <vendor>JetBrains</vendor>
+          <id>org.intellij.qodana</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="true">org.intellij.intelliLang</depends>
+          <depends optional="true">Git4Idea</depends>
+          <depends optional="true">org.jetbrains.plugins.yaml</depends>
+          <depends optional="true">com.intellij.java</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.jpa.jpb.model</id>
+      <path>plugins/JPA Model</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Jakarta EE: JPA Model</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.jpa.jpb.model</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.deadlock.scsyntax</id>
+      <path>plugins/styled-components</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Styled Components &amp; Styled JSX</name>
+          <vendor>JetBrains</vendor>
+          <id>com.deadlock.scsyntax</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.modules.lang</depends>
+          <depends optional="false">com.intellij.css</depends>
+          <depends optional="false">JavaScript</depends>
+          <depends optional="false">org.intellij.plugins.postcss</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.notebooks.core</id>
+      <path>plugins/notebooks-plugin</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Notebook Files</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.notebooks.core</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+          <depends optional="false">com.intellij.modules.platform</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>intellij.ktor</id>
+      <path>plugins/ktor</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Ktor</name>
+          <vendor>JetBrains</vendor>
+          <id>intellij.ktor</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.jetbrains.plugins.docker.gateway</id>
+      <path>plugins/clouds-docker-gateway</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Dev Containers</name>
+          <vendor>JetBrains</vendor>
+          <id>org.jetbrains.plugins.docker.gateway</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.microservices.ui</id>
+      <path>plugins/microservices-ui</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Endpoints</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.microservices.ui</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.jetbrains.security.package-checker</id>
+      <path>plugins/packageChecker</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Package Checker</name>
+          <vendor>JetBrains</vendor>
+          <id>org.jetbrains.security.package-checker</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>Docker</id>
+      <path>plugins/clouds-docker-impl</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Docker</name>
+          <vendor>JetBrains</vendor>
+          <id>Docker</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.react</id>
+      <path>plugins/react</path>
+      <descriptor>
+        <idea-plugin>
+          <name>React</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.react</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+          <depends optional="true">com.intellij.css</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.cdi</id>
+      <path>plugins/javaee-cdi</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Jakarta EE: Contexts and Dependency Injection (CDI)</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.cdi</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.jetbrains.station</id>
+      <path>plugins/station-plugin</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Station</name>
+          <vendor>JetBrains</vendor>
+          <id>com.jetbrains.station</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.modules.platform</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.jetbrains.performancePlugin.async</id>
+      <path>plugins/performanceTesting-async</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Async Profiler for IDE Performance Testing</name>
+          <vendor>JetBrains</vendor>
+          <id>com.jetbrains.performancePlugin.async</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.freemarker</id>
+      <path>plugins/freemarker</path>
+      <descriptor>
+        <idea-plugin>
+          <name>FreeMarker</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.freemarker</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.quarkus</id>
+      <path>plugins/quarkus</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Quarkus</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.quarkus</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.jetbrains.restClient</id>
+      <path>plugins/restClient</path>
+      <descriptor>
+        <idea-plugin>
+          <name>HTTP Client</name>
+          <vendor>JetBrains</vendor>
+          <id>com.jetbrains.restClient</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.openRewrite</id>
+      <path>plugins/openRewrite</path>
+      <descriptor>
+        <idea-plugin>
+          <name>OpenRewrite</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.openRewrite</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>JBoss</id>
+      <path>plugins/javaee-appServers-jboss</path>
+      <descriptor>
+        <idea-plugin>
+          <name>WildFly</name>
+          <vendor>JetBrains</vendor>
+          <id>JBoss</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+          <depends optional="false">com.intellij.modules.ultimate</depends>
+          <depends optional="false">com.intellij.javaee</depends>
+          <depends optional="false">com.intellij.javaee.app.servers.integration</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.jetbrains.plugins.gitlab</id>
+      <path>plugins/vcs-gitlab-IU</path>
+      <descriptor>
+        <idea-plugin>
+          <name>GitLab</name>
+          <vendor>JetBrains</vendor>
+          <id>org.jetbrains.plugins.gitlab</id>
+          <version>251.26094.105-IU</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.settingsSync</id>
+      <path>plugins/settingsSync</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Backup and Sync</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.settingsSync</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.spring.security</id>
+      <path>plugins/spring-security</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Spring Security</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.spring.security</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.editorconfig.editorconfigjetbrains</id>
+      <path>plugins/editorconfig</path>
+      <descriptor>
+        <idea-plugin>
+          <name>EditorConfig</name>
+          <vendor>JetBrains</vendor>
+          <id>org.editorconfig.editorconfigjetbrains</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.modules.lang</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.copyright</id>
+      <path>plugins/copyright</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Copyright</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.copyright</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.hibernate</id>
+      <path>plugins/hibernate</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Hibernate</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.hibernate</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+          <depends optional="false">com.intellij.modules.ultimate</depends>
+          <depends optional="false">com.intellij.javaee</depends>
+          <depends optional="false">com.intellij.javaee.jpa</depends>
+          <depends optional="false">com.intellij.persistence</depends>
+          <depends optional="false">com.intellij.database</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.spring.mvc</id>
+      <path>plugins/spring-mvc-impl</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Spring Web</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.spring.mvc</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+          <depends optional="true">org.jetbrains.idea.maven</depends>
+          <depends optional="true">org.intellij.groovy</depends>
+          <depends optional="true">com.jetbrains.restClient</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>intellij.vitejs</id>
+      <path>plugins/vitejs</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Vite</name>
+          <vendor>JetBrains</vendor>
+          <id>intellij.vitejs</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.javaee.gradle</id>
+      <path>plugins/gradle-javaee</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Jakarta EE: Gradle Integration</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.javaee.gradle</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>ByteCodeViewer</id>
+      <path>plugins/java-byteCodeViewer</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Bytecode Viewer</name>
+          <vendor>JetBrains</vendor>
+          <id>ByteCodeViewer</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.aop</id>
+      <path>plugins/aopCommon</path>
+      <descriptor>
+        <idea-plugin>
+          <name>AOP Pointcut Language</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.aop</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>Subversion</id>
+      <path>plugins/vcs-svn</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Subversion</name>
+          <vendor>JetBrains</vendor>
+          <id>Subversion</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.modules.vcs</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>intellij.indexing.shared.core</id>
+      <path>plugins/indexing-shared</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Shared Indexes</name>
+          <vendor>JetBrains</vendor>
+          <id>intellij.indexing.shared.core</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="true">com.intellij.java</depends>
+          <depends optional="true">com.jetbrains.performancePlugin</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>Remote Development Server</id>
+      <path>plugins/remote-dev-server</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Remote Development Server</name>
+          <vendor>JetBrains</vendor>
+          <id>Remote Development Server</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.dsm</id>
+      <path>plugins/java-dsm</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Dependency Structure Matrix</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.dsm</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.modules.ultimate</depends>
+          <depends optional="false">com.intellij.modules.java</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.javaee.extensions</id>
+      <path>plugins/javaee-extensions</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Jakarta EE: Messaging (JMS)</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.javaee.extensions</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.spring.integration</id>
+      <path>plugins/spring-integration-core</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Spring Integration Patterns</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.spring.integration</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.jetbrains.idea.gradle.ext</id>
+      <path>plugins/gradle-ext</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Gradle Extension</name>
+          <vendor>JetBrains</vendor>
+          <id>org.jetbrains.idea.gradle.ext</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.compose</id>
+      <path>plugins/compose-ide-plugin</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Compose Multiplatform</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.compose</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>Refactor-X</id>
+      <path>plugins/xml-refactoring</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Refactor-X</name>
+          <vendor>JetBrains</vendor>
+          <id>Refactor-X</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.modules.xml</depends>
+          <depends optional="false">com.intellij.modules.ultimate</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.gradle</id>
+      <path>plugins/gradle</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Gradle</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.gradle</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.modules.lang</depends>
+          <depends optional="false">com.intellij.modules.externalSystem</depends>
+          <depends optional="true">com.intellij.properties</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>Tomcat</id>
+      <path>plugins/javaee-appServers-tomcat</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Tomcat and TomEE</name>
+          <vendor>JetBrains</vendor>
+          <id>Tomcat</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+          <depends optional="false">com.intellij.modules.ultimate</depends>
+          <depends optional="false">com.intellij.javaee</depends>
+          <depends optional="false">com.intellij.javaee.app.servers.integration</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.jetbrains.codeWithMe</id>
+      <path>plugins/cwm-plugin</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Code With Me</name>
+          <vendor>JetBrains</vendor>
+          <id>com.jetbrains.codeWithMe</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="true">com.intellij.platform.ide.provisioner</depends>
+          <depends optional="true">Docker</depends>
+          <depends optional="true">com.intellij.station.core</depends>
+          <depends optional="true">com.intellij.platform.ide.provisioner</depends>
+          <depends optional="true">Docker</depends>
+          <depends optional="true">com.intellij.station.core</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.jetbrains.idea.maven</id>
+      <path>plugins/maven</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Maven</name>
+          <vendor>JetBrains</vendor>
+          <id>org.jetbrains.idea.maven</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+          <depends optional="false">com.intellij.properties</depends>
+          <depends optional="false">com.intellij.modules.java</depends>
+          <depends optional="false">org.jetbrains.idea.reposearch</depends>
+          <depends optional="false">org.jetbrains.idea.maven.model</depends>
+          <depends optional="false">org.jetbrains.idea.maven.server.api</depends>
+          <depends optional="true">org.intellij.groovy</depends>
+          <depends optional="true">Error-prone plugin</depends>
+          <depends optional="true">com.jetbrains.performancePlugin</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.android.tools.gradle.dcl</id>
+      <path>plugins/android-gradle-declarative-lang-ide</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Gradle Declarative Support</name>
+          <vendor>JetBrains, Google</vendor>
+          <id>com.android.tools.gradle.dcl</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.javaee.web</id>
+      <path>plugins/javaee-web-impl</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Jakarta EE: Web/Servlets</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.javaee.web</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.plugins.eclipsekeymap</id>
+      <path>plugins/keymap-eclipse</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Eclipse Keymap</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.plugins.eclipsekeymap</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.modules.lang</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.ja</id>
+      <path>plugins/localization-ja</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Japanese Language Pack / 日本語言語パック</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.ja</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.modules.platform</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.tailwindcss</id>
+      <path>plugins/tailwindcss</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Tailwind CSS</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.tailwindcss</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.modules.ultimate</depends>
+          <depends optional="false">com.intellij.css</depends>
+          <depends optional="false">JavaScript</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.properties</id>
+      <path>plugins/properties</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Properties</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.properties</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.jetbrains.plugins.github</id>
+      <path>plugins/vcs-github-IU</path>
+      <descriptor>
+        <idea-plugin>
+          <name>GitHub</name>
+          <vendor>JetBrains</vendor>
+          <id>org.jetbrains.plugins.github</id>
+          <version>251.26094.105-IU</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.javaee.reverseEngineering</id>
+      <path>plugins/javaee-reverseEngineering</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Reverse Engineering</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.javaee.reverseEngineering</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.spring.messaging</id>
+      <path>plugins/spring-messaging</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Spring Messaging</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.spring.messaging</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>intellij.jupyter</id>
+      <path>plugins/jupyter-plugin</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Jupyter</name>
+          <vendor>JetBrains</vendor>
+          <id>intellij.jupyter</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094" until-build="251.*"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>PerforceDirectPlugin</id>
+      <path>plugins/vcs-perforce</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Perforce Helix Core</name>
+          <vendor>JetBrains</vendor>
+          <id>PerforceDirectPlugin</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+          <depends optional="false">com.intellij.modules.lang</depends>
+          <depends optional="false">com.intellij.modules.vcs</depends>
+          <depends optional="true">Git4Idea</depends>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.dev</id>
+      <path>plugins/dev</path>
+      <descriptor>
+        <idea-plugin>
+          <name/>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.dev</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>com.intellij.grpc</id>
+      <path>plugins/grpc</path>
+      <descriptor>
+        <idea-plugin>
+          <name>gRPC</name>
+          <vendor>JetBrains</vendor>
+          <id>com.intellij.grpc</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+    <plugin>
+      <id>org.jetbrains.plugins.less</id>
+      <path>plugins/less</path>
+      <descriptor>
+        <idea-plugin>
+          <name>Less</name>
+          <vendor>JetBrains</vendor>
+          <id>org.jetbrains.plugins.less</id>
+          <version>251.26094.105</version>
+          <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
+        </idea-plugin>
+      </descriptor>
+    </plugin>
+  </plugins>
+</pluginIndex>
