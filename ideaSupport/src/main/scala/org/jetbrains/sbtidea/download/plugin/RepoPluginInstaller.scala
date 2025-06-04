@@ -6,6 +6,7 @@ import org.jetbrains.sbtidea.download.*
 import org.jetbrains.sbtidea.{IntellijPlugin, PluginLogger as log}
 
 import java.nio.file.{Files, Path}
+import scala.util.Using
 
 class RepoPluginInstaller(buildInfo: BuildInfo)
                          (implicit repo: PluginRepoApi, localRegistry: LocalPluginRegistryApi) extends Installer[RemotePluginArtifact] {
@@ -148,8 +149,9 @@ object RepoPluginInstaller {
     val extractDir = Files.createTempDirectory(ctx.baseDirectory, tempDirectoryName)
     log.info(s"Extracting plugin '$plugin' (${pluginZip.toFile.getName}) to $extractDir")
     sbt.IO.unzip(pluginZip.toFile, extractDir.toFile)
-    assert(Files.list(extractDir).count() == 1, s"Expected only single plugin folder in extracted archive, got: ${extractDir.toFile.list().mkString}")
-    val tmpPluginDir = Files.list(extractDir).findFirst().get()
+    val extractedItemsCount = Using.resource(Files.list(extractDir))(_.count())
+    assert(extractedItemsCount == 1, s"Expected only single plugin folder in extracted archive, got: ${extractDir.toFile.list().mkString}")
+    val tmpPluginDir = Using.resource(Files.list(extractDir))(_.findFirst().get())
     tmpPluginDir
   }
 }
