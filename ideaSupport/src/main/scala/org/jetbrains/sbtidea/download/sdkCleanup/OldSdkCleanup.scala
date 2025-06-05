@@ -51,7 +51,7 @@ final class OldSdkCleanup(logger: PluginLogger) {
 
   private def deleteDirectoriesSafe(directories: Seq[Path]): Unit = {
     directories.foreach { dir =>
-      Try(Files.delete(dir)).failed.foreach { ex =>
+      Try(FileUtils.deleteDirectory(dir.toFile)).failed.foreach { ex =>
         logger.warn(s"Failed to delete $dir ($ex)")
       }
     }

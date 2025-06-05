@@ -41,6 +41,21 @@ class OldSdkCleanupTest extends AnyFunSuite with Matchers with BeforeAndAfterEac
     }
   }
 
+  private def createNonEmptySdkDirectories(sdkInfos: Seq[IntellijSdkDirInfo]): Seq[Path] = {
+    sdkInfos.map { sdk =>
+      val dir = tempDir.resolve(sdk.fullVersion.versionString)
+      Files.createDirectories(dir)
+
+      // Create a subdirectory with a dummy file to make the directory non-empty
+      val subDir = dir.resolve("subdirectory")
+      Files.createDirectories(subDir)
+      val dummyFile = subDir.resolve("dummy.txt")
+      Files.write(dummyFile, "This is a dummy file".getBytes)
+
+      dir
+    }
+  }
+
   private def createMockedCachedSdksReport(sdkInfos: Seq[IntellijSdkDirInfo]): CachedSdksCollector.CachedSdksReport = {
     val dirs = createMockSdkDirectories(sdkInfos)
 
@@ -125,7 +140,7 @@ class OldSdkCleanupTest extends AnyFunSuite with Matchers with BeforeAndAfterEac
       createSdkInfoMock(242, 4, 7 * 31), // 7 months ago
       createSdkInfoMock(242, 5, 6 * 31) // 6 months ago
     )
-    val oldDirs = createMockSdkDirectories(oldSdks)
+    val oldDirs = createNonEmptySdkDirectories(oldSdks)
 
     // Create recent SDK directories using TestUtils.createSdkInfoMock
     val recentSdks = Seq(
