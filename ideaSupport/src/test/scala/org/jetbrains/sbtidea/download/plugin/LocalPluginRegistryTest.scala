@@ -222,6 +222,19 @@ final class LocalPluginRegistryTest
       |  <version>1</version>
       |  <plugins>
       |    <plugin>
+      |      <id>com.intellij.properties</id>
+      |      <path>plugins/properties</path>
+      |      <descriptor>
+      |        <idea-plugin>
+      |          <name>Properties</name>
+      |          <vendor>JetBrains</vendor>
+      |          <id>com.intellij.properties</id>
+      |          <version>242.14146.5</version>
+      |          <idea-version since-build="242.14146.5" until-build="242.14146.5"/>
+      |        </idea-plugin>
+      |      </descriptor>
+      |    </plugin>
+      |    <plugin>
       |      <id>com.jetbrains.codeWithMe</id>
       |      <path>plugins/cwm-plugin</path>
       |      <descriptor>
@@ -250,19 +263,6 @@ final class LocalPluginRegistryTest
       |          <version>211.5538.2</version>
       |          <idea-version since-build="211.5538.2" until-build="211.5538.2"/>
       |          <depends optional="false">com.intellij.modules.lang</depends>
-      |        </idea-plugin>
-      |      </descriptor>
-      |    </plugin>
-      |    <plugin>
-      |      <id>com.intellij.properties</id>
-      |      <path>plugins/properties</path>
-      |      <descriptor>
-      |        <idea-plugin>
-      |          <name>Properties</name>
-      |          <vendor>JetBrains</vendor>
-      |          <id>com.intellij.properties</id>
-      |          <version>242.14146.5</version>
-      |          <idea-version since-build="242.14146.5" until-build="242.14146.5"/>
       |        </idea-plugin>
       |      </descriptor>
       |    </plugin>

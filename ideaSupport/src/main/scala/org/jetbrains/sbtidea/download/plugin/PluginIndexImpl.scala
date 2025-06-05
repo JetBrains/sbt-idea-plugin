@@ -82,13 +82,13 @@ class PluginIndexImpl(ideaRoot: Path) extends PluginIndex {
   private def loadFromFile(file: Path): ReprMutable = {
     val buffer = new ReprMutable
     val data = IndexSerializer.load(file)
-    val dataWithAbsolutePaths = data.mapValues(_.withAbsoluteInstallPath(ideaRoot))
+    val dataWithAbsolutePaths = data.map { case (id, info) => (id, info.withAbsoluteInstallPath(ideaRoot))}
     buffer ++= dataWithAbsolutePaths
     buffer
   }
 
   private def saveToFile(idx: Repr): Unit = {
-    val dataWithRelativePaths = idx.mapValues(_.withRelativeInstallPath(ideaRoot))
+    val dataWithRelativePaths = idx.mapValues(_.withRelativeInstallPath(ideaRoot)).toSeq.sortBy(_._1)
     IndexSerializer.save(indexFile, dataWithRelativePaths)
   }
 

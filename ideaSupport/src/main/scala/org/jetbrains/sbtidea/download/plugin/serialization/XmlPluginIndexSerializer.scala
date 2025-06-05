@@ -5,13 +5,13 @@ import org.jetbrains.sbtidea.download.plugin.PluginIndexImpl.PluginInfo
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
-import scala.collection.{Map, mutable}
+import scala.collection.mutable
 import scala.xml.*
 
 object XmlPluginIndexSerializer extends PluginIndexSerializer {
 
-  override def load(file: Path): Map[String, PluginInfo] = {
-    val buffer = new mutable.HashMap[String, PluginInfo]
+  override def load(file: Path): Seq[(String, PluginInfo)] = {
+    val buffer = new mutable.ArrayBuffer[(String, PluginInfo)]
 
     val content = new String(Files.readAllBytes(file), StandardCharsets.UTF_8)
     val xml = XML.loadString(content)
@@ -31,13 +31,13 @@ object XmlPluginIndexSerializer extends PluginIndexSerializer {
       val descriptorNode = (plugin \ "descriptor").head
       val descriptor = PluginDescriptor.load(descriptorNode.asInstanceOf[Elem])
 
-      buffer.put(id, PluginInfo(Path.of(relativePath), descriptor, downloadedFileName))
+      buffer += id -> PluginInfo(Path.of(relativePath), descriptor, downloadedFileName)
     }
 
     buffer
   }
 
-  override def save(file: Path, data: Map[String, PluginInfo]): Unit = {
+  override def save(file: Path, data: Seq[(String, PluginInfo)]): Unit = {
     val plugins = data.map { case (id, info) =>
       val descriptorXml = XML.loadString(info.descriptor.toXMLStr)
 
@@ -47,7 +47,7 @@ object XmlPluginIndexSerializer extends PluginIndexSerializer {
         <descriptor>{descriptorXml}</descriptor>
         {if (info.downloadedFileName.isDefined) <downloadedFileName>{info.downloadedFileName.get}</downloadedFileName>}
       </plugin>
-    }.toSeq
+    }
 
     val indexXml =
       <pluginIndex>
