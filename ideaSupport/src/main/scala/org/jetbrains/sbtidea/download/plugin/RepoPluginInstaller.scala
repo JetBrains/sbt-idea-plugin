@@ -1,8 +1,8 @@
 package org.jetbrains.sbtidea.download.plugin
 
+import org.jetbrains.sbtidea.download.*
 import org.jetbrains.sbtidea.download.FileDownloader.DownloadException
 import org.jetbrains.sbtidea.download.api.*
-import org.jetbrains.sbtidea.download.*
 import org.jetbrains.sbtidea.{IntellijPlugin, PluginLogger as log}
 
 import java.nio.file.{Files, Path}

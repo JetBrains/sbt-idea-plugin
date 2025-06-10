@@ -1,7 +1,7 @@
 package org.jetbrains.sbtidea.tasks.classpath
 
 import org.jetbrains.sbtidea.download.BuildInfo
-import org.jetbrains.sbtidea.download.api.{IdeInstallationContext, IdeInstallationProcessContext}
+import org.jetbrains.sbtidea.download.api.IdeInstallationProcessContext
 import org.jetbrains.sbtidea.download.plugin.*
 import org.jetbrains.sbtidea.{IntellijPlugin, PluginJars, PluginLogger}
 import sbt.*
@@ -68,7 +68,7 @@ object PluginClasspathUtils {
     reportPluginDuplicates(resolved, moduleNameHint, log)
 
     val allDependencies = resolved.flatten
-    val roots = allDependencies.collect { case LocalPlugin(_, descriptor, root) => descriptor -> root }.distinct
+    val roots = allDependencies.collect { case LocalPlugin(_, descriptor, root, _) => descriptor -> root }.distinct
     roots
   }
 
@@ -78,10 +78,10 @@ object PluginClasspathUtils {
     log: PluginLogger,
   ): Unit = {
     val duplicates = findPluginDuplicates(resolved)
-    duplicates.collect { case (LocalPlugin(_, PluginDescriptor(id, _, _, _, _, _, _), _), parents) =>
+    duplicates.collect { case (LocalPlugin(_, PluginDescriptor(id, _, _, _, _, _, _), _, _), parents) =>
       val thisNonOptionalDependency = PluginDescriptor.Dependency(id, optional = false)
       val parentIds = parents.collect {
-        case LocalPlugin(_, PluginDescriptor(parentId, _, _, _, _, _, deps), _) if deps.contains(thisNonOptionalDependency) =>
+        case LocalPlugin(_, PluginDescriptor(parentId, _, _, _, _, _, deps), _, _) if deps.contains(thisNonOptionalDependency) =>
           parentId
       }
       if (parentIds.nonEmpty) {

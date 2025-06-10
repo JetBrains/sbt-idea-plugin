@@ -21,19 +21,18 @@ final case class RemotePluginArtifact(
   override def usedInstaller: RepoPluginInstaller = new RepoPluginInstaller(caller.buildInfo)
 }
 
+/**
+ * @param originalRemotePlugin Some - if the local plugin was originally downloaded from the marketplace,
+ *                             this information is needed to check of the locally installed plugin is up-to date
+ */
 final case class LocalPlugin(
   caller: PluginDependency,
   descriptor: PluginDescriptor,
-  root: Path
+  root: Path,
+  originalRemotePlugin: Option[RemotePluginArtifact] = None
 ) extends PluginArtifact {
 
   override type R = LocalPlugin
 
   override protected def usedInstaller: Installer[LocalPlugin] = LocalPluginInstaller
-}
-
-object LocalPluginInstaller extends Installer[LocalPlugin] {
-  override def isInstalled(art: LocalPlugin)(implicit ctx: IdeInstallationContext): Boolean = art.root.toFile.exists()
-
-  override def downloadAndInstall(art: LocalPlugin)(implicit ctx: IdeInstallationProcessContext): Unit = ()
 }

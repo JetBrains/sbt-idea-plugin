@@ -113,7 +113,7 @@ class CommunityUpdater(
     else
       log.info(s"+ $dependency is up to date: $numInstalled/$numTotal")
 
-    nonInstalled.foreach(_.install)
+    nonInstalled.foreach(_.install())
   }
 
   private[download] def topoSort(deps: Seq[UnresolvedArtifact]): Seq[UnresolvedArtifact] = {

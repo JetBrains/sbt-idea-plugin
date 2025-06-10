@@ -17,7 +17,7 @@ class IntellijPluginResolverTest extends IntellijPluginResolverTestBase {
   test("transitive plugin dependencies are resolved") {
     val res = new PluginResolver(resolveSettings = pluginC.plugin.resolveSettings).resolve(pluginC)
     inside(res) {
-      case RemotePluginArtifact(c, _) :: LocalPlugin(a, _, _) :: RemotePluginArtifact(b, _) :: Nil =>
+      case RemotePluginArtifact(c, _) :: LocalPlugin(a, _, _, _) :: RemotePluginArtifact(b, _) :: Nil =>
         c shouldBe descriptor2Plugin(pluginC)
         a shouldBe descriptor2Plugin(pluginA)
         b shouldBe descriptor2Plugin(pluginB)
