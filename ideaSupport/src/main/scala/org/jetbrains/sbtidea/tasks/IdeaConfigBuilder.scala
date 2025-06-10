@@ -81,32 +81,20 @@ class IdeaConfigBuilder(
       writeToFile(runConfigDir / "_template__of_JUnit.xml", buildJUnitTemplate)
   }
 
-  /**
-   * Some of these parameters are used inside `com.intellij.remoteDev.downloader.EmbeddedClientLauncher`
-   *
-   * @note most client-specific parameters are hardcoded
-   *       (like client debug port, client system/config paths, client properties location, etc...)
-   *       We might consider parametrizing them once this configuration generation is +- stable
-   */
+  // NOTE: most client-specific parameters are hardcoded
+  // (like client debug port, client system/config paths, client properties location)
+  // We might consider parametrizing them once this configuration generation is +- stable
   private def buildSplitModeRunConfigurationXml(configurationName: String): Either[String, String] = {
     val programParams = s"${options.programParams} splitMode"
 
     // TODO: We should take all these VM options from "additional VM properties" from product-info.json (SCL-23540)
     //  We should replace APP_PACKAGE with proper path
     val modulesDescriptorsJar = intellijBaseDir / "modules" / "module-descriptors.jar"
-    val clientDebugPort = "7777"
-    val clientDebugSuspend = "n"
     val vmOptions = intellijVMOptions.withOptions(Seq(
-      s"""-Dintellij.platform.runtime.repository.path="${modulesDescriptorsJar.getCanonicalPath}"""",
-      s"""--add-opens=java.desktop/com.sun.java.swing=ALL-UNNAMED""",
-      s"""--add-opens=java.management/sun.management=ALL-UNNAMED""",
-      // These options are used in com.intellij.remoteDev.downloader.EmbeddedClientLauncher
-      s"-Drdct.embedded.client.debug.port=$clientDebugPort",
-      s"""-Drdct.embedded.client.debug.suspend=$clientDebugSuspend""",
-      // The option is needed to avoid exceptions like "Cannot parse HTML: [<html>Basic proxy authentication is currently disabled for HTTPS connections..."
-      // (not sure what exactly they mean though)
-      s"""-Djdk.http.auth.tunneling.disabledSchemes=""""",
-    ).map(_.replace("\"", "&quot;")))
+      s"-Dintellij.platform.runtime.repository.path=&quot;${modulesDescriptorsJar.getCanonicalPath}&quot;",
+      "--add-opens=java.desktop/com.sun.java.swing=ALL-UNNAMED",
+      "--add-opens=java.management/sun.management=ALL-UNNAMED"
+    ))
 
     val bundledJre = IntellijAwareRunner.getBundledJRE(intellijBaseDir.toPath).getOrElse {
       return Left(s"Can't detect bundled JRE path in $intellijBaseDir required for IDE client")
@@ -120,15 +108,14 @@ class IdeaConfigBuilder(
       "JETBRAINS_CLIENT_PROPERTIES" -> s"$ideClientPropertiesFile"
     )
 
-    // the full list of options can be found in `com.intellij.openapi.application.PathManager` (in IntelliJ code)
-    val clientDataDir = s"$dataDir/embedded-client"
-    val clientSystemPath = s"$clientDataDir/system"
-    val clientConfigPath = s"$clientDataDir/config"
-    val clientLogsPath = s"$clientDataDir/logs"
+    //TODO: also configure location for logs & plugins
+    val clientSystemPath = s"$dataDir/system_client"
+    val clientConfigPath = s"""$dataDir/config_client"""
+    val clientDebugPort = "7777"
     writeToFile(ideClientPropertiesFile,
       s"""-Didea.system.path=$clientSystemPath
          |-Didea.config.path=$clientConfigPath
-         |-Didea.logs.path=$clientLogsPath
+         |-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:$clientDebugPort
          |""".stripMargin
     )
 
