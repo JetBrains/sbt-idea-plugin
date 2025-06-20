@@ -162,6 +162,7 @@ object IntellijVMOptions {
       |--add-opens=java.desktop/javax.swing.plaf.basic=ALL-UNNAMED
       |--add-opens=java.desktop/javax.swing.text=ALL-UNNAMED
       |--add-opens=java.desktop/javax.swing.text.html=ALL-UNNAMED
+      |--add-opens=java.desktop/javax.swing.text.html.parser=ALL-UNNAMED
       |--add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED
       |--add-opens=java.desktop/sun.awt.datatransfer=ALL-UNNAMED
       |--add-opens=java.desktop/sun.awt.image=ALL-UNNAMED
