@@ -1,26 +1,27 @@
 package org.jetbrains.sbtidea.download.idea
 
-import org.jetbrains.sbtidea.{Keys, PluginLogger as log}
-import org.jetbrains.sbtidea.download.BuildInfo
+import org.jetbrains.sbtidea.Keys
 import org.jetbrains.sbtidea.download.api.Resolver
-import sbt.URL
+
+import scala.collection.mutable
 
 class IJRepoIdeaResolver extends Resolver[IdeaDependency] {
   private val LoggerName = this.getClass.getSimpleName
 
   override def resolve(dep: IdeaDependency): Seq[IdeaArtifact] = {
-    val ideaUrl           = () => getUrl(dep.buildInfo, ".zip")
-    // sources are available only for Community Edition
-    val srcJarUrl         = () => getUrl(dep.buildInfo.copy(edition = Keys.IntelliJPlatform.IdeaCommunity), "-sources.jar")
-    IdeaDistImpl(dep, ideaUrl) ::
-      IdeaSourcesImpl(dep, srcJarUrl) :: Nil
-  }
+    val ideaUrlGet = () => IntellijRepositories.getArtifactUrl(dep.buildInfo, ".zip")
 
-  private def getUrl(platform: BuildInfo, artifactSuffix: String): URL = {
-    val locationDescriptor = IntellijVersionUtils.detectArtifactLocation(platform, artifactSuffix)
-    val artifactVersion = locationDescriptor.artifactVersion
-    val artifactUrl = locationDescriptor.url
-    log.warn(s"""[$LoggerName] Artifact location for build number ${platform.buildNumber}: version: $artifactVersion, url: $artifactUrl""")
-    artifactUrl
+    val result = mutable.Buffer[IdeaArtifact]()
+    result += IdeaDistImpl(dep, ideaUrlGet)
+
+    val platformCommunityBuildInfo = dep.buildInfo.withEdition(Keys.IntelliJPlatform.IdeaCommunity)
+    result += IdeaSourcesImpl(dep, platformCommunityBuildInfo)
+    if (dep.buildInfo.edition == Keys.IntelliJPlatform.IdeaUltimate) {
+      // Sources for some ultimate plugins are published in ideaIU-sources.zip
+      val platformUltimateBuildInfo = dep.buildInfo.withEdition(Keys.IntelliJPlatform.IdeaUltimate)
+      result += IdeaSourcesImpl(dep, platformUltimateBuildInfo)
+    }
+
+    result
   }
 }

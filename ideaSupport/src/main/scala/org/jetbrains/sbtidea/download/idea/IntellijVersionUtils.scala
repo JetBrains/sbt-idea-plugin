@@ -29,6 +29,9 @@ object IntellijVersionUtils {
    * For example build number `222.2270` can only correspond to a Nightly version.<br>
    * Build number `222.2270.15` can correspond to a Release version or EAP version or EAP-Candidate version.
    *
+   * !!! ATTENTION !!!
+   * This method accesses the internet to check if a version is available
+   *
    * This table shows possible options: {{{
    *   ________________________________________________________________________________________
    *  | Build Number                | Comments                 | Artifact Version                |  Repository

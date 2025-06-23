@@ -1,13 +1,15 @@
 package org.jetbrains.sbtidea.tasks
 
+import org.apache.commons.io.FileUtils
 import org.jetbrains.sbtidea.Keys.{intellijAttachSources, intellijBaseDirectory, intellijMainJars, intellijPluginJarsClasspath, intellijTestJars, productInfo}
-import org.jetbrains.sbtidea.download.idea.IdeaSourcesImpl
+import org.jetbrains.sbtidea.download.idea.IdeaSourcesInstaller
 import org.jetbrains.sbtidea.download.plugin.PluginDescriptor
 import org.jetbrains.sbtidea.tasks.classpath.AttributedClasspathTasks.{Artifacts, Modules}
 import sbt.*
 import sbt.Keys.*
 
 import scala.collection.Seq
+import scala.jdk.CollectionConverters.collectionAsScalaIterableConverter
 
 object UpdateWithIDEAInjectionTask extends SbtIdeaTask[UpdateReport] {
 
@@ -45,17 +47,23 @@ object UpdateWithIDEAInjectionTask extends SbtIdeaTask[UpdateReport] {
     val ideaModule: ModuleID = Modules.getIntellijSdkModule(buildNumber)
     val ideaModuleTest: ModuleID = Modules.getIntellijSdkTestModule(buildNumber)
 
-    val intelliJSourcesArchive = intellijBaseDir / IdeaSourcesImpl.SOURCES_ZIP
+    def findSourcesArchives(intellijBaseDir: File): Seq[File] = {
+      val sourcesDir = IdeaSourcesInstaller.sourcesRoot(intellijBaseDir.toPath).toFile
+      if (sourcesDir.isDirectory) FileUtils.listFiles(sourcesDir, Array("zip", "jar"), false).asScala.toSeq
+      else Seq()
+    }
+
+    val intelliJSourcesArchives = findSourcesArchives(intellijBaseDir)
 
     val ideaArtifactsMapping: Seq[(sbt.Artifact, File)] = {
       val mainJarsArtifact: Artifact = Artifacts.ideaMainJarsArtifact(intellijMainJars)
-      val sourcesArtifactMapping = if (attachSources) Seq(Artifacts.ideaSourcesArtifact -> intelliJSourcesArchive) else Seq.empty
+      val sourcesArtifactMapping = if (attachSources) intelliJSourcesArchives.map(Artifacts.ideaSourcesArtifact -> _) else Seq.empty
       intellijMainJars.map(mainJarsArtifact -> _) ++ sourcesArtifactMapping
     }
 
     val ideaTestArtifactMappings: Seq[(sbt.Artifact, File)] = {
       //testFramework sources are located in the same archive as main sources
-      val sourcesArtifactMapping = if (attachSources) Seq(Artifacts.ideaTestSourcesArtifact -> intelliJSourcesArchive) else Seq.empty
+      val sourcesArtifactMapping = if (attachSources) intelliJSourcesArchives.map(Artifacts.ideaTestSourcesArtifact -> _) else Seq.empty
       val testJarsArtifact = Artifacts.ideaTestArtifact
       intellijTestJars.map(testJarsArtifact -> _) ++ sourcesArtifactMapping
     }
@@ -69,11 +77,11 @@ object UpdateWithIDEAInjectionTask extends SbtIdeaTask[UpdateReport] {
         val pluginArtifact = f.get(artifact.key).get
         val mainArtifactMapping = classpath.map(pluginArtifact -> _.data)
         //bundled plugin sources are located in the same archive as main sources
-        val sourcesArtifactMapping = Artifacts.pluginSourcesArtifact(pluginArtifact.name) -> intelliJSourcesArchive
+        val sourcesArtifactMappings = intelliJSourcesArchives.map(Artifacts.pluginSourcesArtifact(pluginArtifact.name) -> _)
 
         // bundled plugin has the same version as the platform; add sources
         val mappings = if (attachSources && pluginModule.revision == buildNumber)
-          mainArtifactMapping :+ sourcesArtifactMapping
+          mainArtifactMapping ++ sourcesArtifactMappings
         else
           mainArtifactMapping
         (pluginModule, mappings, Configurations.Compile)

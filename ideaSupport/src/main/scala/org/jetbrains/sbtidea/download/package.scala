@@ -13,6 +13,9 @@ package object download {
    */
   case class BuildInfo(buildNumber: String, edition: IntelliJPlatform) {
     override def toString: String = s"BuildInfo($edition-$buildNumber)"
+
+    def withEdition(newEdition: IntelliJPlatform): BuildInfo =
+      copy(edition = newEdition)
   }
 
   object BuildInfo {

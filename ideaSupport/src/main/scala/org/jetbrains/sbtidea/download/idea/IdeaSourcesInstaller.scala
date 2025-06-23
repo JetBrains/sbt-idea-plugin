@@ -1,24 +1,50 @@
 package org.jetbrains.sbtidea.download.idea
 
 import org.jetbrains.sbtidea.download.api.{IdeInstallationContext, IdeInstallationProcessContext, Installer}
-import org.jetbrains.sbtidea.download.idea.IdeaSourcesImpl.SOURCES_ZIP
-import org.jetbrains.sbtidea.download.{FileDownloader, NioUtils}
+import org.jetbrains.sbtidea.download.idea.IdeaSourcesInstaller.sourcesZipPath
+import org.jetbrains.sbtidea.download.{BuildInfo, FileDownloader, NioUtils}
 import org.jetbrains.sbtidea.{PathExt, PluginLogger}
 import sbt.pathToPathOps
 
-import java.nio.file.Files
+import java.nio.file.{Files, Path}
 
-class IdeaSourcesInstaller(caller: AbstractIdeaDependency) extends Installer[IdeaSources] {
+class IdeaSourcesInstaller(sourcesBuildInfo: BuildInfo) extends Installer[IdeaSources] {
 
   override def isInstalled(art: IdeaSources)(implicit ctx: IdeInstallationContext): Boolean =
-    (ctx.baseDirectory / SOURCES_ZIP).exists
+    sourcesZipPath(ctx.baseDirectory, sourcesBuildInfo).exists
 
   override def downloadAndInstall(art: IdeaSources)(implicit ctx: IdeInstallationProcessContext): Unit = {
     val file = FileDownloader(ctx).download(art.dlUrl, optional = true)
-    Files.copy(file, ctx.baseDirectory.resolve(SOURCES_ZIP))
+
+    val targetFile = sourcesZipPath(ctx.baseDirectory, sourcesBuildInfo)
+
+    Files.createDirectories(targetFile.getParent)
+    Files.copy(file, targetFile)
+
     if (!keepDownloadedFiles) {
       NioUtils.delete(file)
     }
-    PluginLogger.info(s"${caller.buildInfo.edition.name} sources installed")
+
+    PluginLogger.info(s"${targetFile.getFileName.toString} sources installed")
   }
+}
+
+object IdeaSourcesInstaller {
+  //noinspection ScalaWeakerAccess (used in Scala Plugin repo)
+  val SourcesRootDirName: String = "sources"
+
+  def sourcesZipPath(intellijBaseDir: Path, buildInfo: BuildInfo): Path =
+    sourcesRoot(intellijBaseDir) / platformSourcesArchiveName(buildInfo)
+
+  def sourcesRoot(intellijBaseDir: Path): Path =
+    intellijBaseDir / SourcesRootDirName
+
+  /**
+   * Example:
+   *  - ideaIU-251.26927.23-sources.jar
+   *  - ideaIC-251.26927-EAP-CANDIDATE-SNAPSHOT-sources.jar
+   */
+  //noinspection ScalaWeakerAccess (used in Scala Plugin repo)
+  def platformSourcesArchiveName(buildInfo: BuildInfo): String =
+    s"${buildInfo.edition.name}-${buildInfo.buildNumber}-sources.zip"
 }
