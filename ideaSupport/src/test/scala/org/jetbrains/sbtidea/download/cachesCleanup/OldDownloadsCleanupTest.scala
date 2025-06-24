@@ -140,7 +140,7 @@ class OldDownloadsCleanupTest extends AnyFunSuite with Matchers with BeforeAndAf
       s"""[warn] Detected 2 old cached download files (older than 1 month) in ${tempDir.toAbsolutePath}
          |[warn] Total size: SIZE_PLACEHOLDER
          |[warn] Removing old cached download files... (`autoRemoveOldCachedDownloads` is enabled)
-         |[info] Successfully removed 2 old cached download files, freed 56,00 B of disk space
+         |[info] Successfully removed 2 old cached download files, freed 56.00 B of disk space
          |""".stripMargin.trim
 
     // Verify old files were removed

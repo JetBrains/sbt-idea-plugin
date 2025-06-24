@@ -64,7 +64,8 @@ object CleanupUtils {
       unitIndex += 1
     }
 
-    f"$size%.2f ${units(unitIndex)}"
+    //use fixed locale to use dot (".") as the Double delimiter
+    "%.2f %s".formatLocal(java.util.Locale.US, size, units(unitIndex))
   }
 
   private implicit class StringOps(private val str: String) extends AnyVal {
