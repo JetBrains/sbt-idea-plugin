@@ -1,7 +1,6 @@
-package org.jetbrains.sbtidea.download.sdkCleanup
+package org.jetbrains.sbtidea.download.cachesCleanup
 
-import org.apache.commons.io.FileUtils
-import org.jetbrains.sbtidea.download.sdkCleanup.TestUtils.{CapturingTestLogger, createSdkInfoMock}
+import org.jetbrains.sbtidea.download.cachesCleanup.TestUtils._
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -10,26 +9,17 @@ import java.nio.file.{Files, Path}
 
 class OldSdkCleanupTest extends AnyFunSuite with Matchers with BeforeAndAfterEach {
 
-  private def assertDirectoriesExist(dirs: Seq[Path], shouldExist: Boolean): Unit = {
-    dirs.foreach { dir =>
-      TestUtils.assertDirectoryExists(dir, shouldExist)
-    }
-  }
-
-  private def normalizeWarningMessage(message: String): String =
-    message.replaceAll("Total size: [0-9,.]+\\s*[KMGT]?B", "Total size: SIZE_PLACEHOLDER")
-
   // Create a temporary directory for tests
   private var tempDir: Path = _
 
   override def beforeEach(): Unit = {
-    OldSdkCleanup.setMockTodayDate(TestUtils.MockedTodayDate)
+    CleanupUtils.setMockTodayDate(MockedTodayDate)
     tempDir = Files.createTempDirectory("old-sdk-cleanup-test")
   }
 
   override def afterEach(): Unit = {
     if (tempDir != null && Files.exists(tempDir)) {
-      FileUtils.deleteDirectory(tempDir.toFile)
+      FileUtils.deleteDirectory(tempDir)
     }
   }
 
@@ -56,7 +46,7 @@ class OldSdkCleanupTest extends AnyFunSuite with Matchers with BeforeAndAfterEac
     }
   }
 
-  private def createMockedCachedSdksReport(sdkInfos: Seq[IntellijSdkDirInfo]): CachedSdksCollector.CachedSdksReport = {
+  private def createMockedCachedSdksReport(sdkInfos: Seq[IntellijSdkDirInfo]): CachedSdksReport = {
     val dirs = createMockSdkDirectories(sdkInfos)
 
     // Create new SDK infos with the actual paths of the directories we created
@@ -69,7 +59,7 @@ class OldSdkCleanupTest extends AnyFunSuite with Matchers with BeforeAndAfterEac
       )
     }
 
-    CachedSdksCollector.CachedSdksReport(updatedSdkInfos, tempDir)
+    CachedSdksReport(updatedSdkInfos, tempDir)
   }
 
   test("detectOldSdksRemoveIfNeeded - no old SDKs") {

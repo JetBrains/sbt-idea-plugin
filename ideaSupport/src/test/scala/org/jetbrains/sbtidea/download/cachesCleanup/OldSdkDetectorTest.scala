@@ -1,6 +1,6 @@
-package org.jetbrains.sbtidea.download.sdkCleanup
+package org.jetbrains.sbtidea.download.cachesCleanup
 
-import org.jetbrains.sbtidea.download.sdkCleanup.TestUtils.createSdkInfoMock
+import org.jetbrains.sbtidea.download.cachesCleanup.TestUtils.createSdkInfoMock
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 

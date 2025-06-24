@@ -1,4 +1,4 @@
-package org.jetbrains.sbtidea.download.sdkCleanup
+package org.jetbrains.sbtidea.download.cachesCleanup
 
 import org.jetbrains.sbtidea.PluginLogger
 import org.jetbrains.sbtidea.download.Version
@@ -27,11 +27,42 @@ object TestUtils {
     )
   }
 
-  // Helper method to check if a directory exists with a proper assertion message
   def assertDirectoryExists(dir: Path, shouldExist: Boolean): Unit = {
     val exists = Files.exists(dir)
     val message = if (shouldExist) s"Directory should exist: $dir" else s"Directory should not exist: $dir"
     assert(exists == shouldExist, message)
+  }
+
+  def assertFileExists(file: Path, shouldExist: Boolean): Unit = {
+    val exists = Files.exists(file)
+    val message = if (shouldExist) s"File should exist: $file" else s"File should not exist: $file"
+    assert(exists == shouldExist, message)
+  }
+
+  def assertFilesExist(files: Seq[Path], shouldExist: Boolean): Unit = {
+    files.foreach { file =>
+      assertFileExists(file, shouldExist)
+    }
+  }
+
+  def assertDirectoriesExist(dirs: Seq[Path], shouldExist: Boolean): Unit = {
+    dirs.foreach { dir =>
+      assertDirectoryExists(dir, shouldExist)
+    }
+  }
+
+  def normalizeWarningMessage(message: String): String =
+    message.replaceAll("Total size: [0-9,.]+\\s*[KMGT]?B", "Total size: SIZE_PLACEHOLDER")
+
+  def createFileMetaInfo(file: Path, daysAgo: Int): FileMetaInfo = {
+    val creationDate = LocalDate.now().minusDays(daysAgo)
+    FileMetaInfo(file, DirectoryMetaData(creationDate))
+  }
+
+  def createMockDownloadFile(tempDir: Path, fileName: String, daysAgo: Int): Path = {
+    val file = tempDir.resolve(fileName)
+    Files.write(file, "This is a mock download file".getBytes)
+    file
   }
 
   class CapturingTestLogger extends PluginLogger {

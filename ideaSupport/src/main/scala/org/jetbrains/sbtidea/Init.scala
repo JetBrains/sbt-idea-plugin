@@ -38,6 +38,7 @@ trait Init { this: Keys.type =>
     intellijBaseDirectory     := intellijPluginDirectory.value / "sdk" / intellijBuild.value,
     artifactsDownloadsDir     := intellijPluginDirectory.value / "sdk" / "downloads",
     autoRemoveOldCachedIntelliJSDK := false,
+    autoRemoveOldCachedDownloads := false,
     concurrentRestrictions in Global += Tags.limit(Tags.Test, 1), // IDEA tests can't be run in parallel
     bundleScalaLibrary        := !hasPluginsWithScala(intellijPlugins.?.all(ScopeFilter(inAnyProject)).value.flatten.flatten),
     doProjectSetup := Def.taskDyn {
@@ -75,7 +76,8 @@ trait Init { this: Keys.type =>
         intellijBuildInfo.value,
         jbrInfo.value,
         plugins,
-        autoRemoveOldIntellijSdk = autoRemoveOldCachedIntelliJSDK.value
+        autoRemoveOldIntellijSdk = autoRemoveOldCachedIntelliJSDK.value,
+        autoRemoveOldDownloads = autoRemoveOldCachedDownloads.value
       ).update()
       updateFinished = true
     },

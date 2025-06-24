@@ -1,10 +1,10 @@
 package org.jetbrains.sbtidea.download
 
 import org.jetbrains.sbtidea.download.api.*
+import org.jetbrains.sbtidea.download.cachesCleanup.{OldDownloadsCleanup, OldSdkCleanup}
 import org.jetbrains.sbtidea.download.idea.IdeaDependency
 import org.jetbrains.sbtidea.download.jbr.JbrDependency
 import org.jetbrains.sbtidea.download.plugin.{LocalPluginRegistry, PluginDependency, PluginRepoUtils}
-import org.jetbrains.sbtidea.download.sdkCleanup.OldSdkCleanup
 import org.jetbrains.sbtidea.{IntellijPlugin, JbrInfo, PluginLogger as log}
 
 import java.nio.file.{Files, Path}
@@ -15,7 +15,8 @@ class CommunityUpdater(
   ideaBuildInfo: BuildInfo,
   jbrInfo: JbrInfo,
   plugins: Seq[IntellijPlugin],
-  autoRemoveOldIntellijSdk: Boolean
+  autoRemoveOldIntellijSdk: Boolean,
+  autoRemoveOldDownloads: Boolean
 ) {
 
   @deprecated("Use the other constructor", "4.1.1")
@@ -33,11 +34,12 @@ class CommunityUpdater(
       ideaBuildInfo,
       jbrInfo,
       plugins,
-      autoRemoveOldIntellijSdk = false
+      autoRemoveOldIntellijSdk = false,
+      autoRemoveOldDownloads = false
     )
   }
 
-  @deprecated("Use the other constructor")
+  @deprecated("Use the other constructor", "4.1.7")
   def this(
     baseDirectory: Path,
     artifactsDownloadsDirectory: Path,
@@ -51,7 +53,28 @@ class CommunityUpdater(
       ideaBuildInfo,
       jbrInfo,
       plugins,
-      autoRemoveOldIntellijSdk = false
+      autoRemoveOldIntellijSdk = false,
+      autoRemoveOldDownloads = false
+    )
+  }
+
+  @deprecated("Use the other constructor", "4.1.14")
+  def this(
+    baseDirectory: Path,
+    artifactsDownloadsDirectory: Path,
+    ideaBuildInfo: BuildInfo,
+    jbrInfo: JbrInfo,
+    plugins: Seq[IntellijPlugin],
+    autoRemoveOldIntellijSdk: Boolean,
+  ) = {
+    this(
+      baseDirectory,
+      artifactsDownloadsDirectory,
+      ideaBuildInfo,
+      jbrInfo,
+      plugins,
+      autoRemoveOldIntellijSdk = autoRemoveOldIntellijSdk,
+      autoRemoveOldDownloads = false
     )
   }
 
@@ -82,6 +105,11 @@ class CommunityUpdater(
     val sdksRootDir = baseDirectory.getParent
     if (Files.isDirectory(sdksRootDir)) {
       new OldSdkCleanup(log).detectOldSdksRemoveIfNeeded(sdksRootDir, autoRemove = autoRemoveOldIntellijSdk)
+    }
+
+    // Clean up old downloads in the artifact downloads directory
+    if (Files.isDirectory(artifactsDownloadsDirectory)) {
+      new OldDownloadsCleanup(log).detectOldDownloadsRemoveIfNeeded(artifactsDownloadsDirectory, autoRemove = autoRemoveOldDownloads)
     }
 
     val dependenciesSorted = topoSort(dependencies)

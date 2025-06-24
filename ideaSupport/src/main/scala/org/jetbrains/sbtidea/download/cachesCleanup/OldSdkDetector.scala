@@ -1,4 +1,4 @@
-package org.jetbrains.sbtidea.download.sdkCleanup
+package org.jetbrains.sbtidea.download.cachesCleanup
 
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
