@@ -1,8 +1,10 @@
 package org.jetbrains.sbtidea
 
+/** TODO: deduplicate with [[org.jetbrains.sbtidea.download.cachesCleanup.TestUtils.CapturingTestLogger]] */
 private class CapturingLogger extends PluginLogger {
   val messages = new scala.collection.mutable.ArrayBuffer[String]()
   private def capture(msg: => String): Unit = {messages += msg; println(msg)}
+  override def debug(msg: => String): Unit = capture("[debug] " + msg)
   override def info(msg: => String): Unit  = capture("[info] " + msg)
   override def warn(msg: => String): Unit  = capture("[warn] " + msg)
   override def error(msg: => String): Unit = capture("[error] " + msg)

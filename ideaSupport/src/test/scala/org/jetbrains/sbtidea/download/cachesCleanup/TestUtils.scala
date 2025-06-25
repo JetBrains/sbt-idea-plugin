@@ -65,6 +65,7 @@ object TestUtils {
     file
   }
 
+  /** TODO: deduplicate with [[org.jetbrains.sbtidea.CapturingLogger]] */
   class CapturingTestLogger extends PluginLogger {
     private val messages: ArrayBuffer[String] = ArrayBuffer.empty
 
@@ -75,12 +76,10 @@ object TestUtils {
       messages ++= msg.linesIterator.map(line => s"[$severity] $line")
     }
 
+    override def debug(msg: => String): Unit = append("debug", msg)
     override def info(msg: => String): Unit = append("info", msg)
-
     override def warn(msg: => String): Unit = append("warn", msg)
-
     override def error(msg: => String): Unit = append("error", msg)
-
     override def fatal(msg: => String): Unit = append("fatal", msg)
   }
 }

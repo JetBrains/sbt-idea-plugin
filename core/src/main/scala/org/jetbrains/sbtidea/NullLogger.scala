@@ -1,6 +1,7 @@
 package org.jetbrains.sbtidea
 
 object NullLogger extends PluginLogger {
+  override def debug(msg: => String): Unit = ()
   override def info(msg: => String): Unit = ()
   override def warn(msg: => String): Unit = ()
   override def error(msg: => String): Unit = ()
