@@ -52,10 +52,28 @@ class IdeaConfigBuilder(
         configurationName,
         intellijVMOptions,
         options.programParams,
-        options.ideaRunEnv
+        options.ideaRunEnv,
       )
       writeToFile(runConfigDir / s"$configurationName.xml", content)
     }
+
+    // Generate a similar run configuration, but without "Build" "before launch" step
+    // Note there is no need to build the project with an explicit "Build" "before launch" step.
+    // Build artifact should invoke it transitively.
+    // Let's dogfood this run configuration for some time and if we don't find any issues:
+    // make it the only and default behavior and delete the ` addBuildProjectBeforeLaunchStep ` parameter
+    if (options.generateDefaultRunConfig) {
+      val configurationName = artifactName + " (no explicit build step)"
+      val contentNoBuild = buildRunConfigurationXML(
+        configurationName,
+        intellijVMOptions,
+        options.programParams,
+        options.ideaRunEnv,
+        addBuildProjectBeforeLaunchStep = false
+      )
+      writeToFile(runConfigDir / s"$configurationName.xml", contentNoBuild)
+    }
+
     options.additionalRunConfigs.foreach { data: AdditionalRunConfigData =>
       val configurationName = artifactName + data.configurationNameSuffix
       val content = buildRunConfigurationXML(
@@ -245,11 +263,20 @@ class IdeaConfigBuilder(
     configurationName: String,
     vmOptions: IntellijVMOptions,
     programParams: String,
-    envVars: Map[String, String]
+    envVars: Map[String, String],
+    addBuildProjectBeforeLaunchStep: Boolean = true
   ): String = {
     val envVarsSection = createEnvironmentVariablesSection(envVars)
     val vmOptionsStr = buildRunVmOptionsString(vmOptions)
     val moduleName = generateModuleName(sourceSetModuleSuffix =  "main")
+
+    val buildProjectStepText = if (addBuildProjectBeforeLaunchStep) {
+      //No need to build the project, build artifact will invoke it transitively
+      """<option name="Make" enabled="true" />"""
+    }
+    else {
+      ""
+    }
 
     s"""<component name="ProjectRunConfigurationManager">
        |  <configuration default="false" name="$configurationName" type="Application" factoryName="Application">
@@ -271,7 +298,7 @@ class IdeaConfigBuilder(
        |    <ConfigurationWrapper RunnerId="Run" />
        |    $envVarsSection
        |    <method v="2">
-       |      <option name="Make" enabled="true" />
+       |      $buildProjectStepText
        |      <option name="BuildArtifacts" enabled="true">
        |        <artifact name="$artifactName" />
        |      </option>
@@ -356,6 +383,7 @@ class IdeaConfigBuilder(
        |    <ConfigurationWrapper RunnerId="Run" />
        |    $env
        |    <method v="2">
+       |      <!-- We need to explicitly build the project, build artifact doesn't compile the tests -->
        |      <option name="Make" enabled="true" />
        |      <option name="BuildArtifacts" enabled="true">
        |        <artifact name="$artifactName" />
