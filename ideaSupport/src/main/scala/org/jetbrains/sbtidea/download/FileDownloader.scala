@@ -4,13 +4,14 @@ import org.jetbrains.sbtidea.download.FileDownloader.{DownloadException, Progres
 import org.jetbrains.sbtidea.download.api.IdeInstallationProcessContext
 import org.jetbrains.sbtidea.{PluginLogger as log, *}
 
-import java.io.FileOutputStream
+import java.io.{FileOutputStream, IOException}
 import java.net.{SocketTimeoutException, URL}
 import java.nio.ByteBuffer
 import java.nio.channels.{Channels, ReadableByteChannel}
 import java.nio.file.{Files, Path, Paths}
 import javax.net.ssl.SSLException
 import scala.concurrent.duration.{Duration, DurationInt, DurationLong}
+import scala.util.{Failure, Success, Try}
 
 /**
  * The directory to which the temporary files are downloaded.<br>
@@ -35,34 +36,87 @@ class FileDownloader(private val downloadDirectory: Path) {
   }
 
   private val FilePartSuffix = ".part"
+  private def toFilePartPath(path: Path): Path = path.resolveSibling(path.getFileName.toString + FilePartSuffix)
+  private def fromFilePartPath(path: Path): Path = path.resolveSibling(path.getFileName.toString.replace(FilePartSuffix, ""))
+
+  private val printProgressToConsoleCallback: ProgressCallback = { case (progressInfo, to) =>
+    //use carriage return to overwrite the previous progress line
+    val text = s"\r${progressInfo.renderAll} -> $to"
+    //until the progress is 100%, we don't print a trailing new line
+    if (!progressInfo.done)
+      System.out.print(text)
+    else
+      System.out.println(text)
+  }
 
   @throws(classOf[DownloadException])
-  def download(url: URL, optional: Boolean = false): Path = try {
-    val partFile = downloadNativeWithConnectionRetry(url) { case (progressInfo, to) =>
-      //use carriage return to overwrite the previous progress line
-      val text = s"\r${progressInfo.renderAll} -> $to"
-      //until the progress is 100%, we don't print a trailing new line
-      if (!progressInfo.done)
-        System.out.print(text)
-      else
-        System.out.println(text)
-    }
+  @deprecated("use another `download` overloaded method or `downloadOptional`", since = "4.1.16")
+  def download(url: URL, optional: Boolean): Path = {
+    if (optional)
+      downloadOptional(url).getOrElse(Path.of(""))
+    else
+      download(url)
+  }
+
+  @throws(classOf[DownloadException])
+  def download(url: URL): Path = {
+    downloadOptionallyReusingPartFile(url, optional = false).get.get
+  }
+
+  /**
+   * @return Some file if the file was successfully downloaded<br>
+   *         None if optional=true, and the file couldn't be downloaded due to an exception
+   * @throws FileDownloader#DownloadException if optional=false, and the file couldn't be downloaded
+   */
+  @throws(classOf[DownloadException])
+  def downloadOptional(url: URL, optional: Boolean = true): Option[Path] = {
+    downloadOptionallyReusingPartFile(url, optional = optional).get
+  }
+
+  @throws(classOf[DownloadException])
+  private def downloadOptionallyReusingPartFile(
+    url: URL,
+    optional: Boolean,
+    reuseExistingPartFile: Boolean = true
+  ): Try[Option[Path]] = Try {
+    val partFile = downloadNativeWithConnectionRetry(url, reuseExistingPartFile)(printProgressToConsoleCallback)
     partFile match {
       case DownloadedPath.PartPath(partPath) =>
-        val targetFile = partPath.getParent.resolve(partPath.getFileName.toString.replace(FilePartSuffix, ""))
+        val targetFile = fromFilePartPath(partPath)
         if (targetFile.toFile.exists()) {
           log.warn(s"$targetFile already exists, recovering failed install...")
           Files.delete(targetFile)
         }
         Files.move(partPath, targetFile)
-        targetFile
+        Some(targetFile)
       case DownloadedPath.ZipPath(path) =>
-        path
+        Some(path)
     }
-  } catch {
-    case e: Exception if optional =>
-      log.warn(s"Can't download${if (optional) " optional" else ""} $url: $e")
-      Paths.get("")
+  }.recoverWith {
+    case e: Exception =>
+      val canNotDownloadFilePart = isRangeNotSatisfiableHttpResponseException(e)
+      if (canNotDownloadFilePart && reuseExistingPartFile) {
+        log.warn(s"Can't download file part $url: $e")
+        log.warn(s"Retrying with a fresh download...")
+        downloadOptionallyReusingPartFile(url, optional, reuseExistingPartFile = false)
+      }
+      else if (optional) {
+        log.warn(s"Can't download optional file $url: $e")
+        Success(None)
+      }
+      else {
+        log.warn(s"Can't download file $url: $e")
+        Failure(e)
+      }
+  }
+
+  private def isRangeNotSatisfiableHttpResponseException(e: Exception) = e match {
+    case ioe: IOException =>
+      // Example:
+      // [warn] Can't download optional <path>/ideaIC-251.26927T-sources.jar: java.io.IOException: Server returned HTTP response code: 416 for URL: <path>/ideaIC-251.26927T-sources.jar
+      ioe.getMessage.toLowerCase.contains("http response code: 416") //from HttpURLConnection
+    case _ =>
+      false
   }
 
   private def SocketConnectionTimeoutMs = getPositiveLongProperty("download.socket.connection.timeout.ms", 5.seconds.toMillis).ensuring(_ <= Int.MaxValue).toInt
@@ -88,13 +142,19 @@ class FileDownloader(private val downloadDirectory: Path) {
     case class ZipPath(path: Path) extends DownloadedPath
   }
 
-  private def downloadNativeWithConnectionRetry(url: URL)(progressCallback: ProgressCallback): DownloadedPath = {
+  private def downloadNativeWithConnectionRetry(
+    url: URL,
+    reuseExistingPartFile: Boolean
+  )(progressCallback: ProgressCallback): DownloadedPath = {
     val retry1Timeout: Duration = DownloadRetryConnectionTimeoutWait
     val retry2Timeout: Duration = DownloadRetryConnectionIssueWait
 
+    var isFirstAttempt = true
+
     //noinspection NoTailRecursionAnnotation
     def inner(retries1: Long, retries2: Long): DownloadedPath = {
-      try downloadNative(url)(progressCallback) catch {
+      try downloadNative(url, reuseExistingPartFile, isFirstAttempt = isFirstAttempt)(progressCallback)
+      catch {
         //this can happen when server is restarted
         case exception @ (_: SocketTimeoutException | _: SSLException) if retries1 > 0 =>
           log.warn(s"Error occurred during download: ${exception.getMessage}, retry in $retry1Timeout ...")
@@ -110,6 +170,9 @@ class FileDownloader(private val downloadDirectory: Path) {
           Thread.sleep(retry2Timeout.toMillis)
           inner(retries1, retries2 - 1)
       }
+      finally {
+        isFirstAttempt = false
+      }
     }
 
     inner(
@@ -119,7 +182,11 @@ class FileDownloader(private val downloadDirectory: Path) {
   }
 
   @throws[SocketTimeoutException]
-  private def downloadNative(url: URL)(progressCallback: ProgressCallback): DownloadedPath = {
+  private def downloadNative(
+    url: URL,
+    reuseExistingPartFile: Boolean,
+    isFirstAttempt: Boolean
+  )(progressCallback: ProgressCallback): DownloadedPath = {
     val connection = url.openConnection()
     connection.setConnectTimeout(SocketConnectionTimeoutMs)
     connection.setReadTimeout(SocketReadTimeoutMs)
@@ -145,7 +212,7 @@ class FileDownloader(private val downloadDirectory: Path) {
       return DownloadedPath.ZipPath(to)
     }
 
-    val toPart = downloadDirectory.resolve(fileNameWithoutPartSuffix + FilePartSuffix)
+    val toPart = toFilePartPath(downloadDirectory.resolve(fileNameWithoutPartSuffix))
     val tpPartLength = if (toPart.toFile.exists()) Files.size(toPart) else -1
 
     if (remoteMetaData.length == tpPartLength) {
@@ -153,7 +220,11 @@ class FileDownloader(private val downloadDirectory: Path) {
       return DownloadedPath.PartPath(toPart)
     }
 
-    if (toPart.toFile.exists() && isResumeSupported(url)) {
+    val resumePartFileDownload = toPart.toFile.exists() &&
+      isResumeSupported(url) &&
+      // reuseExistingPartFile is effective only during the first download try
+      (reuseExistingPartFile || !isFirstAttempt)
+    if (resumePartFileDownload) {
       connection.setRequestProperty("Range", s"bytes=$tpPartLength-")
       log.info(s"Resuming download of $url to $toPart")
     } else {

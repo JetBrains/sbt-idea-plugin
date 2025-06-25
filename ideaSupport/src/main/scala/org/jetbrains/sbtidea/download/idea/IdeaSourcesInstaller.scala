@@ -14,7 +14,12 @@ class IdeaSourcesInstaller(sourcesBuildInfo: BuildInfo) extends Installer[IdeaSo
     sourcesZipPath(ctx.baseDirectory, sourcesBuildInfo).exists
 
   override def downloadAndInstall(art: IdeaSources)(implicit ctx: IdeInstallationProcessContext): Unit = {
-    val file = FileDownloader(ctx).download(art.dlUrl, optional = true)
+    val file = FileDownloader(ctx).downloadOptional(art.dlUrl) match {
+      case Some(value) => value
+      case None =>
+        //the warning will be printed by the file downloader itself
+        return
+    }
 
     val targetFile = sourcesZipPath(ctx.baseDirectory, sourcesBuildInfo)
 
