@@ -39,7 +39,7 @@ class OldDownloadsCleanup(log: PluginLogger) {
     val oldDownloads = OldDownloadsDetector.detectOldDownloads(report)
 
     if (oldDownloads.isEmpty) {
-      log.info("No old cached downloads found for cleanup")
+      log.debug("No old cached downloads found for cleanup")
       return
     }
 

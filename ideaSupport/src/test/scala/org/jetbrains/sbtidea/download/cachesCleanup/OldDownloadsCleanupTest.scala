@@ -61,7 +61,7 @@ class OldDownloadsCleanupTest extends AnyFunSuite with Matchers with BeforeAndAf
     val cleanup = new OldDownloadsCleanup(mockLogger)
     invokeDetectOldDownloadsAndRemoveIfNeeded(cleanup, mockedReport, autoRemove = true)
 
-    mockLogger.getLoggedText shouldBe "[info] No old cached downloads found for cleanup"
+    mockLogger.getLoggedText shouldBe "[debug] No old cached downloads found for cleanup"
 
     // Verify recent files still exist
     assertFilesExist(recentFiles, shouldExist = true)

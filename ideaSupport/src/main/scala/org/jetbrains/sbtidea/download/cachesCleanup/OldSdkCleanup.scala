@@ -61,8 +61,10 @@ final class OldSdkCleanup(logger: PluginLogger) {
     val sdks = cachedSdksReport.sdkInfos
 
     val oldSdks = OldSdkDetector.detectOldSdks(sdks)
-    if (oldSdks.isEmpty)
+    if (oldSdks.isEmpty) {
+      logger.debug("No old cached IntelliJ SDK directories found for cleanup")
       return None
+    }
 
     val totalSizeBytes: Long = oldSdks.map(sdk => FileUtils.getDirectorySize(sdk.directory)).sum
     val totalSizeFormatted = CleanupUtils.formatSize(totalSizeBytes)

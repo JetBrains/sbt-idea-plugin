@@ -75,7 +75,7 @@ class OldSdkCleanupTest extends AnyFunSuite with Matchers with BeforeAndAfterEac
 
     new OldSdkCleanup(mockLogger).detectOldSdksRemoveIfNeeded(mockedReport, autoRemove = true)
 
-    mockLogger.getLoggedText shouldBe empty
+    mockLogger.getLoggedText shouldBe "[debug] No old cached IntelliJ SDK directories found for cleanup"
 
     recentDirs.foreach { dir =>
       TestUtils.assertDirectoryExists(dir, shouldExist = true)
