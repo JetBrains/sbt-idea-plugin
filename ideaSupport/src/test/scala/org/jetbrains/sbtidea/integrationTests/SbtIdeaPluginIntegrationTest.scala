@@ -40,6 +40,7 @@ class SbtIdeaPluginIntegrationTest
 
     doCommonAssertions(intellijSdkRoot)
     assertFileExists(intellijSdkRoot / "plugins" / "Scala")
+    assertFileExists(intellijSdkRoot / "sources" / "ideaIC-243.22562.145-sources.zip")
     assertFileDoesNotExist(intellijSdkRoot / "sources" / "ideaIU-243.22562.145-sources.zip")
     new IdeInstallationContext(intellijSdkRoot.toPath).productInfo.productCode shouldBe "IC"
   }
@@ -50,7 +51,7 @@ class SbtIdeaPluginIntegrationTest
 
     doCommonAssertions(intellijSdkRoot)
     assertFileExists(intellijSdkRoot / "sources" / "ideaIU-243.22562.145-sources.zip")
-
+    assertFileDoesNotExist(intellijSdkRoot / "sources" / "ideaIC-243.22562.145-sources.zip")
     assertFileDoesNotExist(intellijSdkRoot / "plugins" / "scala")
     new IdeInstallationContext(intellijSdkRoot.toPath).productInfo.productCode shouldBe "IU"
   }
