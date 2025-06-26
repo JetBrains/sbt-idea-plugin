@@ -1,7 +1,8 @@
 package org.jetbrains.sbtidea.integrationTests
 
+import org.apache.commons.io.FileUtils
 import org.jetbrains.sbtidea.download.api.IdeInstallationContext
-import org.jetbrains.sbtidea.testUtils.SbtProjectFilesUtils.{runProcess, runSbtProcess}
+import org.jetbrains.sbtidea.testUtils.SbtProjectFilesUtils.runSbtProcess
 import org.jetbrains.sbtidea.testUtils.{CurrentEnvironmentUtils, FileAssertions, SbtProjectFilesUtils}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -112,13 +113,20 @@ class SbtIdeaPluginIntegrationTest
     runUpdateIntellijCommand(TestProjectsDir / testProjectDirName)
   }
 
+
   private def runUpdateIntellijCommand(projectDir: File): File = {
     assertFileExists(projectDir)
+
+    val sdkRoot = IntellijSdksBaseDir / projectDir.getName
+
+    // Ensure we have a clean SDK directory
+    FileUtils.deleteDirectory(sdkRoot)
 
     SbtProjectFilesUtils.cleanUntrackedVcsFiles(projectDir)
     SbtProjectFilesUtils.updateSbtIdeaPluginToVersion(projectDir, PluginVersion)
 
-    val intellijSdkRoot = SbtProjectFilesUtils.injectExtraSbtFileWithIntelliJSdkTargetDirSettings(projectDir, IntellijSdksBaseDir)
+
+    val intellijSdkRoot = SbtProjectFilesUtils.injectExtraSbtFileWithIntelliJSdkTargetDirSettingsForSdkRoot(projectDir, sdkRoot)
 
     runSbtProcess(
       Seq("updateIntellij"),
