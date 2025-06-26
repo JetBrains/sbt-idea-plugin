@@ -9,7 +9,7 @@ import org.scalatest.matchers.should.Matchers
 import sbt.{File, fileToRichFile}
 
 /**
- * This test is designed to test twe work of sbt-idea-plugin as a whole, in real projects.
+ * This test is designed to test the work of sbt-idea-plugin as a whole, in real projects.
  * The plugin is substituted to sbt projects, then you can run arbitrary command
  * (e.g., updateIntellij or packageArtifact) and run arbitrary assertions on the resulting artifacts
  *
@@ -33,7 +33,18 @@ class SbtIdeaPluginIntegrationTest
     assertFileExists(intellijSdkRoot / "lib")
     assertFileExists(intellijSdkRoot / "plugins")
     assertFileExists(intellijSdkRoot / "product-info.json")
-    assertFileExists(intellijSdkRoot / "sources" / "ideaIC-243.22562.145-sources.zip")
+  }
+
+  /**
+   * Verifies the contents of the sources directory against an expected list of files
+   * 
+   * @param intellijSdkRoot The root directory of the IntelliJ SDK
+   * @param expectedSourcesFiles A sequence of expected sources filenames
+   */
+  private def assertSourcesDirectoryContents(intellijSdkRoot: File, expectedSourcesFiles: Seq[String]): Unit = {
+    val sourcesDir = intellijSdkRoot / "sources"
+    assertFileExists(sourcesDir)
+    assertDirectoryContents(sourcesDir, expectedSourcesFiles)
   }
 
   test("Simple project with plugin") {
@@ -41,8 +52,9 @@ class SbtIdeaPluginIntegrationTest
 
     doCommonAssertions(intellijSdkRoot)
     assertFileExists(intellijSdkRoot / "plugins" / "Scala")
-    assertFileExists(intellijSdkRoot / "sources" / "ideaIC-243.22562.145-sources.zip")
-    assertFileDoesNotExist(intellijSdkRoot / "sources" / "ideaIU-243.22562.145-sources.zip")
+    assertSourcesDirectoryContents(intellijSdkRoot, Seq(
+      "ideaIC-243.22562.145-sources.zip"
+    ))
     new IdeInstallationContext(intellijSdkRoot.toPath).productInfo.productCode shouldBe "IC"
   }
 
@@ -51,8 +63,9 @@ class SbtIdeaPluginIntegrationTest
     val intellijSdkRoot = runUpdateIntellijCommand("simple-ultimate-edition")
 
     doCommonAssertions(intellijSdkRoot)
-    assertFileExists(intellijSdkRoot / "sources" / "ideaIU-243.22562.145-sources.zip")
-    assertFileDoesNotExist(intellijSdkRoot / "sources" / "ideaIC-243.22562.145-sources.zip")
+    assertSourcesDirectoryContents(intellijSdkRoot, Seq(
+      "ideaIU-243.22562.145-sources.zip"
+    ))
     assertFileDoesNotExist(intellijSdkRoot / "plugins" / "scala")
     new IdeInstallationContext(intellijSdkRoot.toPath).productInfo.productCode shouldBe "IU"
   }
