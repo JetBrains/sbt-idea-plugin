@@ -4,8 +4,7 @@ import org.jetbrains.sbtidea.download.cachesCleanup.TestUtils.createSdkInfoMock
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
-class OldSdkDetectorTest extends AnyFunSuite with Matchers {
-
+class OldSdkDetectorTest extends AnyFunSuite with Matchers with WithMockedTime {
   test("detectOldSdks") {
     val sdkInfos = Seq(
       // 242 major version (older than 2 releases from the latest release)

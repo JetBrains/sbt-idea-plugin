@@ -15,7 +15,7 @@ object OldDownloadsDetector {
    */
   def detectOldDownloads(report: DownloadsReport): Seq[FileMetaInfo] = {
     report.fileInfos.filter { fileInfo =>
-      isLaterThen(fileInfo.metaData.creationDate, RetentionDays)
+      isOlderThan(fileInfo.metaData.creationDate, RetentionDays)
     }
   }
 }

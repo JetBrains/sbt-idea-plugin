@@ -77,18 +77,12 @@ private object OldSdkDetector {
     else
       KeepPreviousReleasesThreshold
 
-    val oldVersionsFromLatest = latestMinorVersions.filter(laterThen(_, KeepLongerLatestMinorVersionsThreshold))
-    val oldVersionsFromOlder = olderMinorVersions.filter(laterThen(_, threshold))
+    val oldVersionsFromLatest = latestMinorVersions.filter(olderThan(_, KeepLongerLatestMinorVersionsThreshold))
+    val oldVersionsFromOlder = olderMinorVersions.filter(olderThan(_, threshold))
 
     oldVersionsFromLatest ++ oldVersionsFromOlder
   }
 
-  private def laterThen(sdk: IntellijSdkDirInfo, duration: FiniteDuration): Boolean =
-    laterThen(sdk.dirInfo.creationDate, duration)
-
-  private def laterThen(date: LocalDate, duration: FiniteDuration): Boolean = {
-    val now = LocalDate.now()
-    val diff = ChronoUnit.DAYS.between(date, now)
-    diff > duration.toDays
-  }
+  private def olderThan(sdk: IntellijSdkDirInfo, duration: FiniteDuration): Boolean =
+    isOlderThan(sdk.dirInfo.creationDate, duration)
 }

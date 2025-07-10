@@ -66,8 +66,8 @@ package object cachesCleanup {
 
 
   private[download]
-  def isLaterThen(date: LocalDate, duration: FiniteDuration): Boolean = {
-    val now = LocalDate.now()
+  def isOlderThan(date: LocalDate, duration: FiniteDuration): Boolean = {
+    val now = CleanupUtils.cleanupRelevantTime()
     val diff = ChronoUnit.DAYS.between(date, now)
     diff > duration.toDays
   }

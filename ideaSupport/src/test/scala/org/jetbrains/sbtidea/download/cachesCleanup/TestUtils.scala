@@ -55,7 +55,7 @@ object TestUtils {
     message.replaceAll("Total size: [0-9,.]+\\s*[KMGT]?B", "Total size: SIZE_PLACEHOLDER")
 
   def createFileMetaInfo(file: Path, daysAgo: Int): FileMetaInfo = {
-    val creationDate = LocalDate.now().minusDays(daysAgo)
+    val creationDate = MockedTodayDate.minusDays(daysAgo)
     FileMetaInfo(file, DirectoryMetaData(creationDate))
   }
 

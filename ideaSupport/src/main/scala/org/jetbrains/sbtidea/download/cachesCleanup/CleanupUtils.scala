@@ -9,6 +9,7 @@ import java.time.temporal.ChronoUnit
 object CleanupUtils {
 
   val DateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMM yy")
+  @volatile
   private var MockTodayDate: Option[LocalDate] = None
 
   @TestOnly
@@ -21,6 +22,8 @@ object CleanupUtils {
     items.map(presenter).map(ListSeparator + _).mkString("\n").indented(2)
   }
 
+  def cleanupRelevantTime(): LocalDate = MockTodayDate.getOrElse(LocalDate.now())
+
   /**
    * Formats a given date into a human-readable string indicating how long ago it was
    * (e.g., "2 days ago", "1 week ago", "more than 1 month ago").
@@ -29,7 +32,7 @@ object CleanupUtils {
    * @return a string indicating how long ago the given date occurred (e.g., "today", "3 days ago", "more than 2 months ago")
    */
   def formatAgo(date: LocalDate): String = {
-    val now = MockTodayDate.getOrElse(LocalDate.now())
+    val now = cleanupRelevantTime()
 
     val daysAgo = ChronoUnit.DAYS.between(date, now)
     val weeksAgo = daysAgo / 7

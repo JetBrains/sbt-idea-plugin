@@ -7,13 +7,13 @@ import org.scalatest.matchers.should.Matchers
 
 import java.nio.file.{Files, Path}
 
-class OldSdkCleanupTest extends AnyFunSuite with Matchers with BeforeAndAfterEach {
+class OldSdkCleanupTest extends AnyFunSuite with Matchers with BeforeAndAfterEach with WithMockedTime {
 
   // Create a temporary directory for tests
   private var tempDir: Path = _
 
   override def beforeEach(): Unit = {
-    CleanupUtils.setMockTodayDate(MockedTodayDate)
+    super.beforeEach()
     tempDir = Files.createTempDirectory("old-sdk-cleanup-test")
   }
 
@@ -21,6 +21,7 @@ class OldSdkCleanupTest extends AnyFunSuite with Matchers with BeforeAndAfterEac
     if (tempDir != null && Files.exists(tempDir)) {
       FileUtils.deleteDirectory(tempDir)
     }
+    super.afterEach()
   }
 
   private def createMockSdkDirectories(sdkInfos: Seq[IntellijSdkDirInfo]): Seq[Path] = {
