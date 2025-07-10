@@ -77,6 +77,7 @@ class IdeaDistInstaller(buildInfo: BuildInfo) extends Installer[IdeaDist] {
     }
 
     fixAccessRights(ctx.baseDirectory)
+    addToolboxIgnoreFile(ctx.baseDirectory)
 
     if (!keepDownloadedFiles) {
       log.info(s"Deleting $artifact")
@@ -101,6 +102,12 @@ class IdeaDistInstaller(buildInfo: BuildInfo) extends Installer[IdeaDist] {
           log.warn(s"Failed to fix access rights for $binDir: ${e.getMessage}")
       }
     }
+  }
+
+  private def addToolboxIgnoreFile(ideaDir: Path): Unit = {
+    // we add this file to the directory so that the toolbox doesn't pick it up as an installed instance
+    // See SCL-24107
+    Files.createFile(ideaDir.resolve(".toolbox-ignore"))
   }
 
   private def installDmgApp(

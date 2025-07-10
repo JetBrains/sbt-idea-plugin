@@ -33,6 +33,7 @@ class SbtIdeaPluginIntegrationTest
     assertFileExists(intellijSdkRoot / "lib")
     assertFileExists(intellijSdkRoot / "plugins")
     assertFileExists(intellijSdkRoot / "product-info.json")
+    assertFileExists(intellijSdkRoot / ".toolbox-ignore")
   }
 
   /**
