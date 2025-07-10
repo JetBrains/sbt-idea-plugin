@@ -1,7 +1,7 @@
 package org.jetbrains.sbtidea.download.plugin
 
 import org.jetbrains.sbtidea.Keys.String2Plugin
-import org.jetbrains.sbtidea.download.FileDownloader
+import org.jetbrains.sbtidea.download.{FileDownloader, NioUtils}
 import org.jetbrains.sbtidea.download.api.*
 import org.jetbrains.sbtidea.{IntellijPlugin, PluginLogger as log}
 
@@ -120,8 +120,12 @@ class PluginResolver(
       plugin,
       s"tmp-${plugin.id}-plugin"
     )
-    val pluginDescriptor = LocalPluginRegistry.extractInstalledPluginDescriptorFileContent(tmpPluginDir)
-    pluginDescriptor.right.map(_.content).map(PluginDescriptor.load)
+    try {
+      val pluginDescriptor = LocalPluginRegistry.extractInstalledPluginDescriptorFileContent(tmpPluginDir)
+      pluginDescriptor.right.map(_.content).map(PluginDescriptor.load)
+    } finally {
+      NioUtils.delete(tmpPluginDir.getParent)
+    }
   }
 
   private def resolveInstalledPluginPlugin(pluginDependency: PluginDependency): PluginDescriptorAndArtifactResolveResult = {
