@@ -36,15 +36,19 @@ lazy val commonSettings: Seq[Setting[?]] = Seq(
     "org.scalatest" %% "scalatest" % "3.2.19" % Test,
     // Use latest version of sbt in tests to test against latest versions of projects using this plugin
     "org.scala-sbt" % "sbt" % SbtVersionForTests % Test,
-  )
+  ),
+
+  // Please specify explicitely which modules should be published
+  publish / skip := true
 )
 
 lazy val core = (project in file("core"))
   .enablePlugins(SbtPlugin)
   .settings(commonSettings)
-  .dependsOn(testUtils)
+  .dependsOn(testUtils % "test->test")
   .settings(
-    name := "sbt-declarative-core"
+    name := "sbt-declarative-core",
+    publish / skip := false,
   )
 
 lazy val visualizer = (project in file("visualizer"))
@@ -53,7 +57,8 @@ lazy val visualizer = (project in file("visualizer"))
   .dependsOn(core)
   .settings(
     name := "sbt-declarative-visualizer",
-    libraryDependencies += "com.github.mutcianm" %% "ascii-graphs" % "0.0.6"
+    publish / skip := false,
+    libraryDependencies += "com.github.mutcianm" %% "ascii-graphs" % "0.0.6",
   )
 
 val circeVersion = "0.14.10"
@@ -64,12 +69,13 @@ lazy val packaging = (project in file("packaging"))
   .dependsOn(core, testUtils % "test->test")
   .settings(
     name := "sbt-declarative-packaging",
+    publish / skip := false,
     libraryDependencies ++= Seq(
       "org.pantsbuild" % "jarjar" % "1.7.2",
       "io.circe" %% "circe-core" % circeVersion % Test,
       "io.circe" %% "circe-generic" % circeVersion % Test,
       "io.circe" %% "circe-parser" % circeVersion % Test
-    )
+    ),
   )
 
 lazy val ideaSupport = (project in file("ideaSupport"))
@@ -78,6 +84,7 @@ lazy val ideaSupport = (project in file("ideaSupport"))
   .dependsOn(core, packaging, visualizer, testUtils % "test->test")
   .settings(
     name := "sbt-idea-plugin",
+    publish / skip := false,
     libraryDependencies ++= Seq(
       "org.apache.httpcomponents.client5" % "httpclient5" % "5.3.1",
 
@@ -102,7 +109,6 @@ lazy val testUtils = (project in file("testUtils"))
 lazy val sbtIdeaPlugin = (project in file("."))
   .settings(commonSettings)
   .settings(
-    publish / skip := true,
     ideExcludedDirectories := Seq(
       file("tempProjects"),
       file("tempIntellijSdks"),
