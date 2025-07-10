@@ -84,7 +84,7 @@ class LocalPluginRegistry(ctx: IdeInstallationContext) extends LocalPluginRegist
         throw new MissingPluginRootException(ideaPlugin.toString)
     case _ =>
       val key = ideaPlugin match {
-        case id: IntellijPlugin.Id => id.id
+        case id: IntellijPlugin.WithKnownId => id.id
         case unsupported =>
           throw new RuntimeException(s"Unsupported plugin: $unsupported")
       }

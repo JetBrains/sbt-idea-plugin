@@ -1,8 +1,9 @@
 package org.jetbrains.sbtidea.download.plugin
 
 import org.jetbrains.sbtidea.Keys.String2Plugin
-import org.jetbrains.sbtidea.download.{FileDownloader, NioUtils}
 import org.jetbrains.sbtidea.download.api.*
+import org.jetbrains.sbtidea.download.plugin.PluginResolver.{PluginDescriptorAndArtifactResolveResult, PluginResolverCache}
+import org.jetbrains.sbtidea.download.{FileDownloader, NioUtils}
 import org.jetbrains.sbtidea.{IntellijPlugin, PluginLogger as log}
 
 import java.net.URL
@@ -15,10 +16,6 @@ class PluginResolver(
   repo: PluginRepoApi,
   localRegistry: LocalPluginRegistryApi
 ) extends Resolver[PluginDependency] {
-
-  //Keeping multiple errors in `Seq[String]` mainly for the case when IntellijPlugin.Id.fallbackDownloadUrl is not empty
-  //In that case, we try to resolve the artifact twice and want to report both errors
-  private type PluginDescriptorAndArtifactResolveResult = Either[Seq[String], (PluginDescriptor, PluginArtifact)]
 
   override def resolve(pluginDependency: PluginDependency): Seq[PluginArtifact] = {
     val plugin = pluginDependency.plugin
@@ -68,12 +65,12 @@ class PluginResolver(
   private def resolvePluginById(
     plugin: PluginDependency,
     key: IntellijPlugin.WithKnownId,
-  ): PluginDescriptorAndArtifactResolveResult = {
+  ): PluginDescriptorAndArtifactResolveResult = PluginResolverCache.getOrCompute(key, {
     val resolved = resolvePluginByIdImpl(plugin, key)
     resolved.left.flatMap { originalErrors =>
       tryToResolveUsingFallbackUrlIfExists(plugin, key, originalErrors)
     }
-  }
+  })
 
   private def tryToResolveUsingFallbackUrlIfExists(
     plugin: PluginDependency,
@@ -155,4 +152,24 @@ class PluginResolver(
     case IntellijPlugin.IdWithDownloadUrl(_, downloadUrl) =>
       downloadUrl
   }
+}
+
+object PluginResolver {
+
+  //Keeping multiple errors in `Seq[String]` mainly for the case when IntellijPlugin.Id.fallbackDownloadUrl is not empty
+  //In that case, we try to resolve the artifact twice and want to report both errors
+  private type PluginDescriptorAndArtifactResolveResult = Either[Seq[String], (PluginDescriptor, PluginArtifact)]
+
+  /**
+   * Static cache for plugin resolution results.
+   * It's added to avoid reresolving of the same plugin descriptor multiple times from multiple threads during the same run.<br>
+   * (Reminder: between the runs it's cached in [[LocalPluginRegistry]])
+   * Only one thread can resolve plugin description for a given plugin key.
+   *
+   * Descriptor resolution requires accessing internet resource.<br>
+   * When resolving in the Marketplace, it downloads the plugin XML file (which might be not that big a deal).
+   * When resolving by the direct link ([[IntellijPlugin.IdWithDownloadUrl]]) it downloads the entire plugin
+   * and searches for the plugin.xml inside the plugin jars. This part can be quite costly.
+   */
+  private val PluginResolverCache = new CaffeineCache[IntellijPlugin.WithKnownId, PluginDescriptorAndArtifactResolveResult](log)
 }
