@@ -59,7 +59,7 @@ lazy val CommonSonatypeSettings: Seq[Def.Setting[?]] = Seq(
     case _ => true
   } ++ {
     val env = sys.env.get(_)
-    for {
+    val newCredentials = for {
       username <- env("SONATYPE_USERNAME_NEW")
       password <- env("SONATYPE_PASSWORD_NEW")
     } yield Credentials(
@@ -68,6 +68,10 @@ lazy val CommonSonatypeSettings: Seq[Def.Setting[?]] = Seq(
       username,
       password
     )
+    if (newCredentials.isEmpty) {
+      println("WARNING: no sonatype credentials found")
+    }
+    newCredentials
   },
 )
 
