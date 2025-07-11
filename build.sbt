@@ -1,5 +1,7 @@
-import sbt.librarymanagement.Configurations.CompileInternal
-import xerial.sbt.Sonatype.GitHubHosting
+import sbt.Def
+import sbt.Keys.localStaging
+import sbt.internal.sona
+import sbt.librarymanagement.ivy.Credentials
 
 Global / concurrentRestrictions := Seq(Tags.limit(Tags.Test, 1))
 
@@ -10,16 +12,66 @@ val MinimumSbtVersion = "1.4.5"
 // This version should be backward compatible with MinimumSbtVersion
 val SbtVersionForTests = "1.10.7"
 
-lazy val commonSettings: Seq[Setting[?]] = Seq(
-  organization := "org.jetbrains",
-  sonatypeProfileName := "org.jetbrains",
-  homepage := Some(url("https://github.com/JetBrains/sbt-idea-plugin")),
-  sonatypeProjectHosting := Some(GitHubHosting("JetBrains", "sbt-idea-plugin", "scala-developers@jetbrains.com")),
-  licenses ++= Seq(
-    ("MIT", url("https://opensource.org/licenses/MIT")),
-    ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0"))
-  ),
+ThisBuild / organization := "org.jetbrains"
 
+// Optional but nice-to-have
+ThisBuild / organizationName     := "JetBrains"
+ThisBuild / organizationHomepage := Some(url("https://www.jetbrains.com/"))
+
+ThisBuild / licenses ++= Seq(
+  ("MIT", url("https://opensource.org/licenses/MIT")),
+  ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0"))
+)
+
+ThisBuild / homepage := Some(url("https://github.com/JetBrains/sbt-idea-plugin"))
+
+// Source-control coordinates
+ThisBuild / scmInfo := Some(
+  ScmInfo(
+    url("https://github.com/JetBrains/sbt-idea-plugin"),
+    "git@github.com:JetBrains/sbt-idea-plugin.git"
+  )
+)
+
+ThisBuild / developers := List(
+  Developer(
+    id    = "JetBrains",
+    name  = "JetBrains",
+    email = "scala-developers@jetbrains.com",
+    url   = url("https://github.com/JetBrains")
+  )
+)
+
+val SonatypeRepoName = "Sonatype Nexus Repository Manager"
+
+lazy val CommonSonatypeSettings: Seq[Def.Setting[?]] = Seq(
+  // new setting for the Central Portal
+  ThisBuild / publishTo := {
+    val centralSnapshots = "https://central.sonatype.com/repository/maven-snapshots/"
+    if (isSnapshot.value) Some("central-snapshots" at centralSnapshots)
+    else localStaging.value
+  },
+
+  // Overwrite/filter-out existing credentials
+  // Use copy of `sbt.internal.SysProp.sonatypeCredentalsEnv` but with custom environment variables
+  credentials := credentials.value.filter {
+    case c: DirectCredentials => c.realm != SonatypeRepoName
+    case _ => true
+  } ++ {
+    val env = sys.env.get(_)
+    for {
+      username <- env("SONATYPE_USERNAME_NEW")
+      password <- env("SONATYPE_PASSWORD_NEW")
+    } yield Credentials(
+      SonatypeRepoName,
+      sona.Sona.host,
+      username,
+      password
+    )
+  },
+)
+
+lazy val CommonSettings: Seq[Setting[?]] = Seq(
   scalaVersion := "2.12.18",
   pluginCrossBuild / sbtVersion := MinimumSbtVersion,
 
@@ -44,7 +96,8 @@ lazy val commonSettings: Seq[Setting[?]] = Seq(
 
 lazy val core = (project in file("core"))
   .enablePlugins(SbtPlugin)
-  .settings(commonSettings)
+  .settings(CommonSettings)
+  .settings(CommonSonatypeSettings)
   .dependsOn(testUtils % "test->test")
   .settings(
     name := "sbt-declarative-core",
@@ -53,7 +106,8 @@ lazy val core = (project in file("core"))
 
 lazy val visualizer = (project in file("visualizer"))
   .enablePlugins(SbtPlugin)
-  .settings(commonSettings)
+  .settings(CommonSettings)
+  .settings(CommonSonatypeSettings)
   .dependsOn(core)
   .settings(
     name := "sbt-declarative-visualizer",
@@ -65,7 +119,8 @@ val circeVersion = "0.14.10"
 
 lazy val packaging = (project in file("packaging"))
   .enablePlugins(SbtPlugin)
-  .settings(commonSettings)
+  .settings(CommonSettings)
+  .settings(CommonSonatypeSettings)
   .dependsOn(core, testUtils % "test->test")
   .settings(
     name := "sbt-declarative-packaging",
@@ -80,7 +135,8 @@ lazy val packaging = (project in file("packaging"))
 
 lazy val ideaSupport = (project in file("ideaSupport"))
   .enablePlugins(SbtPlugin)
-  .settings(commonSettings)
+  .settings(CommonSettings)
+  .settings(CommonSonatypeSettings)
   .dependsOn(core, packaging, visualizer, testUtils % "test->test")
   .settings(
     name := "sbt-idea-plugin",
@@ -98,7 +154,7 @@ lazy val ideaSupport = (project in file("ideaSupport"))
   )
 
 lazy val testUtils = (project in file("testUtils"))
-  .settings(commonSettings)
+  .settings(CommonSettings)
   .settings(
     name := "test-utils",
     scalacOptions ++= Seq(
@@ -107,7 +163,7 @@ lazy val testUtils = (project in file("testUtils"))
   )
 
 lazy val sbtIdeaPlugin = (project in file("."))
-  .settings(commonSettings)
+  .settings(CommonSettings)
   .settings(
     ideExcludedDirectories := Seq(
       file("tempProjects"),
