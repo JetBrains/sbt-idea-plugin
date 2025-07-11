@@ -26,13 +26,11 @@ class IntellijPluginResolverTest extends IntellijPluginResolverTestBase {
 
   test("cyclic dependencies are detected") {
     val resolver = new PluginResolver(resolveSettings = pluginE.plugin.resolveSettings)
-    val (messages, result) = captureLogAndValue(resolver.resolve(pluginE))
-    messages.mkString("\n").trim shouldBe
-      """[debug] Computing result for key: org.E
-        |[debug] Computing result for key: org.D
-        |[warn] Circular plugin dependency detected: PluginDependency(org.E) already processed
-        |""".stripMargin.trim
-    result.size shouldBe 3
+    val (logText, result) = captureLogTextAndValue(CapturingLoggerTest.LogLevel.Info)(resolver.resolve(pluginE))
+    logText shouldBe "[warn] Circular plugin dependency detected: PluginDependency(org.E) already processed"
+
+    val resultCallerPlugins = result.map(_.caller.plugin.toString)
+    resultCallerPlugins shouldBe Seq("org.E", "org.D", "org.A")
   }
 
   test("plugin exclude rules work") {

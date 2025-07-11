@@ -1,29 +1,81 @@
 package org.jetbrains.sbtidea
 
+import java.io.PrintStream
+
 /** TODO: deduplicate with [[org.jetbrains.sbtidea.download.cachesCleanup.TestUtils.CapturingTestLogger]] */
-private class CapturingLogger extends PluginLogger {
-  val messages = new scala.collection.mutable.ArrayBuffer[String]()
-  private def capture(msg: => String): Unit = {messages += msg; println(msg)}
-  override def debug(msg: => String): Unit = capture("[debug] " + msg)
-  override def info(msg: => String): Unit  = capture("[info] " + msg)
-  override def warn(msg: => String): Unit  = capture("[warn] " + msg)
-  override def error(msg: => String): Unit = capture("[error] " + msg)
-  override def fatal(msg: => String): Unit = capture("[fatal] " + msg)
+private class CapturingLogger(
+  printToStreamOnCapture: Option[PrintStream]
+) extends PluginLogger {
+  import org.jetbrains.sbtidea.CapturingLoggerTest.LogEntry
+  import org.jetbrains.sbtidea.CapturingLoggerTest.LogLevel.*
+  
+  private val messages = new scala.collection.mutable.ArrayBuffer[LogEntry]()
+
+  private def capture(level: LogLevel, msg: => String): Unit = {
+    val entry = LogEntry(level, msg)
+    messages += entry
+    printToStreamOnCapture.foreach(_.println(entry.rendered))
+  }
+
+  def getMessages: Seq[LogEntry] = messages
+  
+  def getMessagesAtLeastLevelEntries(minLevel: LogLevel): Seq[LogEntry] =
+    messages.filter(_.level.id >= minLevel.id)
+
+  def getMessagesRendered: Seq[String] =
+    getMessages.map(_.rendered)
+
+  def getMessagesAtLeastLevel(minLevel: LogLevel): Seq[String] =
+    getMessagesAtLeastLevelEntries(minLevel).map(_.rendered)
+
+  override def debug(msg: => String): Unit = capture(Debug, msg)
+  override def info(msg: => String): Unit  = capture(Info, msg)
+  override def warn(msg: => String): Unit  = capture(Warn, msg)
+  override def error(msg: => String): Unit = capture(Error, msg)
+  override def fatal(msg: => String): Unit = capture(Fatal, msg)
 }
 
 object CapturingLogger {
-  def captureLog(f: => Any): Seq[String] = {
-    val capturingLogger = new CapturingLogger
-    val previousLogger = PluginLogger.bind(capturingLogger)
-    f
-    PluginLogger.bind(previousLogger)
-    capturingLogger.messages
-  }
-  def captureLogAndValue[T](f: => T): (Seq[String], T) = {
-    val capturingLogger = new CapturingLogger
+  import org.jetbrains.sbtidea.CapturingLoggerTest.{LogEntry, LogLevel}
+
+  def captureLog(f: => Any): Seq[String] =
+    captureLogEntriesAndValueAtLeastLevel(LogLevel.values.min)(f)._1.map(_.rendered)
+
+  def captureLogTextAndValue[T](minLevel: LogLevel.Value = LogLevel.Info)(f: => T): (String, T) =
+    captureLogEntriesAndValueAtLeastLevel(minLevel)(f) match {
+      case (entries, value) =>
+        (entries.map(_.rendered).mkString("\n"), value)
+    }
+
+  private def captureLogEntriesAndValueAtLeastLevel[T](minLevel: LogLevel.Value)(f: => T): (Seq[LogEntry], T) = {
+    val capturingLogger = new CapturingLogger(printToStreamOnCapture = Some(System.out))
     val previousLogger = PluginLogger.bind(capturingLogger)
     val result = f
     PluginLogger.bind(previousLogger)
-    capturingLogger.messages -> result
+    capturingLogger.getMessagesAtLeastLevelEntries(minLevel) -> result
+  }
+}
+
+
+object CapturingLoggerTest {
+  
+  case class LogEntry(level: LogLevel.LogLevel, message: String) {
+    lazy val rendered: String = prefix(level) + message
+
+    private def prefix(level: LogLevel.LogLevel): String = {
+      val str = level match {
+        case LogLevel.Debug => "debug"
+        case LogLevel.Info => "info"
+        case LogLevel.Warn => "warn"
+        case LogLevel.Error => "error"
+        case LogLevel.Fatal => "fatal"
+      }
+      s"[$str] "
+    }
+  }
+
+  object LogLevel extends Enumeration {
+    type LogLevel = Value
+    val Debug, Info, Warn, Error, Fatal = Value
   }
 }
