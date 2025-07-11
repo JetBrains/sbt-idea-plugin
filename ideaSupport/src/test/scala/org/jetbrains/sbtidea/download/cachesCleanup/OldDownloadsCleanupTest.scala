@@ -1,6 +1,7 @@
 package org.jetbrains.sbtidea.download.cachesCleanup
 
-import org.jetbrains.sbtidea.download.cachesCleanup.TestUtils._
+import org.jetbrains.sbtidea.CapturingLogger
+import org.jetbrains.sbtidea.download.cachesCleanup.TestUtils.*
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -44,7 +45,7 @@ class OldDownloadsCleanupTest extends AnyFunSuite with Matchers with BeforeAndAf
   }
 
   test("detectOldDownloadsRemoveIfNeeded - no old downloads") {
-    val mockLogger = new CapturingTestLogger()
+    val mockLogger = new CapturingLogger(None)
 
     // Create recent download files
     val recentFile1 = createMockDownloadFile(tempDir, "recent-file1.zip", 15)
@@ -62,14 +63,14 @@ class OldDownloadsCleanupTest extends AnyFunSuite with Matchers with BeforeAndAf
     val cleanup = new OldDownloadsCleanup(mockLogger)
     invokeDetectOldDownloadsAndRemoveIfNeeded(cleanup, mockedReport, autoRemove = true)
 
-    mockLogger.getLoggedText shouldBe "[debug] No old cached downloads found for cleanup"
+    mockLogger.getText shouldBe "[debug] No old cached downloads found for cleanup"
 
     // Verify recent files still exist
     assertFilesExist(recentFiles, shouldExist = true)
   }
 
   test("detectOldDownloadsRemoveIfNeeded - with old downloads, autoRemove=false") {
-    val mockLogger = new CapturingTestLogger()
+    val mockLogger = new CapturingLogger()
 
     // Create old download files
     val oldFile1 = createMockDownloadFile(tempDir, "old-file1.zip", 40)
@@ -94,7 +95,7 @@ class OldDownloadsCleanupTest extends AnyFunSuite with Matchers with BeforeAndAf
     invokeDetectOldDownloadsAndRemoveIfNeeded(cleanup, mockedReport, autoRemove = false)
 
     // Normalize the warning message and check it
-    val normalizedWarning = normalizeWarningMessage(mockLogger.getLoggedText)
+    val normalizedWarning = normalizeWarningMessage(mockLogger.getText)
 
     // Test the warning message with a single assertion
     normalizedWarning shouldBe
@@ -108,7 +109,7 @@ class OldDownloadsCleanupTest extends AnyFunSuite with Matchers with BeforeAndAf
   }
 
   test("detectOldDownloadsRemoveIfNeeded - with old downloads, autoRemove=true") {
-    val mockLogger = new CapturingTestLogger()
+    val mockLogger = new CapturingLogger()
 
     // Create old download files
     val oldFile1 = createMockDownloadFile(tempDir, "old-file1.zip", 40)
@@ -134,7 +135,7 @@ class OldDownloadsCleanupTest extends AnyFunSuite with Matchers with BeforeAndAf
     invokeDetectOldDownloadsAndRemoveIfNeeded(cleanup, mockedReport, autoRemove = true)
 
     // Normalize the warning message and check it
-    val normalizedWarning = normalizeWarningMessage(mockLogger.getLoggedText)
+    val normalizedWarning = normalizeWarningMessage(mockLogger.getText)
 
     // Test the warning message with a single assertion
     normalizedWarning shouldBe

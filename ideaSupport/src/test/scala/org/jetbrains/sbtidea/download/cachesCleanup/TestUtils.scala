@@ -1,11 +1,9 @@
 package org.jetbrains.sbtidea.download.cachesCleanup
 
-import org.jetbrains.sbtidea.PluginLogger
 import org.jetbrains.sbtidea.download.Version
 
 import java.nio.file.{Files, Path, Paths}
 import java.time.LocalDate
-import scala.collection.mutable.ArrayBuffer
 
 object TestUtils {
 
@@ -63,23 +61,5 @@ object TestUtils {
     val file = tempDir.resolve(fileName)
     Files.write(file, "This is a mock download file".getBytes)
     file
-  }
-
-  /** TODO: deduplicate with [[org.jetbrains.sbtidea.CapturingLogger]] */
-  class CapturingTestLogger extends PluginLogger {
-    private val messages: ArrayBuffer[String] = ArrayBuffer.empty
-
-    def getLoggedText: String =
-      messages.mkString("\n")
-
-    private def append(severity: String, msg: String): Unit = {
-      messages ++= msg.linesIterator.map(line => s"[$severity] $line")
-    }
-
-    override def debug(msg: => String): Unit = append("debug", msg)
-    override def info(msg: => String): Unit = append("info", msg)
-    override def warn(msg: => String): Unit = append("warn", msg)
-    override def error(msg: => String): Unit = append("error", msg)
-    override def fatal(msg: => String): Unit = append("fatal", msg)
   }
 }

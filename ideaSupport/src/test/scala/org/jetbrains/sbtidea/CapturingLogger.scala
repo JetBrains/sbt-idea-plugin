@@ -2,9 +2,8 @@ package org.jetbrains.sbtidea
 
 import java.io.PrintStream
 
-/** TODO: deduplicate with [[org.jetbrains.sbtidea.download.cachesCleanup.TestUtils.CapturingTestLogger]] */
 private class CapturingLogger(
-  printToStreamOnCapture: Option[PrintStream]
+  printToStreamOnCapture: Option[PrintStream] = Some(System.out)
 ) extends PluginLogger {
   import org.jetbrains.sbtidea.CapturingLoggerTest.LogEntry
   import org.jetbrains.sbtidea.CapturingLoggerTest.LogLevel.*
@@ -17,16 +16,14 @@ private class CapturingLogger(
     printToStreamOnCapture.foreach(_.println(entry.rendered))
   }
 
-  def getMessages: Seq[LogEntry] = messages
-  
-  def getMessagesAtLeastLevelEntries(minLevel: LogLevel): Seq[LogEntry] =
-    messages.filter(_.level.id >= minLevel.id)
+  def getMessages: Seq[LogEntry] =
+    messages
 
   def getMessagesRendered: Seq[String] =
     getMessages.map(_.rendered)
 
-  def getMessagesAtLeastLevel(minLevel: LogLevel): Seq[String] =
-    getMessagesAtLeastLevelEntries(minLevel).map(_.rendered)
+  def getText: String =
+    getMessagesRendered.mkString("\n")
 
   override def debug(msg: => String): Unit = capture(Debug, msg)
   override def info(msg: => String): Unit  = capture(Info, msg)
@@ -48,11 +45,14 @@ object CapturingLogger {
     }
 
   private def captureLogEntriesAndValueAtLeastLevel[T](minLevel: LogLevel.Value)(f: => T): (Seq[LogEntry], T) = {
-    val capturingLogger = new CapturingLogger(printToStreamOnCapture = Some(System.out))
+    val capturingLogger = new CapturingLogger()
     val previousLogger = PluginLogger.bind(capturingLogger)
     val result = f
     PluginLogger.bind(previousLogger)
-    capturingLogger.getMessagesAtLeastLevelEntries(minLevel) -> result
+
+    val messages = capturingLogger.getMessages
+    val messagesFiltered = messages.filter(_.level.id >= minLevel.id)
+    messagesFiltered -> result
   }
 }
 
@@ -60,18 +60,19 @@ object CapturingLogger {
 object CapturingLoggerTest {
   
   case class LogEntry(level: LogLevel.LogLevel, message: String) {
-    lazy val rendered: String = prefix(level) + message
+    lazy val rendered: String = {
+      val levelText = getLevelText(level)
+      message.linesIterator.map(line => s"[$levelText] $line").mkString("\n")
+    }
 
-    private def prefix(level: LogLevel.LogLevel): String = {
-      val str = level match {
+    private def getLevelText(level: LogLevel.LogLevel): String =
+      level match {
         case LogLevel.Debug => "debug"
         case LogLevel.Info => "info"
         case LogLevel.Warn => "warn"
         case LogLevel.Error => "error"
         case LogLevel.Fatal => "fatal"
       }
-      s"[$str] "
-    }
   }
 
   object LogLevel extends Enumeration {

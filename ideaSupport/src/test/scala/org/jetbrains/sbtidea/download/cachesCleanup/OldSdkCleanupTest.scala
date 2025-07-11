@@ -1,6 +1,7 @@
 package org.jetbrains.sbtidea.download.cachesCleanup
 
-import org.jetbrains.sbtidea.download.cachesCleanup.TestUtils._
+import org.jetbrains.sbtidea.CapturingLogger
+import org.jetbrains.sbtidea.download.cachesCleanup.TestUtils.*
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -64,7 +65,7 @@ class OldSdkCleanupTest extends AnyFunSuite with Matchers with BeforeAndAfterEac
   }
 
   test("detectOldSdksRemoveIfNeeded - no old SDKs") {
-    val mockLogger = new CapturingTestLogger()
+    val mockLogger = new CapturingLogger()
 
     val recentSdks = Seq(
       createSdkInfoMock(252, 5, 1), // 1 day ago
@@ -76,7 +77,7 @@ class OldSdkCleanupTest extends AnyFunSuite with Matchers with BeforeAndAfterEac
 
     new OldSdkCleanup(mockLogger).detectOldSdksRemoveIfNeeded(mockedReport, autoRemove = true)
 
-    mockLogger.getLoggedText shouldBe "[debug] No old cached IntelliJ SDK directories found for cleanup"
+    mockLogger.getText shouldBe "[debug] No old cached IntelliJ SDK directories found for cleanup"
 
     recentDirs.foreach { dir =>
       TestUtils.assertDirectoryExists(dir, shouldExist = true)
@@ -84,7 +85,7 @@ class OldSdkCleanupTest extends AnyFunSuite with Matchers with BeforeAndAfterEac
   }
 
   test("detectOldSdksRemoveIfNeeded - with old SDKs, autoRemove=false") {
-    val mockLogger = new CapturingTestLogger()
+    val mockLogger = new CapturingLogger()
 
     val oldSdks = Seq(
       createSdkInfoMock(242, 4, 7 * 31), // 7 months ago
@@ -104,7 +105,7 @@ class OldSdkCleanupTest extends AnyFunSuite with Matchers with BeforeAndAfterEac
     new OldSdkCleanup(mockLogger).detectOldSdksRemoveIfNeeded(mockedReport, autoRemove = false)
 
     // Normalize the warning message and check the entire string
-    val normalizedWarning = normalizeWarningMessage(mockLogger.getLoggedText)
+    val normalizedWarning = normalizeWarningMessage(mockLogger.getText)
 
     // Test the warning message with a single assertion
     normalizedWarning shouldBe
@@ -124,7 +125,7 @@ class OldSdkCleanupTest extends AnyFunSuite with Matchers with BeforeAndAfterEac
   }
 
   test("detectOldSdksRemoveIfNeeded - with old SDKs, autoRemove=true") {
-    val mockLogger = new CapturingTestLogger()
+    val mockLogger = new CapturingLogger()
 
     // Create old SDK directories using TestUtils.createSdkInfoMock
     val oldSdks = Seq(
@@ -145,7 +146,7 @@ class OldSdkCleanupTest extends AnyFunSuite with Matchers with BeforeAndAfterEac
     new OldSdkCleanup(mockLogger).detectOldSdksRemoveIfNeeded(mockedReport, autoRemove = true)
 
     // Normalize the warning message and check the entire string
-    val normalizedWarning = normalizeWarningMessage(mockLogger.getLoggedText)
+    val normalizedWarning = normalizeWarningMessage(mockLogger.getText)
 
     normalizedWarning shouldBe
       s"""[warn] Detected 2 old IntelliJ SDK directories in ${tempDir.toAbsolutePath}
@@ -167,7 +168,7 @@ class OldSdkCleanupTest extends AnyFunSuite with Matchers with BeforeAndAfterEac
   }
 
   test("detectOldSdksRemoveIfNeeded - mixed old and recent versions") {
-    val mockLogger = new CapturingTestLogger()
+    val mockLogger = new CapturingLogger()
 
     // Create a mix of old and recent SDK directories for different major versions using TestUtils.createSdkInfoMock
     val oldSdks = Seq(
@@ -193,7 +194,7 @@ class OldSdkCleanupTest extends AnyFunSuite with Matchers with BeforeAndAfterEac
 
     new OldSdkCleanup(mockLogger).detectOldSdksRemoveIfNeeded(mockedReport, autoRemove = true)
 
-    val normalizedWarning = normalizeWarningMessage(mockLogger.getLoggedText)
+    val normalizedWarning = normalizeWarningMessage(mockLogger.getText)
     normalizedWarning shouldBe
       s"""[warn] Detected 6 old IntelliJ SDK directories in ${tempDir.toAbsolutePath}
          |[warn] Total size: SIZE_PLACEHOLDER
