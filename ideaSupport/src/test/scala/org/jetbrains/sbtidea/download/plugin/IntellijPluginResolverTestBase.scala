@@ -48,12 +48,12 @@ abstract class IntellijPluginResolverTestBase extends IntellijPluginInstallerTes
 
     override def markPluginInstalled(ideaPlugin: IntellijPlugin, to: Path): Unit = ()
 
-    override def markPluginInstalled(ideaPlugin: IntellijPlugin, to: Path, downloadedPluginFileName: Option[String]): Unit = ()
+    override def markPluginInstalled(ideaPlugin: IntellijPlugin, to: Path, downloadInfo: Option[PluginInfo.PluginDownloadInfo]): Unit = ()
 
     override def getInstalledPluginRoot(ideaPlugin: IntellijPlugin): Path =
       Paths.get("INVALID")
 
-    override def getDownloadedPluginFileName(ideaPlugin: IntellijPlugin): Option[String] = None
+    override def getDownloadedPluginInfo(ideaPlugin: IntellijPlugin): Option[PluginInfo.PluginDownloadInfo] = None
 
     override def isDownloadedPlugin(ideaPlugin: IntellijPlugin): Boolean = false
   }

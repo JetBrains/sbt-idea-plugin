@@ -2,6 +2,7 @@ package org.jetbrains.sbtidea.download.plugin
 
 import org.jetbrains.sbtidea.download.*
 import org.jetbrains.sbtidea.download.api.IdeInstallationContext
+import org.jetbrains.sbtidea.download.plugin.PluginInfo.PluginDownloadInfo
 import org.jetbrains.sbtidea.{IntellijPlugin, PathExt, PluginLogger as log}
 import sbt.*
 
@@ -26,24 +27,24 @@ class LocalPluginRegistry(ctx: IdeInstallationContext) extends LocalPluginRegist
 
   override def getAllDescriptors: Seq[PluginDescriptor] = index.getAllDescriptors
 
-  override def getDownloadedPluginFileName(ideaPlugin: IntellijPlugin): Option[String] = ideaPlugin match {
+  override def getDownloadedPluginInfo(ideaPlugin: IntellijPlugin): Option[PluginDownloadInfo] = ideaPlugin match {
     case idOwner: IntellijPlugin.WithKnownId =>
-      index.getDownloadedPluginFileName(idOwner.id)
+      index.getDownloadedPluginInfo(idOwner.id)
     case _ =>
       None
   }
 
   override def isDownloadedPlugin(ideaPlugin: IntellijPlugin): Boolean =
-    getDownloadedPluginFileName(ideaPlugin).isDefined
+    getDownloadedPluginInfo(ideaPlugin).isDefined
 
   override def markPluginInstalled(ideaPlugin: IntellijPlugin, to: Path): Unit =
     markPluginInstalled(ideaPlugin, to, None)
 
-  override def markPluginInstalled(ideaPlugin: IntellijPlugin, to: Path, downloadedPluginFileName: Option[String]): Unit = {
+  override def markPluginInstalled(ideaPlugin: IntellijPlugin, to: Path, downloadInfo: Option[PluginDownloadInfo]): Unit = {
     val descriptor = extractPluginMetaData(to)
     descriptor match {
       case Right(value) =>
-        index.put(value, to, downloadedPluginFileName)
+        index.put(value, to, downloadInfo)
       case Left(error) =>
         log.error(s"Failed to mark plugin installed, can't get plugin descriptor: $error")
     }

@@ -13,6 +13,11 @@
           <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
         </idea-plugin>
       </descriptor>
+      <downloadInfo>
+        <downloadedFileName>webpack-251.26094.105.zip</downloadedFileName>
+        <downloadedUrl>https://plugins.jetbrains.com/files/webpack/251.26094.105/webpack-251.26094.105.zip</downloadedUrl>
+        <downloadedTime>2025-07-11T10:30:45</downloadedTime>
+      </downloadInfo>
     </plugin>
     <plugin>
       <id>org.jetbrains.debugger.streams</id>
@@ -26,6 +31,11 @@
           <idea-version since-build="251.26094.105" until-build="251.26094.105"/>
         </idea-plugin>
       </descriptor>
+      <downloadInfo>
+        <downloadedFileName>java-debugger-streams-251.26094.105.zip</downloadedFileName>
+        <downloadedUrl>https://plugins.jetbrains.com/files/debugger-streams/251.26094.105/java-debugger-streams-251.26094.105.zip</downloadedUrl>
+        <downloadedTime>2025-07-10T15:20:30</downloadedTime>
+      </downloadInfo>
     </plugin>
     <plugin>
       <id>com.jetbrains.sh</id>

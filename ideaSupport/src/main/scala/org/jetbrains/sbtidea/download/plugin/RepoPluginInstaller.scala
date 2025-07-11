@@ -3,9 +3,11 @@ package org.jetbrains.sbtidea.download.plugin
 import org.jetbrains.sbtidea.download.*
 import org.jetbrains.sbtidea.download.FileDownloader.DownloadException
 import org.jetbrains.sbtidea.download.api.*
+import org.jetbrains.sbtidea.download.plugin.PluginInfo.PluginDownloadInfo
 import org.jetbrains.sbtidea.{IntellijPlugin, PluginLogger as log}
 
 import java.nio.file.{Files, Path}
+import java.time.LocalDateTime
 import scala.util.Using
 
 class RepoPluginInstaller(buildInfo: BuildInfo)
@@ -20,29 +22,33 @@ class RepoPluginInstaller(buildInfo: BuildInfo)
   override def downloadAndInstall(art: RemotePluginArtifact)(implicit ctx: IdeInstallationProcessContext): Unit = {
     val downloader = FileDownloader(ctx)
     val downloadUrl = art.dlUrl
-    val dist = try {
-      downloader.download(downloadUrl)
+
+    val (downloadedDir, usedDownloadUrl) = try {
+      (downloader.download(downloadUrl), downloadUrl)
     } catch {
       case de: DownloadException if de.responseCode.contains(NotFoundHttpResponseCode) =>
         art.caller.plugin.fallbackDownloadUrl match {
           case Some(fallbackUrl) =>
             log.warn(s"Plugin not found at $downloadUrl\nTrying to download from a fallback url $fallbackUrl")
-            downloader.download(fallbackUrl)
+            (downloader.download(fallbackUrl), fallbackUrl)
           case _  =>
             throw de
         }
     }
+    
     // Get the file name from the downloaded artifact
-    val downloadedPluginFileName = dist.getFileName.toString
-    installIdeaPlugin(art.caller.plugin, dist, Some(downloadedPluginFileName))
+    val downloadedPluginFileName = downloadedDir.getFileName.toString
+    val currentTime = LocalDateTime.now()
+    val downloadInfo = PluginDownloadInfo(downloadedPluginFileName, usedDownloadUrl, currentTime)
+    installIdeaPlugin(art.caller.plugin, downloadedDir, Some(downloadInfo))
   }
 
   private[plugin] def installIdeaPlugin(
     plugin: IntellijPlugin,
     artifact: Path,
-    downloadedPluginFileName: Option[String] = None
+    downloadInfo: Option[PluginDownloadInfo] = None
   )(implicit ctx: IdeInstallationContext): Path = {
-    val downloadedPluginFileNameHint = downloadedPluginFileName.fold("")(name => s" ($name)")
+    val downloadedPluginFileNameHint = downloadInfo.map(_.downloadedFileName).fold("")(name => s" ($name)")
     val installedPluginRoot = if (!PluginXmlDetector.Default.isPluginJar(artifact)) {
       val tmpPluginDir = extractPluginToTemporaryDir(
         artifact,
@@ -61,7 +67,7 @@ class RepoPluginInstaller(buildInfo: BuildInfo)
       log.info(s"Installed plugin '$plugin'$downloadedPluginFileNameHint to $targetJar")
       targetJar
     }
-    localRegistry.markPluginInstalled(plugin, installedPluginRoot, downloadedPluginFileName)
+    localRegistry.markPluginInstalled(plugin, installedPluginRoot, downloadInfo)
     installedPluginRoot
   }
 

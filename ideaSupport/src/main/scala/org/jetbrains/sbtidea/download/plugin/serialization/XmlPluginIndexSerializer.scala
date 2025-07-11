@@ -1,10 +1,12 @@
 package org.jetbrains.sbtidea.download.plugin.serialization
 
-import org.jetbrains.sbtidea.download.plugin.PluginDescriptor
-import org.jetbrains.sbtidea.download.plugin.PluginIndexImpl.PluginInfo
+import org.jetbrains.sbtidea.download.plugin.{PluginDescriptor, PluginInfo}
+import org.jetbrains.sbtidea.download.plugin.PluginInfo.PluginDownloadInfo
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
+import java.net.URL
+import java.time.LocalDateTime
 import scala.collection.mutable
 import scala.xml.*
 
@@ -25,13 +27,22 @@ object XmlPluginIndexSerializer extends PluginIndexSerializer {
     plugins.foreach { plugin =>
       val id = (plugin \ "id").text
       val relativePath = (plugin \ "path").text
-      val downloadedFileName = (plugin \ "downloadedFileName").headOption.map(_.text)
+
+      // Parse downloadInfo if present
+      val downloadInfo = (plugin \ "downloadInfo").headOption.map { infoNode =>
+        val fileName = (infoNode \ "downloadedFileName").text
+        val url = new java.net.URL((infoNode \ "downloadedUrl").text)
+        val timeStr = (infoNode \ "downloadedTime").text
+        val time = java.time.LocalDateTime.parse(timeStr)
+
+        PluginInfo.PluginDownloadInfo(fileName, url, time)
+      }
 
       // Get the descriptor XML node and convert it to a PluginDescriptor
       val descriptorNode = (plugin \ "descriptor").head
       val descriptor = PluginDescriptor.load(descriptorNode.asInstanceOf[Elem])
 
-      buffer += id -> PluginInfo(Path.of(relativePath), descriptor, downloadedFileName)
+      buffer += id -> PluginInfo(Path.of(relativePath), descriptor, downloadInfo)
     }
 
     buffer
@@ -41,11 +52,19 @@ object XmlPluginIndexSerializer extends PluginIndexSerializer {
     val plugins = data.map { case (id, info) =>
       val descriptorXml = XML.loadString(info.descriptor.toXMLStr)
 
+      val downloadInfoXml = info.downloadInfo.map { downloadInfo =>
+        <downloadInfo>
+          <downloadedFileName>{downloadInfo.downloadedFileName}</downloadedFileName>
+          <downloadedUrl>{downloadInfo.downloadedUrl.toString}</downloadedUrl>
+          <downloadedTime>{downloadInfo.downloadedTime.toString}</downloadedTime>
+        </downloadInfo>
+      }
+
       <plugin>
         <id>{id}</id>
         <path>{info.installPath}</path>
         <descriptor>{descriptorXml}</descriptor>
-        {if (info.downloadedFileName.isDefined) <downloadedFileName>{info.downloadedFileName.get}</downloadedFileName>}
+        {if (downloadInfoXml.isDefined) downloadInfoXml.get}
       </plugin>
     }
 

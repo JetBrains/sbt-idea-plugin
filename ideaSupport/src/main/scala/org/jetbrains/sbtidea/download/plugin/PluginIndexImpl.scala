@@ -1,6 +1,7 @@
 package org.jetbrains.sbtidea.download.plugin
 
 import org.jetbrains.annotations.TestOnly
+import org.jetbrains.sbtidea.download.plugin.PluginInfo.PluginDownloadInfo
 import org.jetbrains.sbtidea.download.plugin.serialization.{PluginIndexSerializer, XmlPluginIndexSerializer}
 import org.jetbrains.sbtidea.{PathExt, PluginLogger as log}
 import sbt.*
@@ -60,8 +61,8 @@ class PluginIndexImpl(ideaRoot: Path) extends PluginIndex {
     plugins
   }
 
-  override def put(descriptor: PluginDescriptor, installPath: Path, downloadedPluginFileName: Option[String]): Unit = {
-    index += descriptor.id -> PluginInfo(installPath, descriptor, downloadedPluginFileName)
+  override def put(descriptor: PluginDescriptor, installPath: Path, downloadInfo: Option[PluginDownloadInfo]): Unit = {
+    index += descriptor.id -> PluginInfo(installPath, descriptor, downloadInfo)
     saveToFile(index)
   }
 
@@ -74,8 +75,8 @@ class PluginIndexImpl(ideaRoot: Path) extends PluginIndex {
   override def getPluginDescriptor(id: String): Option[PluginDescriptor] =
     index.get(id).map(_.descriptor)
 
-  override def getDownloadedPluginFileName(id: String): Option[String] =
-    index.get(id).flatMap(_.downloadedFileName)
+  override def getDownloadedPluginInfo(id: String): Option[PluginDownloadInfo] =
+    index.get(id).flatMap(_.downloadInfo)
 
   override def getAllDescriptors: Seq[PluginDescriptor] = index.values.map(_.descriptor).toSeq
 
@@ -115,23 +116,4 @@ object PluginIndexImpl {
   private val IndexSerializer: PluginIndexSerializer = XmlPluginIndexSerializer
 
   @TestOnly val PluginsIndexFilename = "plugins_index.xml"
-
-  /**
-   * Represents information about a plugin in the plugin index.
-   *
-   * @param installPath        the path where the plugin is installed
-   * @param descriptor         the plugin descriptor
-   * @param downloadedFileName the name of the downloaded plugin file, if the plugin was downloaded
-   */
-  case class PluginInfo(
-    installPath: Path,
-    descriptor: PluginDescriptor,
-    downloadedFileName: Option[String]
-  ) {
-    def withAbsoluteInstallPath(ideaRoot: Path): PluginInfo =
-      copy(installPath = ideaRoot.resolve(installPath))
-
-    def withRelativeInstallPath(ideaRoot: Path): PluginInfo =
-      copy(installPath = ideaRoot.relativize(installPath))
-  }
 }

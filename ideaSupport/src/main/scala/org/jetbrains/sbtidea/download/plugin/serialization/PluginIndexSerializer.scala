@@ -1,6 +1,6 @@
 package org.jetbrains.sbtidea.download.plugin.serialization
 
-import org.jetbrains.sbtidea.download.plugin.PluginIndexImpl.PluginInfo
+import org.jetbrains.sbtidea.download.plugin.PluginInfo
 
 import java.nio.file.Path
 
