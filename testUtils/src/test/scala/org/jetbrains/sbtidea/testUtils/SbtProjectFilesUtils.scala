@@ -20,12 +20,12 @@ object SbtProjectFilesUtils {
 
     val content = IoUtils.readLines(pluginsSbtFile)
     val contentWithoutPlugin = content
-      .filterNot(_.contains("""addSbtPlugin("org.jetbrains" % "sbt-idea-plugin""""))
+      .filterNot(_.contains("""addSbtPlugin("org.jetbrains.scala" % "sbt-idea-plugin""""))
       .mkString("\n")
 
     val contentUpdated =
       s"""$contentWithoutPlugin
-         |addSbtPlugin("org.jetbrains" % "sbt-idea-plugin" % "$sbtIdePluginVersion")
+         |addSbtPlugin("org.jetbrains.scala" % "sbt-idea-plugin" % "$sbtIdePluginVersion")
          |""".stripMargin.trim
 
     IoUtils.writeStringToFile(pluginsSbtFile, contentUpdated)
