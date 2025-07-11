@@ -12,7 +12,7 @@ val MinimumSbtVersion = "1.4.5"
 // This version should be backward compatible with MinimumSbtVersion
 val SbtVersionForTests = "1.10.7"
 
-ThisBuild / organization := "org.jetbrains"
+ThisBuild / organization := "org.jetbrains.scala"
 
 // Optional but nice-to-have
 ThisBuild / organizationName     := "JetBrains"

@@ -19,10 +19,12 @@ For a comprehensive usage example see [Scala plugin](https://github.com/JetBrain
 A complete list of public IJ plugins implemented in Scala/SBT can be found on [IntelliJ Platform Explorer](https://plugins.jetbrains.com/intellij-platform-explorer/?buildSystem=sbt)
 
 Note that some features of this plugin may be used independently, i.e. if you only want to [print project structure](#printprojectgraph--taskkeyunit)
-or [package artifacts](#packaging) you can depend on:
+or [package artifacts](#packaging) you can depend on:\
+`"org.jetbrains.scala" % "sbt-declarative-visualizer" % "LATEST_VERSION"` or \
+`"org.jetbrains.scala" % "sbt-declarative-packaging" % "LATEST_VERSION"`
 
-`"org.jetbrains" % "sbt-declarative-visualizer" % "LATEST_VERSION"` or
-
+Note, in versions 4.x, and before you had to use group `org.jetbrains` instead of `org.jetbrains.scala`:\
+`"org.jetbrains" % "sbt-declarative-visualizer" % "LATEST_VERSION"` or \
 `"org.jetbrains" % "sbt-declarative-packaging" % "LATEST_VERSION"`
 
 Please see the [Known Issues](#known-issues-and-limitations) section if you come across a problem, and feel free
@@ -37,10 +39,15 @@ To quickly create a Scala based IJ Plugin we provide a template project. Create 
 
 From version 1.0.0, this plugin is published for sbt 0.13 and 1.0.
 From version 3.17.0, this plugin is published for sbt 1.0 only.
+From version 5.0.0 this plugin is published in a new group `org.jetbrains.scala`
 
 * Insert into `project/plugins.sbt`:
+```scala
+addSbtPlugin("org.jetbrains.scala" % "sbt-idea-plugin" % "LATEST_VERSION")
+```
 
-```Scala
+Note, in versions 4.x, and before you had to use group `org.jetbrains` instead of `org.jetbrains.scala`:
+```scala
 addSbtPlugin("org.jetbrains" % "sbt-idea-plugin" % "LATEST_VERSION")
 ```
 
