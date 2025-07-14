@@ -60,8 +60,8 @@ lazy val CommonSonatypeSettings: Seq[Def.Setting[?]] = Seq(
   } ++ {
     val env = sys.env.get(_)
     val newCredentials = for {
-      username <- env("SONATYPE_USERNAME_NEW")
-      password <- env("SONATYPE_PASSWORD_NEW")
+      username <- env("SONATYPE_USERNAME_NEW").map(_.trim).filter(_.nonEmpty)
+      password <- env("SONATYPE_PASSWORD_NEW").map(_.trim).filter(_.nonEmpty)
     } yield Credentials(
       SonatypeRepoName,
       sona.Sona.host,
