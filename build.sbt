@@ -2,6 +2,7 @@ import sbt.{Def, ThisBuild, url}
 
 Global / concurrentRestrictions := Seq(Tags.limit(Tags.Test, 1))
 
+//DUMMY CHANGE
 // Some tests test global properties and fail when tests are run in parallel
 ThisBuild / Test / parallelExecution := false
 
