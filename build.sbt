@@ -1,46 +1,46 @@
-import sbt.Def
-import sbt.Keys.localStaging
-import sbt.internal.sona
-import sbt.librarymanagement.ivy.Credentials
+import sbt.{Def, ThisBuild, url}
 
 Global / concurrentRestrictions := Seq(Tags.limit(Tags.Test, 1))
 
 // Some tests test global properties and fail when tests are run in parallel
 ThisBuild / Test / parallelExecution := false
 
+lazy val PublishingSettings: Seq[Def.Setting[?]] = Seq(
+  organization := "org.jetbrains.scala",
+
+  // Optional but nice-to-have
+  organizationName := "JetBrains",
+  organizationHomepage := Some(url("https://www.jetbrains.com/")),
+
+  licenses ++= Seq(
+    ("MIT", url("https://opensource.org/licenses/MIT")),
+    ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0"))
+  ),
+
+  homepage := Some(url("https://github.com/JetBrains/sbt-idea-plugin")),
+
+  // Source-control coordinates
+  scmInfo := Some(
+    ScmInfo(
+      url("https://github.com/JetBrains/sbt-idea-plugin"),
+      "git@github.com:JetBrains/sbt-idea-plugin.git"
+    )
+  ),
+
+  // Required by Sonatype for publishing
+  developers := List(
+    Developer(
+      id = "JetBrains",
+      name = "JetBrains",
+      email = "scala-developers@jetbrains.com",
+      url = url("https://github.com/JetBrains")
+    )
+  ),
+)
+
 val MinimumSbtVersion = "1.4.5"
 // This version should be backward compatible with MinimumSbtVersion
 val SbtVersionForTests = "1.10.7"
-
-ThisBuild / organization := "org.jetbrains.scala"
-
-// Optional but nice-to-have
-ThisBuild / organizationName     := "JetBrains"
-ThisBuild / organizationHomepage := Some(url("https://www.jetbrains.com/"))
-
-ThisBuild / licenses ++= Seq(
-  ("MIT", url("https://opensource.org/licenses/MIT")),
-  ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0"))
-)
-
-ThisBuild / homepage := Some(url("https://github.com/JetBrains/sbt-idea-plugin"))
-
-// Source-control coordinates
-ThisBuild / scmInfo := Some(
-  ScmInfo(
-    url("https://github.com/JetBrains/sbt-idea-plugin"),
-    "git@github.com:JetBrains/sbt-idea-plugin.git"
-  )
-)
-
-ThisBuild / developers := List(
-  Developer(
-    id    = "JetBrains",
-    name  = "JetBrains",
-    email = "scala-developers@jetbrains.com",
-    url   = url("https://github.com/JetBrains")
-  )
-)
 
 lazy val CommonSettings: Seq[Setting[?]] = Seq(
   scalaVersion := "2.12.18",
@@ -57,7 +57,7 @@ lazy val CommonSettings: Seq[Setting[?]] = Seq(
 
   libraryDependencies ++= Seq(
     "org.scalatest" %% "scalatest" % "3.2.19" % Test,
-    // Use latest version of sbt in tests to test against latest versions of projects using this plugin
+    // Use the latest version of sbt in tests to test against the latest versions of projects using this plugin
     "org.scala-sbt" % "sbt" % SbtVersionForTests % Test,
   ),
 
@@ -80,8 +80,9 @@ lazy val sbtIdeaPlugin = (project in file("."))
 
 lazy val core = (project in file("core"))
   .enablePlugins(SbtPlugin)
-  .settings(CommonSettings)
   .dependsOn(testUtils % "test->test")
+  .settings(CommonSettings)
+  .settings(PublishingSettings)
   .settings(
     name := "sbt-declarative-core",
     publish / skip := false,
@@ -89,8 +90,9 @@ lazy val core = (project in file("core"))
 
 lazy val visualizer = (project in file("visualizer"))
   .enablePlugins(SbtPlugin)
-  .settings(CommonSettings)
   .dependsOn(core)
+  .settings(CommonSettings)
+  .settings(PublishingSettings)
   .settings(
     name := "sbt-declarative-visualizer",
     publish / skip := false,
@@ -101,8 +103,9 @@ val circeVersion = "0.14.10"
 
 lazy val packaging = (project in file("packaging"))
   .enablePlugins(SbtPlugin)
-  .settings(CommonSettings)
   .dependsOn(core, testUtils % "test->test")
+  .settings(CommonSettings)
+  .settings(PublishingSettings)
   .settings(
     name := "sbt-declarative-packaging",
     publish / skip := false,
@@ -116,8 +119,9 @@ lazy val packaging = (project in file("packaging"))
 
 lazy val ideaSupport = (project in file("ideaSupport"))
   .enablePlugins(SbtPlugin)
-  .settings(CommonSettings)
   .dependsOn(core, packaging, visualizer, testUtils % "test->test")
+  .settings(CommonSettings)
+  .settings(PublishingSettings)
   .settings(
     name := "sbt-idea-plugin",
     publish / skip := false,
