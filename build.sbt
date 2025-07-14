@@ -42,35 +42,6 @@ ThisBuild / developers := List(
   )
 )
 
-val SonatypeRepoName = "Sonatype Nexus Repository Manager"
-
-lazy val CommonSonatypeSettings: Seq[Def.Setting[?]] = Seq(
-  // new setting for the Central Portal
-  publishTo := {
-    val centralSnapshots = "https://central.sonatype.com/repository/maven-snapshots/"
-    if (isSnapshot.value) Some("central-snapshots" at centralSnapshots)
-    else localStaging.value
-  },
-
-  /// Overwrite/filter-out existing credentials
-  // Use copy of `sbt.internal.SysProp.sonatypeCredentalsEnv` but with custom environment variables
-  credentials := credentials.value.filter {
-    case c: DirectCredentials => c.realm != SonatypeRepoName
-    case _ => true
-  } ++ {
-    val env = sys.env.get(_)
-    for {
-      username <- env("SONATYPE_USERNAME_NEW")
-      password <- env("SONATYPE_PASSWORD_NEW")
-    } yield Credentials(
-      SonatypeRepoName,
-      sona.Sona.host,
-      username,
-      password
-    )
-  },
-)
-
 lazy val CommonSettings: Seq[Setting[?]] = Seq(
   scalaVersion := "2.12.18",
   pluginCrossBuild / sbtVersion := MinimumSbtVersion,
@@ -94,10 +65,22 @@ lazy val CommonSettings: Seq[Setting[?]] = Seq(
   publish / skip := true
 )
 
+lazy val sbtIdeaPlugin = (project in file("."))
+  .settings(CommonSettings)
+  .settings(
+    ideExcludedDirectories := Seq(
+      file("target"),
+      file("tempProjects"),
+      file("tempIntellijSdks"),
+      file("tempIntellijArtifactsDownloads"),
+    )
+  )
+  .aggregate(core, packaging, ideaSupport, visualizer, testUtils)
+
+
 lazy val core = (project in file("core"))
   .enablePlugins(SbtPlugin)
   .settings(CommonSettings)
-  .settings(CommonSonatypeSettings)
   .dependsOn(testUtils % "test->test")
   .settings(
     name := "sbt-declarative-core",
@@ -107,7 +90,6 @@ lazy val core = (project in file("core"))
 lazy val visualizer = (project in file("visualizer"))
   .enablePlugins(SbtPlugin)
   .settings(CommonSettings)
-  .settings(CommonSonatypeSettings)
   .dependsOn(core)
   .settings(
     name := "sbt-declarative-visualizer",
@@ -120,7 +102,6 @@ val circeVersion = "0.14.10"
 lazy val packaging = (project in file("packaging"))
   .enablePlugins(SbtPlugin)
   .settings(CommonSettings)
-  .settings(CommonSonatypeSettings)
   .dependsOn(core, testUtils % "test->test")
   .settings(
     name := "sbt-declarative-packaging",
@@ -136,7 +117,6 @@ lazy val packaging = (project in file("packaging"))
 lazy val ideaSupport = (project in file("ideaSupport"))
   .enablePlugins(SbtPlugin)
   .settings(CommonSettings)
-  .settings(CommonSonatypeSettings)
   .dependsOn(core, packaging, visualizer, testUtils % "test->test")
   .settings(
     name := "sbt-idea-plugin",
@@ -161,15 +141,3 @@ lazy val testUtils = (project in file("testUtils"))
       "-Xsource:3"
     )
   )
-
-lazy val sbtIdeaPlugin = (project in file("."))
-  .settings(CommonSettings)
-  .settings(
-    ideExcludedDirectories := Seq(
-      file("target"),
-      file("tempProjects"),
-      file("tempIntellijSdks"),
-      file("tempIntellijArtifactsDownloads"),
-    )
-  )
-  .aggregate(core, packaging, ideaSupport, visualizer, testUtils)
