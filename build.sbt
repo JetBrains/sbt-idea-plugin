@@ -52,26 +52,22 @@ lazy val CommonSonatypeSettings: Seq[Def.Setting[?]] = Seq(
     else localStaging.value
   },
 
-  // Overwrite/filter-out existing credentials
+  /// Overwrite/filter-out existing credentials
   // Use copy of `sbt.internal.SysProp.sonatypeCredentalsEnv` but with custom environment variables
   credentials := credentials.value.filter {
     case c: DirectCredentials => c.realm != SonatypeRepoName
     case _ => true
   } ++ {
     val env = sys.env.get(_)
-    val newCredentials = for {
-      username <- env("SONATYPE_USERNAME_NEW").map(_.trim).filter(_.nonEmpty)
-      password <- env("SONATYPE_PASSWORD_NEW").map(_.trim).filter(_.nonEmpty)
+    for {
+      username <- env("SONATYPE_USERNAME_NEW")
+      password <- env("SONATYPE_PASSWORD_NEW")
     } yield Credentials(
       SonatypeRepoName,
       sona.Sona.host,
       username,
       password
     )
-    if (newCredentials.isEmpty) {
-      println("WARNING: no sonatype credentials found")
-    }
-    newCredentials
   },
 )
 
@@ -170,6 +166,7 @@ lazy val sbtIdeaPlugin = (project in file("."))
   .settings(CommonSettings)
   .settings(
     ideExcludedDirectories := Seq(
+      file("target"),
       file("tempProjects"),
       file("tempIntellijSdks"),
       file("tempIntellijArtifactsDownloads"),
