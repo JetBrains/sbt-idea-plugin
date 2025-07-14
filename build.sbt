@@ -6,11 +6,11 @@ Global / concurrentRestrictions := Seq(Tags.limit(Tags.Test, 1))
 ThisBuild / Test / parallelExecution := false
 
 lazy val PublishingSettings: Seq[Def.Setting[?]] = Seq(
-  organization := "org.jetbrains.scala",
+  organization := "io.github.unkarjedy",
 
   // Optional but nice-to-have
-  organizationName := "JetBrains",
-  organizationHomepage := Some(url("https://www.jetbrains.com/")),
+  //organizationName := "JetBrains",
+  //organizationHomepage := Some(url("https://www.jetbrains.com/")),
 
   licenses ++= Seq(
     ("MIT", url("https://opensource.org/licenses/MIT")),
