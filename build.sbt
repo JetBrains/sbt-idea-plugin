@@ -77,7 +77,6 @@ lazy val sbtIdeaPlugin = (project in file("."))
   )
   .aggregate(core, packaging, ideaSupport, visualizer, testUtils)
 
-
 lazy val core = (project in file("core"))
   .enablePlugins(SbtPlugin)
   .dependsOn(testUtils % "test->test")
@@ -99,7 +98,7 @@ lazy val visualizer = (project in file("visualizer"))
     libraryDependencies += "com.github.mutcianm" %% "ascii-graphs" % "0.0.6",
   )
 
-val circeVersion = "0.14.10"
+val circeVersion = "0.14.14"
 
 lazy val packaging = (project in file("packaging"))
   .enablePlugins(SbtPlugin)
@@ -126,13 +125,13 @@ lazy val ideaSupport = (project in file("ideaSupport"))
     name := "sbt-idea-plugin",
     publish / skip := false,
     libraryDependencies ++= Seq(
-      "org.apache.httpcomponents.client5" % "httpclient5" % "5.3.1",
+      "org.apache.httpcomponents.client5" % "httpclient5" % "5.5",
 
-      "org.jetbrains" % "marketplace-zip-signer" % "0.1.24",
+      "org.jetbrains" % "marketplace-zip-signer" % "0.1.38",
       "io.spray" %% "spray-json" % "1.3.6",
       "org.rauschig" % "jarchivelib" % "1.2.0",
-      "org.ow2.asm" % "asm" % "9.6",
-      "io.get-coursier" %% "coursier" % "2.1.10",
+      "org.ow2.asm" % "asm" % "9.8",
+      "io.get-coursier" %% "coursier" % "2.1.24",
       "commons-io" % "commons-io" % "2.19.0",
     ),
   )
