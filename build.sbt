@@ -6,7 +6,7 @@ import sbt.librarymanagement.ivy.Credentials
 Global / concurrentRestrictions := Seq(Tags.limit(Tags.Test, 1))
 
 // Some tests test global properties and fail when tests are run in parallel
-Test / parallelExecution := false
+ThisBuild / Test / parallelExecution := false
 
 val MinimumSbtVersion = "1.4.5"
 // This version should be backward compatible with MinimumSbtVersion

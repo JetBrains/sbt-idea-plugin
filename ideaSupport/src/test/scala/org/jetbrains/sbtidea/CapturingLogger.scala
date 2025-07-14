@@ -38,17 +38,25 @@ object CapturingLogger {
   def captureLog(f: => Any): Seq[String] =
     captureLogEntriesAndValueAtLeastLevel(LogLevel.values.min)(f)._1.map(_.rendered)
 
-  def captureLogTextAndValue[T](minLevel: LogLevel.Value = LogLevel.Info)(f: => T): (String, T) =
+  def captureLogAndValue[T](minLevel: LogLevel.Value = LogLevel.Info)(f: => T): (Seq[String], T) =
     captureLogEntriesAndValueAtLeastLevel(minLevel)(f) match {
       case (entries, value) =>
-        (entries.map(_.rendered).mkString("\n"), value)
+        (entries.map(_.rendered), value)
     }
+
+  def captureLogTextAndValue[T](minLevel: LogLevel.Value = LogLevel.Info)(f: => T): (String, T) = {
+    val (lines, value) = captureLogAndValue(minLevel)(f)
+    (lines.mkString("\n"), value)
+  }
 
   private def captureLogEntriesAndValueAtLeastLevel[T](minLevel: LogLevel.Value)(f: => T): (Seq[LogEntry], T) = {
     val capturingLogger = new CapturingLogger()
     val previousLogger = PluginLogger.bind(capturingLogger)
-    val result = f
-    PluginLogger.bind(previousLogger)
+    val result = try {
+      f
+    } finally {
+      PluginLogger.bind(previousLogger)
+    }
 
     val messages = capturingLogger.getMessages
     val messagesFiltered = messages.filter(_.level.id >= minLevel.id)
