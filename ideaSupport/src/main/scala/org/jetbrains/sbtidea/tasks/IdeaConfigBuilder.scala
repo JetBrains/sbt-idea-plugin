@@ -314,6 +314,14 @@ class IdeaConfigBuilder(
     s"""${IntellijVMOptions.USE_PATH_CLASS_LOADER} -cp &quot;$bootClasspathString&quot; ${vmOptions.asSeq(quoteValues = true).mkString(" ")}"""
   }
 
+  /**
+   * Similar logic for Gradle IntelliJ plugin is located here:<br>
+   * https://github.com/JetBrains/intellij-platform-gradle-plugin/blob/main/src/main/kotlin/org/jetbrains/intellij/platform/gradle/tasks/TestIdeTask.kt
+   *
+   * Also related: https://youtrack.jetbrains.com/issue/IJPL-180516
+   *
+   * TODO: unify the ordering similar to Gradle, it uses different order now
+   */
   private def buildTestClasspath: Seq[String] = {
     val classPathEntries = Seq.newBuilder[String]
 
@@ -322,10 +330,12 @@ class IdeaConfigBuilder(
     classPathEntries += (pluginAssemblyDir / "lib").toString + File.separator + "*"
     classPathEntries += (pluginAssemblyDir / "lib" / "modules").toString + File.separator + "*"
 
+    // Keep the plugins classpath before the app system classpath to better emulate the production behavior
+    classPathEntries ++= testPluginRoots.flatMap(PluginClasspathUtils.getPluginClasspathPattern)
+
     classPathEntries ++= productInfoExtraDataProvider.bootClasspathJars.map(_.toString)
     classPathEntries ++= productInfoExtraDataProvider.productModulesJars.map(_.toString)
     classPathEntries ++= productInfoExtraDataProvider.testFrameworkJars.map(_.toString)
-    classPathEntries ++= testPluginRoots.flatMap(PluginClasspathUtils.getPluginClasspathPattern)
     classPathEntries ++= ownProductDirs.map(_.toString)
 
     //runtime jars from the *currently running* IJ to actually start the tests:
