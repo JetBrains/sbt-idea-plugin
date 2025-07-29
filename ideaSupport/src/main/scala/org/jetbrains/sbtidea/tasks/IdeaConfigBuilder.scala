@@ -315,6 +315,10 @@ class IdeaConfigBuilder(
   }
 
   /**
+   * ATTENTION: this classpath is only actual for the IntelliJ Run Configurations.
+   * SBT will use a different classpath specified in [[org.jetbrains.sbtidea.tasks.classpath.ExternalDependencyClasspathTasks]]
+   * TODO: unify this logic with ExternalDependencyClasspathTasks, don't use 2 separate
+   *
    * Similar logic for Gradle IntelliJ plugin is located here:<br>
    * https://github.com/JetBrains/intellij-platform-gradle-plugin/blob/main/src/main/kotlin/org/jetbrains/intellij/platform/gradle/tasks/TestIdeTask.kt
    *
