@@ -25,6 +25,7 @@ import scala.annotation.tailrec
  *
  * @param testPluginRoots contains only those plugins which are listed in the project IntelliJ plugin dependencies and their transitive dependencies
  * @param dataDir         base directory of IntelliJ Platform config and system directories for this plugin
+ * @param ownProductDirs  TODO: add description of the parameter
  */
 class IdeaConfigBuilder(
   projectName: String,
@@ -329,13 +330,12 @@ class IdeaConfigBuilder(
   private def buildTestClasspath: Seq[String] = {
     val classPathEntries = Seq.newBuilder[String]
 
-    //plugin jars must go first when using CLASSLOADER_KEY
-    //example: ./target/plugin/Scala/lib/*
-    classPathEntries += (pluginAssemblyDir / "lib").toString + File.separator + "*"
-    classPathEntries += (pluginAssemblyDir / "lib" / "modules").toString + File.separator + "*"
-
-    // Keep the plugins classpath before the app system classpath to better emulate the production behavior
-    classPathEntries ++= testPluginRoots.flatMap(PluginClasspathUtils.getPluginClasspathPattern)
+    // Keep the plugins classpath before the app system classpath to better emulate the production behavior.
+    // The current plugin jar must also go first when using custom classloader key
+    // (see org.jetbrains.sbtidea.runIdea.IntellijVMOptions.VMOptionOps)
+    // Example: ./target/plugin/Scala/lib/*:./target/plugin/Scala/lib/modules/*
+    val allPluginRootsWithSelf = pluginAssemblyDir +: testPluginRoots
+    classPathEntries ++= allPluginRootsWithSelf.flatMap(PluginClasspathUtils.getPluginClasspathPattern)
 
     classPathEntries ++= productInfoExtraDataProvider.bootClasspathJars.map(_.toString)
     classPathEntries ++= productInfoExtraDataProvider.productModulesJars.map(_.toString)
