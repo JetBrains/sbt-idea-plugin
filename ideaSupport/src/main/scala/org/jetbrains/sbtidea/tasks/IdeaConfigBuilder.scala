@@ -1,20 +1,14 @@
 package org.jetbrains.sbtidea.tasks
 
-import coursier.{Dependency, Fetch, Module, ModuleName, Organization}
 import org.jetbrains.sbtidea.IdeaConfigBuildingOptions.AdditionalRunConfigData
 import org.jetbrains.sbtidea.Keys.IdeaConfigBuildingOptions
+import org.jetbrains.sbtidea.PluginLogger as log
 import org.jetbrains.sbtidea.packaging.hasProdTestSeparationEnabled
 import org.jetbrains.sbtidea.productInfo.ProductInfoExtraDataProvider
 import org.jetbrains.sbtidea.runIdea.{IntellijAwareRunner, IntellijVMOptions}
-import org.jetbrains.sbtidea.tasks.IdeaConfigBuilder.{computeJupiterRuntimeDependencies, pathPattern, pluginsPattern}
-import org.jetbrains.sbtidea.tasks.classpath.PluginClasspathUtils
-import org.jetbrains.sbtidea.{PathExt, PluginLogger as log}
 import sbt.*
 
 import java.io.File
-import java.nio.file.{Path, Paths}
-import java.util.regex.Pattern
-import scala.annotation.tailrec
 
 /**
  * The class is responsible to create all run configurations for plugin development.
@@ -34,15 +28,12 @@ class IdeaConfigBuilder(
   intellijBaseDir: File,
   productInfoExtraDataProvider: ProductInfoExtraDataProvider,
   dotIdeaFolder: File,
-  pluginAssemblyDir: File,
   ownProductDirs: Seq[File],
   testPluginRoots: Seq[File],
-  extraJUnitTemplateClasspath: Seq[File],
-  options: IdeaConfigBuildingOptions
+  options: IdeaConfigBuildingOptions,
+  testClasspath: Seq[File]
 ) {
   private val runConfigDir = dotIdeaFolder / "runConfigurations"
-
-  private val IDEA_ROOT_KEY = "idea.installation.dir"
 
   private val artifactName = projectName
 
@@ -152,91 +143,6 @@ class IdeaConfigBuilder(
     }
   }
 
-  private def getExplicitIDEARoot: Option[Path] = sys.props.get(IDEA_ROOT_KEY).map(Paths.get(_))
-
-  /**
-   * Tries to locate IJ installation root. The one with the "lib", "bin", "plugins", etc. folders.
-   * Implementation is wonky since it relies on folder naming a lot, which is prone to changes.
-   * TODO: ask toolbox team how to do this properly
-   */
-  @tailrec
-  private def scanForIDEARoot(current: Path): Option[Path] = {
-    val isToolboxPluginsFolder  = current.getFileName != null && pluginsPattern.matcher(current.getFileName.toString).matches() && (current / "Scala" / "lib").exists
-    val isIJRootFolder          = (current / "lib" / "idea.jar").exists
-    if (isIJRootFolder) { // for non-toolbox installations
-      Some(current)
-    } else if (isToolboxPluginsFolder) {
-      val ijBuild     = current.getFileName.toString.replace(".plugins", "")
-      val maybeIJRoot = current.getParent / ijBuild
-      if (maybeIJRoot.exists)
-        Some(maybeIJRoot)
-      else {
-        log.warn(s"Found toolbox plugins folder, but no IJ root next to it ?! : $current")
-        None
-      }
-    } else if (current.getParent == null) {
-      None
-    } else {
-      scanForIDEARoot(current.getParent)
-    }
-  }
-
-  /**
-   * Attempts to detect jars of '''currently running''' IJ instance to pass ij-junit runtime jars to the
-   * generated junit run configuration template.<br>
-   * This is required because in order to get test progress and overall
-   * communicate with the test framework IJ injects its own classes into your tests classpath and uses a custom junit
-   * runner to start the tests, which is distributed with the IJ itself by adding them to the classpath dynamically
-   * when starting the tests run configuration.<br>
-   * And since we have to statically set the whole classpath in advance while generating the run configuration template
-   * xmls, the required jars have to be found using MAGIC(heuristics). To do this we assume that during an sbt import
-   * process sbt-launch.jar(which should appear on the java's cmdline) is the one we distribute with the Scala plugin
-   * and thereby, resides somewhere close to the IJ core libraries.
-   * @return
-   */
-  private def guessIJRuntimeJarsForJUnitTemplate(): Seq[Path] =
-    getExplicitIDEARoot
-      .orElse(getCurrentLaunchPath.flatMap(scanForIDEARoot)) match {
-      case Some(ijRoot) =>
-        log.info(s"Got IDEA installation root at: $ijRoot")
-        Seq(
-          ijRoot / "lib" / "idea_rt.jar",
-          ijRoot / "plugins" / "junit" / "lib" / "junit5-rt.jar",
-          ijRoot / "plugins" / "junit" / "lib" / "junit-rt.jar")
-      case None =>
-        log.error(s"Unable to detect IDEA installation root, JUnit template may fail")
-        Seq.empty
-    }
-
-  private def resolveJUnitJupiterRuntime(testClasspath: Seq[Path]): Seq[Path] = {
-    val toResolve = computeJupiterRuntimeDependencies(testClasspath)
-    Fetch()
-      .withDependencies(toResolve)
-      .run()
-      .map(_.toPath)
-  }
-
-  private def getCurrentLaunchPath: Option[Path] = {
-    /*
-    (java.class.path,/home/miha/.local/share/JetBrains/Toolbox/apps/IDEA-C/ch-1/203.5419.21.plugins/Scala/launcher/sbt-launch.jar)
-    /home/miha/.local/share/JetBrains/Toolbox/apps/IDEA-C/ch-1/203.5419.21.plugins/Scala/launcher/sbt-launch.jar early(addPluginSbtFile="""/tmp/idea1.sbt""") ; set ideaPort in Global := 33925 ; idea-shell
-    /home/miha/.local/share/JetBrains/Toolbox/apps/IDEA-C/ch-1/203.5419.21/lib/idea_rt.jar
-    /home/miha/.local/share/JetBrains/Toolbox/apps/IDEA-C/ch-1/203.5419.21/plugins/junit/lib/junit5-rt.jar
-    /home/miha/.local/share/JetBrains/Toolbox/apps/IDEA-C/ch-1/203.5419.21/plugins/junit/lib/junit-rt.jar
-    */
-
-    val runCMD = sys.props.getOrElse("sun.java.command", "")
-    val matcher = pathPattern.matcher(runCMD)
-    if (matcher.find()) {
-      val pathString = matcher.group(1)
-      val currentPath = Paths.get(pathString)
-      Some(currentPath)
-    } else {
-      log.warn(s"Can't get sbt-launch.jar location from cmdline: $runCMD")
-      None
-    }
-  }
-
   private lazy val jreSettings: String = {
     val bundledJre = IntellijAwareRunner.getBundledJRE(intellijBaseDir.toPath)
     bundledJre match {
@@ -315,45 +221,8 @@ class IdeaConfigBuilder(
     s"""${IntellijVMOptions.USE_PATH_CLASS_LOADER} -cp &quot;$bootClasspathString&quot; ${vmOptions.asSeq(quoteValues = true).mkString(" ")}"""
   }
 
-  /**
-   * ATTENTION: this classpath is only actual for the IntelliJ Run Configurations.
-   * SBT will use a different classpath specified in [[org.jetbrains.sbtidea.tasks.classpath.ExternalDependencyClasspathTasks]]
-   * TODO: unify this logic with ExternalDependencyClasspathTasks, don't use 2 separate
-   *
-   * Similar logic for Gradle IntelliJ plugin is located here:<br>
-   * https://github.com/JetBrains/intellij-platform-gradle-plugin/blob/main/src/main/kotlin/org/jetbrains/intellij/platform/gradle/tasks/TestIdeTask.kt
-   *
-   * Also related: https://youtrack.jetbrains.com/issue/IJPL-180516
-   *
-   * TODO: unify the ordering similar to Gradle, it uses different order now
-   */
-  private def buildTestClasspath: Seq[String] = {
-    val classPathEntries = Seq.newBuilder[String]
-
-    // Keep the plugins classpath before the app system classpath to better emulate the production behavior.
-    // The current plugin jar must also go first when using custom classloader key
-    // (see org.jetbrains.sbtidea.runIdea.IntellijVMOptions.VMOptionOps)
-    // Example: ./target/plugin/Scala/lib/*:./target/plugin/Scala/lib/modules/*
-    val allPluginRootsWithSelf = pluginAssemblyDir +: testPluginRoots
-    classPathEntries ++= allPluginRootsWithSelf.flatMap(PluginClasspathUtils.getPluginClasspathPattern)
-
-    classPathEntries ++= productInfoExtraDataProvider.bootClasspathJars.map(_.toString)
-    classPathEntries ++= productInfoExtraDataProvider.productModulesJars.map(_.toString)
-    classPathEntries ++= productInfoExtraDataProvider.testFrameworkJars.map(_.toString)
-    classPathEntries ++= ownProductDirs.map(_.toString)
-
-    //runtime jars from the *currently running* IJ to actually start the tests:
-    //<sdkRoot>/lib/idea_rt.jar;
-    //<sdkRoot>/plugins/junit/lib/junit5-rt.jar;
-    //<sdkRoot>/plugins/junit/lib/junit-rt.jar
-    val ijRuntimeJars = guessIJRuntimeJarsForJUnitTemplate()
-    classPathEntries ++= ijRuntimeJars.map(_.toString)
-    val junitJupiterRuntimeJars = resolveJUnitJupiterRuntime(extraJUnitTemplateClasspath.map(_.toPath))
-    classPathEntries ++= junitJupiterRuntimeJars.map(_.toString)
-
-    classPathEntries ++= extraJUnitTemplateClasspath.map(_.toString)
-    classPathEntries.result()
-  }
+  private def buildTestClasspath: Seq[String] =
+    testClasspath.map(_.getAbsolutePath)
 
   private def generateModuleName(sourceSetModuleSuffix: String): String =
     if (hasProdTestSeparationEnabled) s"$projectName.$sourceSetModuleSuffix"
@@ -415,80 +284,5 @@ class IdeaConfigBuilder(
     val classpathStr = escapeBackslash(classPathEntries.mkString(File.pathSeparator))
     val quotedClasspathStr = "\"" + classpathStr + "\""
     (Seq("-cp", quotedClasspathStr) ++ testVMOptions.asSeqQuotedNoEscapeXml.map(escapeBackslash)).mkString(System.lineSeparator())
-  }
-}
-
-object IdeaConfigBuilder {
-  private val pathPattern = Pattern.compile("(^.+sbt-launch\\.jar).*$")
-  private val pluginsPattern = Pattern.compile("^.+\\.plugins$")
-
-  private[tasks] val fallbackJupiterVersion = "5.10.3"
-  private[tasks] val fallbackPlatformVersion = "1.10.3"
-
-  private[tasks] def computeJupiterRuntimeDependencies(testClasspath: Seq[Path]): Seq[Dependency] = {
-    def findJar(org: String, artifact: String): Option[(Path, String)] =
-      testClasspath.find { path =>
-        // org.junit.jupiter -> org/junit/jupiter or org\junit\jupiter
-        val orgPath = org.replace('.', File.separatorChar)
-        // Checks that the jar absolute path contains both the expected organization name and artifact name.
-        // This is done to filter out hypothetical jars that have the same name but a different organization.
-        path.toString.contains(orgPath) &&
-          path.getFileName.toString.matches(s"$artifact-(.*)\\.jar")
-      }.map(path => (path, artifact))
-
-    // Detect the version of the jupiter artifacts already on the classpath. If none, fall back to a hardcoded version.
-    val jupiterVersion = findJar("org.junit.jupiter", "junit-jupiter-api")
-      .orElse(findJar("org.junit.jupiter", "junit-jupiter-engine"))
-      .orElse(findJar("org.junit.vintage", "junit-vintage-engine"))
-      .flatMap { case (jar, artifact) =>
-        val versionRegex = s"$artifact-(.*)\\.jar".r
-
-        jar.getFileName.toString match {
-          case versionRegex(version) => Some(version)
-          case _ => None
-        }
-      }.getOrElse(fallbackJupiterVersion)
-
-    val jupiterVersionRegex = "5\\.(.*)".r
-
-    // Use the corresponding jupiter platform launcher version for the given jupiter version, e.g. 5.9.3 -> 1.9.3.
-    val platformVersion = jupiterVersion match {
-      case jupiterVersionRegex(rest) => s"1.$rest"
-      case _ => fallbackPlatformVersion
-    }
-
-    val dependencies = Seq.newBuilder[Dependency]
-
-    // Resolve the junit-jupiter-engine jar if not already on the test classpath.
-    findJar("org.junit.jupiter", "junit-jupiter-engine") match {
-      case Some(_) =>
-      case None =>
-        dependencies += Dependency(
-          Module(Organization("org.junit.jupiter"), ModuleName("junit-jupiter-engine")),
-          jupiterVersion
-        )
-    }
-
-    // Resolve the junit-vintage-engine jar if not already on the classpath.
-    findJar("org.junit.vintage", "junit-vintage-engine") match {
-      case Some(_) =>
-      case None =>
-        dependencies += Dependency(
-          Module(Organization("org.junit.vintage"), ModuleName("junit-vintage-engine")),
-          jupiterVersion
-        )
-    }
-
-    // Resolve the junit-platform-launcher jar if not already on the classpath.
-    findJar("org.junit.platform", "junit-platform-launcher") match {
-      case Some(_) =>
-      case None =>
-        dependencies += Dependency(
-          Module(Organization("org.junit.platform"), ModuleName("junit-platform-launcher")),
-          platformVersion
-        )
-    }
-
-    dependencies.result()
   }
 }
