@@ -21,7 +21,7 @@ object ExternalDependencyClasspathTasks {
    *
    * @note Similar logic for Gradle IntelliJ plugin is located here:<br>
    *       https://github.com/JetBrains/intellij-platform-gradle-plugin/blob/main/src/main/kotlin/org/jetbrains/intellij/platform/gradle/tasks/TestIdeTask.kt
-   * @note Reminder: the "full classpath" will be reused in [[org.jetbrains.sbtidea.tasks.IdeaConfigBuilder#buildTestClasspath]]
+   * @note Reminder: the "full classpath" will be reused in [[org.jetbrains.sbtidea.tasks.IdeaConfigBuilder]] in `buildTestClasspath` method
    * @see https://youtrack.jetbrains.com/issue/IJPL-180516
    */
   def test: Def.Initialize[Task[Classpath]] = Def.task {
