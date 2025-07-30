@@ -31,7 +31,6 @@ object ExternalDependencyClasspathTasks {
     val intellijExtraPluginsInTestsClasspath = SbtIdeaKeys.intellijExtraRuntimePluginsJarsInTestsClasspath.value.flatMap(_._2)
 
     // Keep the plugins classpath before the app system classpath to better emulate the production behavior.
-    //TODO: seems like this ordering is still not valid (see comments in IJI-1562)
-    pluginsClasspath ++ intellijExtraPluginsInTestsClasspath ++ mainClasspath ++ testClasspath
+     mainClasspath ++ testClasspath ++ pluginsClasspath ++ intellijExtraPluginsInTestsClasspath
   }
 }
