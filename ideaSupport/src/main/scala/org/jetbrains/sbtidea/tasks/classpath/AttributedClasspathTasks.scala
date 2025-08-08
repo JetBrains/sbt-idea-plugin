@@ -1,9 +1,12 @@
 package org.jetbrains.sbtidea.tasks.classpath
 
-import org.jetbrains.sbtidea.{PluginJars, Keys as SbtIdeaKeys}
 import org.jetbrains.sbtidea.download.plugin.PluginDescriptor
+import org.jetbrains.sbtidea.{PluginJars, Keys as SbtIdeaKeys}
 import sbt.Keys.*
+import sbt.internal.inc.Analysis
+import sbt.util.InterfaceUtil
 import sbt.{Def, *}
+import xsbti.compile.CompileAnalysis
 
 import java.io.File
 import scala.collection.mutable
@@ -150,5 +153,39 @@ object AttributedClasspathTasks {
       .put(Keys.moduleID.key, module)
       .put(Keys.configuration.key, configuration)
     jars.map(Attributed(_)(attributes))
+  }
+
+  /**
+   * Defined as a task because it needs to be called for each subproject which is a `"test->test;compile->compile"`
+   * dependency of the root sbt subproject which hosts the IDEA plugin.
+   *
+   * @note This implementation is written to mimic `sbt.internal.ClasspathImpl.trackedExportedJarProducts`
+   *       and the private task definition `sbt.internal.ClasspathImpl.trackedNonJarProductsImplTask`.
+   */
+  def attributedClassDirectory: Def.Initialize[Task[Attributed[File]]] = Def.task {
+    val art = (artifact in packageBin).value
+    val module = projectID.value
+    val config = configuration.value
+    val dir = classDirectory.value
+    val analysis = InterfaceUtil.toOption(previousCompile.value.analysis()).getOrElse(Analysis.empty)
+    val optURL = apiURL.value
+    storeApi(analyzed(dir, analysis), optURL)
+      .put(artifact.key, art)
+      .put(moduleID.key, module)
+      .put(configuration.key, config)
+  }
+
+  /**
+   * A copy of [[sbt.internal.ClasspathImpl.analyzed]] which we cannot call from here as it is package private.
+   */
+  private def analyzed[A](data: A, analysis: CompileAnalysis): Attributed[A] =
+    Attributed.blank(data).put(Keys.analysis, analysis)
+
+  /**
+   * A copy of [[sbt.internal.APIMappings.store]] which we cannot call from here as it is package private.
+   */
+  private def storeApi[T](attr: Attributed[T], entryAPI: Option[URL]): Attributed[T] = entryAPI match {
+    case None => attr
+    case Some(u) => attr.put(Keys.entryApiURL, u)
   }
 }
