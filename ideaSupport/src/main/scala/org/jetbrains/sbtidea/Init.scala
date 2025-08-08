@@ -6,12 +6,11 @@ import org.jetbrains.sbtidea.packaging.PackagingKeys.*
 import org.jetbrains.sbtidea.productInfo.{ProductInfoExtraDataProvider, ProductInfoParser}
 import org.jetbrains.sbtidea.searchableoptions.BuildIndex
 import org.jetbrains.sbtidea.tasks.*
-import org.jetbrains.sbtidea.tasks.classpath.{AttributedClasspathTasks, ExternalDependencyClasspathTasks, PluginClasspathUtils}
+import org.jetbrains.sbtidea.tasks.classpath.{AttributedClasspathTasks, ExternalDependencyClasspathTasks, PluginClasspathUtils, TestClasspathTasks}
 import sbt.Keys.*
 import sbt.{Keys as _, *}
 
 import scala.annotation.nowarn
-import scala.collection.mutable
 
 @nowarn("msg=a pure expression does nothing in statement position")
 trait Init { this: Keys.type =>
@@ -220,39 +219,7 @@ trait Init { this: Keys.type =>
     testOnly.in(Test) := { testOnly.in(Test).dependsOn(packageArtifact).evaluated },
     test.in(Test)     := { test.in(Test).dependsOn(packageArtifact).value },
 
-    fullClasspath.in(Test) := {
-      // `fullClasspath` is a (distinct) concatenation of `exportedProducts` and `dependencyClasspath`.
-      // `exportedProducts` triggers compilation to produce its output, `exportedProductsNoTracking` doesn't.
-      // We need to use `fullClasspath` during the IDEA sbt import process. However, we do not want to compile
-      // the whole project in order to do so, particularly because compilation errors will fail the project import.
-      // This leads to situations where we cannot import the project because it cannot be compiled, yet we need IDE
-      // import to succeed such that we can get IDE support in order to fix the compilation.
-      // Thus, we manually concatenate `exportedProductsNoTracking` and `dependencyClasspath` in order to construct
-      // the `fullClasspath` ourselves, without triggering compilation.
-      // Furthermore, `dependencyClasspath` is a (distinct) concatenation of `internalDependencyClasspath` and
-      // `externalDependencyClasspath`.
-      // `internalDependencyClasspath` also triggers compilation. But in this context, this is not necessary for us.
-      // We are only looking for the `Test / classDirectory` (`<subproject>/target/scala-<version>/test-classes`) for
-      // each dependency of the current sbt subproject.
-      // `classDirectory` return a regular `File`, so we need to transform it into an `Attributed[File]` value.
-      // We do this in `AttributedClasspathTasks.attributedClassDirectory` as it is a slightly more involved process.
-      // `externalDependencyClasspath` on the other hand is safe to call without triggering compilation, and it returns
-      // the list of external managed and unmanaged jar dependencies.
-      val testExportedProducts = exportedProductsNoTracking.in(Test).value
-      val testClassDirectories = AttributedClasspathTasks.attributedClassDirectory.all(ScopeFilter(inDependencies(ThisProject), inConfigurations(Test))).value
-      val testExternalDependencyClasspath = externalDependencyClasspath.in(Test).value
-
-      // Recreate the `fullClasspath` value by concatenating `exportedProductsNoTracking` and our custom
-      // `dependencyClasspath` and calling `.distinct` on the resulting sequence.
-      val fullClasspathValue = (testExportedProducts ++ testClassDirectories ++ testExternalDependencyClasspath).distinct
-
-      val pathFinder = PathFinder.empty +++ // the new IJ plugin loading strategy in tests requires external plugins to be prepended to the classpath
-        packageOutputDir.value * globFilter("*.jar") +++
-        packageOutputDir.value / "lib" * globFilter("*.jar") +++
-        packageOutputDir.value / "lib" / "modules" ** globFilter("*.jar")
-      val allExportedProducts = exportedProductsNoTracking.all(ScopeFilter(inDependencies(ThisProject), inConfigurations(Compile))).value.flatten
-      pathFinder.classpath ++ (fullClasspathValue.to[mutable.LinkedHashSet] -- allExportedProducts.toSet).toSeq // exclude classes already in the artifact
-    },
+    fullClasspath.in(Test) := TestClasspathTasks.fullTestClasspathForSbt.value,
 
     javaOptions.in(Test) ++= { intellijVMOptions.in(Test).value.asSeq() :+ s"-Dsbt.ivy.home=$ivyHomeDir" }
   )
