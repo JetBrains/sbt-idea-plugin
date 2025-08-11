@@ -31,7 +31,7 @@ class IdeaConfigBuilder(
   ownProductDirs: Seq[File],
   testPluginRoots: Seq[File],
   options: IdeaConfigBuildingOptions,
-  testClasspath: Seq[File]
+  testClasspath: Seq[String]
 ) {
   private val runConfigDir = dotIdeaFolder / "runConfigurations"
 
@@ -221,9 +221,6 @@ class IdeaConfigBuilder(
     s"""${IntellijVMOptions.USE_PATH_CLASS_LOADER} -cp &quot;$bootClasspathString&quot; ${vmOptions.asSeq(quoteValues = true).mkString(" ")}"""
   }
 
-  private def buildTestClasspath: Seq[String] =
-    testClasspath.map(_.getAbsolutePath)
-
   private def generateModuleName(sourceSetModuleSuffix: String): String =
     if (hasProdTestSeparationEnabled) s"$projectName.$sourceSetModuleSuffix"
     else projectName
@@ -280,8 +277,7 @@ class IdeaConfigBuilder(
 
   private def buildTestVmOptionsString: String = {
     val testVMOptions = intellijVMOptions.copy(test = true)
-    val classPathEntries = buildTestClasspath
-    val classpathStr = escapeBackslash(classPathEntries.mkString(File.pathSeparator))
+    val classpathStr = escapeBackslash(testClasspath.mkString(File.pathSeparator))
     val quotedClasspathStr = "\"" + classpathStr + "\""
     (Seq("-cp", quotedClasspathStr) ++ testVMOptions.asSeqQuotedNoEscapeXml.map(escapeBackslash)).mkString(System.lineSeparator())
   }

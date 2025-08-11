@@ -11,11 +11,8 @@ import java.nio.file.Path
 
 object PluginClasspathUtils {
 
-  def getPluginClasspathPattern(pluginRoot: File): Seq[String] =
-    if (pluginRoot.isDirectory)
-      pluginJarLocations(pluginRoot).map(dir => s"$dir${File.separator}*")
-    else
-      Seq(pluginRoot.toString)
+  def pluginClasspathPattern(pluginRoot: File): Seq[String] =
+    pluginJarLocationPaths(pluginRoot).map(dir => s"$dir${File.separator}*")
 
   private def collectPluginClasspathJars(pluginRoot: File): Seq[File] = {
     val finders = if (pluginRoot.isDirectory)
@@ -26,11 +23,14 @@ object PluginClasspathUtils {
     finders.foldLeft(PathFinder.empty)(_ +++ _).classpath.map(_.data)
   }
 
-  private def pluginJarLocations(pluginRoot: File): Seq[File] =
+  private def pluginJarLocationPaths(pluginRoot: File): Seq[File] =
     Seq(
       pluginRoot / "lib",
       pluginRoot / "lib" / "modules"
-    ).filter(_.isDirectory) //ensure it's a directory and exists
+    )
+
+  private def pluginJarLocations(pluginRoot: File): Seq[File] =
+    pluginJarLocationPaths(pluginRoot).filter(_.isDirectory) //ensure it's a directory and exists
 
   def buildPluginJars(
     ideaBaseDir: Path,
