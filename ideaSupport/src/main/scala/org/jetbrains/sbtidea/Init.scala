@@ -6,12 +6,11 @@ import org.jetbrains.sbtidea.packaging.PackagingKeys.*
 import org.jetbrains.sbtidea.productInfo.{ProductInfoExtraDataProvider, ProductInfoParser}
 import org.jetbrains.sbtidea.searchableoptions.BuildIndex
 import org.jetbrains.sbtidea.tasks.*
-import org.jetbrains.sbtidea.tasks.classpath.{AttributedClasspathTasks, ExternalDependencyClasspathTasks, PluginClasspathUtils}
+import org.jetbrains.sbtidea.tasks.classpath.{AttributedClasspathTasks, ExternalDependencyClasspathTasks, PluginClasspathUtils, TestClasspathTasks}
 import sbt.Keys.*
 import sbt.{Keys as _, *}
 
 import scala.annotation.nowarn
-import scala.collection.mutable
 
 @nowarn("msg=a pure expression does nothing in statement position")
 trait Init { this: Keys.type =>
@@ -220,15 +219,7 @@ trait Init { this: Keys.type =>
     testOnly.in(Test) := { testOnly.in(Test).dependsOn(packageArtifact).evaluated },
     test.in(Test)     := { test.in(Test).dependsOn(packageArtifact).value },
 
-    fullClasspath.in(Test) := {
-      val fullClasspathValue = fullClasspath.in(Test).value
-      val pathFinder = PathFinder.empty +++ // the new IJ plugin loading strategy in tests requires external plugins to be prepended to the classpath
-        packageOutputDir.value * globFilter("*.jar") +++
-        packageOutputDir.value / "lib" * globFilter("*.jar") +++
-        packageOutputDir.value / "lib" / "modules" ** globFilter("*.jar")
-      val allExportedProducts = exportedProducts.all(ScopeFilter(inDependencies(ThisProject), inConfigurations(Compile))).value.flatten
-      pathFinder.classpath ++ (fullClasspathValue.to[mutable.LinkedHashSet] -- allExportedProducts.toSet).toSeq // exclude classes already in the artifact
-    },
+    fullClasspath.in(Test) := TestClasspathTasks.fullTestClasspathForSbt.value,
 
     javaOptions.in(Test) ++= { intellijVMOptions.in(Test).value.asSeq() :+ s"-Dsbt.ivy.home=$ivyHomeDir" }
   )

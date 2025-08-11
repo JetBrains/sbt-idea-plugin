@@ -2,7 +2,7 @@ package org.jetbrains.sbtidea.tasks
 
 import org.jetbrains.sbtidea
 import org.jetbrains.sbtidea.Keys.*
-import org.jetbrains.sbtidea.tasks.classpath.PluginClasspathUtils
+import org.jetbrains.sbtidea.tasks.classpath.{PluginClasspathUtils, TestClasspathTasks}
 import org.jetbrains.sbtidea.{PluginLogger, SbtPluginLogger}
 import sbt.Keys.*
 import sbt.{Def, *}
@@ -22,8 +22,7 @@ object GenerateIdeaRunConfigurations extends SbtIdeaTask[Unit] {
       val ownClassPath: Seq[File] =
         classDirectory.all(ScopeFilter(inDependencies(ThisProject), inConfigurations(Test))).value
 
-      val fullTestClasspath: Seq[File] =
-        (Test / fullClasspath).value.map(_.data).distinct
+      val fullTestClasspath = TestClasspathTasks.fullTestClasspathForJUnitTemplate.value
 
       val allPlugins = {
         val pluginDeps = intellijPlugins.all(ScopeFilter(inDependencies(ThisProject))).value.flatten
