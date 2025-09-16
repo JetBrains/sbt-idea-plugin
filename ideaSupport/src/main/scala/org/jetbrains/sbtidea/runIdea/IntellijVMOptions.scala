@@ -16,21 +16,23 @@ import scala.math.Ordered.orderingToOrdered
   * @param intellijDirectory example: {{{ <userHome>/.ScalaPluginIU/sdk/223.6160 }}}
   */
 @nowarn("cat=deprecation")
-case class IntellijVMOptions(platform: IntelliJPlatform,
-                             pluginPath: Path,
-                             ideaHome: Path,
-                             intellijDirectory: Path,
-                             xmx: Int = 2048,
-                             xms: Int = 128,
-                             reservedCodeCacheSize: Int = 512,
-                             softRefLRUPolicyMSPerMB: Int = 50,
-                             gc: String = "-XX:+UseG1GC",
-                             gcOpt: String = "-XX:CICompilerCount=2",
-                             debug: Boolean = true,
-                             debugPort: Int = 5005,
-                             suspend: Boolean = false,
-                             test: Boolean = false,
-                             defaultOptions: Seq[String] = IntellijVMOptions.DEFAULT_STATIC_OPTS) {
+case class IntellijVMOptions(
+  platform: IntelliJPlatform,
+  pluginPath: Path,
+  ideaHome: Path,
+  intellijDirectory: Path,
+  xmx: Int = 2048,
+  xms: Int = 128,
+  reservedCodeCacheSize: Int = 512,
+  softRefLRUPolicyMSPerMB: Int = 50,
+  gc: String = "-XX:+UseG1GC",
+  gcOpt: String = "-XX:CICompilerCount=2",
+  debug: Boolean = true,
+  debugPort: Int = 5005,
+  suspend: Boolean = false,
+  test: Boolean = false,
+  defaultOptions: Seq[String] = IntellijVMOptions.DEFAULT_STATIC_OPTS
+) {
   def withOption(option: String): IntellijVMOptions = copy(defaultOptions = defaultOptions :+ option)
   def withOptions(options: Seq[String]): IntellijVMOptions = copy(defaultOptions = defaultOptions ++ options)
 }
