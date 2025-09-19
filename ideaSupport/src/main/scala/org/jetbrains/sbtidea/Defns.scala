@@ -1,5 +1,7 @@
 package org.jetbrains.sbtidea
 
+import scala.annotation.nowarn
+
 /**
   * type aliases and val aliases for sbt autoImport
   * all of the types mentioned in PackagingKeys aka exposed to the user should be aliased here to avoid the
@@ -11,8 +13,15 @@ trait Defns {
   type IdeaConfigBuildingOptions = org.jetbrains.sbtidea.IdeaConfigBuildingOptions
   final val IdeaConfigBuildingOptions: org.jetbrains.sbtidea.IdeaConfigBuildingOptions.type = org.jetbrains.sbtidea.IdeaConfigBuildingOptions
 
+  @nowarn("cat=deprecation")
   type IntellijVMOptions = org.jetbrains.sbtidea.runIdea.IntellijVMOptions
   final val IntellijVMOptions: org.jetbrains.sbtidea.runIdea.IntellijVMOptions.type = org.jetbrains.sbtidea.runIdea.IntellijVMOptions
+
+  type CustomIntellijVMOptions = org.jetbrains.sbtidea.runIdea.CustomIntellijVMOptions
+  final val CustomIntellijVMOptions: org.jetbrains.sbtidea.runIdea.CustomIntellijVMOptions.type = org.jetbrains.sbtidea.runIdea.CustomIntellijVMOptions
+
+  private[sbtidea]
+  type IntellijVMOptionsBuilder = org.jetbrains.sbtidea.runIdea.IntellijVMOptionsBuilder
 
   type pluginXmlOptions = org.jetbrains.sbtidea.pluginXmlOptions
   final val pluginXmlOptions: org.jetbrains.sbtidea.pluginXmlOptions.type = org.jetbrains.sbtidea.pluginXmlOptions

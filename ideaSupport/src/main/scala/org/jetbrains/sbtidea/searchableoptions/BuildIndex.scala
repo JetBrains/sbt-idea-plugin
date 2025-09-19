@@ -1,18 +1,20 @@
 package org.jetbrains.sbtidea.searchableoptions
 
-import org.jetbrains.sbtidea.Keys.{intellijBaseDirectory, intellijVMOptions, productInfoExtraDataProvider}
+import org.jetbrains.sbtidea.Keys.{customIntellijVMOptions, intellijBaseDirectory, intellijVMOptions, intellijVMOptionsBuilder, productInfoExtraDataProvider, useNewVmOptions}
 import org.jetbrains.sbtidea.download.NioUtils
 import org.jetbrains.sbtidea.download.plugin.LocalPluginRegistry
 import org.jetbrains.sbtidea.packaging.*
 import org.jetbrains.sbtidea.packaging.PackagingKeys.packageArtifact
 import org.jetbrains.sbtidea.packaging.artifact.{DistBuilder, DumbIncrementalCache, IncrementalCache}
 import org.jetbrains.sbtidea.runIdea.IdeaRunner
+import org.jetbrains.sbtidea.runIdea.IntellijVMOptionsBuilder.VmOptions
 import org.jetbrains.sbtidea.{PathExt, PluginLogger, SbtPluginLogger}
 import sbt.*
 import sbt.Keys.{streams, target}
 
 import java.nio.file.{Files, Path}
 import java.util.function.Predicate
+import scala.annotation.nowarn
 import scala.collection.JavaConverters.*
 import scala.util.Try
 
@@ -48,7 +50,6 @@ object BuildIndex {
     val pluginRoot      = packageArtifact.value.toPath
     val indexOutputPath = target.value / "searchableOptions"
     val indexerCMD      = "traverseUI" :: indexOutputPath.getCanonicalPath :: "true" :: Nil
-    val vmOptions       = intellijVMOptions.value.withOption("-Didea.l10n.keys=only")
 
     log.info("Building searchable plugin options index...")
 
@@ -57,13 +58,22 @@ object BuildIndex {
         .flatMap(v => Try(v.toBoolean).toOption)
         .getOrElse(true)
 
+    val vmOptions: VmOptions = if (useNewVmOptions.value)
+      VmOptions.New(customIntellijVMOptions.value)
+    else
+      VmOptions.Old(intellijVMOptions.value): @nowarn("cat=deprecation")
+
+    val vmOptionsUpdated =
+      vmOptions.withExtraOption("-Didea.l10n.keys=only")
+
     val runner = new IdeaRunner(
-      intellijBaseDir.toPath,
-      productInfoExtraDataProvider.value,
-      vmOptions,
+      intellijBaseDirectory = intellijBaseDir.toPath,
+      productInfoExtraDataProvider = productInfoExtraDataProvider.value,
+      vmOptions = vmOptionsUpdated,
+      vmOptionsBuilder = intellijVMOptionsBuilder.value,
       blocking = true,
       discardOutput = discardOutput,
-      programArguments = indexerCMD
+      programArguments = indexerCMD,
     )
     runner.run()
 

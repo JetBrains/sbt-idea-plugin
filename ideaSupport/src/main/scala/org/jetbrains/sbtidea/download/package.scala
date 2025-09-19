@@ -9,6 +9,7 @@ import scala.concurrent.duration.DurationInt
 package object download {
 
   /**
+   * Stores simple information about the IDE build, like build number and which IDE edition it is designed for
    * See also [[org.jetbrains.sbtidea.productInfo.ProductInfo]]
    */
   case class BuildInfo(buildNumber: String, edition: IntelliJPlatform) {

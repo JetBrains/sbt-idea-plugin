@@ -1,21 +1,17 @@
 package org.jetbrains.sbtidea.runIdea
 
 import org.jetbrains.sbtidea.*
-import org.jetbrains.sbtidea.download.{IntelliJVersionDetector, Version}
-import sbt.pathToPathOps
 
 import java.nio.file.Path
-import scala.annotation.nowarn
-import scala.collection.JavaConverters.*
-import scala.collection.mutable
-import scala.math.Ordered.orderingToOrdered
 
 /**
-  * @param ideaHome          this path will be used as idea home when you run IDEA or unit tests<br>
-  *                          example: {{{ <userHome>/.ScalaPluginIU }}}
-  * @param intellijDirectory example: {{{ <userHome>/.ScalaPluginIU/sdk/223.6160 }}}
-  */
-@nowarn("cat=deprecation")
+ * @param ideaHome          this path will be used as idea home when you run IDEA or unit tests<br>
+ *                          example: {{{ <userHome>/.ScalaPluginIU }}}
+ * @param intellijDirectory example: {{{ <userHome>/.ScalaPluginIU/sdk/223.6160 }}}
+ *
+ * @deprecated Use [[CustomIntellijVMOptions]] instead
+ */
+@deprecated("Use org.jetbrains.sbtidea.runIdea.CustomIntellijVMOptions and ensure `org.jetbrains.sbtidea.Keys.useNewVmOptions` is not disabled")
 case class IntellijVMOptions(
   platform: IntelliJPlatform,
   pluginPath: Path,
@@ -39,79 +35,13 @@ case class IntellijVMOptions(
 
 object IntellijVMOptions {
 
-  implicit class VMOptionOps(val options: IntellijVMOptions) extends AnyVal {
-    import options.*
-
-    private def build(quoteValues: Boolean, escapeXml: Boolean): Seq[String] = {
-      val intellijVersion = IntelliJVersionDetector.detectIntellijVersion(intellijDirectory.toFile)
-
-      def OQ(str: String): String =
-        if (quoteValues) {
-          if (escapeXml) str.xmlQuote else "\"" + str + "\""
-        } else str
-
-      val buffer = new mutable.ArrayBuffer[String]()
-      buffer ++= defaultOptions
-
-      val jnaFolderName = System.getProperty("os.arch") match {
-        case "aarch64" => "aarch64"
-        case _         => "amd64" //currently there are only two possible folders in `lib/jna`
-      }
-
-      //if the version is not detected, assume as if it's the latest
-      if (intellijVersion.forall(_ > Version("223.6160"))) {
-        val pty4jFolderPath = (intellijDirectory / "lib/pty4j").toString.replace("\\", "/")
-        val jnaFolderPath = (intellijDirectory / "lib/jna" / jnaFolderName).toString.replace("\\", "/")
-        buffer += s"-Dpty4j.preferred.native.folder=${OQ(pty4jFolderPath)}"
-        buffer += s"-Djna.boot.library.path=${OQ(jnaFolderPath)}"
-        buffer += s"-Djna.nounpack=true"
-        buffer += s"-Djna.nosys=true"
-      }
-
-      buffer +=  s"-Xms${xms}m"
-      buffer +=  s"-Xmx${xmx}m"
-      buffer +=  s"-XX:ReservedCodeCacheSize=${reservedCodeCacheSize}m"
-      buffer +=  s"-XX:SoftRefLRUPolicyMSPerMB=$softRefLRUPolicyMSPerMB"
-      buffer +=  gc
-      buffer +=  gcOpt
-      val (system, config) =
-        if (test) (ideaHome.resolve("test-system"), ideaHome.resolve("test-config"))
-        else      (ideaHome.resolve("system"), ideaHome.resolve("config"))
-      buffer += s"-Didea.system.path=${OQ(system.toString)}"
-      buffer += s"-Didea.config.path=${OQ(config.toString)}"
-      buffer += s"-Dplugin.path=${OQ(pluginPath.toString)}"
-      if(test) {
-        buffer += "-Didea.use.core.classloader.for.plugin.path=true"
-        buffer += "-Didea.force.use.core.classloader=true"
-      }
-      if (!test)
-        buffer += "-Didea.is.internal=true"
-      if (debug) {
-        val suspendValue = if (suspend) "y" else "n"
-        buffer += s"-agentlib:jdwp=transport=dt_socket,server=y,suspend=$suspendValue,address=$debugPort"
-      }
-      if (platform.platformPrefix.nonEmpty)
-        buffer += s"-Didea.platform.prefix=${platform.platformPrefix}"
-      buffer
-    }
-
-    def add(opts: Seq[String]): IntellijVMOptions = copy(defaultOptions = defaultOptions ++ opts)
-    def add(opt: String): IntellijVMOptions = copy(defaultOptions = defaultOptions :+ opt)
-
-    def asSeq(quoteValues: Boolean = false): Seq[String] = build(quoteValues, escapeXml = true).filter(_.nonEmpty)
-    def asSeqQuotedNoEscapeXml: Seq[String] = build(quoteValues = true, escapeXml = false).filter(_.nonEmpty)
-    def asJava(quoteValues: Boolean = false): java.util.List[String] = asSeq(quoteValues).asJava
-  }
-
-  val IDEA_MAIN = "com.intellij.idea.Main"
-
   val USE_PATH_CLASS_LOADER = "-Djava.system.class.loader=com.intellij.util.lang.PathClassLoader"
 
   /**
-    * @note -Dsun.io.useCanonCaches & -Dsun.io.useCanonPrefixCache are disabled by default in JDK 17,
-    *       but we still explicitly pass `false` just in case (e.g. if JBR 11 is used)
-    */
-  val DEFAULT_STATIC_OPTS: Seq[String] =
+   * @note -Dsun.io.useCanonCaches & -Dsun.io.useCanonPrefixCache are disabled by default in JDK 17,
+   *       but we still explicitly pass `false` just in case (e.g. if JBR 11 is used)
+   */
+  private val DEFAULT_STATIC_OPTS: Seq[String] =
     """-Dsun.io.useCanonCaches=false
       |-Dsun.io.useCanonPrefixCache=false
       |-ea

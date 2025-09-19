@@ -43,12 +43,12 @@ val MinimumSbtVersion = "1.4.5"
 val SbtVersionForTests = "1.10.7"
 
 lazy val CommonSettings: Seq[Setting[?]] = Seq(
-  scalaVersion := "2.12.18",
+  scalaVersion := "2.12.20",
   pluginCrossBuild / sbtVersion := MinimumSbtVersion,
 
   Compile / scalacOptions ++= Seq("-deprecation", "-feature", "-Xfatal-warnings"),
 
-  // It's fine to require later JDK level.
+  // It's fine to require the later JDK level.
   // You still JDK >= 17 when developing IntelliJ plugin as IntelliJ requires JDK 17 (at least in 2024.3)
   Compile / javacOptions ++= Seq("--release", "11"),
   Compile / scalacOptions ++= Seq("-release", "11"),

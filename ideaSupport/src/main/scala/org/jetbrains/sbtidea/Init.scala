@@ -3,7 +3,8 @@ package org.jetbrains.sbtidea
 import org.jetbrains.sbtidea.download.*
 import org.jetbrains.sbtidea.instrumentation.ManipulateBytecode
 import org.jetbrains.sbtidea.packaging.PackagingKeys.*
-import org.jetbrains.sbtidea.productInfo.{ProductInfoExtraDataProvider, ProductInfoParser}
+import org.jetbrains.sbtidea.productInfo.{ProductInfoExtraDataProviderImpl, ProductInfoParser}
+import org.jetbrains.sbtidea.runIdea.IntellijVMOptionsBuilder.VmOptions
 import org.jetbrains.sbtidea.searchableoptions.BuildIndex
 import org.jetbrains.sbtidea.tasks.*
 import org.jetbrains.sbtidea.tasks.classpath.{AttributedClasspathTasks, ExternalDependencyClasspathTasks, PluginClasspathUtils, TestClasspathTasks}
@@ -60,7 +61,7 @@ trait Init { this: Keys.type =>
       val intellijRoot = intellijBaseDirectory.value
       val info = productInfo.value
       val platform = jbrInfo.value.platform
-      new ProductInfoExtraDataProvider(intellijRoot, info, info.launchFor(platform))
+      new ProductInfoExtraDataProviderImpl(intellijRoot, info, info.launchFor(platform))
     },
     updateIntellij := {
       PluginLogger.bind(new SbtPluginLogger(streams.value))
@@ -183,13 +184,21 @@ trait Init { this: Keys.type =>
     createIDEARunConfiguration := GenerateIdeaRunConfigurations.createTask.value,
     ideaConfigOptions := IdeaConfigBuildingOptions(),
 
-    intellijVMOptions :=
-      IntellijVMOptions(
-        intellijPlatform.in(ThisBuild).value,
-        packageOutputDir.value.toPath,
-        intellijPluginDirectory.in(ThisBuild).value.toPath,
-        intellijBaseDirectory.in(ThisBuild).value.toPath
-      ),
+    useNewVmOptions := true,
+    customIntellijVMOptions := CustomIntellijVMOptions(),
+    intellijVMOptions := IntellijVMOptions(
+      intellijPlatform.in(ThisBuild).value,
+      packageOutputDir.value.toPath,
+      intellijPluginDirectory.in(ThisBuild).value.toPath,
+      intellijBaseDirectory.in(ThisBuild).value.toPath
+    ): @nowarn("cat=deprecation"),
+    intellijVMOptionsBuilder := new IntellijVMOptionsBuilder(
+      platform = (ThisBuild / intellijPlatform).value,
+      productInfoExtraDataProvider = (ThisBuild / productInfoExtraDataProvider).value,
+      pluginPath = packageOutputDir.value.toPath,
+      ideaHome = (ThisBuild / intellijPluginDirectory).value.toPath,
+      intellijDirectory = (ThisBuild / intellijBaseDirectory).value.toPath,
+    ),
 
     runIDE := RunIDETask.createTask.evaluated,
 
@@ -209,18 +218,34 @@ trait Init { this: Keys.type =>
     buildIntellijOptionsIndex := BuildIndex.createTask.value,
 
     // Test-related settings
-
-    fork in Test      := true,
     logBuffered       := false,
     parallelExecution := false,
-    intellijVMOptions in Test := intellijVMOptions.value.copy(test = true, debug = false),
-    envVars           in Test += "NO_FS_ROOTS_ACCESS_CHECK" -> "yes",
 
-    testOnly.in(Test) := { testOnly.in(Test).dependsOn(packageArtifact).evaluated },
-    test.in(Test)     := { test.in(Test).dependsOn(packageArtifact).value },
+    Test / envVars           += "NO_FS_ROOTS_ACCESS_CHECK" -> "yes",
 
-    fullClasspath.in(Test) := TestClasspathTasks.fullTestClasspathForSbt.value,
+    Test / testOnly := { (Test / testOnly).dependsOn(packageArtifact).evaluated },
+    Test / test     := { (Test / test).dependsOn(packageArtifact).value },
 
-    javaOptions.in(Test) ++= { intellijVMOptions.in(Test).value.asSeq() :+ s"-Dsbt.ivy.home=$ivyHomeDir" }
+    Test / fullClasspath := TestClasspathTasks.fullTestClasspathForSbt.value,
+
+    // We need to fork tests to pass custom VM options
+    Test / fork := true,
+    Test / intellijVMOptions := intellijVMOptions.value.copy(debug = false): @nowarn("cat=deprecation"),
+    Test / customIntellijVMOptions := customIntellijVMOptions.value.copy(debugInfo = None),
+    Test / javaOptions ++= {
+      val intellijVMOptionsBuilder = Keys.intellijVMOptionsBuilder.value
+
+      val vmOptions: VmOptions = if ((Test / useNewVmOptions).value)
+        VmOptions.New((Test / customIntellijVMOptions).value)
+      else
+        VmOptions.Old((Test / intellijVMOptions).value): @nowarn("cat=deprecation")
+
+      val testVmOptions = intellijVMOptionsBuilder.build(
+        vmOptions = vmOptions,
+        forTests = true,
+        quoteValues = false
+      )
+      testVmOptions :+ s"-Dsbt.ivy.home=$ivyHomeDir"
+    }
   )
 }

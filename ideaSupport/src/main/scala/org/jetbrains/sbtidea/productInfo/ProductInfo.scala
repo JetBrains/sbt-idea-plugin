@@ -3,13 +3,17 @@ package org.jetbrains.sbtidea.productInfo
 import org.jetbrains.sbtidea.JbrPlatform
 
 /**
- * The class represents a subset of fields of `product-info.json` file in IntelliJ installation root.
- * It contains only those fields which we actually use
+ * The class represents a subset of fields of `product-info.json` file in IntelliJ installation.
+ * It contains only those fields which we actually use, so if you need more, please add them.
+ *
+ * Note, this class only contains raw values as stored in `product-info.json`.
+ * For example, some values can contain variables like `$$APP_PACKAGE`
+ * To get the values with substituted variables you should use [[org.jetbrains.sbtidea.productInfo.ProductInfoExtraDataProvider]]
  *
  * Similar entity from Gradle plugin:<br>
- * [[https://github.com/JetBrains/intellij-platform-gradle-plugin/blob/main/src/main/kotlin/org/jetbrains/intellij/platform/gradle/models/ProductInfo.kt#L36]]
+ * https://github.com/JetBrains/intellij-platform-gradle-plugin/blob/main/src/main/kotlin/org/jetbrains/intellij/platform/gradle/models/ProductInfo.kt#L36
  *
- * See also [[org.jetbrains.sbtidea.download.BuildInfo]]
+ * @see [[org.jetbrains.sbtidea.download.BuildInfo]]
  */
 case class ProductInfo(
   name: String,

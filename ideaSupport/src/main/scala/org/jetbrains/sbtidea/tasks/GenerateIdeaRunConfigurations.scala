@@ -7,6 +7,9 @@ import org.jetbrains.sbtidea.{PluginLogger, SbtPluginLogger}
 import sbt.Keys.*
 import sbt.{Def, *}
 
+import scala.annotation.nowarn
+
+private[sbtidea]
 object GenerateIdeaRunConfigurations extends SbtIdeaTask[Unit] {
   override def createTask: Def.Initialize[Task[Unit]] = Def.taskDyn {
     val buildRoot = baseDirectory.in(ThisBuild).value
@@ -15,7 +18,12 @@ object GenerateIdeaRunConfigurations extends SbtIdeaTask[Unit] {
     if (buildRoot == projectRoot) Def.task {
       PluginLogger.bind(new SbtPluginLogger(streams.value))
       val buildInfo = sbtidea.Keys.intellijBuildInfo.in(ThisBuild).value
-      val vmOptions = intellijVMOptions.value.copy(debug = false)
+
+      // In IntelliJ IDEA Run Configurations we don't need the explicit debug agent.
+      // The standard IJ mechanism will be used to run the configuration in Run or Debug mode.
+      val customVmOptions = customIntellijVMOptions.value.copy(debugInfo = None)
+      val legacyVmOptions = intellijVMOptions.value.copy(debug = false): @nowarn("cat=deprecation")
+
       val dotIdeaFolder = baseDirectory.in(ThisBuild).value / ".idea"
       val sbtRunEnv = envVars.value
       val sbtTestEnv = envVars.in(Test).value
@@ -38,20 +46,25 @@ object GenerateIdeaRunConfigurations extends SbtIdeaTask[Unit] {
           name.value
         ).map(_._2.toFile)
       val config = Some(ideaConfigOptions.value)
-        .map(x => if (x.ideaRunEnv.isEmpty) x.copy(ideaRunEnv = sbtRunEnv) else  x)
+        .map(x => if (x.ideaRunEnv.isEmpty) x.copy(ideaRunEnv = sbtRunEnv) else x)
         .map(x => if (x.ideaTestEnv.isEmpty) x.copy(ideaTestEnv = sbtTestEnv) else x)
         .get
       val configBuilder = new IdeaConfigBuilder(
         projectName = name.value,
-        intellijVMOptions = vmOptions,
         dataDir = intellijPluginDirectory.value,
         intellijBaseDir = intellijBaseDirectory.in(ThisBuild).value,
-        productInfoExtraDataProvider.value,
         dotIdeaFolder = dotIdeaFolder,
         ownProductDirs = ownClassPath,
         testPluginRoots = pluginRoots,
+        testClasspath = fullTestClasspath,
+
+        intellijVMOptions = customVmOptions,
+        legacyIntellijVMOptions = legacyVmOptions,
+        intellijVMOptionsBuilder = intellijVMOptionsBuilder.value,
+        useNewVmOptions = useNewVmOptions.value,
+
+        productInfoExtraDataProvider = productInfoExtraDataProvider.value,
         options = config,
-        testClasspath = fullTestClasspath
       )
 
       configBuilder.build()

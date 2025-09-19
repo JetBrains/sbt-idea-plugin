@@ -5,17 +5,21 @@ import org.jetbrains.sbtidea.Keys.IdeaConfigBuildingOptions
 import org.jetbrains.sbtidea.PluginLogger as log
 import org.jetbrains.sbtidea.packaging.hasProdTestSeparationEnabled
 import org.jetbrains.sbtidea.productInfo.ProductInfoExtraDataProvider
-import org.jetbrains.sbtidea.runIdea.{IntellijAwareRunner, IntellijVMOptions}
+import org.jetbrains.sbtidea.runIdea.IntellijVMOptionsBuilder.VmOptions
+import org.jetbrains.sbtidea.runIdea.{CustomIntellijVMOptions, IntellijAwareRunner, IntellijVMOptions, IntellijVMOptionsBuilder}
 import sbt.*
 
 import java.io.File
+import scala.annotation.nowarn
 
 /**
- * The class is responsible to create all run configurations for plugin development.
+ * The class is responsible to create all Run Configurations required for the plugin development.
  * That includes:
  *  - main configuration to run development instance of IDE
  *  - extra configurations to run development instance of IDE with additional parameters (VM options, arguments, etc.)
  *  - configuration template for JUnit tests
+ *
+ * For the similar logic made for SBT commands see [[org.jetbrains.sbtidea.runIdea.IdeaRunner]]
  *
  * @param testPluginRoots contains only those plugins which are listed in the project IntelliJ plugin dependencies and their transitive dependencies
  * @param dataDir         base directory of IntelliJ Platform config and system directories for this plugin
@@ -23,30 +27,56 @@ import java.io.File
  */
 class IdeaConfigBuilder(
   projectName: String,
-  intellijVMOptions: IntellijVMOptions,
   dataDir: File,
   intellijBaseDir: File,
-  productInfoExtraDataProvider: ProductInfoExtraDataProvider,
   dotIdeaFolder: File,
   ownProductDirs: Seq[File],
   testPluginRoots: Seq[File],
+  testClasspath: Seq[String],
+
+  intellijVMOptions: CustomIntellijVMOptions,
+  @nowarn("cat=deprecation")
+  legacyIntellijVMOptions: IntellijVMOptions,
+  intellijVMOptionsBuilder: IntellijVMOptionsBuilder,
+  useNewVmOptions: Boolean,
+
+  productInfoExtraDataProvider: ProductInfoExtraDataProvider,
   options: IdeaConfigBuildingOptions,
-  testClasspath: Seq[String]
 ) {
   private val runConfigDir = dotIdeaFolder / "runConfigurations"
 
   private val artifactName = projectName
 
+  private val vmOptions: VmOptions = if (useNewVmOptions)
+    VmOptions.New(intellijVMOptions)
+  else
+    VmOptions.Old(legacyIntellijVMOptions)
+
   def build(): Unit = {
     if (options.generateDefaultRunConfig) {
       val configurationName = artifactName
       val content = buildRunConfigurationXML(
-        configurationName,
-        intellijVMOptions,
-        options.programParams,
-        options.ideaRunEnv,
+        configurationName = configurationName,
+        vmOptions = vmOptions,
+        programParams = options.programParams,
+        envVars = options.ideaRunEnv,
       )
       writeToFile(runConfigDir / s"$configurationName.xml", content)
+
+      if (useNewVmOptions) {
+        // Generate run configuration with the old versions for convenience
+        // If there are any issues with the new version, we could quickly try the old configuration during
+        // local development without changing value of `org.jetbrains.sbtidea.Keys.useNewVmOptions` and reloading
+        // TODO: drop this after some time (in ~1 month?) if there are no issues identified in the default run configuration
+        val configurationName = artifactName + " (old VM options)"
+        val content = buildRunConfigurationXML(
+          configurationName = configurationName,
+          vmOptions = VmOptions.Old(legacyIntellijVMOptions),
+          programParams = options.programParams,
+          envVars = options.ideaRunEnv,
+        )
+        writeToFile(runConfigDir / s"$configurationName.xml", content)
+      }
     }
 
     // Generate a similar run configuration, but without "Build" "before launch" step
@@ -54,13 +84,14 @@ class IdeaConfigBuilder(
     // Build artifact should invoke it transitively.
     // Let's dogfood this run configuration for some time and if we don't find any issues:
     // make it the only and default behavior and delete the ` addBuildProjectBeforeLaunchStep ` parameter
+    // TODO: remove the extra Run Configuration and just make this behavior the default one
     if (options.generateDefaultRunConfig) {
       val configurationName = artifactName + " (no explicit build step)"
       val contentNoBuild = buildRunConfigurationXML(
-        configurationName,
-        intellijVMOptions,
-        options.programParams,
-        options.ideaRunEnv,
+        configurationName = configurationName,
+        vmOptions = vmOptions,
+        programParams = options.programParams,
+        envVars = options.ideaRunEnv,
         addBuildProjectBeforeLaunchStep = false
       )
       writeToFile(runConfigDir / s"$configurationName.xml", contentNoBuild)
@@ -69,10 +100,10 @@ class IdeaConfigBuilder(
     options.additionalRunConfigs.foreach { data: AdditionalRunConfigData =>
       val configurationName = artifactName + data.configurationNameSuffix
       val content = buildRunConfigurationXML(
-        configurationName,
-        intellijVMOptions.withOptions(data.extraVmOptions),
-        options.programParams,
-        options.ideaRunEnv
+        configurationName = configurationName,
+        vmOptions = vmOptions.withExtraOptions(data.extraVmOptions),
+        programParams = options.programParams,
+        envVars = options.ideaRunEnv
       )
       writeToFile(runConfigDir / s"$configurationName.xml", content)
     }
@@ -97,15 +128,6 @@ class IdeaConfigBuilder(
   private def buildSplitModeRunConfigurationXml(configurationName: String): Either[String, String] = {
     val programParams = s"${options.programParams} splitMode"
 
-    // TODO: We should take all these VM options from "additional VM properties" from product-info.json (SCL-23540)
-    //  We should replace APP_PACKAGE with proper path
-    val modulesDescriptorsJar = intellijBaseDir / "modules" / "module-descriptors.jar"
-    val vmOptions = intellijVMOptions.withOptions(Seq(
-      s"-Dintellij.platform.runtime.repository.path=&quot;${modulesDescriptorsJar.getCanonicalPath}&quot;",
-      "--add-opens=java.desktop/com.sun.java.swing=ALL-UNNAMED",
-      "--add-opens=java.management/sun.management=ALL-UNNAMED"
-    ))
-
     val bundledJre = IntellijAwareRunner.getBundledJRE(intellijBaseDir.toPath).getOrElse {
       return Left(s"Can't detect bundled JRE path in $intellijBaseDir required for IDE client")
     }
@@ -129,7 +151,12 @@ class IdeaConfigBuilder(
          |""".stripMargin
     )
 
-    Right(buildRunConfigurationXML(configurationName, vmOptions, programParams, envVars))
+    Right(buildRunConfigurationXML(
+      configurationName = configurationName,
+      vmOptions = vmOptions,
+      programParams = programParams,
+      envVars = envVars
+    ))
   }
 
   private def writeToFile(file: File, content: =>String): Unit = {
@@ -168,22 +195,20 @@ class IdeaConfigBuilder(
 
   private def buildRunConfigurationXML(
     configurationName: String,
-    vmOptions: IntellijVMOptions,
+    vmOptions: VmOptions,
     programParams: String,
     envVars: Map[String, String],
-    addBuildProjectBeforeLaunchStep: Boolean = true
+    addBuildProjectBeforeLaunchStep: Boolean = true,
   ): String = {
     val envVarsSection = createEnvironmentVariablesSection(envVars)
     val vmOptionsStr = buildRunVmOptionsString(vmOptions)
     val moduleName = generateModuleName(sourceSetModuleSuffix =  "main")
 
-    val buildProjectStepText = if (addBuildProjectBeforeLaunchStep) {
-      //No need to build the project, build artifact will invoke it transitively
+    //No need to build the project, build artifact will invoke it transitively
+    val buildProjectStepText = if (addBuildProjectBeforeLaunchStep)
       """<option name="Make" enabled="true" />"""
-    }
-    else {
+    else
       ""
-    }
 
     s"""<component name="ProjectRunConfigurationManager">
        |  <configuration default="false" name="$configurationName" type="Application" factoryName="Application">
@@ -212,13 +237,17 @@ class IdeaConfigBuilder(
        |    </method>
        |  </configuration>
        |</component>""".stripMargin
-
   }
 
-  private def buildRunVmOptionsString(vmOptions: IntellijVMOptions): String = {
+  private def buildRunVmOptionsString(vmOptions: VmOptions): String = {
     val bootClasspathJarPaths = productInfoExtraDataProvider.bootClasspathJars.map(_.toString)
     val bootClasspathString = bootClasspathJarPaths.mkString(File.pathSeparator)
-    s"""${IntellijVMOptions.USE_PATH_CLASS_LOADER} -cp &quot;$bootClasspathString&quot; ${vmOptions.asSeq(quoteValues = true).mkString(" ")}"""
+    val vmOptionsSeq = intellijVMOptionsBuilder.build(
+      vmOptions = vmOptions,
+      quoteValues = true,
+      forTests = false,
+    )
+    s"""${IntellijVMOptions.USE_PATH_CLASS_LOADER} -cp &quot;$bootClasspathString&quot; ${vmOptionsSeq.mkString(" ")}"""
   }
 
   private def generateModuleName(sourceSetModuleSuffix: String): String =
@@ -276,9 +305,12 @@ class IdeaConfigBuilder(
   private def escapeBackslash(s: String): String = s.replace("\\", "\\\\")
 
   private def buildTestVmOptionsString: String = {
-    val testVMOptions = intellijVMOptions.copy(test = true)
     val classpathStr = escapeBackslash(testClasspath.mkString(File.pathSeparator))
     val quotedClasspathStr = "\"" + classpathStr + "\""
-    (Seq("-cp", quotedClasspathStr) ++ testVMOptions.asSeqQuotedNoEscapeXml.map(escapeBackslash)).mkString(System.lineSeparator())
+    val vmOptionsEscaped = intellijVMOptionsBuilder.buildQuotedNoEscapeXml(
+      vmOptions = vmOptions,
+      forTests = true,
+    ).map(escapeBackslash)
+    (Seq("-cp", quotedClasspathStr) ++ vmOptionsEscaped).mkString(System.lineSeparator())
   }
 }
