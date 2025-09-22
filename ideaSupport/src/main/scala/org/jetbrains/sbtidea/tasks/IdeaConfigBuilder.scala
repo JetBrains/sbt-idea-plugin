@@ -35,6 +35,7 @@ class IdeaConfigBuilder(
   testClasspath: Seq[String],
 
   intellijVMOptions: CustomIntellijVMOptions,
+  //noinspection ScalaDeprecation
   @nowarn("cat=deprecation")
   legacyIntellijVMOptions: IntellijVMOptions,
   intellijVMOptionsBuilder: IntellijVMOptionsBuilder,
@@ -77,24 +78,6 @@ class IdeaConfigBuilder(
         )
         writeToFile(runConfigDir / s"$configurationName.xml", content)
       }
-    }
-
-    // Generate a similar run configuration, but without "Build" "before launch" step
-    // Note there is no need to build the project with an explicit "Build" "before launch" step.
-    // Build artifact should invoke it transitively.
-    // Let's dogfood this run configuration for some time and if we don't find any issues:
-    // make it the only and default behavior and delete the ` addBuildProjectBeforeLaunchStep ` parameter
-    // TODO: remove the extra Run Configuration and just make this behavior the default one
-    if (options.generateDefaultRunConfig) {
-      val configurationName = artifactName + " (no explicit build step)"
-      val contentNoBuild = buildRunConfigurationXML(
-        configurationName = configurationName,
-        vmOptions = vmOptions,
-        programParams = options.programParams,
-        envVars = options.ideaRunEnv,
-        addBuildProjectBeforeLaunchStep = false
-      )
-      writeToFile(runConfigDir / s"$configurationName.xml", contentNoBuild)
     }
 
     options.additionalRunConfigs.foreach { data: AdditionalRunConfigData =>
@@ -198,17 +181,14 @@ class IdeaConfigBuilder(
     vmOptions: VmOptions,
     programParams: String,
     envVars: Map[String, String],
-    addBuildProjectBeforeLaunchStep: Boolean = true,
   ): String = {
     val envVarsSection = createEnvironmentVariablesSection(envVars)
     val vmOptionsStr = buildRunVmOptionsString(vmOptions)
     val moduleName = generateModuleName(sourceSetModuleSuffix =  "main")
 
-    //No need to build the project, build artifact will invoke it transitively
-    val buildProjectStepText = if (addBuildProjectBeforeLaunchStep)
-      """<option name="Make" enabled="true" />"""
-    else
-      ""
+    // We only run the "Build Artifacts" before lunch.
+    // It transitively triggers the "Build" under the hood, ensuring incremental compilation of any changes.
+    val buildArtifactsStepText = s"""<option name="BuildArtifacts" enabled="true"><artifact name="$artifactName" /></option>"""
 
     s"""<component name="ProjectRunConfigurationManager">
        |  <configuration default="false" name="$configurationName" type="Application" factoryName="Application">
@@ -230,10 +210,7 @@ class IdeaConfigBuilder(
        |    <ConfigurationWrapper RunnerId="Run" />
        |    $envVarsSection
        |    <method v="2">
-       |      $buildProjectStepText
-       |      <option name="BuildArtifacts" enabled="true">
-       |        <artifact name="$artifactName" />
-       |      </option>
+       |      $buildArtifactsStepText
        |    </method>
        |  </configuration>
        |</component>""".stripMargin
