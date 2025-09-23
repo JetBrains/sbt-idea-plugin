@@ -70,7 +70,7 @@ object BuildIndex {
       intellijBaseDirectory = intellijBaseDir.toPath,
       productInfoExtraDataProvider = productInfoExtraDataProvider.value,
       vmOptions = vmOptionsUpdated,
-      vmOptionsBuilder = intellijVMOptionsBuilder.value,
+      vmOptionsBuilder = intellijVMOptionsBuilder.value.withCustomSystemAndConfigDir("build-index"),
       blocking = true,
       discardOutput = discardOutput,
       programArguments = indexerCMD,

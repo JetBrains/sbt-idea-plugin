@@ -15,25 +15,33 @@ import scala.math.Ordered.orderingToOrdered
 /**
  * The class is responsible for constructing the list of VM options passed to the dev IDE process or to tests.
  * The class is not meant to be customizable by users directly.
- * Any customisation comes from the class parameters (see keys in [[org.jetbrains.sbtidea.Keys]]).
+ * Any customization comes from the class parameters (see keys in [[org.jetbrains.sbtidea.Keys]]).
  *
  * Note it doesn't add the classpath VM option - the classpath in other places:
  * [[org.jetbrains.sbtidea.tasks.IdeaConfigBuilder]]
  * or [[org.jetbrains.sbtidea.tasks.classpath.TestClasspathTasks.fullTestClasspathForSbt]]
  *
- * @param pluginPath        path to the directory in which the current plugin is assembled (usually `target/plugin/PluginName`
- * @param ideaHome          this path will be used as idea home when you run IDEA or unit tests<br>
- *                          example: {{{ <userHome>/.ScalaPluginIU }}}
- * @param intellijDirectory example: {{{ <userHome>/.ScalaPluginIU/sdk/223.6160 }}}
- * @param useNewVmOptions   whether to use new VM options read from IDE system in combination with [[CustomIntellijVMOptions]]
+ * @param pluginPath                     path to the directory in which the current plugin is assembled (usually `target/plugin/PluginName`
+ * @param ideaHome                       this path will be used as idea home when you run IDEA or unit tests<br>
+ *                                       example: {{{ <userHome>/.ScalaPluginIU }}}
+ * @param intellijDirectory              example: {{{ <userHome>/.ScalaPluginIU/sdk/223.6160 }}}
+ * @param customSystemAndConfigDirPrefix if specified, the system and config directories will have it as prefix:
+ *                                        - -Didea.system.path=ideaHome/$$customSystemAndConfigDirPrefix-system
+ *                                        - -Didea.config.path==ideaHome/$$customSystemAndConfigDirPrefix-config
+ *
+ * @note usnig "case" class primarily to be able to copy the class
  */
-final class IntellijVMOptionsBuilder(
+final case class IntellijVMOptionsBuilder(
   platform: IntelliJPlatform,
   productInfoExtraDataProvider: ProductInfoExtraDataProvider,
   pluginPath: Path,
   ideaHome: Path,
   intellijDirectory: Path,
+  customSystemAndConfigDirPrefix: Option[String] = None,
 ) {
+
+  def withCustomSystemAndConfigDir(dirsPrefix: String): IntellijVMOptionsBuilder =
+    copy(customSystemAndConfigDirPrefix = Some(dirsPrefix))
 
   def build(
     vmOptions: VmOptions,
@@ -111,9 +119,14 @@ final class IntellijVMOptionsBuilder(
 
     extraOptions += s"-Dplugin.path=${qq(pluginPath.toString)}"
 
-    val (systemPath, configPath) =
-      if (forTests) (ideaHome.resolve("test-system"), ideaHome.resolve("test-config"))
-      else (ideaHome.resolve("system"), ideaHome.resolve("config"))
+    val (systemDirName, configDirName) = customSystemAndConfigDirPrefix match {
+      case Some(prefix) =>
+        (s"$prefix-system", s"$prefix-config")
+      case None =>
+        if (forTests) ("test-system", "test-config")
+        else ("system", "config")
+    }
+    val (systemPath, configPath) = (ideaHome.resolve(systemDirName), ideaHome.resolve(configDirName))
 
     val customPluginsPath = systemPath.resolve("plugins")
     val logPath = systemPath.resolve("log")
