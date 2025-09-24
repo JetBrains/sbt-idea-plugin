@@ -40,7 +40,8 @@ final class ProductInfoExtraDataProviderImpl(
    */
   private def substituteVariables(line: String): String =
     line
-      .replace("%IDE_HOME%", intellijBaseDir.getPath) // Windows, Linux
+      .replace("%IDE_HOME%", intellijBaseDir.getPath) // Windows
+      .replace("$IDE_HOME", intellijBaseDir.getPath) // Linux
       // NOTE: it should actually be IDE_HOME as well here on macOS as well.
       // $IDE_HOME ~ $APP_PACKAGE/Contents. But due to some historical reasons there is this mess with the variables.
       .replace("$APP_PACKAGE", intellijBaseDir.getPath) // macOS
