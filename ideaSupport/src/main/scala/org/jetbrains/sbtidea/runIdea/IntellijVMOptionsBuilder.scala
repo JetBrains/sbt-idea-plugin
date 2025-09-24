@@ -78,10 +78,6 @@ final case class IntellijVMOptionsBuilder(
     }
   }
 
-  // TODO:
-  //  Consider deliting these in tests? (coming from additional options from product-info.json)
-  //  -Xbootclasspath/a:/Users/dmitrii.naumenko/.ScalaPluginIU/sdk/252.26199.7/lib/nio-fs.jar
-  //  -Djava.system.class.loader=com.intellij.util.lang.PathClassLoader
   private def buildNew(
     options: CustomIntellijVMOptions,
     quoteValues: Boolean,
@@ -93,8 +89,17 @@ final case class IntellijVMOptionsBuilder(
       else line
 
     // Escaping quotes. Example: `-Djdk.http.auth.tunneling.disabledSchemes=""`
-    val defaultOptionsFromProductInfo =
+    val defaultOptionsFromProductInfoOriginal =
       productInfoExtraDataProvider.vmOptionsAll.map(escapeQuotes)
+
+    val defaultOptionsFromProductInfoFiltered = if (forTests)
+      defaultOptionsFromProductInfoOriginal.filterNot { optionLine =>
+        // By default, the additional VM options contain these options that should not be in tests
+        //  -Djava.system.class.loader=com.intellij.util.lang.PathClassLoader
+        optionLine.startsWith("-Djava.system.class.loader=")
+      }
+    else
+      defaultOptionsFromProductInfoOriginal
 
     val extraOptions = mutable.ArrayBuffer[String]()
 
@@ -173,7 +178,7 @@ final case class IntellijVMOptionsBuilder(
 
     // NOTE: first go the default options, then extra options
     // Some extra options can potentially override the default (it depends on the concrete option, e.g. it can work for -Xmx)
-    defaultOptionsFromProductInfo ++ extraOptions
+    defaultOptionsFromProductInfoFiltered ++ extraOptions
   }
 }
 
