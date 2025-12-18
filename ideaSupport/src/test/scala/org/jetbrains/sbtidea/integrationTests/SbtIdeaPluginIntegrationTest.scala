@@ -52,7 +52,9 @@ class SbtIdeaPluginIntegrationTest
     val intellijSdkRoot = runUpdateIntellijCommand("simple-with-plugin")
 
     doCommonAssertions(intellijSdkRoot)
-    assertFileExists(intellijSdkRoot / "plugins" / "Scala")
+    assertFileDoesNotExist(intellijSdkRoot / "plugins" / "Scala")
+    assertFileExists(intellijSdkRoot / "custom-plugins")
+    assertFileExists(intellijSdkRoot / "custom-plugins" / "Scala")
     assertSourcesDirectoryContents(intellijSdkRoot, Seq(
       "ideaIC-243.22562.145-sources.zip"
     ))
@@ -68,6 +70,7 @@ class SbtIdeaPluginIntegrationTest
       "ideaIU-243.22562.145-sources.zip"
     ))
     assertFileDoesNotExist(intellijSdkRoot / "plugins" / "scala")
+    assertFileDoesNotExist(intellijSdkRoot / "custom-plugins")
     new IdeInstallationContext(intellijSdkRoot.toPath).productInfo.productCode shouldBe "IU"
   }
 

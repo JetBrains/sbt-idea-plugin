@@ -1,5 +1,6 @@
 package org.jetbrains.sbtidea.download.api
 
+import org.jetbrains.sbtidea.download.api.IdeInstallationContext.customPluginsDirName
 import org.jetbrains.sbtidea.productInfo.{ProductInfo, ProductInfoParser}
 import sbt.pathToPathOps
 
@@ -18,7 +19,21 @@ sealed class IdeInstallationContext(
     ProductInfoParser.parse(productInfoFile.toFile)
   }
 
-  def pluginsDir: Path = baseDirectory / "plugins"
+  /**
+   * Represents the path to the "custom" plugins:
+   *   - installed via Marketplace;
+   *   - installed via "Install Plugin from Disk";
+   *   - plugins from [[org.jetbrains.sbtidea.Keys.intellijPlugins]], except bundled;
+   *   - a plugin from `org.jetbrains.sbtidea.packaging.PackagingKeys.packageOutputDir` when running locally;
+   *   - updates for bundled plugins.
+   *
+   * Passed to the IDE via `-Didea.plugins.path` option, see [[org.jetbrains.sbtidea.runIdea.IntellijVMOptionsBuilder.build]]
+   */
+  def pluginsDir: Path = baseDirectory / customPluginsDirName
+}
+
+object IdeInstallationContext {
+  val customPluginsDirName: String = "custom-plugins"
 }
 
 /**

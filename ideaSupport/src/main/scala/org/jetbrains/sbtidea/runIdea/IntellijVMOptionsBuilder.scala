@@ -1,6 +1,7 @@
 package org.jetbrains.sbtidea.runIdea
 
 import org.jetbrains.sbtidea.*
+import org.jetbrains.sbtidea.download.api.IdeInstallationContext
 import org.jetbrains.sbtidea.download.{IntelliJVersionDetector, Version}
 import org.jetbrains.sbtidea.productInfo.ProductInfoExtraDataProvider
 import org.jetbrains.sbtidea.runIdea.CustomIntellijVMOptions.DebugInfo
@@ -133,7 +134,7 @@ final case class IntellijVMOptionsBuilder(
     }
     val (systemPath, configPath) = (ideaHome.resolve(systemDirName), ideaHome.resolve(configDirName))
 
-    val customPluginsPath = systemPath.resolve("plugins")
+    val customPluginsPath = intellijDirectory.resolve(IdeInstallationContext.customPluginsDirName)
     val logPath = systemPath.resolve("log")
 
     // IntelliJ requires all these paths to be set when "idea.paths.selector" VM options is used (that comes from product-info.json)
@@ -230,6 +231,8 @@ object IntellijVMOptionsBuilder {
       else (ideaHome.resolve("system"), ideaHome.resolve("config"))
     buffer += s"-Didea.system.path=${OQ(system.toString)}"
     buffer += s"-Didea.config.path=${OQ(config.toString)}"
+    val customPlugins = intellijDirectory.resolve(IdeInstallationContext.customPluginsDirName)
+    buffer += s"-Didea.plugins.path=${OQ(customPlugins.toString)}"
     buffer += s"-Dplugin.path=${OQ(pluginPath.toString)}"
     if (forTests) {
       buffer += "-Didea.use.core.classloader.for.plugin.path=true"

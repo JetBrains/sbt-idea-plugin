@@ -77,8 +77,9 @@ class IdeaVmOptionsTest extends AnyFunSuite with Matchers {
 
   private val mustBeQuoted = Seq(
     "plugin.path",
+    "idea.config.path",
+    "idea.plugins.path",
     "idea.system.path",
-    "idea.config.path"
   )
 
   test("paths are quoted in xml version") {

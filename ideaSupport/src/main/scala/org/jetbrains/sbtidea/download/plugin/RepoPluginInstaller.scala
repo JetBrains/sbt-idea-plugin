@@ -49,20 +49,21 @@ class RepoPluginInstaller(buildInfo: BuildInfo)
     downloadInfo: Option[PluginDownloadInfo] = None
   )(implicit ctx: IdeInstallationContext): Path = {
     val downloadedPluginFileNameHint = downloadInfo.map(_.downloadedFileName).fold("")(name => s" ($name)")
+    val pluginsInstallationDir = Files.createDirectories(ctx.pluginsDir)
     val installedPluginRoot = if (!PluginXmlDetector.Default.isPluginJar(artifact)) {
       val tmpPluginDir = extractPluginToTemporaryDir(
         artifact,
         plugin,
         s"${buildInfo.edition.name}-${buildInfo.buildNumber}-plugin"
       )
-      val installDir = ctx.pluginsDir.resolve(tmpPluginDir.getFileName)
+      val installDir = pluginsInstallationDir.resolve(tmpPluginDir.getFileName)
       NioUtils.delete(installDir)
       Files.move(tmpPluginDir, installDir)
       NioUtils.delete(tmpPluginDir.getParent)
       log.info(s"Installed plugin '$plugin'$downloadedPluginFileNameHint to $installDir")
       installDir
     } else {
-      val targetJar = ctx.pluginsDir.resolve(artifact.getFileName)
+      val targetJar = pluginsInstallationDir.resolve(artifact.getFileName)
       Files.move(artifact, targetJar)
       log.info(s"Installed plugin '$plugin'$downloadedPluginFileNameHint to $targetJar")
       targetJar
