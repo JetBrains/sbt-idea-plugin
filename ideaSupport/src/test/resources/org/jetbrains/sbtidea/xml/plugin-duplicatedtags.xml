@@ -1,0 +1,17 @@
+<idea-plugin url="https://www.jetbrains.com/idea">
+    <!--12345<description>This is comment 1</description>-->
+    <!--    <description>This is
+    comment 2</description>   -->
+<!--<description>This is comment 3</description>12345-->
+    <description>Integrates Volume Snapshot Service W10
+    This is a very
+    long description.
+    It has multiple lines.
+    </description>
+<!--    <description>This is comment 4</description>-->
+    <description>Integrates Volume Snapshot Service W10
+        This is a very
+        long description.
+        It has multiple lines.
+    </description>
+</idea-plugin>
