@@ -65,28 +65,35 @@ object PluginClasspathUtils {
     PluginLogger.bind(log)
 
     val resolved = plugins.map(pl => PluginDependency(pl, ideaBuildInfo, Seq.empty).resolve)
-    reportPluginDuplicates(resolved, moduleNameHint, log)
+    debugLogDuplicatedPluginDependencies(resolved, moduleNameHint, log)
 
     val allDependencies = resolved.flatten
     val roots = allDependencies.collect { case LocalPlugin(_, descriptor, root, _) => descriptor -> root }.distinct
     roots
   }
 
-  private def reportPluginDuplicates(
+
+  // This used to log warnings about duplicated plugins, but it's not really useful.
+  // It's fine if a plugin is declared as an explicit dependency even if it's already included transitively.
+  // We leave it here for now under the "debug" log level just in case, given that the code already exists.
+  private def debugLogDuplicatedPluginDependencies(
     resolved: Seq[Seq[PluginArtifact]],
     moduleNameHint: String,
     log: PluginLogger,
   ): Unit = {
     val duplicates = findPluginDuplicates(resolved)
-    duplicates.collect { case (LocalPlugin(_, PluginDescriptor(id, _, _, _, _, _, _), _, _), parents) =>
-      val thisNonOptionalDependency = PluginDescriptor.Dependency(id, optional = false)
-      val parentIds = parents.collect {
-        case LocalPlugin(_, PluginDescriptor(parentId, _, _, _, _, _, deps), _, _) if deps.contains(thisNonOptionalDependency) =>
-          parentId
-      }
-      if (parentIds.nonEmpty) {
-        log.warn(s"Plugin [$id] is already included by: [${parentIds.mkString(", ")}]${if (moduleNameHint.nonEmpty) s" in project '$moduleNameHint'" else ""}")
-      }
+    duplicates.foreach {
+      case (LocalPlugin(_, PluginDescriptor(id, _, _, _, _, _, _), _, _), parents) =>
+        val thisNonOptionalDependency = PluginDescriptor.Dependency(id, optional = false)
+        val parentIds = parents.collect {
+          case LocalPlugin(_, PluginDescriptor(parentId, _, _, _, _, _, deps), _, _) if deps.contains(thisNonOptionalDependency) =>
+            parentId
+        }
+        if (parentIds.nonEmpty) {
+          val moduleNameHintSuffix = if (moduleNameHint.nonEmpty) s" in project '$moduleNameHint'" else ""
+          log.debug(s"Plugin [$id] is already included by: [${parentIds.mkString(", ")}]$moduleNameHintSuffix")
+        }
+      case _ => //do nothing
     }
   }
 
