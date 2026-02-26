@@ -1,5 +1,11 @@
 package org.jetbrains.sbtidea.packaging.structure
 
+/**
+  * Internal, sbt-agnostic packaging model used by extracted project structure.
+  *
+  * See [[org.jetbrains.sbtidea.packaging.PackagingMethod]] for the rationale and the difference
+  * between sbt-facing and structure-facing representations.
+  */
 sealed trait PackagingMethod
 
 object PackagingMethod {
