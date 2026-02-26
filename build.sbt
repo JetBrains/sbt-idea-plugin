@@ -102,7 +102,7 @@ val circeVersion = "0.14.14"
 
 lazy val packaging = (project in file("packaging"))
   .enablePlugins(SbtPlugin)
-  .dependsOn(core, testUtils % "test->test")
+  .dependsOn(core % "compile->compile;test->test", testUtils % "test->test")
   .settings(CommonSettings)
   .settings(PublishingSettings)
   .settings(
@@ -118,7 +118,7 @@ lazy val packaging = (project in file("packaging"))
 
 lazy val ideaSupport = (project in file("ideaSupport"))
   .enablePlugins(SbtPlugin)
-  .dependsOn(core, packaging, visualizer, testUtils % "test->test")
+  .dependsOn(core % "compile->compile;test->test", packaging, visualizer, testUtils % "test->test")
   .settings(CommonSettings)
   .settings(PublishingSettings)
   .settings(

@@ -67,7 +67,7 @@ class LinearMappingsBuilder(override val outputDir: File, log: PluginLogger) ext
       if (nodes.isEmpty)
         throw new MappingBuildException(s"No standalone-packaged parents found for $node")
 
-      // note that we do not package into parent with PackagingMethod.PluginModule. For this explicilty use PluginModule
+      // note that we do not package into parent with PackagingMethod.PluginModule. For this explicitly use PluginModule
       val candidates = nodes.filter(_.packagingOptions.packageMethod.isInstanceOf[PackagingMethod.Standalone]).distinct
       if (candidates.size > 1)
         throw new MappingBuildException(s"Multiple direct parents package into standalone jar ($node) (use MergeIntoOther): $candidates")
@@ -81,14 +81,41 @@ class LinearMappingsBuilder(override val outputDir: File, log: PluginLogger) ext
       collectCandidate(node.parents)
   }
 
+  /**
+    * Emits a warning when an implicit merge target can look ambiguous.
+    *
+    * This method does not select the merge target: `to` is already resolved by `processTarget/findParentToMerge`.
+    * Its only responsibility is to explain potentially surprising implicit merges and suggest an explicit
+    * `MergeIntoOther(...)` override.
+    *
+    * Warning policy:
+    *  - `MergeIntoOther(...)`: no warning, because the target is explicitly chosen by the user.
+    *  - `MergeIntoParent()`: warn only when there are standalone candidates outside the selected target lineage.
+    *    Standalone ancestors of `to` are treated as part of the same branch and are ignored.
+    */
   private def validateMerge(from: PackagedProjectNode, to: PackagedProjectNode): Unit = {
-    if (to.hasRealParents) {
-      val otherCandidates = from.collectStandaloneParents.toSet - to
-      if (otherCandidates.nonEmpty)
-        log.warn(
-          s"""Warning: $from will be merged into non-terminal $to, other candidates were: $otherCandidates
-             |You can specify explicit merge: packageMethod := PackagingMethod.MergeIntoOther(${otherCandidates.head.name})""".stripMargin
-        )
+    from.packagingOptions.packageMethod match {
+      // Explicit target: the user already intentionally resolves ambiguity.
+      case PackagingMethod.MergeIntoOther(_) =>
+      case PackagingMethod.MergeIntoParent() =>
+        // "Non-terminal" means `to` has non-skipped/non-deps-only ancestors.
+        // For terminal targets there is nothing to warn about.
+        if (to.hasRealParents) {
+          val standaloneParentsTo = to.collectStandaloneParents
+          val standaloneParentsFrom = from.collectStandaloneParents
+
+          // Candidates on the selected target lineage are not true alternatives.
+          // Keep only standalone ancestors that belong to other branches.
+          val otherCandidates = standaloneParentsFrom.toSet -- standaloneParentsTo.toSet - to
+
+          // Remaining candidates represent genuinely different standalone merge branches.
+          if (otherCandidates.nonEmpty)
+            log.warn(
+              s"""Warning: $from will be merged into non-terminal $to, other candidates were: $otherCandidates
+                 |You can specify explicit merge: packageMethod := PackagingMethod.MergeIntoOther(${otherCandidates.head.name})""".stripMargin
+            )
+        }
+      case _ =>  // No merge warning logic is needed for other packaging methods.
     }
   }
 
