@@ -230,8 +230,10 @@ trait Init { this: Keys.type =>
 
     // We need to fork tests to pass custom VM options
     Test / fork := true,
+
     Test / intellijVMOptions := intellijVMOptions.value.copy(debug = false): @nowarn("cat=deprecation"),
     Test / customIntellijVMOptions := customIntellijVMOptions.value.copy(debugInfo = None),
+
     Test / javaOptions ++= {
       val intellijVMOptionsBuilder = Keys.intellijVMOptionsBuilder.value
 

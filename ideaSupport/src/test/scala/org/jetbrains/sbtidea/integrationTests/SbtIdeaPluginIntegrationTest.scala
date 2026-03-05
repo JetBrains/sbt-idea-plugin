@@ -3,7 +3,7 @@ package org.jetbrains.sbtidea.integrationTests
 import org.apache.commons.io.FileUtils
 import org.jetbrains.sbtidea.download.api.IdeInstallationContext
 import org.jetbrains.sbtidea.testUtils.SbtProjectFilesUtils.runSbtProcess
-import org.jetbrains.sbtidea.testUtils.{CurrentEnvironmentUtils, FileAssertions, SbtProjectFilesUtils}
+import org.jetbrains.sbtidea.testUtils.{CurrentEnvironmentUtils, FileAssertions, IoUtils, SbtProjectFilesUtils}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import sbt.{File, fileToRichFile}
@@ -38,7 +38,7 @@ class SbtIdeaPluginIntegrationTest
 
   /**
    * Verifies the contents of the sources directory against an expected list of files
-   * 
+   *
    * @param intellijSdkRoot The root directory of the IntelliJ SDK
    * @param expectedSourcesFiles A sequence of expected sources filenames
    */
@@ -103,6 +103,35 @@ class SbtIdeaPluginIntegrationTest
     dumpedFileTree shouldBe expectedFileTree
   }
 
+  test("createIDEARunConfiguration uses Test/customIntellijVMOptions for JUnit template") {
+    val projectDir = TestProjectsDir / "simple-with-plugin"
+
+    // Ensure SDK paths/settings are injected into the fixture before generating run configs.
+    runUpdateIntellijCommand(projectDir)
+
+    // Add different VM option markers in Compile vs Test scopes to verify scope selection.
+    appendVmOptionsScopeMarkersToExtraSbt(projectDir)
+
+    // Generate IntelliJ run configurations including the JUnit template and its argfile.
+    runSbtProcess(Seq("createIDEARunConfiguration"), projectDir)
+
+    val runConfigurationsDir = projectDir / ".idea" / "runConfigurations"
+    val argFile = runConfigurationsDir / "junit_template_argfile.txt"
+    assertFileExists(argFile)
+
+    // The generated JUnit logfile must use Test-scoped VM options, not Compile-scoped ones.
+    val argFileText = IoUtils.readLines(argFile).mkString(System.lineSeparator())
+    argFileText should include("-Dscope.marker=test")
+    argFileText should include("-Dscope.marker=compile1")
+    argFileText should not include "-Dscope.marker=compile2"
+
+    // The template must reference the argfile that actually carries the VM options.
+    val junitTemplateFile = runConfigurationsDir / "_template__of_JUnit.xml"
+    assertFileExists(junitTemplateFile)
+    val junitTemplateText = IoUtils.readLines(junitTemplateFile).mkString(System.lineSeparator())
+    junitTemplateText should include("junit_template_argfile.txt")
+  }
+
   private def dumpFileStructure(directory: File): String = {
     val IndentIncrement = "  "
 
@@ -130,6 +159,28 @@ class SbtIdeaPluginIntegrationTest
     runUpdateIntellijCommand(TestProjectsDir / testProjectDirName)
   }
 
+  private def appendVmOptionsScopeMarkersToExtraSbt(projectDir: File): Unit = {
+    val extraSbt = projectDir / "extra.sbt"
+    assertFileExists(extraSbt)
+
+    val currentContent = IoUtils.readLines(extraSbt).mkString(System.lineSeparator())
+
+    //language=SBT
+    val additionalSettings =
+      """
+        |
+        |customIntellijVMOptions := (LocalRootProject / customIntellijVMOptions).value
+        |  .withExtraOptions(Seq("-Dscope.marker=compile1"))
+        |
+        |Compile / customIntellijVMOptions := (Compile / customIntellijVMOptions).value
+        |  .withExtraOptions(Seq("-Dscope.marker=compile2"))
+        |
+        |Test / customIntellijVMOptions := (Test / customIntellijVMOptions).value
+        |  .withExtraOptions(Seq("-Dscope.marker=test"))
+        |""".stripMargin
+
+    IoUtils.writeStringToFile(extraSbt, currentContent + additionalSettings)
+  }
 
   private def runUpdateIntellijCommand(projectDir: File): File = {
     assertFileExists(projectDir)

@@ -22,8 +22,12 @@ object GenerateIdeaRunConfigurations extends SbtIdeaTask[Unit] {
       // In IntelliJ IDEA Run Configurations we don't need the explicit debug agent.
       // The standard IJ mechanism will be used to run the configuration in Run or Debug mode.
       val customVmOptions = customIntellijVMOptions.value.copy(debugInfo = None)
+      val testCustomVmOptions = (Test / customIntellijVMOptions).value.copy(debugInfo = None)
+
       //noinspection ScalaDeprecation (workaround for SCL-25104)
       val legacyVmOptions = intellijVMOptions.value.copy(debug = false): @nowarn("cat=deprecation")
+      //noinspection ScalaDeprecation (workaround for SCL-25104)
+      val legacyTestVmOptions = (Test / intellijVMOptions).value.copy(debug = false): @nowarn("cat=deprecation")
 
       val dotIdeaFolder = baseDirectory.in(ThisBuild).value / ".idea"
       val sbtRunEnv = envVars.value
@@ -59,8 +63,10 @@ object GenerateIdeaRunConfigurations extends SbtIdeaTask[Unit] {
         testPluginRoots = pluginRoots,
         testClasspath = fullTestClasspath,
 
-        intellijVMOptions = customVmOptions,
-        legacyIntellijVMOptions = legacyVmOptions,
+        runIntellijVMOptions = customVmOptions,
+        runLegacyIntellijVMOptions = legacyVmOptions,
+        testIntellijVMOptions = testCustomVmOptions,
+        testLegacyIntellijVMOptions = legacyTestVmOptions,
         intellijVMOptionsBuilder = intellijVMOptionsBuilder.value,
         useNewVmOptions = useNewVmOptions.value,
 

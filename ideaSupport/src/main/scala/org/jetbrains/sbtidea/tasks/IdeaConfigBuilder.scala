@@ -34,10 +34,16 @@ class IdeaConfigBuilder(
   testPluginRoots: Seq[File],
   testClasspath: Seq[String],
 
-  intellijVMOptions: CustomIntellijVMOptions,
+  runIntellijVMOptions: CustomIntellijVMOptions,
   //noinspection ScalaDeprecation
   @nowarn("cat=deprecation")
-  legacyIntellijVMOptions: IntellijVMOptions,
+  runLegacyIntellijVMOptions: IntellijVMOptions,
+
+  testIntellijVMOptions: CustomIntellijVMOptions,
+  //noinspection ScalaDeprecation
+  @nowarn("cat=deprecation")
+  testLegacyIntellijVMOptions: IntellijVMOptions,
+
   intellijVMOptionsBuilder: IntellijVMOptionsBuilder,
   useNewVmOptions: Boolean,
 
@@ -48,17 +54,22 @@ class IdeaConfigBuilder(
 
   private val artifactName = projectName
 
-  private val vmOptions: VmOptions = if (useNewVmOptions)
-    VmOptions.New(intellijVMOptions)
+  private val runVmOptions: VmOptions = if (useNewVmOptions)
+    VmOptions.New(runIntellijVMOptions)
   else
-    VmOptions.Old(legacyIntellijVMOptions)
+    VmOptions.Old(runLegacyIntellijVMOptions)
+
+  private val testVmOptions: VmOptions = if (useNewVmOptions)
+    VmOptions.New(testIntellijVMOptions)
+  else
+    VmOptions.Old(testLegacyIntellijVMOptions)
 
   def build(): Unit = {
     if (options.generateDefaultRunConfig) {
       val configurationName = artifactName
       val content = buildRunConfigurationXML(
         configurationName = configurationName,
-        vmOptions = vmOptions,
+        vmOptions = runVmOptions,
         programParams = options.programParams,
         envVars = options.ideaRunEnv,
       )
@@ -72,7 +83,7 @@ class IdeaConfigBuilder(
         val configurationName = artifactName + " (old VM options)"
         val content = buildRunConfigurationXML(
           configurationName = configurationName,
-          vmOptions = VmOptions.Old(legacyIntellijVMOptions),
+          vmOptions = VmOptions.Old(runLegacyIntellijVMOptions),
           programParams = options.programParams,
           envVars = options.ideaRunEnv,
         )
@@ -84,7 +95,7 @@ class IdeaConfigBuilder(
       val configurationName = artifactName + data.configurationNameSuffix
       val content = buildRunConfigurationXML(
         configurationName = configurationName,
-        vmOptions = vmOptions.withExtraOptions(data.extraVmOptions),
+        vmOptions = runVmOptions.withExtraOptions(data.extraVmOptions),
         programParams = options.programParams,
         envVars = options.ideaRunEnv
       )
@@ -136,7 +147,7 @@ class IdeaConfigBuilder(
 
     Right(buildRunConfigurationXML(
       configurationName = configurationName,
-      vmOptions = vmOptions,
+      vmOptions = runVmOptions,
       programParams = programParams,
       envVars = envVars
     ))
@@ -285,7 +296,7 @@ class IdeaConfigBuilder(
     val classpathStr = escapeBackslash(testClasspath.mkString(File.pathSeparator))
     val quotedClasspathStr = "\"" + classpathStr + "\""
     val vmOptionsEscaped = intellijVMOptionsBuilder.buildQuotedNoEscapeXml(
-      vmOptions = vmOptions,
+      vmOptions = testVmOptions,
       forTests = true,
     ).map(escapeBackslash)
     (Seq("-cp", quotedClasspathStr) ++ vmOptionsEscaped).mkString(System.lineSeparator())
