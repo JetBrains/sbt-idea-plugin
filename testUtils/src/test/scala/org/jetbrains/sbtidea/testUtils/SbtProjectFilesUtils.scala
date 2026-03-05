@@ -62,7 +62,9 @@ object SbtProjectFilesUtils {
     vmOptions: Seq[String] = Seq.empty,
     envVars: Map[String, String] = Map.empty,
   ): ProcessRunResult = {
-    val javaOptions = if (vmOptions.nonEmpty) Map("JAVA_OPTS" -> vmOptions.mkString(" ")) else Map.empty
+    val DebugAgentOption = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:0"
+    val effectiveVmOptions = vmOptions :+ DebugAgentOption
+    val javaOptions = if (effectiveVmOptions.nonEmpty) Map("JAVA_OPTS" -> effectiveVmOptions.mkString(" ")) else Map.empty
     val envVarsUpdated = envVars ++ javaOptions
 
     val sbtExecutablePath = sys.env.get("SBT_PATH")
