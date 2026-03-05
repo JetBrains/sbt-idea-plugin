@@ -1,10 +1,8 @@
 package org.jetbrains.sbtidea.integrationTests
 
-import org.apache.commons.io.FileUtils
 import org.jetbrains.sbtidea.download.api.IdeInstallationContext
 import org.jetbrains.sbtidea.testUtils.SbtProjectFilesUtils.runSbtProcess
-import org.jetbrains.sbtidea.testUtils.{CurrentEnvironmentUtils, FileAssertions, IoUtils, SbtProjectFilesUtils}
-import org.scalatest.funsuite.AnyFunSuite
+import org.jetbrains.sbtidea.testUtils.IoUtils
 import org.scalatest.matchers.should.Matchers
 import sbt.{File, fileToRichFile}
 
@@ -17,16 +15,8 @@ import sbt.{File, fileToRichFile}
  * runs assertions on pre-generated test data which has to be regenerated using RegenerateProjectsStructureTestData
  */
 class SbtIdeaPluginIntegrationTest
-  extends AnyFunSuite
-    with Matchers
-    with FileAssertions {
-
-  private val TestProjectsDir = new File("ideaSupport/testData/projects").getAbsoluteFile
-  private val IntellijSdksBaseDir = new File("tempIntellijSdks").getAbsoluteFile
-
-  private lazy val PluginVersion = CurrentEnvironmentUtils.publishCurrentSbtIdeaPluginToLocalRepoAndGetVersions
-
-  private val CommonIntellijBuild = "243.22562.145"
+  extends SbtIdeaPluginIntegrationTestBase
+    with Matchers {
 
   private def doCommonAssertions(intellijSdkRoot: File): Unit = {
     assertFileExists(intellijSdkRoot)
@@ -75,7 +65,7 @@ class SbtIdeaPluginIntegrationTest
   }
 
   test("Project with library dependency with multiple artifacts") {
-    val projectDir = TestProjectsDir / "dependency-with-multiple-artifacts"
+    val projectDir = testProjectsDir / "dependency-with-multiple-artifacts"
     runUpdateIntellijCommand(projectDir)
 
     runSbtProcess(Seq("packageArtifact"), projectDir)
@@ -104,7 +94,7 @@ class SbtIdeaPluginIntegrationTest
   }
 
   test("createIDEARunConfiguration uses Test/customIntellijVMOptions for JUnit template") {
-    val projectDir = TestProjectsDir / "simple-with-plugin"
+    val projectDir = testProjectsDir / "simple-with-plugin"
 
     // Ensure SDK paths/settings are injected into the fixture before generating run configs.
     runUpdateIntellijCommand(projectDir)
@@ -154,11 +144,6 @@ class SbtIdeaPluginIntegrationTest
     inner(directory, builder = builder)
     builder.toString
   }
-
-  private def runUpdateIntellijCommand(testProjectDirName: String): File = {
-    runUpdateIntellijCommand(TestProjectsDir / testProjectDirName)
-  }
-
   private def appendVmOptionsScopeMarkersToExtraSbt(projectDir: File): Unit = {
     val extraSbt = projectDir / "extra.sbt"
     assertFileExists(extraSbt)
@@ -180,29 +165,5 @@ class SbtIdeaPluginIntegrationTest
         |""".stripMargin
 
     IoUtils.writeStringToFile(extraSbt, currentContent + additionalSettings)
-  }
-
-  private def runUpdateIntellijCommand(projectDir: File): File = {
-    assertFileExists(projectDir)
-
-    val sdkRoot = IntellijSdksBaseDir / projectDir.getName
-
-    // Ensure we have a clean SDK directory
-    FileUtils.deleteDirectory(sdkRoot)
-
-    SbtProjectFilesUtils.cleanUntrackedVcsFiles(projectDir)
-    SbtProjectFilesUtils.updateSbtIdeaPluginToVersion(projectDir, PluginVersion)
-
-
-    val intellijSdkRoot = SbtProjectFilesUtils.injectExtraSbtFileWithIntelliJSdkTargetDirSettingsForSdkRoot(projectDir, sdkRoot)
-
-    runSbtProcess(
-      Seq("updateIntellij"),
-      projectDir,
-      //ensure we reuse downloaded artifacts between tests if they need the same artifacts
-      vmOptions = Seq("-Dsbt.idea.plugin.keep.downloaded.files=true"),
-    )
-
-    intellijSdkRoot / "sdk" / CommonIntellijBuild
   }
 }
