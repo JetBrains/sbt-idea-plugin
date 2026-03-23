@@ -128,7 +128,7 @@ object BuildIndex {
     indexesForPlugin
   }
 
-  private def getIndexFilesNew(pluginOutputDir: Path, indexOutputDir: Path): Seq[IndexElement] = {
+  private def getIndexFilesNew(pluginOutputDir: Path, indexOutputDir: Path)(implicit log: PluginLogger): Seq[IndexElement] = {
     if (!indexOutputDir.exists)
       return Nil
 
@@ -137,12 +137,30 @@ object BuildIndex {
     def getPluginId(jarPath: Path): Option[String] =
       LocalPluginRegistry.extractPluginMetaData(jarPath).toOption.map(_.id)
 
-    for {
+    def getModuleName(jarPath: Path): String = {
+      val jarFileName = jarPath.getFileName.toString
+      jarFileName.stripSuffix(".jar")
+    }
+
+    // Index files for main plugin (by plugin ID)
+    val pluginIndexFiles = for {
       jarPath <- allArtifactJars.values.toSeq
       pluginId <- getPluginId(jarPath)
       indexPath = indexOutputDir / s"p-$pluginId-searchableOptions.json"
       if Files.exists(indexPath)
     } yield IndexElement.New(jarPath, indexPath)
+
+    // Index files for modules (by module name, for jars containing messages/ folder)
+    val moduleIndexFiles = for {
+      jarPath <- allArtifactJars.values.toSeq
+      moduleName = getModuleName(jarPath)
+      indexPath = indexOutputDir / s"m-$moduleName-searchableOptions.json"
+      if Files.exists(indexPath)
+    } yield {
+      IndexElement.New(jarPath, indexPath)
+    }
+
+    pluginIndexFiles ++ moduleIndexFiles
   }
 
   private def prepareMappings(indexes: Seq[IndexElement], tmp: Path)(implicit log: PluginLogger): Seq[(Path, Mapping)] =
