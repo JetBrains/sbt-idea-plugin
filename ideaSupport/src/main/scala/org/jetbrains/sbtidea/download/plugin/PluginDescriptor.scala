@@ -1,8 +1,8 @@
 package org.jetbrains.sbtidea.download.plugin
 
-import java.io.InputStream
+import org.jetbrains.sbtidea.models.XmlDecoder
+
 import java.net.URL
-import java.nio.file.{Files, Path}
 import scala.xml.*
 import scala.xml.Utility.escape
 
@@ -73,23 +73,15 @@ case class PluginDescriptor(id: String,
   }
 }
 
-object PluginDescriptor {
+object PluginDescriptor extends XmlDecoder[PluginDescriptor] {
   private val OPTIONAL_KEY  = "(optional) "
   private val OPTIONAL_ATTR = "optional"
 
   final case class Dependency(id: String, optional: Boolean)
 
-  def load(str: String): PluginDescriptor =
-    load(XML.withSAXParser(createNonValidatingParser).loadString(str))
+  def load(str: String): PluginDescriptor = decode(str)
 
-  def load(url: URL): PluginDescriptor =
-    load(XML.withSAXParser(createNonValidatingParser).load(url))
-
-  def load(path: Path): PluginDescriptor =
-    load(XML.withSAXParser(createNonValidatingParser).load(Files.newInputStream(path)))
-
-  def load(stream: InputStream): PluginDescriptor =
-    load(XML.withSAXParser(createNonValidatingParser).load(stream))
+  def load(url: URL): PluginDescriptor = decode(url)
 
   //noinspection ExistsEquals : scala 2.10
   def load(xml: Elem): PluginDescriptor = {
@@ -108,21 +100,12 @@ object PluginDescriptor {
     PluginDescriptor(idOrName, vendor, name, version, since, until, dependencies)
   }
 
+  override def decode(xml: Elem): PluginDescriptor = load(xml)
+
 //  private def requiredTag(xml: Elem, name: String): NodeSeq = {
 //    val res = xml \\ name
 //    if (res == null || res.isEmpty)
 //      throw new IllegalArgumentException(s"Plugin descriptor xml doesn't have a required tag: $name")
 //    res
 //  }
-
-  private def createNonValidatingParser: SAXParser = {
-    val factory = javax.xml.parsers.SAXParserFactory.newInstance()
-    factory.setValidating(false)
-    factory.setFeature("http://xml.org/sax/features/validation", false)
-    factory.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false)
-    factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
-    factory.setFeature("http://xml.org/sax/features/external-general-entities", false)
-    factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false)
-    factory.newSAXParser()
-  }
 }
