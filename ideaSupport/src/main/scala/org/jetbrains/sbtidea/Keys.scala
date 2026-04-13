@@ -11,10 +11,10 @@ object Keys extends Defns with Init with Utils with Quirks {
     "Name of the plugin you're developing")
 
   lazy val intellijBuild = settingKey[String](
-    "Number of IntelliJ IntelliJ Platform build to use in project")
+    "Number of IntelliJ Platform build to use in project")
 
   lazy val intellijPlatform = settingKey[IntelliJPlatform](
-    "Edition of Intellij Platform to use in project")
+    "Edition of IntelliJ Platform to use in project")
 
   private[sbtidea] lazy val intellijBuildInfo = settingKey[download.BuildInfo]("")
 
@@ -39,7 +39,7 @@ object Keys extends Defns with Init with Utils with Quirks {
     "Search for plugin ID by plugin name or description")
 
   lazy val updateIntellij = taskKey[Unit](
-    "Download Intellij IntelliJ Platform binaries, sources and external plugins for specified build")
+    "Download IntelliJ Platform binaries, sources and external plugins for specified build")
 
   lazy val publishPlugin =inputKey[Unit](
     "Publish IntelliJ Platform plugin on plugins.jetbrains.com")
