@@ -2,6 +2,8 @@ package org.jetbrains.sbtidea.productInfo
 
 import org.jetbrains.sbtidea.JbrPlatform
 
+import java.util.Locale
+
 /**
  * The class represents a subset of fields of `product-info.json` file in IntelliJ installation.
  * It contains only those fields which we actually use, so if you need more, please add them.
@@ -11,7 +13,7 @@ import org.jetbrains.sbtidea.JbrPlatform
  * To get the values with substituted variables you should use [[org.jetbrains.sbtidea.productInfo.ProductInfoExtraDataProvider]]
  *
  * Similar entity from Gradle plugin:<br>
- * https://github.com/JetBrains/intellij-platform-gradle-plugin/blob/main/src/main/kotlin/org/jetbrains/intellij/platform/gradle/models/ProductInfo.kt#L36
+ * https://github.com/JetBrains/intellij-platform-gradle-plugin/blob/12b993e2a56a66c6fdde72deb0bebb02a1635622/src/main/kotlin/org/jetbrains/intellij/platform/gradle/models/ProductInfo.kt#L41
  *
  * @see [[org.jetbrains.sbtidea.download.BuildInfo]]
  */
@@ -47,9 +49,9 @@ case class ProductInfo(
     }
 
     val osInProductFormat = os match {
-      case  JbrPlatform.Os.windows => OS.Windows
-      case  JbrPlatform.Os.linux => OS.Linux
-      case  JbrPlatform.Os.osx => OS.macOs
+      case JbrPlatform.Os.windows => OS.Windows
+      case JbrPlatform.Os.linux => OS.Linux
+      case JbrPlatform.Os.osx => OS.macOs
       case other =>
         throw new IllegalArgumentException(s"Unsupported OS: $other")
     }
@@ -106,4 +108,12 @@ object OS {
   case object Windows extends OS
   case object macOs extends OS
   case object Linux extends OS
+
+  lazy val current: OS = System.getProperty("os.name", "").toLowerCase(Locale.ENGLISH) match {
+    case value if value.startsWith("win") => Windows
+    case value if value.startsWith("lin") => Linux
+    case value if value.startsWith("mac") => macOs
+    case other =>
+      throw new IllegalStateException(s"OS $other is unsupported")
+  }
 }

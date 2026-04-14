@@ -17,7 +17,7 @@ class SearchPluginIdTest extends AnyFunSuite with IdeaMock with Matchers {
 
     actual shouldBe Seq(PluginBasicInfo("com.intellij.properties", "Properties", isRemote = false))
 
-    logText should contain("[info] Plugin ids from plugins_index.xml: com.intellij.properties, com.jetbrains.codeWithMe, org.jetbrains.plugins.yaml")
+    logText should contain("[info] Plugin ids from plugins_index.xml: com.intellij.java, com.intellij.properties, com.jetbrains.codeWithMe, org.jetbrains.plugins.yaml")
   }
 
   test("search plugin: marketplace only") {

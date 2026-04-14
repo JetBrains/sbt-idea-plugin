@@ -33,6 +33,33 @@ class IntellijPluginResolverTest extends IntellijPluginResolverTestBase {
     resultCallerPlugins shouldBe Seq("org.E", "org.D", "org.A")
   }
 
+  test("transitive bundled module dependencies are handled") {
+    val resolver = new PluginResolver(resolveSettings = pluginG.plugin.resolveSettings)
+    val (logText, result) = captureLogTextAndValue(CapturingLoggerTest.LogLevel.Info)(resolver.resolve(pluginG))
+    logText shouldBe empty
+
+    val resultCallerPlugins = result.map(_.caller.plugin.toString)
+    resultCallerPlugins shouldBe Seq("org.G", "org.F", "org.A")
+  }
+
+  test("missing transitive bundled module dependencies are reported") {
+    val resolver = new PluginResolver(resolveSettings = pluginI.plugin.resolveSettings)
+    val (logText, result) = captureLogTextAndValue(CapturingLoggerTest.LogLevel.Info)(resolver.resolve(pluginI))
+    logText shouldBe "[error] Failed to resolve PluginDependency(intellij.java.missing.module): java.lang.RuntimeException: TestPluginRepoApi error for getRemotePluginXmlDescriptor"
+
+    val resultCallerPlugins = result.map(_.caller.plugin.toString)
+    resultCallerPlugins shouldBe Seq("org.I", "org.H", "org.B")
+  }
+
+  test("missing transitive nonexistent module dependencies are reported") {
+    val resolver = new PluginResolver(resolveSettings = pluginK.plugin.resolveSettings)
+    val (logText, result) = captureLogTextAndValue(CapturingLoggerTest.LogLevel.Info)(resolver.resolve(pluginK))
+    logText shouldBe "[error] Failed to resolve PluginDependency(some.nonexistent.module): java.lang.RuntimeException: TestPluginRepoApi error for getRemotePluginXmlDescriptor"
+
+    val resultCallerPlugins = result.map(_.caller.plugin.toString)
+    resultCallerPlugins shouldBe Seq("org.K", "org.J", "org.A")
+  }
+
   test("plugin exclude rules work") {
     val newResolveSettings = IntellijPlugin.Settings(excludedIds = Set(pluginA.id))
     val res = new PluginResolver(resolveSettings = newResolveSettings).resolve(pluginC)

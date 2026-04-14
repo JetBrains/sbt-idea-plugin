@@ -2,7 +2,9 @@ package org.jetbrains
 
 import java.io.InputStream
 import java.nio.file.{Files, Path}
+import scala.jdk.CollectionConverters.iterableAsScalaIterableConverter
 import scala.language.implicitConversions
+import scala.util.Using
 
 package object sbtidea {
   implicit class Any2Option[T <: Any](any: T) {
@@ -31,5 +33,13 @@ package object sbtidea {
     def exists: Boolean = Files.exists(path)
     def isDir: Boolean = Files.isDirectory(path)
     def inputStream: InputStream = Files.newInputStream(path)
+
+    def listDirectoryEntries(glob: String = "*"): Seq[Path] =
+      Using.resource(Files.newDirectoryStream(path, glob))(_.asScala.toList)
+
+    def invariantSeparatorsPathString: String = {
+      val separator = path.getFileSystem.getSeparator
+      if (separator == "/") path.toString else path.toString.replace(separator, "/")
+    }
   }
 }

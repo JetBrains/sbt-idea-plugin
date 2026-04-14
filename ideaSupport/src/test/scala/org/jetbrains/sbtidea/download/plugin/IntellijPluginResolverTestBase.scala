@@ -19,9 +19,33 @@ abstract class IntellijPluginResolverTestBase extends IntellijPluginInstallerTes
     Seq(Dependency("org.E", optional = false), Dependency("org.A", optional = true)))
   protected val pluginE: PluginDescriptor = PluginDescriptor("org.E", "VENDOR", "C - remote cyclic", "0", "", "",
     Seq(Dependency("org.D", optional = false), Dependency("org.C", optional = true)))
+  protected val pluginF: PluginDescriptor = PluginDescriptor("org.F", "VENDOR", "F - bundled module", "0", "", "",
+    Seq(Dependency("org.A", optional = false), Dependency("intellij.java.backend", optional = false)))
+  protected val pluginG: PluginDescriptor = PluginDescriptor("org.G", "VENDOR", "G - bundled module transitive", "0", "", "",
+    Seq(Dependency("org.F", optional = false)))
+  protected val pluginH: PluginDescriptor = PluginDescriptor("org.H", "VENDOR", "H - missing bundled module", "0", "", "",
+    Seq(Dependency("org.B", optional = false), Dependency("intellij.java.missing.module", optional = false)))
+  protected val pluginI: PluginDescriptor = PluginDescriptor("org.I", "VENDOR", "I - missing bundled module transitive", "0", "", "",
+    Seq(Dependency("org.H", optional = false)))
+  protected val pluginJ: PluginDescriptor = PluginDescriptor("org.J", "VENDOR", "J - missing bundled nonexistent module", "0", "", "",
+    Seq(Dependency("org.A", optional = false), Dependency("some.nonexistent.module", optional = false)))
+  protected val pluginK: PluginDescriptor = PluginDescriptor("org.K", "VENDOR", "K - missing bundled nonexistent module transitive", "0", "", "",
+    Seq(Dependency("org.J", optional = false)))
 
   protected val descriptorMap: Map[String, PluginDescriptor] =
-    Seq(pluginA, pluginB, pluginC, pluginD, pluginE).map(p => p.id -> p).toMap
+    Seq(
+      pluginA,
+      pluginB,
+      pluginC,
+      pluginD,
+      pluginE,
+      pluginF,
+      pluginG,
+      pluginH,
+      pluginI,
+      pluginJ,
+      pluginK
+    ).map(p => p.id -> p).toMap
 
   protected implicit def descriptor2Plugin(descriptor: PluginDescriptor): PluginDependency =
     PluginDependency(IntellijPlugin.Id(descriptor.id, None, None),

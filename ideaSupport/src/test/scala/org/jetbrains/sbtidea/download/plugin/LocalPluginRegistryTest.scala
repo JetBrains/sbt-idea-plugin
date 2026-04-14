@@ -222,6 +222,19 @@ final class LocalPluginRegistryTest
       |  <version>1</version>
       |  <plugins>
       |    <plugin>
+      |      <id>com.intellij.java</id>
+      |      <path>plugins/java</path>
+      |      <descriptor>
+      |        <idea-plugin>
+      |          <name>Java</name>
+      |          <vendor>JetBrains</vendor>
+      |          <id>com.intellij.java</id>
+      |          <version>261.22158.277</version>
+      |          <idea-version since-build="261.22158" until-build="261.*"/>
+      |        </idea-plugin>
+      |      </descriptor>
+      |    </plugin>
+      |    <plugin>
       |      <id>com.intellij.properties</id>
       |      <path>plugins/properties</path>
       |      <descriptor>
@@ -229,8 +242,8 @@ final class LocalPluginRegistryTest
       |          <name>Properties</name>
       |          <vendor>JetBrains</vendor>
       |          <id>com.intellij.properties</id>
-      |          <version>242.14146.5</version>
-      |          <idea-version since-build="242.14146.5" until-build="242.14146.5"/>
+      |          <version>261.22158.277</version>
+      |          <idea-version since-build="261.22158" until-build="261.*"/>
       |        </idea-plugin>
       |      </descriptor>
       |    </plugin>
@@ -288,7 +301,7 @@ final class LocalPluginRegistryTest
 
     val descriptors = pluginIndex.getAllDescriptors
 
-    descriptors.size shouldBe 3
+    descriptors.size shouldBe 4
 
     // Verify the plugin descriptors
     val cwmPlugin = descriptors.find(_.id == "com.jetbrains.codeWithMe").get
@@ -317,9 +330,18 @@ final class LocalPluginRegistryTest
     propertiesPlugin.id shouldBe "com.intellij.properties"
     propertiesPlugin.vendor shouldBe "JetBrains"
     propertiesPlugin.name shouldBe "Properties"
-    propertiesPlugin.version shouldBe "242.14146.5"
-    propertiesPlugin.sinceBuild shouldBe "242.14146.5"
-    propertiesPlugin.untilBuild shouldBe "242.14146.5"
+    propertiesPlugin.version shouldBe "261.22158.277"
+    propertiesPlugin.sinceBuild shouldBe "261.22158"
+    propertiesPlugin.untilBuild shouldBe "261.*"
     propertiesPlugin.dependsOn shouldBe empty
+
+    val javaPlugin = descriptors.find(_.id == "com.intellij.java").get
+    javaPlugin.id shouldBe "com.intellij.java"
+    javaPlugin.vendor shouldBe "JetBrains"
+    javaPlugin.name shouldBe "Java"
+    javaPlugin.version shouldBe "261.22158.277"
+    javaPlugin.sinceBuild shouldBe "261.22158"
+    javaPlugin.untilBuild shouldBe "261.*"
+    javaPlugin.dependsOn shouldBe empty
   }
 }

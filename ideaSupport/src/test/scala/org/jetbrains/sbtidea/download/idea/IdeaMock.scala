@@ -11,7 +11,7 @@ import java.util.zip.{ZipEntry, ZipInputStream}
 import scala.util.Using
 
 trait IdeaMock extends TmpDirUtils {
-  protected val IDEA_VERSION      = "242.14146.5"
+  protected val IDEA_VERSION      = "261.22158.277"
   protected val IDEA_EDITION      = "IU"
   protected val IDEA_DIST         = s"idea$IDEA_EDITION-$IDEA_VERSION.zip"
   protected val IDEA_DIST_PATH    = s"/org/jetbrains/sbtidea/download/$IDEA_DIST"
@@ -25,6 +25,7 @@ trait IdeaMock extends TmpDirUtils {
     "org.jetbrains.plugins.yaml".toPlugin ::
       "com.intellij.properties".toPlugin ::
       "com.jetbrains.codeWithMe".toPlugin ::
+      "com.intellij.java".toPlugin ::
       Nil
 
   protected def installIdeaMock: Path = {

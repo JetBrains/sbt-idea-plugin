@@ -1,6 +1,6 @@
 package org.jetbrains.sbtidea
 
-import java.util.Locale
+import org.jetbrains.sbtidea.productInfo.OS
 
 sealed trait JbrInfo {
   def version: JbrVersion
@@ -105,11 +105,10 @@ object JbrPlatform {
   val windows_x64: JbrPlatform = JbrPlatform(Os.windows, Arch.x64)
 
   def auto: JbrPlatform = {
-    val osName = System.getProperty("os.name", "").toLowerCase(Locale.ENGLISH) match {
-      case value if value.startsWith("win") => Os.windows
-      case value if value.startsWith("lin") => Os.linux
-      case value if value.startsWith("mac") => Os.osx
-      case other => throw new IllegalStateException(s"OS $other is unsupported")
+    val osName = OS.current match {
+      case OS.Windows => Os.windows
+      case OS.Linux => Os.linux
+      case OS.macOs => Os.osx
     }
     val osArch = System.getProperty("os.arch") match {
       case Arch.aarch6 => Arch.aarch6

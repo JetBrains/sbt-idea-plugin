@@ -30,27 +30,27 @@ final class IntellijPluginInstallerTest extends IntellijPluginInstallerTestBase 
   }
 
   test("Plugin installer checks IDEA compatibility") {
-    val pluginMetadata = PluginDescriptor("org.intellij.scala", "JetBrains", "Scala", "2024.2.423", "242.123", "242.4")
+    val pluginMetadata = PluginDescriptor("org.intellij.scala", "JetBrains", "Scala", "2026.1.679", "261.123", "261.4")
     val mockPluginDist = createPluginJarMock(pluginMetadata)
     val installer = createInstaller
     installer.installIdeaPlugin(pluginMetadata.toPluginId, mockPluginDist)
     val messages = captureLog(installer.isInstalled(pluginMetadata.toPluginId) shouldBe false)
-    messages should contain ("[warn] Plugin org.intellij.scala is incompatible with current ideaVersion(242.14146.5): PluginDescriptor(org.intellij.scala,JetBrains,Scala,2024.2.423,242.123,242.4,List())")
+    messages should contain ("[warn] Plugin org.intellij.scala is incompatible with current ideaVersion(261.22158.277): PluginDescriptor(org.intellij.scala,JetBrains,Scala,2026.1.679,261.123,261.4,List())")
   }
 
   test("Plugin installer checks IDEA compatibility using wildcards") {
-    val pluginMetadata = PluginDescriptor("org.intellij.scala", "JetBrains", "Scala", "2024.1.423", "242.0", "242.*")
+    val pluginMetadata = PluginDescriptor("org.intellij.scala", "JetBrains", "Scala", "2026.1.679", "261.0", "261.*")
     val mockPluginDist = createPluginJarMock(pluginMetadata)
     val installer = createInstaller
     installer.installIdeaPlugin(pluginMetadata.toPluginId, mockPluginDist)
     val messages = captureLog(installer.isInstalled(pluginMetadata.toPluginId) shouldBe true)
     messages should not contain
-      "Plugin org.intellij.scala is incompatible with current ideaVersion(211.5538.2): PluginDescriptor(org.intellij.scala,JetBrains,Scala,2019.2.423,193.123,193.*,List())"
+      "Plugin org.intellij.scala is incompatible with current ideaVersion(261.22158.277): PluginDescriptor(org.intellij.scala,JetBrains,Scala,2026.1.679,261.0,261.*,List())"
   }
 
 
   test("Plugin installer checks for newer plugin version") {
-    val pluginMetadata = PluginDescriptor("org.intellij.scala", "JetBrains", "Scala", "2024.1.1", "242.0", "242.*")
+    val pluginMetadata = PluginDescriptor("org.intellij.scala", "JetBrains", "Scala", "2024.1.1", "261.0", "261.*")
     val mockPluginDist = createPluginJarMock(pluginMetadata)
     val installer = createInstaller
     val pluginId = pluginMetadata.toPluginId.copy(version = None)
