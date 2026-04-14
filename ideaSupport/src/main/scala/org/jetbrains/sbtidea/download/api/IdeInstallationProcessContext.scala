@@ -1,6 +1,7 @@
 package org.jetbrains.sbtidea.download.api
 
 import org.jetbrains.sbtidea.download.api.IdeInstallationContext.customPluginsDirName
+import org.jetbrains.sbtidea.moduleDescriptors.ModuleDescriptor
 import org.jetbrains.sbtidea.productInfo.{ProductInfo, ProductInfoParser}
 import sbt.pathToPathOps
 
@@ -17,6 +18,11 @@ sealed class IdeInstallationContext(
   lazy val productInfo: ProductInfo = {
     val productInfoFile = baseDirectory / "product-info.json"
     ProductInfoParser.parse(productInfoFile.toFile)
+  }
+
+  lazy val moduleDescriptors: Seq[ModuleDescriptor] = {
+    val moduleDescriptorsFile = baseDirectory / "modules" / "module-descriptors.jar"
+    ModuleDescriptor.parseDescriptors(moduleDescriptorsFile)
   }
 
   /**

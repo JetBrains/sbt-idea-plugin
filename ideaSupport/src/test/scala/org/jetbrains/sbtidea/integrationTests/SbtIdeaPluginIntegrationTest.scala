@@ -21,6 +21,7 @@ class SbtIdeaPluginIntegrationTest
   private def doCommonAssertions(intellijSdkRoot: File): Unit = {
     assertFileExists(intellijSdkRoot)
     assertFileExists(intellijSdkRoot / "lib")
+    assertFileExists(intellijSdkRoot / "modules" / "module-descriptors.jar")
     assertFileExists(intellijSdkRoot / "plugins")
     assertFileExists(intellijSdkRoot / "product-info.json")
     assertFileExists(intellijSdkRoot / ".toolbox-ignore")
