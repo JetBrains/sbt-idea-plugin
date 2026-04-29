@@ -1,6 +1,7 @@
 package org.jetbrains.sbtidea.integrationTests
 
 import org.jetbrains.sbtidea.download.api.IdeInstallationContext
+import org.jetbrains.sbtidea.testUtils.SbtProjectFilesUtils
 import org.jetbrains.sbtidea.testUtils.SbtProjectFilesUtils.runSbtProcess
 import org.jetbrains.sbtidea.testUtils.IoUtils
 import org.scalatest.matchers.should.Matchers
@@ -121,6 +122,47 @@ class SbtIdeaPluginIntegrationTest
     assertFileExists(junitTemplateFile)
     val junitTemplateText = IoUtils.readLines(junitTemplateFile).mkString(System.lineSeparator())
     junitTemplateText should include("junit_template_argfile.txt")
+  }
+
+  test("intellijExtraJUnitTemplateLibraryDependencies appears only on the JUnit template classpath") {
+    val projectDir = testProjectsDir / "simple-with-plugin"
+
+    // Inject SDK paths/settings into the fixture; this rewrites extra.sbt from a clean state
+    // (runUpdateIntellijCommand calls cleanUntrackedVcsFiles -> git clean -fdx first).
+    runUpdateIntellijCommand(projectDir)
+
+    // Configure one extra dep that should appear ONLY on the generated JUnit template classpath.
+    appendExtraJUnitTemplateLibDepToExtraSbt(projectDir)
+
+    // 1) Generate the JUnit template — the jar must end up in the argfile.
+    runSbtProcess(Seq("createIDEARunConfiguration"), projectDir)
+
+    val argFile = projectDir / ".idea" / "runConfigurations" / "junit_template_argfile.txt"
+    assertFileExists(argFile)
+    val argFileText = IoUtils.readLines(argFile).mkString(System.lineSeparator())
+    argFileText should include("commons-io-2.16.1.jar")
+
+    // 2) The same jar must NOT appear on the sbt Test / fullClasspath.
+    val result = runSbtProcess(
+      Seq("show Test/fullClasspath"),
+      projectDir,
+      ioMode = SbtProjectFilesUtils.IoMode.PrintAndCollectOutput,
+    )
+    val fullClasspathOutput = result.outputLines.getOrElse(Seq.empty).mkString("\n")
+    fullClasspathOutput should not include "commons-io-2.16.1.jar"
+  }
+
+  private def appendExtraJUnitTemplateLibDepToExtraSbt(projectDir: File): Unit = {
+    val extraSbt = projectDir / "extra.sbt"
+    assertFileExists(extraSbt)
+    val current = IoUtils.readLines(extraSbt).mkString(System.lineSeparator())
+    //language=SBT
+    val additional =
+      """
+        |
+        |intellijExtraJUnitTemplateLibraryDependencies += "commons-io" % "commons-io" % "2.16.1"
+        |""".stripMargin
+    IoUtils.writeStringToFile(extraSbt, current + additional)
   }
 
   private def dumpFileStructure(directory: File): String = {

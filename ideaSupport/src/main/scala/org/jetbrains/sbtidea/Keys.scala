@@ -27,6 +27,14 @@ object Keys extends Defns with Init with Utils with Quirks {
   lazy val intellijExtraRuntimePluginsInTests = settingKey[Seq[IntellijPlugin]](
     "List of IntelliJ platform plugins to include in tests at runtime")
 
+  lazy val intellijExtraJUnitTemplateLibraryDependencies = settingKey[Seq[ModuleID]](
+    "Extra library dependencies provided only on the JUnit test Run Configuration template classpath " +
+      "(generated during IDEA project import). These do not affect the sbt Test classpath."
+  ).withRank(sbt.KeyRanks.Invisible)
+
+  private[sbtidea] lazy val intellijJUnitTemplateConfig: Configuration =
+    Configuration.of("IntellijJUnitTemplate", "intellij-junit-template").hide
+
   @Deprecated(forRemoval = true)
   @deprecated("The setting is ignored and will be removed in future versions. The sources are always downloaded")
   lazy val intellijDownloadSources = settingKey[Boolean](

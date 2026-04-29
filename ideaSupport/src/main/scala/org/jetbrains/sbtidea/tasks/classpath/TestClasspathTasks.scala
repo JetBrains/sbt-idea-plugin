@@ -1,9 +1,10 @@
 package org.jetbrains.sbtidea.tasks.classpath
 
+import org.jetbrains.sbtidea.Keys.intellijJUnitTemplateConfig
 import org.jetbrains.sbtidea.packaging.PackagingKeys.packageOutputDir
 import sbt.*
 import sbt.Def.Classpath
-import sbt.Keys.{exportedProductsNoTracking, externalDependencyClasspath}
+import sbt.Keys.{classpathTypes, exportedProductsNoTracking, externalDependencyClasspath, update}
 
 import scala.collection.mutable
 
@@ -36,7 +37,14 @@ object TestClasspathTasks {
     val outputDir = packageOutputDir.value
     val pluginPlaceholderPatterns = PluginClasspathUtils.pluginClasspathPattern(outputDir)
     val commonClasspath = commonTestClasspath.value
-    pluginPlaceholderPatterns ++ commonClasspath.map(_.data.getAbsolutePath)
+    val extraTemplateJars = Classpaths.managedJars(
+      intellijJUnitTemplateConfig,
+      classpathTypes.value,
+      update.value
+    )
+    pluginPlaceholderPatterns ++
+      commonClasspath.map(_.data.getAbsolutePath) ++
+      extraTemplateJars.map(_.data.getAbsolutePath)
   }
 
   /**

@@ -11,13 +11,13 @@ jobs:
     name: sbt-idea-plugin plugin Build & Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 17
           cache: sbt
       - uses: sbt/setup-sbt@v1
-      - uses: coursier/cache-action@v6
+      - uses: coursier/cache-action@v8
       - name: Compile & Test
         run: sbt test
