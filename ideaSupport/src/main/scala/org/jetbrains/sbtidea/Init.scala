@@ -124,6 +124,11 @@ trait Init { this: Keys.type =>
 
     intellijPlugins := Seq.empty,
     intellijExtraRuntimePluginsInTests := Seq.empty,
+    intellijExtraJUnitTemplateLibraryDependencies := Seq.empty,
+
+    ivyConfigurations += intellijJUnitTemplateConfig,
+    libraryDependencies ++= intellijExtraJUnitTemplateLibraryDependencies.value
+      .map(_ % intellijJUnitTemplateConfig),
 
     intellijMainJarsClasspath := AttributedClasspathTasks.main.value,
     intellijTestJarsClasspath := AttributedClasspathTasks.test.value,
