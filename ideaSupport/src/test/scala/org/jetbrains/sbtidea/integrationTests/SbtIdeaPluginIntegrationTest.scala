@@ -2,6 +2,7 @@ package org.jetbrains.sbtidea.integrationTests
 
 import org.jetbrains.sbtidea.download.api.IdeInstallationContext
 import org.jetbrains.sbtidea.testUtils.SbtProjectFilesUtils
+import org.jetbrains.sbtidea.testUtils.SbtProjectFilesUtils.IoMode.PrintAndCollectOutput
 import org.jetbrains.sbtidea.testUtils.SbtProjectFilesUtils.runSbtProcess
 import org.jetbrains.sbtidea.testUtils.IoUtils
 import org.scalatest.matchers.should.Matchers
@@ -18,6 +19,9 @@ import sbt.{File, fileToRichFile}
 class SbtIdeaPluginIntegrationTest
   extends SbtIdeaPluginIntegrationTestBase
     with Matchers {
+
+  private val ProvidedModuleNamesCacheDebugProperty = "sbtidea.providedModuleNamesCache.debug"
+  private val ProvidedModuleNamesCalculationMarker = "[sbt-idea-plugin] calculating provided module names for "
 
   private def doCommonAssertions(intellijSdkRoot: File): Unit = {
     assertFileExists(intellijSdkRoot)
@@ -163,6 +167,33 @@ class SbtIdeaPluginIntegrationTest
         |intellijExtraJUnitTemplateLibraryDependencies += "commons-io" % "commons-io" % "2.16.1"
         |""".stripMargin
     IoUtils.writeStringToFile(extraSbt, current + additional)
+  }
+
+  test("provided module names cache is reused across intellijPluginJars calculations") {
+    val projectDir = testProjectsDir / "multi-module-plugin-jars-cache"
+    runUpdateIntellijCommand(projectDir)
+
+    val outputLines = runSbtProcess(
+      sbtArguments = Seq(
+        "show moduleA / intellijPluginJars",
+        "show moduleB / intellijPluginJars",
+        "show moduleC / intellijPluginJars",
+        "show moduleA / intellijPluginJars",
+      ),
+      workingDir = projectDir,
+      ioMode = PrintAndCollectOutput,
+      vmOptions = Seq(s"-D$ProvidedModuleNamesCacheDebugProperty=true"),
+    ).outputLines.get
+
+    val calculationLines = outputLines.filter(_.contains(ProvidedModuleNamesCalculationMarker))
+    withClue(
+      s"""Expected exactly one provided-module-names calculation in one sbt JVM across repeated intellijPluginJars lookups.
+         |Actual marker count: ${calculationLines.size}
+         |Matching lines:
+         |${calculationLines.mkString("\n")}""".stripMargin
+    ) {
+      calculationLines.size shouldBe 1
+    }
   }
 
   private def dumpFileStructure(directory: File): String = {

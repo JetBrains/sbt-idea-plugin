@@ -4,11 +4,9 @@ import org.jetbrains.sbtidea.Keys.String2Plugin
 import org.jetbrains.sbtidea.download.api.*
 import org.jetbrains.sbtidea.download.plugin.PluginResolver.{PluginDescriptorAndArtifactResolveResult, PluginResolverCache}
 import org.jetbrains.sbtidea.download.{FileDownloader, NioUtils}
-import org.jetbrains.sbtidea.productInfo.{OS, ProductInfo}
-import org.jetbrains.sbtidea.{IntellijPlugin, PathExt, PluginLogger as log}
+import org.jetbrains.sbtidea.{IntellijPlugin, PluginLogger as log}
 
 import java.net.URL
-import java.nio.file.Path
 
 class PluginResolver(
   private val processedPlugins: Set[IntellijPlugin] = Set.empty,
@@ -53,7 +51,7 @@ class PluginResolver(
   private def resolveDependencies(plugin: PluginDependency, key: IntellijPlugin, descriptor: PluginDescriptor): Seq[PluginArtifact] = {
     val productInfo = ctx.productInfo
     val coreModules = productInfo.modules ++ productInfo.productModulesNames
-    val providedModules = getModuleNames(productInfo)
+    val providedModules = ProvidedModuleNamesCache.providedModuleNames(productInfo)
 
     val dependencies = descriptor.dependsOn
       .filterNot(!resolveSettings.optionalDeps && _.optional)                              // skip all optional plugins if flag is set
@@ -65,48 +63,6 @@ class PluginResolver(
     dependencies
       .map(dep => PluginDependency(dep.id.toPlugin, plugin.buildInfo))
       .flatMap(new PluginResolver(processedPlugins = processedPlugins + key, resolveSettings).resolve)
-  }
-
-  private def getModuleNames(productInfo: ProductInfo): Seq[String] = {
-    val platformPath = ctx.baseDirectory
-    val platformJars = getPlatformJars(productInfo, platformPath)
-    val bundledPluginJars = getBundledPluginJars(platformPath)
-
-    val collectedJars = (platformJars ++ bundledPluginJars)
-      .map(jar => platformPath.relativize(jar).invariantSeparatorsPathString)
-    ctx.moduleDescriptors.collect {
-      case desc if desc.path.exists(collectedJars.contains) =>
-        desc.name
-    }
-  }
-
-  private def getPlatformJars(productInfo: ProductInfo, platformPath: Path): Set[Path] = {
-    val bootClasspath: Seq[String] = productInfo.launch
-      .filter(_.os == OS.current)
-      .flatMap(_.bootClassPathJarNames)
-      .map("lib/" + _)
-
-    val ijCorePluginId = "com.intellij"
-    val ijCorePluginClasspath: Seq[String] = productInfo.layout
-      .filter(_.name == ijCorePluginId)
-      .flatMap(_.classPath).flatten
-
-    val finalClasspath = bootClasspath ++ ijCorePluginClasspath
-    finalClasspath
-      .map(platformPath.resolve)
-      .filter(_.exists)
-      .toSet
-  }
-
-  private def getBundledPluginJars(platformPath: Path): Set[Path] = {
-    val allPluginsJarsLocations = platformPath.resolve("plugins")
-      .listDirectoryEntries()
-      .flatMap(plugin => Seq(plugin.resolve("lib"), plugin.resolve("lib").resolve("modules")))
-
-    allPluginsJarsLocations
-      .filter(_.exists)
-      .flatMap(_.listDirectoryEntries("*.jar"))
-      .toSet
   }
 
   private def resolvePluginById(
