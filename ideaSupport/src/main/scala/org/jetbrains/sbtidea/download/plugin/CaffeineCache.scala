@@ -8,6 +8,12 @@ private class CaffeineCache[Key <: AnyRef, Value <: AnyRef](log: PluginLogger) {
   private val cache: Cache[Key, Value] =
     Caffeine.newBuilder().build[Key, Value]()
 
+  /**
+   * Returns the cached value for [[key]], or computes and stores it atomically.
+   *
+   * Caffeine's [[Cache.get]] synchronizes the mapping function per key, so concurrent callers for
+   * the same key share one calculation instead of evaluating [[compute]] repeatedly.
+   */
   def getOrCompute(key: Key, compute: => Value): Value = {
     val cachedResult = cache.getIfPresent(key)
     if (cachedResult != null) {
