@@ -173,6 +173,9 @@ final case class IntellijVMOptionsBuilder(
       // But it seems like they are not mandatory, and we are not that sure we want/need to add them as well.
     }
 
+    // Set log level to warning explicitly, as 262+ IDEs disable it by default
+    extraOptions += "-Dintellij.console.log.level=warning"
+
     options.xmx.foreach(v => extraOptions += s"-Xmx${v}m")
     options.xms.foreach(v => extraOptions += s"-Xms${v}m")
     extraOptions ++= options.extraOptions
@@ -247,6 +250,8 @@ object IntellijVMOptionsBuilder {
     val platformPrefix = platform.platformPrefix
     if (platformPrefix.nonEmpty)
       buffer += s"-Didea.platform.prefix=$platformPrefix"
+    // Set log level to warning explicitly, as 262+ IDEs disable it by default
+    buffer += "-Dintellij.console.log.level=warning"
     buffer
   }
 
