@@ -512,6 +512,39 @@ If your Scala plugin version is 2024.2.444 or higher, and you enabled separate m
 then to generate correct mappings and IDEA Run Configuration you should set this property to true (`-Dseparate.prod.test.sources.enabled=true`).
 Otherwise, there is no need to do anything as this value is set to false by default.
 
+## Source-Level Debugging with `packageArtifactDynamic`
+
+`packageArtifact` packages all project classes into JARs under `lib/`. This is suitable for distribution but prevents IntelliJ's debugger from mapping classes back to source files in dependent modules.
+
+For development, use `packageArtifactDynamic` instead:
+
+```
+sbt packageArtifactDynamic
+```
+
+This writes class files to a `classes/` directory on disk instead of packaging them into JARs. IntelliJ's debugger can then resolve source files for all modules in the project, enabling **breakpoints across module boundaries** — including external projects loaded via `dependsOn(RootProject(...))`.
+
+| Task | Output | Source-level debugging |
+|------|--------|-----------------------|
+| `packageArtifact` | JARs in `lib/` | Only within the main plugin module |
+| `packageArtifactDynamic` | Class files in `classes/` | Across all modules including external projects |
+| `packageArtifactZip` | Distributable `.zip` | For publishing to JetBrains Marketplace |
+
+### External Project Support
+
+`dependsOn(RootProject(...))` works for depending on normal SBT projects that don't use sbt-idea-plugin. External projects' class files are automatically merged into the plugin artifact via `MergeIntoParent()`, and their library dependencies are resolved and included — no `packageFileMappings` or manual `libraryDependencies` pull needed.
+
+`packageLibraryMappings` set on the root plugin project applies as global defaults to all nodes, including external projects. For example, to exclude scala libraries from the entire artifact (including external project dependencies):
+
+```scala
+packageLibraryMappings ++= Seq(
+  "org.scala-lang" % "scala.*" % ".*" -> None,
+  "org.scala-lang.modules" % "scala.*" % ".*" -> None
+)
+```
+
+Node-specific `packageLibraryMappings` override root mappings when both are set.
+
 ## Known Issues and Limitations
 
 ### `name` key in projects
