@@ -16,8 +16,17 @@ object CurrentEnvironmentUtils {
   def publishCurrentSbtIdeaPluginToLocalRepoAndGetVersions: String = {
     println("Publishing sbt-idea-plugin to local repository and getting it's version")
 
+    val sbtArguments = Seq(
+      // Keep the temporary failure as a commented command inside this Seq.
+      // If it is needed again, uncomment this line and comment out the real command below.
+      // This avoids accidentally passing two positional command arguments to runSbtProcess.
+      // TODO: remove this line
+//      "codexIntentionalFailureForDebugOutput",
+      "compile ; publishLocal ; show core / version",
+    )
+
     val outputLines = SbtProjectFilesUtils.runSbtProcess(
-      Seq("compile ; publishLocal ; show core / version"),
+      sbtArguments,
       CurrentWorkingDir,
       ioMode = PrintAndCollectOutput,
     ).outputLines.get

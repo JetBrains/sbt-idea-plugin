@@ -4,10 +4,13 @@ import sbt.fileToRichFile
 
 import java.io.File
 import java.nio.file.Path
+import scala.collection.mutable
 import scala.io.Source
 import scala.util.Using
 
 object SbtProjectFilesUtils {
+  // Keep failure messages useful without embedding huge sbt logs into ScalaTest output.
+  private val ProcessOutputTailLinesNumber = 80
 
   def updateSbtIdeaPluginToVersion(projectDir: File, sbtIdePluginVersion: String): Path = {
     val pluginsSbtFile = projectDir / "project" / "plugins.sbt"
@@ -97,10 +100,7 @@ object SbtProjectFilesUtils {
     val pb = new ProcessBuilder(command *)
     pb.directory(workingDir)
     pb.redirectErrorStream(true)
-
-    if (ioMode == IoMode.Inherit) {
-      pb.inheritIO()
-    }
+    pb.redirectInput(ProcessBuilder.Redirect.INHERIT)
 
     envVars.foreach { case (key, value) =>
       pb.environment().put(key, value)
@@ -108,23 +108,60 @@ object SbtProjectFilesUtils {
 
     val process = pb.start()
 
-    val outputLines: Option[Seq[String]] = if (ioMode == IoMode.PrintAndCollectOutput) {
-      Some(Using.resource(Source.fromInputStream(process.getInputStream)) { source =>
-        source.getLines.map { line =>
-          println(line)
-          line
-        }.toArray.toSeq
-      })
-    } else {
-      None
+    // IoMode.Inherit used to print process output via ProcessBuilder.inheritIO().
+    // We still print it live, but stdout/stderr are now piped through this helper
+    // so nonzero exits can include the last output lines in the thrown exception.
+    val outputTail = mutable.Queue.empty[String]
+
+    // Only callers that explicitly request collected output should receive the full log.
+    // Other callers still get the bounded failure tail via outputTail.
+    val collectedOutputBuilder: Option[mutable.Builder[String, Vector[String]]] =
+      if (ioMode == IoMode.PrintAndCollectOutput)
+        Some(Vector.newBuilder[String])
+      else
+        None
+    var outputLineCount = 0
+
+    val outputLines: Option[Seq[String]] = Using.resource(Source.fromInputStream(process.getInputStream)) { source =>
+      source.getLines.foreach { line =>
+        println(line)
+
+        outputLineCount += 1
+        collectedOutputBuilder.foreach(_ += line)
+
+        // Keep the last N lines so nonzero exits include the relevant sbt error.
+        outputTail.enqueue(line)
+        if (outputTail.size > ProcessOutputTailLinesNumber) {
+          outputTail.dequeue()
+        }
+      }
+
+      collectedOutputBuilder.map(_.result())
     }
 
     val exitCode = process.waitFor()
     if (exitCode != 0) {
-      throw new RuntimeException(s"Command '$command' failed with exit code $exitCode")
+      throw new RuntimeException(s"Command '$command' failed with exit code $exitCode.${formatProcessOutputForError(outputTail, outputLineCount)}")
     }
 
     ProcessRunResult(outputLines)
+  }
+
+  private def formatProcessOutputForError(lines: Seq[String], outputLineCount: Int): String = {
+    if (lines.nonEmpty) {
+      // Mention omitted lines so the reader knows this is a tail, not the full process log.
+      val omittedLines = outputLineCount - lines.size
+      val omittedMessage = if (omittedLines > 0)
+        s"\n... ($omittedLines earlier output lines omitted)"
+      else
+        ""
+
+      s"""$omittedMessage
+         |Process output (last ${lines.size} of $outputLineCount lines):
+         |${lines.mkString("\n")}""".stripMargin
+    } else {
+      "\nProcess output: <empty>"
+    }
   }
 
   /**
