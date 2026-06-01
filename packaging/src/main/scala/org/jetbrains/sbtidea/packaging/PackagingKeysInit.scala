@@ -152,7 +152,7 @@ trait PackagingKeysInit {
     val logger: SbtPluginLogger = new SbtPluginLogger(streams.value)
     val buildStructure = Keys.buildStructure.value
     val structure = new SbtPackagingStructureExtractor(rootProject, data, buildDeps, buildStructure, logger).extract
-    val res = new LinearMappingsBuilder(outputDir, logger).buildMappings(structure)
+    val res = new LinearMappingsBuilder(outputDir, logger, Some(rootProject)).buildMappings(structure)
     logger.throwFatalErrors()
     res
   }

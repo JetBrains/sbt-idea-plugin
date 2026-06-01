@@ -3,23 +3,31 @@ package org.jetbrains.sbtidea.packaging.mappings
 import org.jetbrains.sbtidea.packaging.structure.{PackagedProjectNode, PackagingMethod}
 import org.jetbrains.sbtidea.packaging.{MAPPING_KIND, Mapping, Mappings}
 import org.jetbrains.sbtidea.structure.ProjectNode
+import org.jetbrains.sbtidea.structure.sbtImpl.SbtProjectNode
 import org.jetbrains.sbtidea.{PluginLogger, structure}
 import sbt.*
 
 import scala.collection.mutable
 
-class LinearMappingsBuilder(override val outputDir: File, log: PluginLogger) extends AbstractMappingBuilder {
+class LinearMappingsBuilder(
+  override val outputDir: File,
+  log: PluginLogger,
+  rootProjectRef: Option[ProjectRef] = None
+) extends AbstractMappingBuilder {
 
   class MappingBuildException(message: String) extends Exception(message)
 
   private val mappingsBuffer: mutable.Set[Mapping] = new mutable.TreeSet[Mapping]()
 
-  private def processNode(node: PackagedProjectNode,
-                          rootLibraryMappings: Map[structure.ModuleKey, Option[String]]): Unit = {
+  private def processNode(
+    node: PackagedProjectNode,
+    libraryMappingsContext: LibraryMappingsContext
+  ): Unit = {
     if (shouldSkip(node))
       return
     val targetJar = processTarget(node)
-    processLibraries(node, targetJar, rootLibraryMappings)
+    validateLibraryMappings(node, libraryMappingsContext)
+    processLibraries(node, targetJar, libraryMappingsContext.rootLibraryMappings)
     processFileMappings(node)
   }
 
@@ -128,6 +136,35 @@ class LinearMappingsBuilder(override val outputDir: File, log: PluginLogger) ext
     to
   }
 
+  private case class LibraryMappingsContext(
+    rootNode: Option[PackagedProjectNode],
+    rootLibraryMappings: Map[structure.ModuleKey, Option[String]],
+    allNodes: Seq[PackagedProjectNode]
+  )
+
+  private def validateLibraryMappings(node: PackagedProjectNode, context: LibraryMappingsContext): Unit = {
+    val mappingsToValidate = node.packagingOptions.libraryMappings.toMap
+
+    // See https://github.com/JetBrains/sbt-idea-plugin/pull/147
+    val libsToValidateAgainst: Seq[structure.Library] =
+      if (context.rootNode.contains(node))
+        context.allNodes.flatMap(_.libs)
+      else
+        node.libs
+
+    val invalidMappings = mappingsToValidate.filterNot { case (key, _) =>
+      // Default filtering was added in https://github.com/JetBrains/sbt-idea-plugin/issues/75
+      isDefaultScalaMapping(key) ||
+        libsToValidateAgainst.exists(_.key == key)
+    }
+    invalidMappings.foreach { m =>
+      log.fatal(s"No library dependencies match mapping $m in module ${node.name}")
+    }
+  }
+  private def isDefaultScalaMapping(key: structure.ModuleKey): Boolean =
+    key.org == "org.scala-lang.modules" ||
+      key.org == "org.scala-lang"
+
   private def processLibraries(node: PackagedProjectNode, targetJar: File,
                                rootLibraryMappings: Map[structure.ModuleKey, Option[String]]): Unit = {
     def mapping(jarFile: File, to: File): Mapping =
@@ -147,16 +184,6 @@ class LinearMappingsBuilder(override val outputDir: File, log: PluginLogger) ext
     // | empty (no exclusions wanted) | empty                | empty                        | All included    |
     val mappings: Map[structure.ModuleKey, Option[String]] =
       rootLibraryMappings ++ node.packagingOptions.libraryMappings.toMap
-
-    val invalidMappings = mappings
-      .filterNot { case (key, _) =>
-        key.org == "org.scala-lang.modules" || // filter out default mappings
-          key.org == "org.scala-lang"         || // filter out default mappings
-          node.libs.exists(_.key == key)
-      }
-    invalidMappings.foreach { m =>
-      log.fatal(s"No library dependencies match mapping $m in module ${node.name}")
-    }
 
     for {
       lib <- node.libs
@@ -188,25 +215,51 @@ class LinearMappingsBuilder(override val outputDir: File, log: PluginLogger) ext
 
   override def buildMappings(nodes: Seq[PackagedProjectNode]): Mappings = {
     log.info(s"building mappings for ${nodes.size} nodes")
-    val rootLibraryMappings = rootLibraryMappingsOf(nodes)
-    nodes.foreach(processNode(_, rootLibraryMappings))
+    val libraryMappingsContext = buildLibraryMappingsContext(nodes)
+    nodes.foreach(processNode(_, libraryMappingsContext))
     mappingsBuffer.toSeq
   }
 
   /**
-    * Returns the root (Standalone) project's `libraryMappings`, used by [[processLibraries]] as
-    * global defaults applied to every node.
+    * Returns the root plugin project's `libraryMappings`, used by [[processLibraries]] as global
+    * defaults applied to every node.
     *
     * This lets a plugin author set `packageLibraryMappings` once on the root project and have it
     * apply to external projects loaded via `dependsOn(RootProject(...))`, which don't run
-    * sbt-idea-plugin and therefore carry an empty `libraryMappings`. Returns an empty map when no
-    * Standalone node is present.
+    * sbt-idea-plugin and therefore carry an empty `libraryMappings`.
     */
-  private def rootLibraryMappingsOf(nodes: Seq[PackagedProjectNode]): Map[structure.ModuleKey, Option[String]] =
-    nodes
-      .find(_.packagingOptions.packageMethod.isInstanceOf[PackagingMethod.Standalone])
-      .map(_.packagingOptions.libraryMappings.toMap)
-      .getOrElse(Map.empty)
+  private def buildLibraryMappingsContext(nodes: Seq[PackagedProjectNode]): LibraryMappingsContext = {
+    val rootNode = rootProjectNodeOf(nodes)
+    LibraryMappingsContext(
+      rootNode = rootNode,
+      rootLibraryMappings = rootNode.map(_.packagingOptions.libraryMappings.toMap).getOrElse(Map.empty),
+      allNodes = nodes
+    )
+  }
+
+  private def rootProjectNodeOf(nodes: Seq[PackagedProjectNode]): Option[PackagedProjectNode] =
+    rootProjectRef
+      .flatMap(findRootProjectNodeByRef(nodes))
+      .orElse(findRootProjectNodeByTopology(nodes))
+
+  private def findRootProjectNodeByRef(nodes: Seq[PackagedProjectNode])(rootRef: ProjectRef): Option[PackagedProjectNode] =
+    nodes.collectFirst {
+      case node: SbtProjectNode if node.ref == rootRef =>
+        node.asInstanceOf[PackagedProjectNode]
+    }
+
+  private def findRootProjectNodeByTopology(nodes: Seq[PackagedProjectNode]): Option[PackagedProjectNode] = {
+    val rootCandidates = nodes.filter(_.parents.isEmpty)
+    rootCandidates match {
+      case Seq(root) => Some(root)
+      case _ =>
+        val standalone = rootCandidates.filter(_.packagingOptions.packageMethod.isInstanceOf[PackagingMethod.Standalone])
+        standalone match {
+          case Seq(root) => Some(root)
+          case _         => None
+        }
+    }
+  }
 
   private def getTopLevelJarPath(node: PackagedProjectNode): String = node.packagingOptions.packageMethod match {
     case PackagingMethod.Skip() =>

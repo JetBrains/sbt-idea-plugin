@@ -1,5 +1,6 @@
 package org.jetbrains.sbtidea.packaging
 
+import org.jetbrains.sbtidea.CapturingLogger
 import org.jetbrains.sbtidea.PluginLogger
 import org.jetbrains.sbtidea.packaging.mappings.LinearMappingsBuilder
 import org.jetbrains.sbtidea.packaging.structure.{PackagingMethod => SPackagingMethod}
@@ -144,6 +145,90 @@ class ExternalProjectPackagingTest extends AnyWordSpec with Matchers with Packag
       // scala-library excluded by root's mappings, cats-core included
       mappings.exists(_.from == scalaLibJar) shouldBe false
       mappings.exists(_.from == appLibJar) shouldBe true
+    }
+
+    "exclude non-scala libraries from external projects when root project has exclusions without invalid mapping errors" in {
+      // User POV:
+      // A plugin project can depend on a normal sbt project via `dependsOn(RootProject(...))`.
+      // The external project does not enable sbt-idea-plugin, so it has no own `packageLibraryMappings`;
+      // the root plugin project's mappings are the user-visible way to exclude or remap its libraries.
+      //
+      // Therefore a root-level exclusion for an external-only library is valid when that library is present
+      // in the external project, even if it is absent from the root plugin module itself.
+      // It must exclude the external library and must not be reported as "No library dependencies match mapping".
+      //
+      // Related:
+      // - https://github.com/JetBrains/sbt-idea-plugin/issues/146
+      // - https://github.com/JetBrains/sbt-idea-plugin/pull/147
+      // - https://github.com/JetBrains/sbt-idea-plugin/issues/68
+      val appLibJar = new File("/tmp/cats-core.jar")
+      val appLibKey = mkKey("org.typelevel", "cats-core_3", "2.13.0")
+      val appLib = new TestLibrary(appLibKey, Seq(appLibJar))
+
+      val pluginNode = node(
+        "main-plugin",
+        SPackagingMethod.Standalone("lib/main-plugin.jar", static = false),
+        libraryMappings = Seq(appLibKey -> None)
+      )
+      val externalNode = node(
+        "external-lib",
+        SPackagingMethod.MergeIntoParent(),
+        parents = Seq(pluginNode),
+        libs = Seq(appLib),
+        libraryMappings = Seq.empty
+      )
+
+      val (messages, mappings) = CapturingLogger.captureLogAndValue() {
+        new LinearMappingsBuilder(outputDir, PluginLogger).buildMappings(Seq(externalNode, pluginNode))
+      }
+
+      mappings.exists(_.from == appLibJar) shouldBe false
+      messages.exists(_.contains("No library dependencies match mapping")) shouldBe false
+    }
+
+    "use root plugin library mappings when another standalone node appears before root" in {
+      // User POV:
+      // `packageLibraryMappings` configured on the root plugin project are documented as global
+      // defaults for all packaging nodes, including external RootProject dependencies. That contract
+      // should not depend on the internal order in which the extracted packaging graph is traversed.
+      //
+      // A build may contain another Standalone-packaged node before the actual root plugin node
+      // (for example, in multi-module/plugin-model setups).
+      // Such a node is a valid packaging target, but it is not the root plugin project whose mappings the user configured.
+      // The external project's libraries should still be filtered by the real root plugin mappings.
+      //
+      // Related:
+      // - https://github.com/JetBrains/sbt-idea-plugin/issues/146
+      // - https://github.com/JetBrains/sbt-idea-plugin/pull/147
+      // - https://youtrack.jetbrains.com/issue/SCL-21681
+      val scalaLibJar = new File("/tmp/scala-library-3.7.4.jar")
+      val scalaLibKey = mkKey("org.scala-lang", "scala3-library_3", "3.7.4")
+      val scalaLib = new TestLibrary(scalaLibKey, Seq(scalaLibJar))
+
+      val pluginNode = node(
+        "main-plugin",
+        SPackagingMethod.Standalone("lib/main-plugin.jar", static = false),
+        libraryMappings = Seq(scalaLibKey -> None)
+      )
+      val standaloneSubmodule = node(
+        "standalone-submodule",
+        SPackagingMethod.Standalone("lib/standalone-submodule.jar", static = false),
+        parents = Seq(pluginNode),
+        libraryMappings = Seq.empty
+      )
+      val externalNode = node(
+        "external-lib",
+        SPackagingMethod.MergeIntoParent(),
+        parents = Seq(pluginNode),
+        libs = Seq(scalaLib),
+        libraryMappings = Seq.empty
+      )
+
+      val mappings = new LinearMappingsBuilder(outputDir, PluginLogger).buildMappings(
+        Seq(externalNode, standaloneSubmodule, pluginNode)
+      )
+
+      mappings.exists(_.from == scalaLibJar) shouldBe false
     }
 
     "exclude scala when both root and node have the same exclusions" in {
