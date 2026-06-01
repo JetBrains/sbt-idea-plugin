@@ -14,11 +14,12 @@ class LinearMappingsBuilder(override val outputDir: File, log: PluginLogger) ext
 
   private val mappingsBuffer: mutable.Set[Mapping] = new mutable.TreeSet[Mapping]()
 
-  private def processNode(node: PackagedProjectNode): Unit = {
+  private def processNode(node: PackagedProjectNode,
+                          rootLibraryMappings: Map[structure.ModuleKey, Option[String]]): Unit = {
     if (shouldSkip(node))
       return
     val targetJar = processTarget(node)
-    processLibraries(node, targetJar)
+    processLibraries(node, targetJar, rootLibraryMappings)
     processFileMappings(node)
   }
 
@@ -127,15 +128,25 @@ class LinearMappingsBuilder(override val outputDir: File, log: PluginLogger) ext
     to
   }
 
-  private def processLibraries(node: PackagedProjectNode, targetJar: File): Unit = {
+  private def processLibraries(node: PackagedProjectNode, targetJar: File,
+                               rootLibraryMappings: Map[structure.ModuleKey, Option[String]]): Unit = {
     def mapping(jarFile: File, to: File): Mapping =
       if (node.packagingOptions.assembleLibraries)
         Mapping(jarFile, targetJar, node.mmd.copy(kind = MAPPING_KIND.LIB_ASSEMBLY))
       else
         Mapping(jarFile, to, node.mmd.copy(kind = MAPPING_KIND.LIB))
 
+    // Merge root project's libraryMappings as global defaults with this node's own mappings.
+    // Node-specific mappings override root mappings (node wins via ++ ordering).
+    //
+    // | Node libMapping              | Root libMapping      | Merged (root ++ node)        | Result          |
+    // |------------------------------|----------------------|------------------------------|-----------------|
+    // | empty (external project)     | scala-.* -> None     | scala-.* -> None             | Scala excluded  |
+    // | scala-.* -> None (subproject)| scala-.* -> None     | scala-.* -> None             | Same            |
+    // | scala-reflect -> Some("lib/")| scala-.* -> None     | scala-reflect -> Some("lib/")| Node wins       |
+    // | empty (no exclusions wanted) | empty                | empty                        | All included    |
     val mappings: Map[structure.ModuleKey, Option[String]] =
-      node.packagingOptions.libraryMappings.toMap
+      rootLibraryMappings ++ node.packagingOptions.libraryMappings.toMap
 
     val invalidMappings = mappings
       .filterNot { case (key, _) =>
@@ -177,9 +188,25 @@ class LinearMappingsBuilder(override val outputDir: File, log: PluginLogger) ext
 
   override def buildMappings(nodes: Seq[PackagedProjectNode]): Mappings = {
     log.info(s"building mappings for ${nodes.size} nodes")
-    nodes.foreach(processNode)
+    val rootLibraryMappings = rootLibraryMappingsOf(nodes)
+    nodes.foreach(processNode(_, rootLibraryMappings))
     mappingsBuffer.toSeq
   }
+
+  /**
+    * Returns the root (Standalone) project's `libraryMappings`, used by [[processLibraries]] as
+    * global defaults applied to every node.
+    *
+    * This lets a plugin author set `packageLibraryMappings` once on the root project and have it
+    * apply to external projects loaded via `dependsOn(RootProject(...))`, which don't run
+    * sbt-idea-plugin and therefore carry an empty `libraryMappings`. Returns an empty map when no
+    * Standalone node is present.
+    */
+  private def rootLibraryMappingsOf(nodes: Seq[PackagedProjectNode]): Map[structure.ModuleKey, Option[String]] =
+    nodes
+      .find(_.packagingOptions.packageMethod.isInstanceOf[PackagingMethod.Standalone])
+      .map(_.packagingOptions.libraryMappings.toMap)
+      .getOrElse(Map.empty)
 
   private def getTopLevelJarPath(node: PackagedProjectNode): String = node.packagingOptions.packageMethod match {
     case PackagingMethod.Skip() =>

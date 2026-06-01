@@ -23,7 +23,13 @@ trait Init { this: Keys.type =>
   private def isRunningFromIDEA: Boolean = sys.props.contains("idea.managed")
 
   lazy val globalSettings : Seq[Setting[?]] = Seq(
-    intellijAttachSources     := true
+    intellijAttachSources     := true,
+    // Provide defaults for settings that are aggregated across all dependencies
+    // (including external projects loaded via RootProject/ProjectRef).
+    // Without these defaults, `ScopeFilter(inDependencies(ThisProject))` fails
+    // when a dependency project doesn't have sbt-idea-plugin enabled.
+    intellijPlugins           := Seq.empty,
+    intellijExtraRuntimePluginsInTests := Seq.empty
   )
 
   lazy val buildSettings: Seq[Setting[?]] = Seq(

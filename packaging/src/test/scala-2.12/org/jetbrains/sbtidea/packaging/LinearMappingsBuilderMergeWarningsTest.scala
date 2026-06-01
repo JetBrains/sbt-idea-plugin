@@ -1,8 +1,7 @@
 package org.jetbrains.sbtidea.packaging
 
 import org.jetbrains.sbtidea.packaging.mappings.LinearMappingsBuilder
-import org.jetbrains.sbtidea.packaging.structure.{PackagedProjectNode, PackagingMethod as SPackagingMethod, ProjectPackagingOptions}
-import org.jetbrains.sbtidea.structure.{Library, ModuleKey}
+import org.jetbrains.sbtidea.packaging.structure.{PackagingMethod as SPackagingMethod}
 import org.jetbrains.sbtidea.PluginLogger
 import org.jetbrains.sbtidea.CapturingLogger
 import org.scalatest.matchers.should.Matchers
@@ -11,7 +10,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import java.io.File
 
 //NOTE: the test was generated with Codex
-class LinearMappingsBuilderMergeWarningsTest extends AnyWordSpec with Matchers {
+class LinearMappingsBuilderMergeWarningsTest extends AnyWordSpec with Matchers with PackagingTestNodes {
   private val MergeWarningText = "will be merged into non-terminal"
 
   "LinearMappingsBuilder merge warnings" should {
@@ -69,39 +68,6 @@ class LinearMappingsBuilderMergeWarningsTest extends AnyWordSpec with Matchers {
       assertContainsWarningText(messages, MergeWarningText)
       assertContainsWarningText(messages, "{scalaUltimateCandidate}")
     }
-  }
-
-  private def node(
-    name: String,
-    method: SPackagingMethod,
-    parents: Seq[PackagedProjectNode] = Seq.empty
-  ): TestNode =
-    new TestNode(name = name, parents0 = parents, packagingOptions = packagingOptions(method))
-
-  private def packagingOptions(method: SPackagingMethod): ProjectPackagingOptions =
-    new ProjectPackagingOptions {
-      override def packageMethod: SPackagingMethod = method
-      override def libraryMappings: Seq[(ModuleKey, Option[String])] = Seq.empty
-      override def libraryBaseDir: File = new File("lib")
-      override def fileMappings: Seq[(File, String)] = Seq.empty
-      override def shadePatterns: Seq[ShadePattern] = Seq.empty
-      override def excludeFilter: ExcludeFilter = ExcludeFilter.AllPass
-      override def additionalProjects: Seq[PackagedProjectNode] = Seq.empty
-      override def classRoots: Seq[File] = Seq.empty
-      override def assembleLibraries: Boolean = false
-    }
-
-  private final class TestNode(
-    override val name: String,
-    parents0: Seq[PackagedProjectNode],
-    override val packagingOptions: ProjectPackagingOptions
-  ) extends PackagedProjectNode {
-    override val rootProjectName: Option[String] = None
-    override val parents: Seq[PackagedProjectNode] = parents0
-    override val children: Seq[PackagedProjectNode] = Seq.empty
-    override val libs: Seq[Library] = Seq.empty
-
-    override def toString: String = s"{$name}"
   }
 
   private def assertContainsWarningText(messages: Seq[String], warningText: String): Unit =

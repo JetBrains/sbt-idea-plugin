@@ -8,6 +8,41 @@ import sbt.*
 import sbt.Def.spaceDelimited
 import sbt.Keys.*
 
+object PackagingKeysInit {
+  // Pure assembly of SbtPackageProjectData for external projects (those not already
+  // covered by pluginData). Extracted from packageMappingsImpl so the data plumbing can
+  // be unit-tested without an SBT environment — see ExternalProjectPackagingTest.
+  def buildExternalProjectData(
+    pluginRefs: Set[ProjectRef],
+    allRefs: Seq[ProjectRef],
+    allNames: Seq[String],
+    allProducts: Seq[Seq[File]],
+    allClasspaths: Seq[Def.Classpath],
+    allDefinedDeps: Seq[Seq[ModuleID]],
+    allReports: Seq[UpdateReport],
+  ): Seq[SbtPackageProjectData] =
+    allRefs.indices
+      .filterNot(i => pluginRefs.contains(allRefs(i)))
+      .map { i =>
+        SbtPackageProjectData(
+          thisProject = allRefs(i),
+          thisProjectName = allNames(i),
+          cp = allClasspaths(i),
+          definedDeps = allDefinedDeps(i),
+          additionalProjects = Seq.empty,
+          assembleLibraries = false,
+          productDirs = allProducts(i),
+          report = allReports(i),
+          libMapping = Seq.empty,
+          libraryBaseDir = file("lib"),
+          additionalMappings = Seq.empty,
+          packageMethod = PackagingMethod.MergeIntoParent(),
+          shadePatterns = Seq.empty,
+          excludeFilter = ExcludeFilter.AllPass
+        )
+      }
+}
+
 trait PackagingKeysInit {
   this: PackagingKeys.type =>
 
@@ -41,11 +76,14 @@ trait PackagingKeysInit {
 
     packageMappings := {
       streams.value.log.info("started dumping structure")
-      packageMappingsImpl(dumpDependencyStructure).value
+      packageMappingsImpl(dumpDependencyStructure, Compile / products).value
     },
     packageMappingsOffline := {
       streams.value.log.info("started dumping offline structure")
-      packageMappingsImpl(dumpDependencyStructureOffline).value
+      // Offline must use productDirectories (path-only). products would force a compile
+      // of every project during IntelliJ sync via createIDEAArtifactXml → packageMappingsOffline,
+      // and a compile error in any external RootProject would then break sync entirely.
+      packageMappingsImpl(dumpDependencyStructureOffline, Compile / productDirectories).value
     },
     findLibraryMapping := {
       val args        = spaceDelimited("<arg>").parsed
@@ -100,10 +138,16 @@ trait PackagingKeysInit {
     }
   )
 
-  private def packageMappingsImpl(keyFor: TaskKey[SbtPackageProjectData]): Def.Initialize[Task[Mappings]] = Def.task {
+  private def packageMappingsImpl(
+    keyFor: TaskKey[SbtPackageProjectData],
+    productsKey: TaskKey[Seq[File]],
+  ): Def.Initialize[Task[Mappings]] = Def.task {
     val rootProject = thisProjectRef.value
     val buildDeps = buildDependencies.value
-    val data = keyFor.?.all(ScopeFilter(inAnyProject)).value.flatten.filterNot(_ == null)
+    val pluginData = keyFor.?.all(ScopeFilter(inAnyProject)).value.flatten.filterNot(_ == null)
+    val externalData = externalProjectData(keyFor, productsKey).value
+
+    val data = pluginData ++ externalData
     val outputDir = packageOutputDir.value
     val logger: SbtPluginLogger = new SbtPluginLogger(streams.value)
     val buildStructure = Keys.buildStructure.value
@@ -111,6 +155,50 @@ trait PackagingKeysInit {
     val res = new LinearMappingsBuilder(outputDir, logger).buildMappings(structure)
     logger.throwFatalErrors()
     res
+  }
+
+  /**
+   * Sub-task that collects packaging data for external projects loaded via
+   * `RootProject` / `ProjectRef` — those not already covered by `keyFor`.
+   *
+   * External projects have their own builds and don't load sbt-idea-plugin, so
+   * `dumpDependencyStructure` is undefined for them and they are absent from `keyFor`'s data.
+   * Without this, their class files and library dependencies would never reach the plugin
+   * artifact, forcing consumers into `packageFileMappings` with explicit JARs (which breaks
+   * source-level debugging) and manual `libraryDependencies` pulls.
+   *
+   * We read project refs, names, class output, managed classpaths, library dependencies, and
+   * full dependency reports (`updateFull`) from ALL projects using standard SBT keys (available
+   * everywhere), then [[PackagingKeysInit.buildExternalProjectData]] turns the projects not in
+   * `keyFor` into [[SbtPackageProjectData]] defaulting to `MergeIntoParent()` — so their classes
+   * and libraries merge into the parent plugin artifact, just like `dependsOn` for normal
+   * (non-IJ) SBT projects. The full report (not null) lets `IvyLibraryExtractor` resolve
+   * transitive dependencies without special null-handling.
+   *
+   * `productsKey` is supplied by the caller to mirror the online/offline split that already
+   * exists for `dumpDependencyStructure(Offline)`: `packageMappings` passes `Compile / products`
+   * (compile-triggering, needed to actually package class files); `packageMappingsOffline` passes
+   * `Compile / productDirectories` (path-only). The offline variant runs during IntelliJ sync via
+   * `createIDEAArtifactXml`, so using `products` there would force a compile of every project on
+   * sync, and a compile error in any external `RootProject` would break sync entirely.
+   *
+   * For IJ plugins with no external `RootProject` dependencies this returns an empty sequence
+   * (no-op) — every project is already covered by `keyFor`.
+   */
+  private def externalProjectData(
+    keyFor: TaskKey[SbtPackageProjectData],
+    productsKey: TaskKey[Seq[File]],
+  ): Def.Initialize[Task[Seq[SbtPackageProjectData]]] = Def.task {
+    val pluginRefs = keyFor.?.all(ScopeFilter(inAnyProject)).value.flatten.filterNot(_ == null).map(_.thisProject).toSet
+    val allRefs = thisProjectRef.all(ScopeFilter(inAnyProject)).value
+    val allNames = name.all(ScopeFilter(inAnyProject)).value
+    val allProducts = productsKey.all(ScopeFilter(inAnyProject)).value
+    val allClasspaths = (Runtime / managedClasspath).all(ScopeFilter(inAnyProject)).value
+    val allDefinedDeps = (Compile / libraryDependencies).all(ScopeFilter(inAnyProject)).value
+    val allReports = updateFull.all(ScopeFilter(inAnyProject)).value
+    PackagingKeysInit.buildExternalProjectData(
+      pluginRefs, allRefs, allNames, allProducts, allClasspaths, allDefinedDeps, allReports
+    )
   }
 
 }

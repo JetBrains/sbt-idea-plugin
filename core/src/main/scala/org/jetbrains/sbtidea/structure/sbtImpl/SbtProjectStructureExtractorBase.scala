@@ -16,20 +16,53 @@ trait SbtProjectStructureExtractorBase extends ProjectStructureExtractor {
   val buildDependencies: BuildDependencies
   val projectsData: Seq[ProjectDataType]
 
+  /**
+   * Maps each [[ProjectRef]] of the current build to its extracted project data.
+   *
+   * Only projects that belong to this build (i.e. present in `projectsData`) are included.
+   * Projects pulled in via `dependsOn(RootProject(...))` live in their own builds and don't
+   * run sbt-idea-plugin, so we have no data for them and they are deliberately absent here.
+   * That is why every lookup against `projectMap` in this trait is guarded with
+   * `projectMap.contains` / `projectMap.get`: an unguarded `projectMap(externalRef)` is exactly
+   * the `NoSuchElementException` reported in issue #146.
+   *
+   * The filtering behaviour is covered by `SbtProjectStructureExtractorExternalRefsTest`.
+   */
   protected lazy val projectMap: Map[ProjectRef, ProjectDataType] = projectsData.iterator.map(x => x.thisProject -> x).toMap
-  protected lazy val revProjectMap: Seq[(ProjectRef, ProjectRef)] = projectsData.flatMap(x => buildDependencies.classpathRefs(x.thisProject).map(_ -> x.thisProject))
+  // `filter(projectMap.contains)` drops reverse edges to external projects (dependsOn(RootProject(...))):
+  // they are not in projectMap, so leaving them in would later crash collectParents' `projectMap(ref)`
+  // lookup (the original #146 bug). See SbtProjectStructureExtractorExternalRefsTest.
+  protected lazy val revProjectMap: Seq[(ProjectRef, ProjectRef)] = projectsData.flatMap(x => buildDependencies.classpathRefs(x.thisProject).filter(projectMap.contains).map(_ -> x.thisProject))
   protected lazy val projectCache: mutable.Map[ProjectRef, NodeType] = mutable.HashMap.empty
 
   def findProjectRef(project: Project): Option[ProjectRef] = projectMap.find(_._1.project == project.id).map(_._1)
 
   protected def topoSortRefs(root: ProjectRef, queue: Seq[ProjectRef] = Seq.empty): Seq[ProjectRef] = {
-    val data = projectMap(root)
-    if (!queue.contains(root)) {
-      val newQueue = queue :+ root
-      val direct = buildDependencies.classpathRefs(root).foldLeft(newQueue) { case (q, r) => topoSortRefs(r, q) }
-      val additional = collectAdditionalProjects(data, direct)
-      additional
-    } else { queue }
+    projectMap.get(root) match {
+      case None =>
+        // `root` is an external project (dependsOn(RootProject(...))) that isn't part of this
+        // build, so we have no data for it and can't place it in the graph — skip it. See #146.
+        log.warn(s"skipping external project ref not part of the current build: $root")
+        queue
+      case Some(data) =>
+        if (queue.contains(root)) queue
+        else enqueueWithDependencies(data, root, queue)
+    }
+  }
+
+  /**
+   * Appends `root` to the topo-sort `queue`, then recursively visits its classpath
+   * dependencies and any additional projects contributed by subclasses.
+   *
+   * External classpath refs are filtered out here for the same reason as in [[projectMap]]:
+   * they belong to other builds and have no entry to recurse into.
+   */
+  private def enqueueWithDependencies(data: ProjectDataType, root: ProjectRef, queue: Seq[ProjectRef]): Seq[ProjectRef] = {
+    val newQueue = queue :+ root
+    val direct = buildDependencies.classpathRefs(root)
+      .filter(projectMap.contains)
+      .foldLeft(newQueue) { case (q, r) => topoSortRefs(r, q) }
+    collectAdditionalProjects(data, direct)
   }
 
   protected def collectAdditionalProjects(data: ProjectDataType, direct: Seq[ProjectRef]): Seq[ProjectRef] = direct
@@ -69,7 +102,10 @@ trait SbtProjectStructureExtractorBase extends ProjectStructureExtractor {
   }
 
   override def collectChildren(node: NodeType, data: ProjectDataType): Seq[NodeType] = {
-    val childRefs = buildDependencies.classpathRefs(node.ref)
+    // Same rationale as revProjectMap/topoSortRefs: external classpath refs
+    // (dependsOn(RootProject(...))) have no cached stub, so exclude them before lookup. See #146
+    // and SbtProjectStructureExtractorExternalRefsTest.
+    val childRefs = buildDependencies.classpathRefs(node.ref).filter(projectCache.contains)
     assert(childRefs.forall(projectCache.contains), s"Child stubs incomplete: ${childRefs.filterNot(projectCache.contains)}")
     childRefs.map(projectCache)
   }
