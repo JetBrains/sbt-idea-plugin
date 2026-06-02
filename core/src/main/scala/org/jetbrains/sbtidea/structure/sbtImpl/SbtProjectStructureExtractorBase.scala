@@ -17,7 +17,7 @@ trait SbtProjectStructureExtractorBase extends ProjectStructureExtractor {
   val projectsData: Seq[ProjectDataType]
 
   /**
-   * Maps each [[ProjectRef]] of the current build to its extracted project data.
+   * Maps each `ProjectRef` of the current build to its extracted project data.
    *
    * Only projects that belong to this build (i.e. present in `projectsData`) are included.
    * Projects pulled in via `dependsOn(RootProject(...))` live in their own builds and don't
