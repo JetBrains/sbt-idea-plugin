@@ -185,14 +185,38 @@ patchPluginXml := pluginXmlOptions { xml =>
 }
 ```
 
-#### `intellijVMOptions :: SettingKey[IntellijVMOptions]`
+#### `customIntellijVMOptions :: SettingKey[CustomIntellijVMOptions]`
 
-Fine tune java VM options for running the plugin with [runIDE](#runide-nodebug-suspend-blocking--inputkeyunit) task.
+Fine tune Java VM options for running the plugin with [runIDE](#runide-nodebug-suspend-blocking--inputkeyunit)
+task and for generated IntelliJ IDEA run configurations.
+
+By default, `sbt-idea-plugin` uses VM options from the downloaded IntelliJ Platform distribution and appends
+`customIntellijVMOptions` on top. Appended options can therefore be used for local development customizations.
+
 Example:
 
 ```SBT
-intellijVMOptions := intellijVMOptions.value.copy(xmx = 2048, xms = 256) 
+customIntellijVMOptions := customIntellijVMOptions.value.copy(xmx = Some(2048), xms = Some(256))
 ```
+
+Additional VM options can be appended with `withExtraOption` / `withExtraOptions`:
+
+```SBT
+customIntellijVMOptions := customIntellijVMOptions.value
+  .withExtraOption("-Dnosplash=true")
+```
+
+If you need a custom `idea.properties` file for the development IDE, point the platform to it explicitly:
+
+```SBT
+customIntellijVMOptions := customIntellijVMOptions.value
+  .withExtraOption("-Didea.properties.file=/absolute/path/to/idea.properties")
+```
+
+#### `intellijVMOptions :: SettingKey[IntellijVMOptions]`
+
+Deprecated. This key is ignored by default and only applies when `useNewVmOptions := false`.
+Use [`customIntellijVMOptions`](#customintellijvmoptions--settingkeycustomintellijvmoptions) for new code.
 
 #### `ideaConfigOptions :: SettingKey[IdeaConfigBuildingOptions]`
 
@@ -203,7 +227,8 @@ Fine tune how IntelliJ run configurations are generated when importing the proje
 Runs IntelliJ IDE with current plugin. This task is non-blocking by default, so you can continue using SBT console.
 
 By default, IDE is run with non-suspending debug agent on port `5005`. This can be overridden by either optional
-arguments above, or by modifying default [`intellijVMOptions`](#intellijvmoptions--settingkeyintellijvmoptions).
+arguments above, or by modifying default
+[`customIntellijVMOptions`](#customintellijvmoptions--settingkeycustomintellijvmoptions).
 
 ### Publishing and Verification
 
