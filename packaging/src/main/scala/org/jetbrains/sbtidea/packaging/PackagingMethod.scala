@@ -21,9 +21,34 @@ sealed trait PackagingMethod
 
 object PackagingMethod {
   final case class Skip() extends PackagingMethod
+  /**
+   * Merge this module into the nearest eligible standalone parent in the project dependency graph.
+   *
+   * In practice this is often the default/fallback mode for non-root projects when users do not
+   * explicitly configure `packageMethod`.
+   *
+   * Fallback is assigned in the sbt-layer settings:
+   * [[org.jetbrains.sbtidea.packaging.PackagingKeysInit.projectSettings]]
+   *
+   * This structure-level value is produced from the sbt-layer value in
+   * [[org.jetbrains.sbtidea.packaging.structure.sbtImpl.SbtPackagingStructureExtractor.keys2Structure]]
+   */
   final case class MergeIntoParent() extends PackagingMethod
+
   final case class DepsOnly(targetPath: String = "") extends PackagingMethod
+
   final case class MergeIntoOther(project: Project) extends PackagingMethod
+  /**
+   * Package this project as a standalone artifact.
+   *
+   * @param targetPath path of the generated jar inside the plugin artifact,<br>
+   *                   or an empty string to use `lib/<project-name>.jar`
+   * @param static     if `true`, keep this project packaged as a jar when running `packageArtifactDynamic`;<br>
+   *                   if `false`, dynamic packaging may expand project classes into the plugin `classes/` directory
+   *                   to support source-level debugging. <br.
+   *                   Regular `packageArtifact` and `packageArtifactZip` still produce jars for standalone projects.
+   */
   final case class Standalone(targetPath: String = "", static: Boolean = false) extends PackagingMethod
+
   final case class PluginModule(moduleName: String, static: Boolean = false) extends PackagingMethod
 }
