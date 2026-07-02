@@ -16,7 +16,7 @@ import scala.language.implicitConversions
 trait IntellijPluginInstallerTestBase extends AnyFunSuite with Matchers with IdeaMock with PluginMock with BeforeAndAfter {
   protected var ideaRoot: Path        = _
   protected var pluginsRoot: Path     = _
-  protected val ideaBuild: BuildInfo  = BuildInfo(IDEA_VERSION, IntelliJPlatform.IdeaUltimate)
+  protected val ideaBuild: BuildInfo  = BuildInfo(IDEA_VERSION, IntelliJPlatform.Idea)
 
   protected implicit val defaultBuildInfo: BuildInfo = IDEA_BUILDINFO
 

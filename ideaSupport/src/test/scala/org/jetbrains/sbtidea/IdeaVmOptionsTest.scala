@@ -1,6 +1,6 @@
 package org.jetbrains.sbtidea
 
-import org.jetbrains.sbtidea.IntelliJPlatform.IdeaCommunity
+import org.jetbrains.sbtidea.IntelliJPlatform.Idea
 import org.jetbrains.sbtidea.productInfo.{Launch, OS, ProductInfoExtraDataProvider}
 import org.jetbrains.sbtidea.runIdea.CustomIntellijVMOptions.DebugInfo
 import org.jetbrains.sbtidea.runIdea.IntellijVMOptionsBuilder.VmOptions
@@ -19,7 +19,7 @@ class IdeaVmOptionsTest extends AnyFunSuite with Matchers {
   private val mockIntellijBaseDir: Path = Paths.get("test non-existent intellijDirectory")
 
   private val oldVmOptions = VmOptions.Old(IntellijVMOptions(
-    platform = IdeaCommunity,
+    platform = Idea,
     pluginPath = Paths.get("foo bar"),
     ideaHome = Paths.get("bar baz"),
     intellijDirectory = mockIntellijBaseDir
@@ -62,7 +62,7 @@ class IdeaVmOptionsTest extends AnyFunSuite with Matchers {
 
   private def vmOptionsBuilder(useNewVmOptions: Boolean) = {
     new IntellijVMOptionsBuilder(
-      platform = IdeaCommunity,
+      platform = Idea,
       productInfoExtraDataProvider = mockProductInfoExtraDataProvider,
       pluginPath = Paths.get("foo bar"),
       ideaHome = Paths.get("bar baz"),

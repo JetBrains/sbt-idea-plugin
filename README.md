@@ -84,16 +84,21 @@ incomplete, so it is strongly recommended to verify it against
 
 #### `intellijPlatform in ThisBuild :: SettingKey[IntelliJPlatform]`
 
-**Default**: `IntelliJPlatform.IdeaCommunity`
+**Default**: `IntelliJPlatform.Idea`
 
 Edition of IntelliJ IDE to use in project. Currently available options are:
+
+- Idea
+- PyCharm
+- CLion
+- MPS
+
+Deprecated compatibility options:
 
 - IdeaCommunity
 - IdeaUltimate
 - PyCharmCommunity
 - PyCharmProfessional
-- CLion
-- MPS
 
 #### `intellijPlugins :: SettingKey[IdeaPlugin]`
 

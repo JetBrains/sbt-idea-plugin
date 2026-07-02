@@ -7,6 +7,7 @@ import sbt.{MavenRepository, url}
 
 import java.io.IOException
 import java.net.SocketTimeoutException
+import scala.annotation.nowarn
 
 object IntellijVersionUtils {
   private val LoggerName = this.getClass.getSimpleName.stripSuffix("$")
@@ -101,9 +102,12 @@ object IntellijVersionUtils {
 
   private case class IntelliJProductCoordinates(groupPath: String, artifactId: String)
 
+  @nowarn("cat=deprecation")
   private def getCoordinates(platform: IntelliJPlatform): IntelliJProductCoordinates = platform match {
+    case IntelliJPlatform.Idea => IntelliJProductCoordinates("com/jetbrains/intellij/idea", "ideaIU")
     case IntelliJPlatform.IdeaCommunity => IntelliJProductCoordinates("com/jetbrains/intellij/idea", "ideaIC")
     case IntelliJPlatform.IdeaUltimate => IntelliJProductCoordinates("com/jetbrains/intellij/idea", "ideaIU")
+    case IntelliJPlatform.PyCharm => IntelliJProductCoordinates("com/jetbrains/intellij/pycharm", "pycharmPY")
     case IntelliJPlatform.PyCharmCommunity => IntelliJProductCoordinates("com/jetbrains/intellij/pycharm", "pycharmPC")
     case IntelliJPlatform.PyCharmProfessional => IntelliJProductCoordinates("com/jetbrains/intellij/pycharm", "pycharmPY")
     case IntelliJPlatform.CLion => IntelliJProductCoordinates("com/jetbrains/intellij/clion", "clion")

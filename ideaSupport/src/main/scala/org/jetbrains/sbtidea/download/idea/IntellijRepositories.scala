@@ -10,7 +10,7 @@ import java.net.URL
 object IntellijRepositories {
   private val LoggerName = this.getClass.getSimpleName.stripSuffix("$")
 
-  private val BaseIntelliJRepositoryUrl = {
+  private def baseIntelliJRepositoryUrl = {
     val urlFormEnv = System.getProperty(IJ_REPO_OVERRIDE)
     if (urlFormEnv != null) {
       log.warn(s"[$LoggerName] Using non-default IntelliJ repository URL: $urlFormEnv")
@@ -20,9 +20,9 @@ object IntellijRepositories {
     }
   }
 
-  val Releases: MavenRepository = MavenRepository("intellij-repository-releases", s"$BaseIntelliJRepositoryUrl/releases")
-  val Eap: MavenRepository = MavenRepository("intellij-repository-eap", s"$BaseIntelliJRepositoryUrl/snapshots")
-  val Nightly: MavenRepository = MavenRepository("intellij-repository-nightly", s"$BaseIntelliJRepositoryUrl/nightly")
+  def Releases: MavenRepository = MavenRepository("intellij-repository-releases", s"$baseIntelliJRepositoryUrl/releases")
+  def Eap: MavenRepository = MavenRepository("intellij-repository-eap", s"$baseIntelliJRepositoryUrl/snapshots")
+  def Nightly: MavenRepository = MavenRepository("intellij-repository-nightly", s"$baseIntelliJRepositoryUrl/nightly")
 
   /**
    * !!! ATTENTION !!<br>

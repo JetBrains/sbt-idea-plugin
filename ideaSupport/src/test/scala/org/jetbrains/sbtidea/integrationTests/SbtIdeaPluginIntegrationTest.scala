@@ -52,9 +52,9 @@ class SbtIdeaPluginIntegrationTest
     assertFileExists(intellijSdkRoot / "custom-plugins")
     assertFileExists(intellijSdkRoot / "custom-plugins" / "Scala")
     assertSourcesDirectoryContents(intellijSdkRoot, Seq(
-      "ideaIC-243.22562.145-sources.zip"
+      "ideaIU-243.22562.145-sources.zip"
     ))
-    new IdeInstallationContext(intellijSdkRoot.toPath).productInfo.productCode shouldBe "IC"
+    new IdeInstallationContext(intellijSdkRoot.toPath).productInfo.productCode shouldBe "IU"
   }
 
   //NOTE: it seems like this test will only pass in JetBrains internal network and won't work on GitHub

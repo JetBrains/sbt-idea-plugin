@@ -28,7 +28,7 @@ class PluginRepoUtilsTest extends AnyFeatureSpecLike with BeforeAndAfterAll {
   }
 
   Feature("getPluginDownloadURL") {
-    val buildInfo = BuildInfo("1.2.3", IntelliJPlatform.IdeaUltimate)
+    val buildInfo = BuildInfo("1.2.3", IntelliJPlatform.Idea)
 
     def getUrlString(pluginInfo: IntellijPlugin.Id): String = {
       val baseDir = Files.createTempDirectory("PluginRepoUtilsTest_baseDir")

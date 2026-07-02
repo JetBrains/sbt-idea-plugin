@@ -11,7 +11,7 @@ lazy val myAwesomeFramework =
       scalaVersion := "2.13.15",
       ThisBuild / intellijPluginName := "My Awesome Framework",
       ThisBuild / intellijBuild := "243.22562.145",
-      ThisBuild / intellijPlatform := IntelliJPlatform.IdeaCommunity,
+      ThisBuild / intellijPlatform := IntelliJPlatform.Idea,
       libraryDependencies ++= Seq(
         "org.lwjglx" % "lwjgl3-awt" % "0.2.3",
         "org.lwjgl" % "lwjgl" % "3.3.6",
