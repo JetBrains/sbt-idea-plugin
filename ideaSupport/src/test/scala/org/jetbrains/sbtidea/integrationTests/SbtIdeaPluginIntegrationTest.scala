@@ -71,8 +71,8 @@ class SbtIdeaPluginIntegrationTest
   }
 
   test("Project with library dependency with multiple artifacts") {
-    val projectDir = testProjectsDir / "dependency-with-multiple-artifacts"
-    runUpdateIntellijCommand(projectDir)
+    val testProject = runUpdateIntellijCommandInTemporaryProject("dependency-with-multiple-artifacts")
+    val projectDir = testProject.projectDir
 
     runSbtProcess(Seq("packageArtifact"), projectDir)
 
@@ -100,10 +100,9 @@ class SbtIdeaPluginIntegrationTest
   }
 
   test("createIDEARunConfiguration uses Test/customIntellijVMOptions for JUnit template") {
-    val projectDir = testProjectsDir / "simple-with-plugin"
-
-    // Ensure SDK paths/settings are injected into the fixture before generating run configs.
-    runUpdateIntellijCommand(projectDir)
+    // Ensure SDK paths/settings are injected into the working project before generating run configs.
+    val testProject = runUpdateIntellijCommandInTemporaryProject("simple-with-plugin")
+    val projectDir = testProject.projectDir
 
     // Add different VM option markers in Compile vs Test scopes to verify scope selection.
     appendVmOptionsScopeMarkersToExtraSbt(projectDir)
@@ -129,11 +128,9 @@ class SbtIdeaPluginIntegrationTest
   }
 
   test("intellijExtraJUnitTemplateLibraryDependencies appears only on the JUnit template classpath") {
-    val projectDir = testProjectsDir / "simple-with-plugin"
-
-    // Inject SDK paths/settings into the fixture; this rewrites extra.sbt from a clean state
-    // (runUpdateIntellijCommand calls cleanUntrackedVcsFiles -> git clean -fdx first).
-    runUpdateIntellijCommand(projectDir)
+    // Inject SDK paths/settings into a fresh working project; this rewrites extra.sbt from a clean state.
+    val testProject = runUpdateIntellijCommandInTemporaryProject("simple-with-plugin")
+    val projectDir = testProject.projectDir
 
     // Configure one extra dep that should appear ONLY on the generated JUnit template classpath.
     appendExtraJUnitTemplateLibDepToExtraSbt(projectDir)
@@ -170,8 +167,8 @@ class SbtIdeaPluginIntegrationTest
   }
 
   test("provided module names cache is reused across intellijPluginJars calculations") {
-    val projectDir = testProjectsDir / "multi-module-plugin-jars-cache"
-    runUpdateIntellijCommand(projectDir)
+    val testProject = runUpdateIntellijCommandInTemporaryProject("multi-module-plugin-jars-cache")
+    val projectDir = testProject.projectDir
 
     val outputLines = runSbtProcess(
       sbtArguments = Seq(
