@@ -4,6 +4,7 @@ import org.jetbrains.sbtidea.Keys.pluginXmlOptions
 import org.jetbrains.sbtidea.PluginLogger as log
 
 import java.nio.file.{Files, Path}
+import java.util.regex.Matcher
 
 class PluginXmlPatcher(input: Path, createCopy: Boolean = false) {
 
@@ -43,7 +44,8 @@ class PluginXmlPatcher(input: Path, createCopy: Boolean = false) {
     }
 
     if (ideaVersionTag.nonEmpty)
-      content = content.replaceAll("<idea-version.+/>", ideaVersionTag)
+      // Regex replacement strings treat $ and \ specially, so quote the tag to insert option values literally.
+      content = content.replaceAll("<idea-version.+/>", Matcher.quoteReplacement(ideaVersionTag))
 
     content
   }
@@ -59,7 +61,11 @@ class PluginXmlPatcher(input: Path, createCopy: Boolean = false) {
       val endIdx = matchItem.end
 
       if (!matchedStr.startsWith("<!--")) {
-        val newValue = matchedStr.replaceFirst(s"(?s)<$name>.*?</$name>", s"<$name>$value</$name>")
+        val newValue = matchedStr.replaceFirst(
+          s"(?s)<$name>.*?</$name>",
+          // Regex replacement strings treat $ and \ specially, so quote the tag to insert option values literally.
+          Matcher.quoteReplacement(s"<$name>$value</$name>")
+        )
         val prefix = replacedStr.substring(0, startIdx)
         val postfix = replacedStr.substring(endIdx)
         replacedStr = prefix + newValue + postfix

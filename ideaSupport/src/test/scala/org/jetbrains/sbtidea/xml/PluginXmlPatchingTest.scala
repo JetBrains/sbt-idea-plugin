@@ -42,6 +42,25 @@ class PluginXmlPatchingTest extends AnyFunSuite with Matchers with IdeaMock {
     diff should contain (s"""    <idea-version since-build="${options.sinceBuild}" until-build="${options.untilBuild}"/>""")
   }
 
+  test("patches values with dollar signs and backslashes literally") {
+    val options = pluginXmlOptions { xml =>
+      xml.version           = "1.2.$BUILD\\release"
+      xml.changeNotes       = "Changed $schema\\notes"
+      xml.pluginDescription = "Path C:\\plugin\\$HOME"
+      xml.sinceBuild        = "IC-$SINCE\\build"
+      xml.untilBuild        = "IC-$UNTIL\\build"
+    }
+    val pluginXml = getPluginXml()
+    val patcher = new PluginXmlPatcher(pluginXml)
+    val result = patcher.patch(options)
+    val newContent = Files.readAllLines(result).asScala
+
+    newContent should contain ("""    <change-notes>Changed $schema\notes</change-notes>""")
+    newContent should contain ("""    <version>1.2.$BUILD\release</version>""")
+    newContent should contain ("""    <description>Path C:\plugin\$HOME</description>""")
+    newContent should contain ("""    <idea-version since-build="IC-$SINCE\build" until-build="IC-$UNTIL\build"/>""")
+  }
+
   test("patch only since fields test") {
     val options = pluginXmlOptions { xml =>
       xml.version           = "VERSION"
