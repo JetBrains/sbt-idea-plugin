@@ -11,6 +11,7 @@ import scala.util.Using
 object SbtProjectFilesUtils {
   // Keep failure messages useful without embedding huge sbt logs into ScalaTest output.
   private val ProcessOutputTailLinesNumber = 80
+  val SbtVersionForIntegrationTests = "1.12.11"
 
   def updateSbtIdeaPluginToVersion(projectDir: File, sbtIdePluginVersion: String): Path = {
     val pluginsSbtFile = projectDir / "project" / "plugins.sbt"
@@ -36,11 +37,16 @@ object SbtProjectFilesUtils {
 
   def updateSbtVersion(repoDir: File, newSbtVersion: String): Unit = {
     val sbtPropertiesFile = repoDir / "project" / "build.properties"
-    assert(sbtPropertiesFile.exists())
-    val sbtVersionInRepo = IoUtils.readLines(sbtPropertiesFile)
-      .find(_.startsWith("sbt.version"))
-      .map(_.split("=").apply(1).trim)
-      .get
+    sbtPropertiesFile.getParentFile.mkdirs()
+    val sbtVersionInRepo =
+      if (sbtPropertiesFile.exists()) {
+        IoUtils.readLines(sbtPropertiesFile)
+          .find(_.startsWith("sbt.version"))
+          .map(_.split("=").apply(1).trim)
+          .getOrElse("<unknown>")
+      } else {
+        "<missing>"
+      }
 
     val updatedContent = s"sbt.version=$newSbtVersion"
     IoUtils.writeStringToFile(sbtPropertiesFile, updatedContent)

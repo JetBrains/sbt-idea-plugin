@@ -31,6 +31,7 @@ abstract class SbtIdeaPluginIntegrationTestBase
     }
 
     SbtProjectFilesUtils.cleanUntrackedVcsFiles(projectDir)
+    SbtProjectFilesUtils.updateSbtVersion(projectDir, SbtProjectFilesUtils.SbtVersionForIntegrationTests)
     SbtProjectFilesUtils.updateSbtIdeaPluginToVersion(projectDir, pluginVersion)
 
     val intellijSdkRoot = SbtProjectFilesUtils.injectExtraSbtFileWithIntelliJSdkTargetDirSettingsForSdkRoot(projectDir, sdkRoot)
