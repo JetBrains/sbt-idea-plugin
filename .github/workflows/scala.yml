@@ -18,6 +18,8 @@ jobs:
           java-version: 17
           cache: sbt
       - uses: sbt/setup-sbt@v1
+        with:
+          sbt-runner-version: 1.12.11
       - uses: coursier/cache-action@v8
       - name: Compile & Test
         run: sbt test
