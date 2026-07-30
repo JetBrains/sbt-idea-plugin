@@ -133,6 +133,9 @@ lazy val ideaSupport = (project in file("ideaSupport"))
       "org.ow2.asm" % "asm" % "9.8",
       "io.get-coursier" %% "coursier" % "2.1.24",
       "commons-io" % "commons-io" % "2.19.0",
+
+      // Used to compile the test fixtures of the @NotNull instrumentation tests
+      "org.jetbrains" % "annotations" % "26.0.2" % Test,
     ),
   )
 

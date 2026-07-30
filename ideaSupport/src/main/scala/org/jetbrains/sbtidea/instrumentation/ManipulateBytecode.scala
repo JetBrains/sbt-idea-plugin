@@ -1,6 +1,6 @@
 package org.jetbrains.sbtidea.instrumentation
 
-import org.jetbrains.sbtidea.Keys.instrumentThreadingAnnotations
+import org.jetbrains.sbtidea.Keys.{instrumentNotNullAnnotations, instrumentThreadingAnnotations, notNullAnnotations}
 import sbt.*
 import sbt.Keys.*
 import sbt.internal.inc.{Analysis, Stamps}
@@ -8,28 +8,56 @@ import xsbti.compile.CompileResult
 import xsbti.compile.analysis.Stamp
 import xsbti.{FileConverter, VirtualFileRef}
 
+import java.net.URLClassLoader
 import java.nio.file.Path
+import scala.util.control.NonFatal
 
 object ManipulateBytecode {
   def manipulateBytecodeTask(config: Configuration): Def.Initialize[Task[CompileResult]] = Def.taskDyn {
-    val doInstrument = instrumentThreadingAnnotations.value
+    val instrumentThreading = instrumentThreadingAnnotations.value
+    val instrumentNotNull = instrumentNotNullAnnotations.value
     val currentResult = (config / manipulateBytecode).value
-    if (doInstrument) {
-      instrumentTask(config, currentResult)
+    if (instrumentThreading || instrumentNotNull) {
+      instrumentTask(config, currentResult, instrumentThreading, instrumentNotNull)
     } else {
       Def.task(currentResult)
     }
   }
 
-  private def instrumentTask(config: Configuration, currentResult: CompileResult): Def.Initialize[Task[CompileResult]] = Def.task {
+  private def instrumentTask(
+    config: Configuration,
+    currentResult: CompileResult,
+    instrumentThreading: Boolean,
+    instrumentNotNull: Boolean
+  ): Def.Initialize[Task[CompileResult]] = Def.task {
     val previousResult = (config / previousCompile).value
     val converter = fileConverter.value
+    val annotations = notNullAnnotations.value
+    // fullClasspath cannot be used here: it depends on the compile task, which would create a cycle with manipulateBytecode
+    val classpath = (config / classDirectory).value +: (config / dependencyClasspath).value.map(_.data)
 
     val previousAnalysis = previousResult.analysis().asScala.collect { case a: Analysis => a }.getOrElse(Analysis.empty)
     val currentAnalysis = currentResult.analysis() match { case a: Analysis => a }
 
     val changed = changedClasses(currentAnalysis.stamps, previousAnalysis.stamps, converter)
-    changed.foreach(ThreadingAnnotationInstrumenter.instrument)
+    if (instrumentThreading) {
+      changed.foreach(ThreadingAnnotationInstrumenter.instrument)
+    }
+    if (instrumentNotNull) {
+      val classpathLoader = new URLClassLoader(classpath.map(_.toURI.toURL).toArray)
+      try {
+        changed.foreach { classFile =>
+          try {
+            NotNullInstrumenter.instrument(classFile, annotations, classpathLoader)
+          } catch {
+            case NonFatal(e) =>
+              throw new MessageOnlyException(s"Failed to instrument @NotNull assertions into $classFile: ${e.getMessage}")
+          }
+        }
+      } finally {
+        classpathLoader.close()
+      }
+    }
 
     val stamper = Stamps.timeWrapBinaryStamps(converter)
 

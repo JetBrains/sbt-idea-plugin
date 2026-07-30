@@ -217,6 +217,8 @@ trait Init { this: Keys.type =>
     unmanagedResourceDirectories in Test    += baseDirectory.value / "testResources",
 
     instrumentThreadingAnnotations := false,
+    instrumentNotNullAnnotations := false,
+    notNullAnnotations := Seq("org.jetbrains.annotations.NotNull"),
     Compile / manipulateBytecode := ManipulateBytecode.manipulateBytecodeTask(Compile).value,
     Test / manipulateBytecode := ManipulateBytecode.manipulateBytecodeTask(Test).value,
 
