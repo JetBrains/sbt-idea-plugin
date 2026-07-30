@@ -43,7 +43,7 @@ val MinimumSbtVersion = "1.4.5"
 val SbtVersionForTests = "1.10.7"
 
 lazy val CommonSettings: Seq[Setting[?]] = Seq(
-  scalaVersion := "2.12.20",
+  scalaVersion := "2.12.21",
   pluginCrossBuild / sbtVersion := MinimumSbtVersion,
 
   Compile / scalacOptions ++= Seq("-deprecation", "-feature", "-Xfatal-warnings"),
