@@ -439,6 +439,26 @@ Generate JVM bytecode to assert that a method is called on the correct IDEA thre
 
 See: [IntelliJ IDEA ThreadingAssertions.java](https://github.com/JetBrains/intellij-community/blob/5758eb99b4a1971ebe75cda755693cc930949465/platform/core-api/src/com/intellij/util/concurrency/ThreadingAssertions.java)
 
+#### `instrumentNotNullAnnotations :: SettingKey[Boolean]`
+
+**Default**: `false`
+
+Generate JVM bytecode to assert that values of `@NotNull`-annotated method parameters and return values are not null.
+A null value passed for an annotated parameter throws an `IllegalArgumentException`; a null value returned from an
+annotated method throws an `IllegalStateException`. The set of annotation classes is configured with the
+`notNullAnnotations` setting.
+
+This is the same instrumentation that IntelliJ IDEA applies to its own codebase and that the
+[IntelliJ Platform Gradle Plugin](https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-tasks.html#instrumentCode)
+performs as part of its `instrumentCode` task. Kotlin classes are skipped, as kotlinc generates its own
+nullability assertions.
+
+#### `notNullAnnotations :: SettingKey[Seq[String]]`
+
+**Default**: `Seq("org.jetbrains.annotations.NotNull")`
+
+Fully qualified names of the annotation classes instrumented by `instrumentNotNullAnnotations`.
+
 #### `packageOutputDir :: SettingKey[File]`
 
 **Default**: `target.value / "plugin" / intellijPluginName.in(ThisBuild).value.removeSpaces`

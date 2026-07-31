@@ -133,6 +133,14 @@ object Keys extends Defns with Init with Utils with Quirks {
     "Generate JVM bytecode to assert that a method is called on the correct IDEA thread " ++
       "(supported method annotations: @RequiresBackgroundThread, @RequiresEdt, @RequiresReadLock, @RequiresReadLockAbsence, @RequiresWriteLock)")
 
+  lazy val instrumentNotNullAnnotations = settingKey[Boolean](
+    "Generate JVM bytecode to assert that values of @NotNull-annotated method parameters and return values are not null " ++
+      "(throws IllegalArgumentException for parameters and IllegalStateException for return values; " ++
+      "the annotation classes are configured with the notNullAnnotations setting)")
+
+  lazy val notNullAnnotations = settingKey[Seq[String]](
+    "Fully qualified names of the annotation classes instrumented by instrumentNotNullAnnotations")
+
   /* Deprecated task aliases */
 
   lazy val buildIntellijOptionsIndex = taskKey[Unit](
