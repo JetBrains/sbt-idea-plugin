@@ -134,8 +134,9 @@ lazy val ideaSupport = (project in file("ideaSupport"))
       "io.get-coursier" %% "coursier" % "2.1.24",
       "commons-io" % "commons-io" % "2.22.0",
 
-      // Used to compile the test fixtures of the @NotNull instrumentation tests
-      "org.jetbrains" % "annotations" % "26.1.0" % Test
+      // Used by the sources copied from IntelliJ IDEA in the threadingModelHelper package
+      // and to compile the test fixtures of the @NotNull instrumentation tests
+      "org.jetbrains" % "annotations" % "26.1.0"
     ),
   )
 

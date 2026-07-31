@@ -437,6 +437,10 @@ Generate JVM bytecode to assert that a method is called on the correct IDEA thre
 4. `com.intellij.util.concurrency.annotations.RequiresReadLockAbsence`
 5. `com.intellij.util.concurrency.annotations.RequiresWriteLock`
 
+This is the same instrumentation that IntelliJ IDEA applies to its own codebase. Note that, matching IntelliJ IDEA's
+behavior, `@RequiresReadLock` generates a call to `ThreadingAssertions.softAssertReadAccess`, which logs an error
+instead of throwing an exception when read access is missing.
+
 See: [IntelliJ IDEA ThreadingAssertions.java](https://github.com/JetBrains/intellij-community/blob/5758eb99b4a1971ebe75cda755693cc930949465/platform/core-api/src/com/intellij/util/concurrency/ThreadingAssertions.java)
 
 #### `instrumentNotNullAnnotations :: SettingKey[Boolean]`
