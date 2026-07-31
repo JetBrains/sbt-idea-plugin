@@ -20,7 +20,12 @@ private object ThreadingAnnotationInstrumenter {
     // The generated assertion is a zero-argument static ()V call at method entry,
     // which changes neither stack map frames nor the maximum stack size.
     val writer = new ClassWriter(reader, 0)
-    if (TMHInstrumenter.instrument(reader, writer, Generators, /*generateLineNumbers =*/ false)) {
+    // Line number generation matches IDE-driven JPS builds. While the standalone JPS builder defaults
+    // "tmh.generate.line.numbers" to false, the DevKit plugin injects -Dtmh.generate.line.numbers=true into every
+    // build process it spawns (the registry key defaults to true in intellij.devkit.core.xml). The generated
+    // assertion is annotated with the line number of the start of the method, producing better stack traces when
+    // the assertion throws.
+    if (TMHInstrumenter.instrument(reader, writer, Generators, /*generateLineNumbers =*/ true)) {
       Files.write(classFile, writer.toByteArray)
     }
   }
