@@ -56,12 +56,12 @@ lazy val CommonSettings: Seq[Setting[?]] = Seq(
   Test / classLoaderLayeringStrategy := ClassLoaderLayeringStrategy.Flat,
 
   libraryDependencies ++= Seq(
-    "org.scalatest" %% "scalatest" % "3.2.19" % Test,
+    "org.scalatest" %% "scalatest" % "3.2.20" % Test,
     // Use the latest version of sbt in tests to test against the latest versions of projects using this plugin
     "org.scala-sbt" % "sbt" % SbtVersionForTests % Test,
   ),
 
-  // Please specify explicitely which modules should be published
+  // Please specify explicitly which modules should be published
   publish / skip := true
 )
 
@@ -98,7 +98,7 @@ lazy val visualizer = (project in file("visualizer"))
     libraryDependencies += "com.github.mutcianm" %% "ascii-graphs" % "0.0.6",
   )
 
-val circeVersion = "0.14.14"
+val circeVersion = "0.14.16"
 
 lazy val packaging = (project in file("packaging"))
   .enablePlugins(SbtPlugin)
@@ -125,14 +125,14 @@ lazy val ideaSupport = (project in file("ideaSupport"))
     name := "sbt-idea-plugin",
     publish / skip := false,
     libraryDependencies ++= Seq(
-      "org.apache.httpcomponents.client5" % "httpclient5" % "5.5",
+      "org.apache.httpcomponents.client5" % "httpclient5" % "5.6.2",
 
-      "org.jetbrains" % "marketplace-zip-signer" % "0.1.38",
+      "org.jetbrains" % "marketplace-zip-signer" % "0.1.43",
       "io.spray" %% "spray-json" % "1.3.6",
       "org.rauschig" % "jarchivelib" % "1.2.0",
-      "org.ow2.asm" % "asm" % "9.8",
+      "org.ow2.asm" % "asm" % "9.10.1",
       "io.get-coursier" %% "coursier" % "2.1.24",
-      "commons-io" % "commons-io" % "2.19.0",
+      "commons-io" % "commons-io" % "2.22.0",
     ),
   )
 
