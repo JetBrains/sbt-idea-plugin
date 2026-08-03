@@ -91,6 +91,8 @@ trait Init { this: Keys.type =>
       IO.delete(intellijTestSystemDir.value)
       IO.delete(intellijTestConfigDir.value)
     },
+    Test / intellijTestRuntimeDirectories :=
+      IntellijTestRuntimeDirectories(intellijPluginDirectory.value.toPath),
 
     searchPluginId := SearchPluginId.createTask.evaluated,
     onLoad in Global := ((s: State) => {

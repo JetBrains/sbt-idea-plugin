@@ -34,6 +34,10 @@ trait Defns {
 
   type JbrInfo = org.jetbrains.sbtidea.JbrInfo
 
+  type IntellijTestRuntimeDirectories = org.jetbrains.sbtidea.IntellijTestRuntimeDirectories
+  final val IntellijTestRuntimeDirectories: org.jetbrains.sbtidea.IntellijTestRuntimeDirectories.type =
+    org.jetbrains.sbtidea.IntellijTestRuntimeDirectories
+
   type JBR = org.jetbrains.sbtidea.JBR
   final val JBR: org.jetbrains.sbtidea.JBR.type = org.jetbrains.sbtidea.JBR
 
