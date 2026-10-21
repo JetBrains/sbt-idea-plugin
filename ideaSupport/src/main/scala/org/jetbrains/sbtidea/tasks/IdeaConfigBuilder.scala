@@ -134,24 +134,37 @@ class IdeaConfigBuilder(
       "JETBRAINS_CLIENT_PROPERTIES" -> s"$ideClientPropertiesFile"
     )
 
-    //TODO: also configure location for logs & plugins
-    val clientSystemPath = s"$dataDir/system_client"
-    val clientConfigPath = s"""$dataDir/config_client"""
-    val clientDebugPort = "7777"
-    writeToFile(ideClientPropertiesFile,
-      s"""-Didea.system.path=$clientSystemPath
-         |-Didea.config.path=$clientConfigPath
-         |-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:$clientDebugPort
-         |""".stripMargin
-    )
+    // The IDE passes the file to the client as `-Didea.properties.file`, so it must be a properties file,
+    // not a list of VM options: each key becomes a system property of the client (see `PathManager.loadProperties`)
+    val clientSystemPath = dataDir / "system_client"
+    val clientConfigPath = dataDir / "config_client"
+    val clientLogPath    = clientSystemPath / "log"
+    writeToFile(ideClientPropertiesFile, buildClientProperties(
+      "idea.system.path" -> clientSystemPath.toString,
+      "idea.config.path" -> clientConfigPath.toString,
+      "idea.log.path"    -> clientLogPath.toString,
+      // the client needs the plugin as well, otherwise none of its modules can be loaded on the frontend
+      "plugin.path"      -> intellijVMOptionsBuilder.pluginPath.toString,
+    ))
+
+    // A VM option can't be passed to the client in the properties file.
+    // The IDE starts the client with a debug agent when the registry value is set,
+    // and a registry value can be set by a system property of the IDE (see `RegistryValue`)
+    val clientDebugPort = 7777
+    val vmOptions = runVmOptions.withExtraOption(s"-Drdct.embedded.client.debug.port=$clientDebugPort")
 
     Right(buildRunConfigurationXML(
       configurationName = configurationName,
-      vmOptions = runVmOptions,
+      vmOptions = vmOptions,
       programParams = programParams,
       envVars = envVars
     ))
   }
+
+  private def buildClientProperties(properties: (String, String)*): String =
+    properties
+      .map { case (key, value) => s"$key=${escapeBackslash(value)}" }
+      .mkString("", "\n", "\n")
 
   private def writeToFile(file: File, content: =>String): Unit = {
     try {
