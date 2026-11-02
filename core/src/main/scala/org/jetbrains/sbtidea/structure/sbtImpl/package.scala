@@ -31,7 +31,8 @@ package object sbtImpl {
   class SbtProjectExtractException(message: String) extends Exception(message)
 
   private def isScala2Library(lib: ModuleID): Boolean = lib.name == "scala-library"
-  private def isScala3Library(lib: ModuleID): Boolean = lib.name == "scala3-library_3"
+  private def isScala3Library(lib: ModuleID): Boolean =
+    lib.name == "scala3-library" || lib.name == "scala3-library_3"
   def isScalaLibrary(lib: ModuleID): Boolean = isScala2Library(lib) || isScala3Library(lib)
 
   /**
