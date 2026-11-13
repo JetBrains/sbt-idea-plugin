@@ -28,8 +28,9 @@ extended layout:
 ```
 
 - `checkoutHash` is the existing 10-character SHA-256 prefix of the canonical build-root path.
-- `product-build` identifies the IDE product/edition and full IDE build, rather than only its release
-  line. Resolution of mutable snapshot identities needs separate implementation design.
+- `product-build` identifies the installed target SDK's product/edition and full IDE build, rather
+  than its requested alias or only its release line. The primary IDE used to edit the project does
+  not determine this identity.
 - `purpose` distinguishes runtimes such as `tests` and `dev`.
 - Each runtime keeps `system` and `config` as separate child directories. Logs can remain under
   `system/log`, following the current convention.
@@ -57,6 +58,65 @@ the purpose in the combined name groups a build's test and development entries t
 
 This record accepts the intended directory format before implementation; it does not change current
 runtime paths or settle every runtime lifecycle policy.
+
+### Runtime coverage and build identity
+
+Move tests, development IDEs, split-mode clients, and searchable-options indexing together. Use
+`tests`, `dev`, and `build-index` purposes; the split-mode frontend lives under the development
+runtime's `client/{system,config}` directories. Logs follow each selected system directory.
+
+Resolve the default `intellijRuntimeBuildId` from installed `product-info.json` as product code plus
+full build number. An explicit task-key override supplies a distinct, path-safe identity for custom
+SDKs rebuilt without changing their reported build number. Do not introduce automatic installation
+tracking or silently fall back to a requested alias when metadata is missing.
+
+### Directory keys and compatibility
+
+Change `intellijTestSystemDir` and `intellijTestConfigDir` from settings to tasks. Installed SDK
+metadata is already task-based and may be unavailable when settings are evaluated. Keeping settings
+would instead require SDK setup and reload coordination; tasks fit the existing consumers, which
+are already tasks. Path resolution only reads metadata, without installing SDKs or creating runtimes.
+
+Ordinary `:=` directory overrides and task reads remain supported. Setting reads must be adapted,
+and the key-type change is both source and binary incompatible for affected consumers. Keep existing
+SDK-selection and custom VM-option settings as settings. Preserve the published explicit-ID
+`IntellijTestRuntimeDirectories.forRuntimeId` and `applyTo` APIs and their existing path semantics.
+
+Add independent task keys for development system/config and frontend system/config paths. Exact
+directory overrides remain authoritative, including over raw directory VM options in both current
+and legacy VM-option builders. Fully explicit overrides must avoid unnecessary identity dependencies.
+
+### Optional shared development directories
+
+Isolate development directories by default, just like tests. A single boolean setting,
+`intellijDevUseSharedDirectories`, selects these paths across checkouts and builds when enabled:
+
+```text
+runtime/system-shared/
+runtime/config-shared/
+runtime/system-client-shared/
+runtime/config-client-shared/
+```
+
+The setting defaults to false, or to the value supplied with
+`-Dsbtidea.dev.sharedDirectories=true` to the sbt JVM. An explicit sbt assignment overrides this
+property-derived default. Each exact directory override wins independently over the mode's default
+path. Tests and indexing remain isolated. Shared development directories assume sequential use.
+
+### Existing data and preparation
+
+Start new development configs fresh; settings import is manual. Preserve all old directories without
+automatic copying, migration, or deletion. Developers can explicitly select legacy paths when they
+want to reuse them. Installed plugins remain SDK-scoped; sharing config does not share plugin files.
+
+Keep non-overwriting README markers in managed test directories, identifying checkout and build.
+Create them during test preparation or JUnit configuration generation, never on path inspection or
+in explicitly overridden directories. Test cleanup deletes only the selected test system/config
+directories, never an entire checkout root, other builds, or shared development data.
+
+Regenerate IDEA configurations after changing build identity or directory settings. Automatic
+retention, active-JVM tracking, and the release version bump remain separate work; schedule the
+version change for pre-push/pre-release preparation.
 
 ## Alternatives
 
@@ -122,8 +182,7 @@ configuration and other user data.
   directory structure alone is neither proof of ownership nor evidence that a runtime is idle.
 - This layout does not isolate simultaneous JVMs sharing the same checkout, build, and purpose.
 - Implementation must preserve support for explicit directory overrides.
-- Mutable snapshot identity, development-config reuse/import, legacy-path migration, cleanup
-  eligibility and retention, and active-JVM protection need separate design before implementation.
-  Those policies are not implicitly accepted by choosing this hierarchy.
+- Automatic cleanup eligibility and retention, and active-JVM protection need separate design.
+  The hierarchy and manual cleanup command do not establish that a runtime is safe to remove.
 
 Related issue: [SCL-26436](https://youtrack.jetbrains.com/issue/SCL-26436).
