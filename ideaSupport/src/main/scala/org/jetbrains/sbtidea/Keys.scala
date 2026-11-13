@@ -89,11 +89,33 @@ object Keys extends Defns with Init with Utils with Quirks {
   private[sbtidea] lazy val intellijExtraRuntimePluginsJarsInTestsClasspath = taskKey[Seq[(PluginDescriptor, Classpath)]](
     "Attributed classpath containing jars of extra plugins added to test classpath at runtime")
 
-  lazy val intellijTestConfigDir = settingKey[File](
+  lazy val intellijTestConfigDir = taskKey[File](
     "IntelliJ Platform's config directory for tests")
 
-  lazy val intellijTestSystemDir = settingKey[File](
+  lazy val intellijTestSystemDir = taskKey[File](
     "IntelliJ Platform's system directory for tests")
+
+  lazy val intellijRuntimeBuildId = taskKey[String](
+    "Path-safe runtime identity, by default the installed target SDK's product code and full build number")
+
+  lazy val intellijDevSystemDir = taskKey[File]("Development IDE system directory")
+  lazy val intellijDevConfigDir = taskKey[File]("Development IDE config directory")
+  lazy val intellijDevClientSystemDir = taskKey[File]("Split-mode development frontend system directory")
+  lazy val intellijDevClientConfigDir = taskKey[File]("Split-mode development frontend config directory")
+  lazy val intellijDevUseSharedDirectories = settingKey[Boolean](
+    "Share development backend/frontend directories across checkouts and builds; defaults to sbtidea.dev.sharedDirectories or false")
+
+  private[sbtidea] lazy val checkoutRuntimeDirectories = settingKey[CheckoutRuntimeDirectories](
+    "Pure runtime path resolver identified by the canonical build root").withRank(sbt.KeyRanks.Invisible)
+  private[sbtidea] lazy val defaultDevRuntimeDirectories = taskKey[IntellijTestRuntimeDirectories.RuntimeDirectories](
+    "Default development paths selected by the sharing flag").withRank(sbt.KeyRanks.Invisible)
+  private[sbtidea] lazy val defaultDevClientRuntimeDirectories = taskKey[IntellijTestRuntimeDirectories.RuntimeDirectories](
+    "Default split-mode frontend paths selected by the sharing flag").withRank(sbt.KeyRanks.Invisible)
+  private[sbtidea] lazy val intellijBuildIndexDirectories = taskKey[IntellijTestRuntimeDirectories.RuntimeDirectories](
+    "Isolated searchable-options indexing paths").withRank(sbt.KeyRanks.Invisible)
+
+  private[sbtidea] lazy val prepareIntellijTestDirectories = taskKey[Unit](
+    "Create checkout markers in automatically managed test directories").withRank(sbt.KeyRanks.Invisible)
 
   lazy val cleanUpTestEnvironment = taskKey[Unit](
     "Clean up IntelliJ Platform test system and config directories")
@@ -118,6 +140,11 @@ object Keys extends Defns with Init with Utils with Quirks {
   private[sbtidea] lazy val intellijVMOptionsBuilder = taskKey[IntellijVMOptionsBuilder](
     "See org.jetbrains.sbtidea.runIdea.IntellijVMOptionsBuilder",
   ).withRank(sbt.KeyRanks.Invisible)
+
+  private[sbtidea] lazy val baseIntellijVMOptionsBuilder = taskKey[IntellijVMOptionsBuilder](
+    "SDK and VM-option context without runtime directory dependencies").withRank(sbt.KeyRanks.Invisible)
+  private[sbtidea] lazy val intellijTestVMOptionsBuilder = taskKey[IntellijVMOptionsBuilder](
+    "VM-option builder with selected test directories").withRank(sbt.KeyRanks.Invisible)
 
   private[sbtidea] lazy val productInfoExtraDataProvider = taskKey[ProductInfoExtraDataProvider](
     "See org.jetbrains.sbtidea.productInfo.ProductInfoExtraDataProvider"

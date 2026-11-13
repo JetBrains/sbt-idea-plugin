@@ -39,7 +39,12 @@ final case class IntellijVMOptionsBuilder(
   ideaHome: Path,
   intellijDirectory: Path,
   customSystemAndConfigDirPrefix: Option[String] = None,
+  testRuntimeDirectories: Option[IntellijTestRuntimeDirectories.RuntimeDirectories] = None,
+  devRuntimeDirectories: Option[IntellijTestRuntimeDirectories.RuntimeDirectories] = None,
 ) {
+
+  def withRuntimeDirectories(directories: IntellijTestRuntimeDirectories.RuntimeDirectories): IntellijVMOptionsBuilder =
+    copy(devRuntimeDirectories = Some(directories))
 
   def withCustomSystemAndConfigDir(dirsPrefix: String): IntellijVMOptionsBuilder =
     copy(customSystemAndConfigDirPrefix = Some(dirsPrefix))
@@ -71,12 +76,24 @@ final case class IntellijVMOptionsBuilder(
     quoteValues: Boolean,
     escapeXml: Boolean,
   ): Seq[String] = {
-    vmOptions match {
+    val options = vmOptions match {
       case VmOptions.New(options) =>
         buildNew(options, quoteValues, escapeXml, forTests)
       case VmOptions.Old(options) =>
         buildOld(options, quoteValues, escapeXml, forTests)
     }
+    val selectedDirectories = if (forTests) testRuntimeDirectories else devRuntimeDirectories
+    if (selectedDirectories.nonEmpty) {
+      val directoryOptions = selectedDirectories.get.jvmOptions.map { option =>
+        val Array(key, value) = option.split("=", 2)
+        val quotedValue =
+          if (!quoteValues) value
+          else if (escapeXml) value.xmlQuote
+          else "\"" + value + "\""
+        s"$key=$quotedValue"
+      }
+      options.filterNot(IntellijTestRuntimeDirectories.isIntellijDirectoryOption) ++ directoryOptions
+    } else options
   }
 
   private def buildNew(

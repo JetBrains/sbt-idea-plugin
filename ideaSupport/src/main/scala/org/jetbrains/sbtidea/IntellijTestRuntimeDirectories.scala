@@ -7,8 +7,9 @@ import java.nio.file.Path
 /**
  * Builds isolated IntelliJ Platform runtime directories for an individual forked test JVM.
  *
- * The default sbt-idea-plugin test configuration is intentionally unchanged. Consumers opt in
- * by applying these directories to the `ForkOptions` of a particular `Tests.SubProcess`.
+ * By default, sbt-idea-plugin isolates tests by checkout and target SDK build. Consumers can additionally isolate
+ * individual JVMs by applying an explicit runtime ID to a particular `Tests.SubProcess`.
+ * Explicit IDs are used verbatim and are independent of the default checkout identity.
  */
 final class IntellijTestRuntimeDirectories private (ideaHome: Path) {
   import IntellijTestRuntimeDirectories.*
@@ -66,6 +67,6 @@ object IntellijTestRuntimeDirectories {
       "IntelliJ test runtime ID must start with a letter or digit and contain only letters, digits, '.', '_', or '-': " + runtimeId
     )
 
-  private def isIntellijDirectoryOption(option: String): Boolean =
+  private[sbtidea] def isIntellijDirectoryOption(option: String): Boolean =
     ReplacedOptionPrefixes.exists(option.startsWith)
 }

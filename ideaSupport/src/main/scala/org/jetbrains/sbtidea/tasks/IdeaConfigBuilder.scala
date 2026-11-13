@@ -1,6 +1,7 @@
 package org.jetbrains.sbtidea.tasks
 
 import org.jetbrains.sbtidea.IdeaConfigBuildingOptions.AdditionalRunConfigData
+import org.jetbrains.sbtidea.IntellijTestRuntimeDirectories.RuntimeDirectories
 import org.jetbrains.sbtidea.Keys.IdeaConfigBuildingOptions
 import org.jetbrains.sbtidea.PluginLogger as log
 import org.jetbrains.sbtidea.packaging.hasProdTestSeparationEnabled
@@ -49,6 +50,9 @@ class IdeaConfigBuilder(
 
   productInfoExtraDataProvider: ProductInfoExtraDataProvider,
   options: IdeaConfigBuildingOptions,
+  testUseNewVmOptions: Option[Boolean] = None,
+  testIntellijVMOptionsBuilder: Option[IntellijVMOptionsBuilder] = None,
+  clientRuntimeDirectories: Option[RuntimeDirectories] = None,
 ) {
   private val runConfigDir = dotIdeaFolder / "runConfigurations"
 
@@ -59,7 +63,7 @@ class IdeaConfigBuilder(
   else
     VmOptions.Old(runLegacyIntellijVMOptions)
 
-  private val testVmOptions: VmOptions = if (useNewVmOptions)
+  private val testVmOptions: VmOptions = if (testUseNewVmOptions.getOrElse(useNewVmOptions))
     VmOptions.New(testIntellijVMOptions)
   else
     VmOptions.Old(testLegacyIntellijVMOptions)
@@ -117,7 +121,7 @@ class IdeaConfigBuilder(
   }
 
   // NOTE: most client-specific parameters are hardcoded
-  // (like client debug port, client system/config paths, client properties location)
+  // (like client debug port and client properties location)
   // We might consider parametrizing them once this configuration generation is +- stable
   private def buildSplitModeRunConfigurationXml(configurationName: String): Either[String, String] = {
     val programParams = s"${options.programParams} splitMode"
@@ -136,8 +140,8 @@ class IdeaConfigBuilder(
 
     // The IDE passes the file to the client as `-Didea.properties.file`, so it must be a properties file,
     // not a list of VM options: each key becomes a system property of the client (see `PathManager.loadProperties`)
-    val clientSystemPath = dataDir / "system_client"
-    val clientConfigPath = dataDir / "config_client"
+    val clientSystemPath = clientRuntimeDirectories.map(_.system.toFile).getOrElse(dataDir / "system_client")
+    val clientConfigPath = clientRuntimeDirectories.map(_.config.toFile).getOrElse(dataDir / "config_client")
     val clientLogPath    = clientSystemPath / "log"
     writeToFile(ideClientPropertiesFile, buildClientProperties(
       "idea.system.path" -> clientSystemPath.toString,
@@ -214,11 +218,16 @@ class IdeaConfigBuilder(
     // It transitively triggers the "Build" under the hood, ensuring incremental compilation of any changes.
     val buildArtifactsStepText = s"""<option name="BuildArtifacts" enabled="true"><artifact name="$artifactName" /></option>"""
 
+    val logDirectory = intellijVMOptionsBuilder.devRuntimeDirectories.map(_.log.toFile)
+      .getOrElse(dataDir / "system" / "log")
+    val ideaLog = scala.xml.Utility.escape((logDirectory / "idea.log").toString)
+    val jpsLog = scala.xml.Utility.escape((logDirectory / "build-log" / "build.log").toString)
+
     s"""<component name="ProjectRunConfigurationManager">
        |  <configuration default="false" name="$configurationName" type="Application" factoryName="Application">
        |    $jreSettings
-       |    <log_file alias="IJ LOG" path="$dataDir/system/log/idea.log" />
-       |    <log_file alias="JPS LOG" path="$dataDir/system/log/build-log/build.log" />
+       |    <log_file alias="IJ LOG" path="$ideaLog" />
+       |    <log_file alias="JPS LOG" path="$jpsLog" />
        |    <option name="MAIN_CLASS_NAME" value="com.intellij.idea.Main" />
        |    <module name="$moduleName" />
        |    <option name="VM_PARAMETERS" value="$vmOptionsStr" />
@@ -262,7 +271,7 @@ class IdeaConfigBuilder(
     val argFilePath = runConfigDir / "junit_template_argfile.txt"
     writeToFile(argFilePath, vmOptionsStr)
 
-    val vmOptionsStrArgfile = s"@${argFilePath.getAbsolutePath}"
+    val vmOptionsStrArgfile = s"&quot;@${argFilePath.getAbsolutePath}&quot;"
 
     val moduleName = generateModuleName(sourceSetModuleSuffix = "test")
 
@@ -308,7 +317,7 @@ class IdeaConfigBuilder(
   private def buildTestVmOptionsString: String = {
     val classpathStr = escapeBackslash(testClasspath.mkString(File.pathSeparator))
     val quotedClasspathStr = "\"" + classpathStr + "\""
-    val vmOptionsEscaped = intellijVMOptionsBuilder.buildQuotedNoEscapeXml(
+    val vmOptionsEscaped = testIntellijVMOptionsBuilder.getOrElse(intellijVMOptionsBuilder).buildQuotedNoEscapeXml(
       vmOptions = testVmOptions,
       forTests = true,
     ).map(escapeBackslash)

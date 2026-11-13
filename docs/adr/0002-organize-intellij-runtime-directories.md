@@ -1,30 +1,29 @@
-# ADR 0002: Organize IntelliJ runtime directories by checkout
+# ADR 0002: Organize IntelliJ runtimes by build, checkout, and purpose
 
 Status: Accepted
 
 Date: 2026-11-13
 
-Implementation: Pending
+Implementation: Implemented
 
 ## Context
 
 Tests need separate mutable IntelliJ runtime data in different checkouts/worktrees so they can run
-in parallel. The current implementation isolates test system/config directories by checkout.
+in parallel. The preceding implementation isolated test system/config directories by checkout.
 Extending isolation to distinguish IDE builds and runtime purposes, such as tests and a development
 IDE, introduces three grouping axes. Their order affects browsing and bulk management, while the
 identities included in the path determine which runtimes share data.
 
-We want a shallow, understandable hierarchy that keeps a worktree's runtime data together and makes
-individual runtimes easy to identify. SDK installations and download caches have a separate lifecycle
-and should remain outside the runtime hierarchy.
+We want an understandable hierarchy with useful information near the top and a manageable balance
+between width and depth. SDK installations and download caches have a separate lifecycle and should
+remain outside the runtime hierarchy.
 
 ## Decision
 
-Use the following format for automatically managed runtime directories when implementing the
-extended layout:
+Use the following format for automatically managed runtime directories:
 
 ```text
-<intellijPluginDirectory>/runtime/<checkoutHash>/<product-build>-<purpose>/{system,config}
+<intellijPluginDirectory>/runtime/<product-build>/<checkoutHash>/<purpose>/{system,config}
 ```
 
 - `checkoutHash` is the existing 10-character SHA-256 prefix of the canonical build-root path.
@@ -39,25 +38,42 @@ Example using an illustrative IDE build number and the checkout hash `a0f9d9b86d
 
 ```text
 ~/.ScalaPluginIU/runtime/
-  a0f9d9b86d/
-    IU-263.12345.67-tests/
-      system/
-        log/
-      config/
-    IU-263.12345.67-dev/
-      system/
-      config/
-    IU-263.12346.10-tests/
-      system/
-      config/
+  IU-263.12345.67/
+    a0f9d9b86d/
+      tests/
+        system/
+          log/
+        config/
+      dev/
+        system/
+        config/
+  IU-263.12346.10/
+    a0f9d9b86d/
+      tests/
+        system/
+        config/
 ```
 
-Checkout-first grouping puts all runtime data for a worktree under one parent. Combining build and
-purpose removes one grouping level compared with a fully nested layout. Putting the build before
-the purpose in the combined name groups a build's test and development entries together when sorted.
+Build-first grouping makes product and full build visible when opening `runtime/`. Each build/checkout
+pair keeps its purposes together, and each purpose sits directly above `system` and `config`. A
+worktree's data spans builds, and the fully nested format adds a level compared with combining axes.
 
-This record accepts the intended directory format before implementation; it does not change current
-runtime paths or settle every runtime lifecycle policy.
+The initial local implementation used checkout-first grouping with combined build/purpose names.
+This record and the implementation were revised together before release. The earlier preference and
+the other alternatives remain below; runtime retention and automatic cleanup need separate decisions.
+
+### Subjective preference and revisiting the choice
+
+We do not have hard evidence that this ordering is the best alternative. The final choice is partly
+an intuitive visual preference: keeping purpose directories immediately above `system` and `config`
+looks pleasant and makes the structure feel coherent. The browsing and grouping benefits are useful
+tradeoffs, not proof that this arrangement is objectively superior.
+
+There are many reasonable layouts, and the exact ordering is not essential to correctness or to
+agent-assisted development. We choose a workable format rather than prolonging the comparison. If
+practical evidence favors another layout, such as repeated browsing friction or awkward runtime
+management, raise the question again with the team and choose another alternative. A future change
+must still account for existing runtime paths and preserve valuable data.
 
 ### Runtime coverage and build identity
 
@@ -82,9 +98,11 @@ and the key-type change is both source and binary incompatible for affected cons
 SDK-selection and custom VM-option settings as settings. Preserve the published explicit-ID
 `IntellijTestRuntimeDirectories.forRuntimeId` and `applyTo` APIs and their existing path semantics.
 
-Add independent task keys for development system/config and frontend system/config paths. Exact
-directory overrides remain authoritative, including over raw directory VM options in both current
-and legacy VM-option builders. Fully explicit overrides must avoid unnecessary identity dependencies.
+Add independent task keys for development system/config and frontend system/config paths. Both
+current and legacy VM-option builders prefer directory keys over conflicting raw directory
+properties. Lower-level sbt `Test / javaOptions` overrides remain available and can deliberately
+diverge from the directory keys, generated JUnit configurations, markers, and cleanup targets.
+Fully explicit directory overrides must avoid unnecessary identity dependencies.
 
 ### Optional shared development directories
 
@@ -105,9 +123,10 @@ path. Tests and indexing remain isolated. Shared development directories assume 
 
 ### Existing data and preparation
 
-Start new development configs fresh; settings import is manual. Preserve all old directories without
-automatic copying, migration, or deletion. Developers can explicitly select legacy paths when they
-want to reuse them. Installed plugins remain SDK-scoped; sharing config does not share plugin files.
+Start new development configs fresh; settings import is manual. Preserve all old directories,
+including those from the earlier local checkout-first layout, without automatic copying, migration,
+or deletion. Developers can explicitly select legacy paths when they want to reuse them. Installed
+plugins remain SDK-scoped; sharing config does not share plugin files.
 
 Keep non-overwriting README markers in managed test directories, identifying checkout and build.
 Create them during test preparation or JUnit configuration generation, never on path inspection or
@@ -128,8 +147,8 @@ name; reversing those tokens changes sorting rather than the grouping structure.
 
 | Pattern | Advantages | Disadvantages |
 |---|---|---|
-| `B/H/P` | One subtree per build, then all purposes for each checkout. | A checkout's data spans builds; three grouping levels. |
-| `B/P/H` | Convenient build retirement and purpose-specific inspection within a build. | A checkout's data spans builds and purposes; three grouping levels. |
+| `B/H/P` — chosen | Meaningful build directories at the root; all purposes for a build/checkout pair together; purpose directly above system/config. | A checkout's data spans builds; three grouping levels. |
+| `B/P/H` — closest fully nested alternative | Convenient build retirement and purpose-specific inspection within a build; same grouping depth as the chosen layout. | A checkout's purposes are separated; three grouping levels. |
 | `H/B/P` | All checkout data together, with explicit build boundaries. | Build-wide operations span checkouts; three grouping levels. |
 | `H/P/B` | Convenient inspection of one checkout's test or development data across builds. | A build's data spans purposes and checkouts; three grouping levels. |
 | `P/B/H` | Clear purpose-specific grouping and build management within each purpose. | Checkout-wide operations span branches; three grouping levels. |
@@ -139,8 +158,8 @@ name; reversing those tokens changes sorting rather than the grouping structure.
 
 | Pattern | Advantages | Disadvantages |
 |---|---|---|
-| `H/B-P` — chosen | All checkout data together; each runtime directly visible inside it; two grouping levels. | Build-wide and purpose-wide operations require traversal or metadata. |
-| `B/P-H` — closest alternative | All build data together; each runtime directly visible inside it; two grouping levels. | Checkout-wide operations span builds. |
+| `H/B-P` — initial local choice | All checkout data together; each runtime directly visible inside it; two grouping levels. | Opaque hashes at the root; build-wide and purpose-wide operations require traversal or metadata. |
+| `B/P-H` — shallower build-first alternative | All build data together; each runtime directly visible inside it; two grouping levels. | Checkout-wide operations span builds; more siblings inside each build. |
 | `P/B-H` | Clear test/development separation and purpose-specific management. | Neither builds nor checkouts have a complete subtree. |
 | `B-H/P` | All purposes for one build/checkout pair together. | More entries at the runtime root; neither build nor checkout has its own parent. |
 | `B-P/H` | Groups all checkouts for one build and purpose. | Build-wide operations span purposes; checkout-wide operations span multiple parents. |
@@ -158,21 +177,26 @@ name; reversing those tokens changes sorting rather than the grouping structure.
   full build and config per release line. One running IDE's data then spans separate branches,
   complicating inspection and cleanup; shared config still needs its own concurrency policy.
 
-## Closest alternative and significance of the choice
+## Closest alternatives and earlier preference
 
-The closest alternative is `runtime/<product-build>/<purpose>-<checkoutHash>/{system,config}`.
-It is equally valid for isolation and slightly more convenient when retiring old nightly builds
-across many checkouts. We prefer checkout-first because worktree ownership and lifecycle are a better
-primary grouping for this use case: inspecting or retiring one worktree's runtime data is direct.
+The closest fully nested alternative is
+`runtime/<product-build>/<purpose>/<checkoutHash>/{system,config}`. It has the same grouping depth
+but shows purpose before checkout. It is equally valid; our preference for keeping purpose next to
+system/config is subjective rather than backed by evidence of better usability.
 
-The ordering is a practical preference, not a critical correctness requirement. Both layouts include
-the same identities and provide equivalent separation; the choice does not depend on an expected
-performance advantage. Combining path components reduces directory depth but generally does not
-reduce total path length. Ownership and activity metadata can support cleanup across either grouping.
+The strongest shallower contender is
+`runtime/<product-build>/<purpose>-<checkoutHash>/{system,config}`. It keeps build information at the
+root and removes one level, at the cost of more entries inside each build directory.
 
-We can revisit the ordering if actual usage favors build-first. A later path change would still need
-documented migration or recreation of disposable data, with preservation of valuable development
-configuration and other user data.
+Our initial checkout-first choice, `runtime/<checkoutHash>/<product-build>-<purpose>/{system,config}`,
+prioritized keeping all of a worktree's data together. On reconsideration, hashes give little useful
+information at the root, while product/build names identify a release line and exact SDK build.
+Worktrees typically stay within a release line, although SDK updates can accumulate several builds.
+These observations support build-first browsing without proving a unique best layout.
+
+All these layouts include the same identities and provide equivalent separation. No performance
+advantage is claimed. Combining path components reduces directory depth but generally does not
+reduce total path length. Ownership and activity metadata can support cleanup across these groupings.
 
 ## Consequences and follow-up
 
@@ -181,8 +205,10 @@ configuration and other user data.
 - More build-specific runtimes increase disk usage and introduce cold caches for new builds. The
   directory structure alone is neither proof of ownership nor evidence that a runtime is idle.
 - This layout does not isolate simultaneous JVMs sharing the same checkout, build, and purpose.
-- Implementation must preserve support for explicit directory overrides.
+- Explicit directory overrides remain supported.
 - Automatic cleanup eligibility and retention, and active-JVM protection need separate design.
   The hierarchy and manual cleanup command do not establish that a runtime is safe to remove.
+
+Usage and migration: [Runtime directory isolation](../../README.md#runtime-directory-isolation).
 
 Related issue: [SCL-26436](https://youtrack.jetbrains.com/issue/SCL-26436).

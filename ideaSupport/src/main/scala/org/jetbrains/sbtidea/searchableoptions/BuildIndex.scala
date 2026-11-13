@@ -1,6 +1,6 @@
 package org.jetbrains.sbtidea.searchableoptions
 
-import org.jetbrains.sbtidea.Keys.{customIntellijVMOptions, intellijBaseDirectory, intellijVMOptions, intellijVMOptionsBuilder, productInfoExtraDataProvider, useNewVmOptions}
+import org.jetbrains.sbtidea.Keys.{baseIntellijVMOptionsBuilder, customIntellijVMOptions, intellijBaseDirectory, intellijBuildIndexDirectories, intellijVMOptions, productInfoExtraDataProvider, useNewVmOptions}
 import org.jetbrains.sbtidea.download.NioUtils
 import org.jetbrains.sbtidea.download.plugin.LocalPluginRegistry
 import org.jetbrains.sbtidea.packaging.*
@@ -70,7 +70,7 @@ object BuildIndex {
       intellijBaseDirectory = intellijBaseDir.toPath,
       productInfoExtraDataProvider = productInfoExtraDataProvider.value,
       vmOptions = vmOptionsUpdated,
-      vmOptionsBuilder = intellijVMOptionsBuilder.value.withCustomSystemAndConfigDir("build-index"),
+      vmOptionsBuilder = baseIntellijVMOptionsBuilder.value.withRuntimeDirectories(intellijBuildIndexDirectories.value),
       blocking = true,
       discardOutput = discardOutput,
       programArguments = indexerCMD,

@@ -514,6 +514,145 @@ Your plugin will be automatically compiled, an artifact built and attached to ne
 
 Debugger can later be attached to the process remotely - the default port is 5005.
 
+### Runtime directory isolation
+
+By default, separate checkouts/worktrees and target IDE builds get separate IntelliJ system/config
+directories. This lets tests run in parallel across worktrees without sharing mutable indexes or
+caches, and keeps development IDE state separate from tests and searchable-options indexing.
+
+Managed paths under `intellijPluginDirectory` are:
+
+```text
+runtime/<product-build>/<checkoutHash>/tests/{system,config}
+runtime/<product-build>/<checkoutHash>/dev/{system,config}
+runtime/<product-build>/<checkoutHash>/dev/client/{system,config}
+runtime/<product-build>/<checkoutHash>/build-index/{system,config}
+```
+
+`checkoutHash` is a 10-character SHA-256 prefix of the canonical build-root path; subprojects and
+symlink aliases share it. `product-build` comes from the **installed target SDK selected by
+`intellijBuild`**: its product code and full build number, independently of the IDE editing the
+project. For example, the canonical path `/checkout/with-spaces` hashes to `a0f9d9b86d`, giving:
+
+```text
+~/.ScalaPluginIU/runtime/IU-263.12345.67/a0f9d9b86d/tests/system/
+~/.ScalaPluginIU/runtime/IU-263.12345.67/a0f9d9b86d/tests/config/
+~/.ScalaPluginIU/runtime/IU-263.12345.67/a0f9d9b86d/tests/system/log/
+~/.ScalaPluginIU/runtime/IU-263.12345.67/a0f9d9b86d/dev/client/config/
+```
+
+Directory resolution reads installed SDK metadata without downloading an SDK or creating runtime
+directories. Missing metadata fails rather than falling back to a requested alias such as
+`LATEST-EAP-SNAPSHOT`; install the SDK with `updateIntellij` first. For custom SDKs reporting the
+same build number, distinguish them explicitly:
+
+```scala
+ThisBuild / intellijRuntimeBuildId := "IU-263.12345.67-custom-2"
+```
+
+The ID must start with an ASCII letter or digit and contain only letters, digits, `.`, `_`, or `-`.
+
+#### Directory overrides and shared development mode
+
+These `TaskKey[File]` keys select exact paths independently:
+
+| Runtime | System key | Config key |
+|---|---|---|
+| Tests (sbt and IDEA JUnit) | `intellijTestSystemDir` | `intellijTestConfigDir` |
+| Development backend | `intellijDevSystemDir` | `intellijDevConfigDir` |
+| Split-mode frontend | `intellijDevClientSystemDir` | `intellijDevClientConfigDir` |
+
+The current and legacy VM-option builders use the directory keys, with logs under the selected
+system directory's `log/`, overriding conflicting properties in `customIntellijVMOptions` or
+`intellijVMOptions`. Fully explicit directory overrides avoid the build-identity dependency for
+those paths.
+
+Lower-level sbt overrides remain available, for example:
+
+```scala
+Test / javaOptions += "-Didea.system.path=/tmp/custom-test-system"
+```
+
+This can override the forked JVM's path without updating the directory keys, generated JUnit
+configuration, markers, or cleanup targets. Use the directory keys to keep these consumers aligned.
+
+Development backend and frontend can opt into directories shared across checkouts **and builds**:
+
+```scala
+ThisBuild / intellijDevUseSharedDirectories := true
+```
+
+Or set its default through the sbt JVM: `sbt -Dsbtidea.dev.sharedDirectories=true`. Shared paths are:
+
+```text
+runtime/system-shared/         runtime/config-shared/
+runtime/system-client-shared/  runtime/config-client-shared/
+```
+
+Each exact directory override wins for that directory; otherwise the sharing flag selects the
+development defaults. An explicit sbt assignment to the flag overrides its JVM-property default.
+Without either, isolation is enabled. Tests and indexing remain isolated. Shared development mode
+assumes sequential use; it does not make concurrent access safe or share SDK-scoped installed plugins.
+
+**Compatibility:** `intellijTestSystemDir` and `intellijTestConfigDir` changed from `SettingKey[File]`
+to `TaskKey[File]`, a source and binary incompatible change. Normal `:=` overrides and reads inside
+tasks still work; reads inside settings must move to tasks, and compiled consumers may need adaptation
+and recompilation. `intellijRuntimeBuildId` is also a task; SDK-selection and custom VM-option keys
+retain their existing types.
+
+Regenerate IDEA configurations with `createIDEARunConfiguration` or an sbt refresh after changing
+the target build, runtime identity, directories, or sharing mode. Existing JUnit configurations may
+need to be recreated from the regenerated template.
+
+#### Existing data, markers, and cleanup
+
+Development configs start fresh by default. Existing runtime data, including the earlier local
+checkout-first layout, is left intact: nothing is copied or deleted automatically. Regenerate IDEA
+configurations to adopt the new paths. To import settings, export them from the old development IDE
+with **File | Manage IDE Settings | Export Settings**, then use **Import Settings** in the new instance.
+Keep the old config directory until the imported settings have been verified.
+
+Alternatively, point individual keys at legacy locations to reuse them directly, for example:
+
+```scala
+ThisBuild / intellijDevConfigDir := intellijPluginDirectory.value / "config"
+ThisBuild / intellijDevSystemDir := intellijPluginDirectory.value / "system"
+ThisBuild / intellijTestSystemDir := intellijPluginDirectory.value / "test-system"
+```
+
+The last example leaves the test config isolated unless overridden separately. Split-mode legacy
+locations were `system_client/` and `config_client/`. Exact overrides receive no `README.txt` markers.
+
+Managed test system/config directories get non-overwriting `README.txt` markers identifying their
+purpose, canonical checkout, and target build. They are created during test preparation or JUnit
+configuration generation, never merely by inspecting paths. `cleanUpTestEnvironment` deletes only
+the selected test system/config directories, **including explicit overrides**; it does not remove
+checkout roots, other builds, or shared development data. Automatic cleanup remains separate work.
+
+SDKs, plugin dependencies, and downloads retain their shared locations under `intellijPluginDirectory`:
+
+```text
+sdk/<intellijBuild>/                 IntelliJ SDK
+sdk/<intellijBuild>/plugins/         bundled plugins
+sdk/<intellijBuild>/custom-plugins/  installed plugin dependencies
+sdk/downloads/                      download cache
+```
+
+#### Concurrency
+
+Separate checkouts/worktrees can run tests independently. The sbt and IDEA test runners use the same
+paths for one checkout and build, so do not run them simultaneously. Within one sbt server, test
+commands run sequentially; this plugin also disables parallel tests. Independent sbt processes,
+including non-server runs, still share the selected directories. Concurrent JVMs sharing the same
+checkout, build, and purpose are unsupported: indexes and caches can conflict or become corrupted.
+
+For explicit per-JVM test isolation, use `forRuntimeId` or `applyTo` in
+[`IntellijTestRuntimeDirectories`](ideaSupport/src/main/scala/org/jetbrains/sbtidea/IntellijTestRuntimeDirectories.scala).
+Their signatures and explicit-ID paths (`test-system-<id>`, `test-config-<id>`) are unchanged and
+independent of checkout/build defaults. Hash rationale and marker details are in
+[`CheckoutRuntimeDirectories`](ideaSupport/src/main/scala/org/jetbrains/sbtidea/CheckoutRuntimeDirectories.scala);
+design alternatives are recorded in [ADR 0002](docs/adr/0002-organize-intellij-runtime-directories.md).
+
 ### From IDEA
 
 - `sbt-idea-plugin` generates IDEA-readable artifact xml and run configuration on project import

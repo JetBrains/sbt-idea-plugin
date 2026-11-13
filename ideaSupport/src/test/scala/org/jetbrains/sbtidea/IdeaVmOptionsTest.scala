@@ -117,4 +117,40 @@ class IdeaVmOptionsTest extends AnyFunSuite with Matchers {
       option shouldNot endWith regex s"=$Q.+$Q$$"
     }
   }
+
+  for ((label, vmOptions) <- Seq("current" -> newVmOptions, "legacy" -> oldVmOptions)) {
+    for (purpose <- Seq("dev", "build-index")) {
+      test(s"$label $purpose options normalize selected system/config/log paths") {
+        val dirs = CheckoutRuntimeDirectories(java.nio.file.Paths.get("plugin home"), new File("/checkout"))
+        val selected = if (purpose == "dev") dirs.dev("IU-263.12345.67") else dirs.buildIndex("IU-263.12345.67")
+        val builder = vmOptionsBuilderNew.withRuntimeDirectories(selected)
+        val conflicting = vmOptions.withExtraOptions(Seq(
+          "-Didea.system.path=stale", "-Didea.config.path=stale", "-Didea.log.path=stale", "-Dretained=yes"))
+        val actual = builder.build(conflicting, forTests = false, quoteValues = false)
+        actual.filter(IntellijTestRuntimeDirectories.isIntellijDirectoryOption) shouldBe selected.jvmOptions
+        actual should contain("-Dretained=yes")
+        actual should contain("-Dplugin.path=foo bar")
+        builder.buildQuotedNoEscapeXml(conflicting, forTests = false) should contain(
+          s"""-Didea.config.path="${selected.config}"""")
+      }
+    }
+    test(s"$label test options use resolved directories and retain unrelated options") {
+      val dirs = IntellijTestRuntimeDirectories.RuntimeDirectories(
+        Paths.get("custom system"), Paths.get("custom config"), Paths.get("custom system/log"))
+      val builder = vmOptionsBuilderNew.copy(testRuntimeDirectories = Some(dirs))
+      val withStalePaths = vmOptions.withExtraOptions(Seq(
+        "-Didea.system.path=stale", "-Didea.config.path=stale", "-Didea.log.path=stale", "-Dother.option=kept"))
+      val actual = builder.build(withStalePaths, forTests = true, quoteValues = false)
+      actual.filter(IntellijTestRuntimeDirectories.isIntellijDirectoryOption) shouldBe dirs.jvmOptions
+      actual should contain("-Dother.option=kept")
+      actual should contain("-Dkey1=value")
+      actual.filterNot(IntellijTestRuntimeDirectories.isIntellijDirectoryOption) shouldBe
+        vmOptionsBuilderNew.build(withStalePaths, forTests = true, quoteValues = false)
+          .filterNot(IntellijTestRuntimeDirectories.isIntellijDirectoryOption)
+      builder.buildQuotedNoEscapeXml(withStalePaths, forTests = true) should contain("-Didea.system.path=\"custom system\"")
+      builder.build(withStalePaths, forTests = true, quoteValues = true) should contain("-Didea.config.path=&quot;custom config&quot;")
+      builder.build(vmOptions, forTests = false, quoteValues = false) shouldBe
+        vmOptionsBuilderNew.build(vmOptions, forTests = false, quoteValues = false)
+    }
+  }
 }

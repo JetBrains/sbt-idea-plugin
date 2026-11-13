@@ -14,6 +14,9 @@ object GenerateIdeaRunConfigurations extends SbtIdeaTask[Unit] {
   override def createTask: Def.Initialize[Task[Unit]] = Def.taskDyn {
     val buildRoot = baseDirectory.in(ThisBuild).value
     val projectRoot = baseDirectory.in(ThisProject).value
+    val prepare = if (ideaConfigOptions.value.generateJUnitTemplate)
+      Def.task { prepareIntellijTestDirectories.value }
+    else Def.task { () }
 
     if (buildRoot == projectRoot) Def.task {
       PluginLogger.bind(new SbtPluginLogger(streams.value))
@@ -69,11 +72,19 @@ object GenerateIdeaRunConfigurations extends SbtIdeaTask[Unit] {
         testLegacyIntellijVMOptions = legacyTestVmOptions,
         intellijVMOptionsBuilder = intellijVMOptionsBuilder.value,
         useNewVmOptions = useNewVmOptions.value,
+        testUseNewVmOptions = Some((Test / useNewVmOptions).value),
+        testIntellijVMOptionsBuilder = Some(intellijTestVMOptionsBuilder.value),
+        clientRuntimeDirectories = Some(sbtidea.IntellijTestRuntimeDirectories.RuntimeDirectories(
+          intellijDevClientSystemDir.value.toPath,
+          intellijDevClientConfigDir.value.toPath,
+          intellijDevClientSystemDir.value.toPath.resolve("log"),
+        )),
 
         productInfoExtraDataProvider = productInfoExtraDataProvider.value,
         options = config,
       )
 
+      val _ = prepare.value
       configBuilder.build()
     } else Def.task { }
   }

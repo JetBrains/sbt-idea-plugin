@@ -22,6 +22,15 @@ trait Init { this: Keys.type =>
 
   private def isRunningFromIDEA: Boolean = sys.props.contains("idea.managed")
 
+  private lazy val managedTestDirectory = AttributeKey[Boolean]("intellij-managed-test-directory")
+
+  // Keep ownership on the default tasks, so an exact-path override is user-managed even
+  // when its path happens to match the managed layout. Reading task metadata does not run it.
+  private def managedTestDirectorySetting(setting: Def.Setting[Task[File]]): Def.Setting[Task[File]] =
+    setting.mapInit { (_, task) =>
+      task.copy(info = task.info.set(managedTestDirectory, true))
+    }
+
   lazy val globalSettings : Seq[Setting[?]] = Seq(
     intellijAttachSources     := true,
     // Provide defaults for settings that are aggregated across all dependencies
@@ -39,8 +48,33 @@ trait Init { this: Keys.type =>
     intellijBuildInfo         := BuildInfo(intellijBuild.value, intellijPlatform.value),
     jbrInfo                   := AutoJbr(),
     intellijPluginDirectory   := homePrefix / s".${intellijPluginName.value.removeSpaces}Plugin${intellijPlatform.value.edition}",
-    intellijTestConfigDir     := intellijPluginDirectory.value / "test-config",
-    intellijTestSystemDir     := intellijPluginDirectory.value / "test-system",
+    checkoutRuntimeDirectories := CheckoutRuntimeDirectories(intellijPluginDirectory.value.toPath, (ThisBuild / baseDirectory).value),
+    intellijRuntimeBuildId := {
+      val info = productInfo.value
+      require(info.productCode.nonEmpty && info.buildNumber.nonEmpty,
+        "The installed target SDK must report a product code and full build number in product-info.json")
+      CheckoutRuntimeDirectories.validateBuildId(s"${info.productCode}-${info.buildNumber}")
+    },
+    managedTestDirectorySetting(
+      intellijTestConfigDir := checkoutRuntimeDirectories.value.tests(intellijRuntimeBuildId.value).config.toFile),
+    managedTestDirectorySetting(
+      intellijTestSystemDir := checkoutRuntimeDirectories.value.tests(intellijRuntimeBuildId.value).system.toFile),
+    intellijDevUseSharedDirectories := CheckoutRuntimeDirectories.sharedDevDefault,
+    defaultDevRuntimeDirectories := Def.taskDyn {
+      val resolver = checkoutRuntimeDirectories.value
+      if (intellijDevUseSharedDirectories.value) Def.task { resolver.sharedDev }
+      else Def.task { resolver.dev(intellijRuntimeBuildId.value) }
+    }.value,
+    defaultDevClientRuntimeDirectories := Def.taskDyn {
+      val resolver = checkoutRuntimeDirectories.value
+      if (intellijDevUseSharedDirectories.value) Def.task { resolver.sharedDevClient }
+      else Def.task { resolver.devClient(intellijRuntimeBuildId.value) }
+    }.value,
+    intellijDevSystemDir := defaultDevRuntimeDirectories.value.system.toFile,
+    intellijDevConfigDir := defaultDevRuntimeDirectories.value.config.toFile,
+    intellijDevClientSystemDir := defaultDevClientRuntimeDirectories.value.system.toFile,
+    intellijDevClientConfigDir := defaultDevClientRuntimeDirectories.value.config.toFile,
+    intellijBuildIndexDirectories := checkoutRuntimeDirectories.value.buildIndex(intellijRuntimeBuildId.value),
     intellijBaseDirectory     := intellijPluginDirectory.value / "sdk" / intellijBuild.value,
     artifactsDownloadsDir     := intellijPluginDirectory.value / "sdk" / "downloads",
     autoRemoveOldCachedIntelliJSDK := false,
@@ -86,10 +120,6 @@ trait Init { this: Keys.type =>
         autoRemoveOldDownloads = autoRemoveOldCachedDownloads.value
       ).update()
       updateFinished = true
-    },
-    cleanUpTestEnvironment := {
-      IO.delete(intellijTestSystemDir.value)
-      IO.delete(intellijTestConfigDir.value)
     },
     Test / intellijTestRuntimeDirectories :=
       IntellijTestRuntimeDirectories(intellijPluginDirectory.value.toPath),
@@ -205,12 +235,26 @@ trait Init { this: Keys.type =>
       intellijPluginDirectory.in(ThisBuild).value.toPath,
       intellijBaseDirectory.in(ThisBuild).value.toPath
     ): @nowarn("cat=deprecation"),
-    intellijVMOptionsBuilder := new IntellijVMOptionsBuilder(
+    baseIntellijVMOptionsBuilder := new IntellijVMOptionsBuilder(
       platform = (ThisBuild / intellijPlatform).value,
       productInfoExtraDataProvider = (ThisBuild / productInfoExtraDataProvider).value,
       pluginPath = packageOutputDir.value.toPath,
       ideaHome = (ThisBuild / intellijPluginDirectory).value.toPath,
       intellijDirectory = (ThisBuild / intellijBaseDirectory).value.toPath,
+    ),
+    intellijVMOptionsBuilder := baseIntellijVMOptionsBuilder.value.withRuntimeDirectories(
+      IntellijTestRuntimeDirectories.RuntimeDirectories(
+        system = intellijDevSystemDir.value.toPath,
+        config = intellijDevConfigDir.value.toPath,
+        log = intellijDevSystemDir.value.toPath.resolve("log"),
+      ),
+    ),
+    intellijTestVMOptionsBuilder := baseIntellijVMOptionsBuilder.value.copy(
+      testRuntimeDirectories = Some(IntellijTestRuntimeDirectories.RuntimeDirectories(
+        system = (Test / intellijTestSystemDir).value.toPath,
+        config = (Test / intellijTestConfigDir).value.toPath,
+        log = (Test / intellijTestSystemDir).value.toPath.resolve("log"),
+      )),
     ),
 
     runIDE := RunIDETask.createTask.evaluated,
@@ -233,6 +277,22 @@ trait Init { this: Keys.type =>
     buildIntellijOptionsIndex := BuildIndex.createTask.value,
 
     // Test-related settings
+    prepareIntellijTestDirectories := Def.taskDyn {
+      val resolver = checkoutRuntimeDirectories.value
+      val system = (Test / intellijTestSystemDir).value
+      val config = (Test / intellijTestConfigDir).value
+      val managedSystem = Option(system).filter(_ =>
+        (Test / intellijTestSystemDir).taskValue.info.get(managedTestDirectory).contains(true))
+      val managedConfig = Option(config).filter(_ =>
+        (Test / intellijTestConfigDir).taskValue.info.get(managedTestDirectory).contains(true))
+      if (managedSystem.nonEmpty || managedConfig.nonEmpty) Def.task {
+        resolver.prepareTests(intellijRuntimeBuildId.value, managedSystem, managedConfig)
+      } else Def.task { () }
+    }.value,
+    cleanUpTestEnvironment := {
+      IO.delete((Test / intellijTestSystemDir).value)
+      IO.delete((Test / intellijTestConfigDir).value)
+    },
     logBuffered       := false,
     parallelExecution := false,
 
@@ -245,12 +305,13 @@ trait Init { this: Keys.type =>
 
     // We need to fork tests to pass custom VM options
     Test / fork := true,
+    Test / forkOptions := (Test / forkOptions).dependsOn(prepareIntellijTestDirectories).value,
 
     Test / intellijVMOptions := intellijVMOptions.value.copy(debug = false): @nowarn("cat=deprecation"),
     Test / customIntellijVMOptions := customIntellijVMOptions.value.copy(debugInfo = None),
 
     Test / javaOptions ++= {
-      val intellijVMOptionsBuilder = Keys.intellijVMOptionsBuilder.value
+      val intellijVMOptionsBuilder = Keys.intellijTestVMOptionsBuilder.value
 
       val vmOptions: VmOptions = if ((Test / useNewVmOptions).value)
         VmOptions.New((Test / customIntellijVMOptions).value)

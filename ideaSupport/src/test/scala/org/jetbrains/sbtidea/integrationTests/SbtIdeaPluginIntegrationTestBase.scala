@@ -61,7 +61,7 @@ abstract class SbtIdeaPluginIntegrationTestBase
     intellijSdkRoot / "sdk" / commonIntellijBuild
   }
 
-  private def copyTestProjectToTemporaryDirectory(sourceProjectDir: File): File = {
+  protected final def copyTestProjectToTemporaryDirectory(sourceProjectDir: File): File = {
     val targetProjectDir = newTmpDir.toFile / sourceProjectDir.getName
     val trackedFixtureFiles = listTrackedFixtureFiles(sourceProjectDir)
 
