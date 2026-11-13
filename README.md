@@ -13,6 +13,8 @@ SBT plugin that makes development of IntelliJ Platform plugins in Scala easier b
 - Flexible way to define plugin artifact structure
 - Publishing the plugin to JetBrains plugin repository
 
+Design decisions and their rationale are documented in [Architecture Decision Records](docs/adr/README.md).
+
 For a comprehensive usage example see [Scala plugin](https://github.com/JetBrains/intellij-scala) or 
 [HOCON plugin](https://github.com/JetBrains/intellij-hocon/) build definition.
 
