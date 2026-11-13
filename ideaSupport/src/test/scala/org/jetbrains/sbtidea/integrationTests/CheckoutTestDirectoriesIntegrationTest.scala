@@ -271,6 +271,107 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
     Files.exists(directories.config.resolve("README.txt")) shouldBe true
   }
 
+  // Completeness regressions for unusual custom configurations: valid SDK metadata normally
+  // hides these unused dependencies. Throwing tasks expose evaluation of a disabled output role.
+  test("disabled split output does not resolve frontend directories") {
+    val home = newTmpDir.toFile / "home"
+    val project = prepareConsumer(home)
+    IO.append(project / "extra.sbt", """
+      |LocalRootProject / ideaConfigOptions := IdeaConfigBuildingOptions()
+      |ThisBuild / intellijDevClientSystemDir := sys.error("disabled frontend system evaluated")
+      |ThisBuild / intellijDevClientConfigDir := sys.error("disabled frontend config evaluated")
+      |""".stripMargin)
+
+    runSbtProcess(Seq("createIDEARunConfiguration", "assertMarkers"), project)
+    val configs = project / ".idea" / "runConfigurations"
+    val expected = CheckoutRuntimeDirectories(home.toPath, project).dev(buildId)
+    IO.read(configs / "root.xml") should include(expected.system.toString)
+    (configs / "_template__of_JUnit.xml").isFile shouldBe true
+    (configs / "junit_template_argfile.txt").isFile shouldBe true
+    (configs / "root (split mode).xml").exists() shouldBe false
+    (configs / "idea_client.properties").exists() shouldBe false
+  }
+
+  test("disabled JUnit output does not resolve test directories for default, additional or split development configs") {
+    Seq(
+      "IdeaConfigBuildingOptions(generateJUnitTemplate = false)" -> "root.xml",
+      "IdeaConfigBuildingOptions(generateDefaultRunConfig = false, generateJUnitTemplate = false, " +
+        "additionalRunConfigs = Seq(org.jetbrains.sbtidea.IdeaConfigBuildingOptions.AdditionalRunConfigData(\" extra\", Nil)))" -> "root extra.xml",
+      "IdeaConfigBuildingOptions(generateDefaultRunConfig = false, generateJUnitTemplate = false, " +
+        "generateRunConfigForSplitMode = true)" -> "root (split mode).xml",
+    ).foreach { case (options, output) =>
+      val home = newTmpDir.toFile / "home"
+      val project = prepareConsumer(home)
+      IO.append(project / "extra.sbt", s"""
+        |LocalRootProject / ideaConfigOptions := $options
+        |ThisBuild / intellijDevUseSharedDirectories := true
+        |ThisBuild / intellijRuntimeBuildId := sys.error("unused identity evaluated")
+        |ThisBuild / intellijTestSystemDir := sys.error("disabled JUnit system evaluated")
+        |ThisBuild / intellijTestConfigDir := sys.error("disabled JUnit config evaluated")
+        |""".stripMargin)
+
+      runSbtProcess(Seq("createIDEARunConfiguration"), project)
+      val configs = project / ".idea" / "runConfigurations"
+      IO.read(configs / output) should include((home / "runtime" / "system-shared").getAbsolutePath)
+      (configs / "_template__of_JUnit.xml").exists() shouldBe false
+      (configs / "junit_template_argfile.txt").exists() shouldBe false
+      Files.exists(CheckoutRuntimeDirectories(home.toPath, project).tests(buildId).system) shouldBe false
+      Files.exists(CheckoutRuntimeDirectories(home.toPath, project).tests(buildId).config) shouldBe false
+      if (output == "root (split mode).xml") {
+        readProperties(configs / "idea_client.properties").getProperty("idea.system.path") shouldBe
+          (home / "runtime" / "system-client-shared").getAbsolutePath
+      }
+    }
+  }
+
+  test("JUnit-only output uses explicit test paths without resolving development directories or build identity") {
+    val home = newTmpDir.toFile / "home"
+    val project = prepareConsumer(home)
+    val system = home / "explicit test system"
+    val config = home / "explicit test config"
+    IO.append(project / "extra.sbt", s"""
+      |LocalRootProject / ideaConfigOptions := IdeaConfigBuildingOptions(generateDefaultRunConfig = false)
+      |ThisBuild / intellijTestSystemDir := file(${quote(system)})
+      |ThisBuild / intellijTestConfigDir := file(${quote(config)})
+      |ThisBuild / intellijRuntimeBuildId := sys.error("unused identity evaluated")
+      |ThisBuild / intellijDevSystemDir := sys.error("disabled backend system evaluated")
+      |ThisBuild / intellijDevConfigDir := sys.error("disabled backend config evaluated")
+      |ThisBuild / intellijDevClientSystemDir := sys.error("disabled frontend system evaluated")
+      |ThisBuild / intellijDevClientConfigDir := sys.error("disabled frontend config evaluated")
+      |""".stripMargin)
+
+    runSbtProcess(Seq("createIDEARunConfiguration"), project)
+    val configs = project / ".idea" / "runConfigurations"
+    configs.list().toSet shouldBe Set("_template__of_JUnit.xml", "junit_template_argfile.txt")
+    val java = new File(System.getProperty("java.home")) / "bin" / "java"
+    val observed = project / "junit-only.properties"
+    runProcess(Seq(java.getAbsolutePath, "@" + (configs / "junit_template_argfile.txt").getAbsolutePath,
+      "DirectoryProbe", observed.getAbsolutePath), project)
+    val properties = readProperties(observed)
+    properties.getProperty("idea.system.path") shouldBe system.getAbsolutePath
+    properties.getProperty("idea.config.path") shouldBe config.getAbsolutePath
+    properties.getProperty("idea.log.path") shouldBe (system / "log").getAbsolutePath
+    Seq(system, config).foreach(path => (path / "README.txt").exists() shouldBe false)
+  }
+
+  test("disabling every configuration output is a no-op without SDK or runtime task evaluation") {
+    val home = newTmpDir.toFile / "home"
+    val project = prepareConsumer(home)
+    IO.append(project / "extra.sbt", """
+      |LocalRootProject / ideaConfigOptions := IdeaConfigBuildingOptions(
+      |  generateDefaultRunConfig = false, generateJUnitTemplate = false)
+      |ThisBuild / productInfo := sys.error("unused SDK metadata evaluated")
+      |ThisBuild / intellijRuntimeBuildId := sys.error("unused identity evaluated")
+      |ThisBuild / intellijDevSystemDir := sys.error("disabled backend evaluated")
+      |ThisBuild / intellijDevClientSystemDir := sys.error("disabled frontend evaluated")
+      |ThisBuild / intellijTestSystemDir := sys.error("disabled JUnit evaluated")
+      |""".stripMargin)
+
+    runSbtProcess(Seq("createIDEARunConfiguration"), project)
+    (project / ".idea" / "runConfigurations").exists() shouldBe false
+    (home / "runtime").exists() shouldBe false
+  }
+
   private def prepareConsumer(home: File): File = {
     IO.write(home / "sdk" / "243.22562.145" / "bin" / "probe.vmoptions", "-Dproduct.marker=retained\n")
     IO.write(JbrInstaller.getJbrHome((home / "sdk" / "243.22562.145").toPath).resolve("release").toFile,
