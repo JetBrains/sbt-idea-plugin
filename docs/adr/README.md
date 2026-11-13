@@ -6,6 +6,7 @@ alongside the code. Use them for consequential decisions, not every code change.
 ## Index
 
 - [ADR 0001: Record architecture decisions in Markdown](0001-record-architecture-decisions.md) — Accepted
+- [ADR 0002: Organize IntelliJ runtime directories by checkout](0002-organize-intellij-runtime-directories-by-checkout.md) — Accepted; implementation pending
 
 ## Conventions
 
