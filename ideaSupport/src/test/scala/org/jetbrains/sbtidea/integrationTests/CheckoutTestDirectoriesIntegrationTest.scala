@@ -458,6 +458,53 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
     runSbtProcess(Seq("show name"), project) // Housekeeping cannot break unrelated commands.
   }
 
+  test("minimum supported sbt executes runtime tasks, generation, forks and startup maintenance") {
+    val home = newTmpDir.toFile / "plugin home with spaces"
+    val project = prepareConsumer(home)
+    enableRuntimeMaintenanceStartup(project)
+    // Keep in sync with MinimumSbtVersion in build.sbt. Compile-time compatibility alone
+    // does not exercise Task.info ownership, dynamic dependencies or lifecycle hooks.
+    val minimumSbtVersion = "1.4.5"
+    SbtProjectFilesUtils.updateSbtVersion(project, minimumSbtVersion)
+    // Personal global plugins may require a newer sbt and are not part of this fixture.
+    val vmOptions = Seq(s"-Dsbt.global.base=${newTmpDir.resolve("global")}")
+    val oldCheckout = newTmpDir
+    val old = CheckoutRuntimeDirectories(home.toPath, oldCheckout.toFile).tests(buildId)
+    IO.write(old.system.resolve("expired.txt").toFile, "expired")
+    val registry = new runtimeCleanup.RuntimeCleanup(home.toPath,
+      runtimeCleanup.RuntimeCleanup.Policy(true, 7.days, 1.day), new CapturingLogger(),
+      () => Instant.now().minusSeconds(8.days.toSeconds))
+    registry.refresh(oldCheckout, buildId, Map("test.system" -> old.system))
+
+    runSbtProcess(Seq("dumpPaths", "child / dumpPaths", "createIDEARunConfiguration", "probe"),
+      project, vmOptions = vmOptions)
+    readProperties(project / "settings.properties").getProperty("sbt.version") shouldBe minimumSbtVersion
+    readProperties(project / "child" / "settings.properties").getProperty("idea.system.path") shouldBe
+      readProperties(project / "settings.properties").getProperty("idea.system.path")
+    assertProbeAndTemplateAgree(project, home, legacy = false)
+    Files.exists(old.system) shouldBe false
+    val marker = registry.marker(project.toPath, buildId).toFile
+    readProperties(marker).getProperty("test.system") should not be null
+
+    val customId = "IU-minimum-sbt-custom"
+    val explicitSystem = home / "explicit test system"
+    runSbtProcess(Seq(
+      s"""set ThisBuild / intellijRuntimeBuildId := "$customId"""",
+      s"set ThisBuild / intellijTestSystemDir := file(${quote(explicitSystem)})",
+      "set ThisBuild / intellijDevUseSharedDirectories := true",
+      "dumpPaths", "createIDEARunConfiguration", "probe"), project, vmOptions = vmOptions)
+    val paths = readProperties(project / "settings.properties")
+    paths.getProperty("idea.system.path") shouldBe explicitSystem.getAbsolutePath
+    paths.getProperty("dev.system") shouldBe (home / "runtime" / "system-shared").getAbsolutePath
+    paths.getProperty("idea.config.path") shouldBe
+      CheckoutRuntimeDirectories(home.toPath, project).tests(customId).config.toString
+    assertProbeAndTemplateAgree(project, home, legacy = false)
+    (explicitSystem / "README.txt").exists() shouldBe false
+    val changed = readProperties(registry.marker(project.toPath, customId).toFile)
+    changed.getProperty("test.system") shouldBe null
+    changed.getProperty("test.config") should not be null
+  }
+
   private def enableRuntimeMaintenanceStartup(project: File): Unit = {
     val build = project / "build.sbt"
     IO.write(build, IO.read(build).replace("Global / onLoad := identity",
