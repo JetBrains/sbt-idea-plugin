@@ -55,21 +55,29 @@ private[sbtidea] final class RuntimeUsageRegistry(pluginHome: Path, log: PluginL
     }
   }
 
-  /** Overrides can coincide with an old default. Withdraw that ownership even without SDK metadata. */
-  def withdraw(paths: Set[Path]): Unit = safely {
-    val excluded = paths.map(normalizeManaged)
-    if (excluded.nonEmpty) records().foreach { file =>
+  /** Preserve whole overlapping directories, even when an override selects only a nested child. */
+  def withdraw(paths: Set[Path]): Boolean = try {
+    val excluded = paths.map(_.toFile.getCanonicalFile.toPath)
+    if (excluded.isEmpty) true
+    else listRecords().fold(reason => throw new java.io.IOException(reason), identity).map { file =>
+      var completed = false
       withLock(lockFor(file), blocking = true) {
         read(file).foreach { record =>
-          val kept = record.paths.filterNot { case (_, path) => excluded(path) }
+          val kept = record.paths.filterNot { case (_, path) => excluded.exists(overlaps(_, path)) }
           if (kept != record.paths) {
             val modified = Files.getLastModifiedTime(file, NOFOLLOW_LINKS)
             if (kept.isEmpty) Files.delete(file)
             else { write(file, properties(record.copy(paths = kept))); Files.setLastModifiedTime(file, modified) }
           }
         }
+        completed = true
       }
-    }
+      completed
+    }.forall(identity)
+  } catch {
+    case NonFatal(ex) =>
+      log.warn(s"IntelliJ runtime ownership withdrawal skipped: ${ex.getMessage}")
+      false
   }
 
   def records(): Seq[Path] = listRecords().getOrElse(Seq.empty)

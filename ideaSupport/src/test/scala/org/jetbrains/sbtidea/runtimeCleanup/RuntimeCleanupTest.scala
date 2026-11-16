@@ -155,6 +155,27 @@ class RuntimeCleanupTest extends AnyFunSuite with Matchers with TmpDirUtils {
     Files.exists(f.tests.system.resolve("cache")) shouldBe true
   }
 
+  test("overlapping overrides preserve whole managed directories for the rare development reuse case") {
+    // Reusing a disposable test directory for persistent development data is unusual;
+    // cover it for completeness, including a nested directory and a containing root.
+    Seq("exact", "nested", "parent", "symlink").foreach { kind =>
+      val f = new Fixture
+      f.paths.values.foreach(path => f.file(path.resolve("cache")))
+      f.register()
+      val selected = kind match {
+        case "exact" => f.tests.system
+        case "nested" => f.tests.system.resolve("development")
+        case "parent" => f.tests.system.getParent
+        case "symlink" => Files.createSymbolicLink(newTmpDir.resolve("alias"), f.tests.system)
+      }
+      f.cleanup.withdraw(Set(selected))
+      f.advance(8.days)
+      // Another checkout's cleaner sees the persisted ownership withdrawal too.
+      f.service().cleanupIfDue().directories shouldBe (if (kind == "parent") 2 else 3)
+      Files.exists(f.tests.system.resolve("cache")) shouldBe true
+    }
+  }
+
   test("unknown formats, unsafe paths, future timestamps and symlinked roots are left untouched") {
     Seq("formatVersion" -> "99", "owner" -> "someone-else", "test.system" -> "../outside/system",
       "test.system" -> "/absolute/system", "test.system" -> "runtime/build/checkout/dev/system").foreach { case (key, value) =>
@@ -203,6 +224,7 @@ class RuntimeCleanupTest extends AnyFunSuite with Matchers with TmpDirUtils {
     val f = new Fixture
     val maintenance = new RuntimeMaintenance(f.home, f.resolver, f.policy, new Object, f.log,
       () => f.time, () => Some(Set.empty))
+    maintenance.initializeOverrides(Set.empty)
     maintenance.register(id, f.paths, Roles)
     val original = Files.getLastModifiedTime(f.marker)
     f.advance(30.minutes); maintenance.afterBatch()
@@ -260,12 +282,42 @@ class RuntimeCleanupTest extends AnyFunSuite with Matchers with TmpDirUtils {
     val maintenance = new RuntimeMaintenance(f.home, f.resolver, f.policy, new Object, f.log,
       () => f.time, () => Some(Set.empty))
     f.file(f.tests.system.resolve("keep")); f.file(f.tests.config.resolve("cache"))
-    maintenance.register(id, f.paths, Roles)
-    maintenance.withdraw(Set(f.tests.system.toFile.getCanonicalFile.toPath))
+    f.register()
+    maintenance.initializeOverrides(Set(f.tests.system.resolve("development")))
     maintenance.register(id, f.paths, Roles)
     f.advance(8.days)
     f.cleanup.cleanupIfDue().directories shouldBe 1
     Files.exists(f.tests.system.resolve("keep")) shouldBe true
+  }
+
+  test("maintenance waits for override discovery and defers deletion when withdrawal cannot acquire a record lock") {
+    val f = new Fixture
+    f.file(f.tests.system.resolve("settings")); f.file(f.index.system.resolve("expired"))
+    f.register(); f.advance(8.days)
+    val maintenance = new RuntimeMaintenance(f.home, f.resolver, f.policy, new Object, f.log,
+      () => f.time, () => Some(Set.empty))
+    val currentId = "IU-current-build"
+    val current = f.resolver.tests(currentId)
+    def registerCurrent(): Unit = maintenance.register(currentId, Map("test.system" -> current.system), TestRoles)
+    registerCurrent(); maintenance.afterBatch()
+    Files.exists(f.index.system.resolve("expired")) shouldBe true
+    Files.exists(f.cleanup.marker(f.checkout, currentId)) shouldBe false
+
+    val channel = FileChannel.open(f.marker.resolveSibling(f.marker.getFileName.toString.replace(".properties", ".lock")), CREATE, WRITE)
+    val lock = channel.lock()
+    try {
+      maintenance.initializeOverrides(Set(f.tests.system))
+      maintenance.overridesReady shouldBe false
+      registerCurrent(); maintenance.afterBatch()
+      Files.exists(f.tests.system.resolve("settings")) shouldBe true
+      Files.exists(f.index.system.resolve("expired")) shouldBe true
+    } finally { lock.release(); channel.close() }
+
+    maintenance.initializeOverrides(Set(f.tests.system))
+    maintenance.overridesReady shouldBe true
+    registerCurrent(); maintenance.afterBatch()
+    Files.exists(f.tests.system.resolve("settings")) shouldBe true
+    Files.exists(f.index.system.resolve("expired")) shouldBe false
   }
 
   test("an actual Java process using a generated argument file protects an expired runtime") {

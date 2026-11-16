@@ -115,6 +115,9 @@ object Keys extends Defns with Init with Utils with Quirks {
     "Report registered runtime cleanup policies and current eligibility without modifying cleanup state; normal sbt lifecycle hooks still apply")
 
   private[sbtidea] lazy val runtimeMaintenance = settingKey[runtimeCleanup.RuntimeMaintenance]("").withRank(sbt.KeyRanks.Invisible)
+  private[sbtidea] lazy val intellijRuntimeDirectoryOverrides = taskKey[Set[java.nio.file.Path]]("").withRank(sbt.KeyRanks.Invisible)
+  private[sbtidea] lazy val collectIntellijRuntimeDirectoryOverrides = taskKey[Set[java.nio.file.Path]]("").withRank(sbt.KeyRanks.Invisible)
+  private[sbtidea] lazy val prepareIntellijRuntimeMaintenance = taskKey[Unit]("").withRank(sbt.KeyRanks.Invisible)
   private[sbtidea] lazy val refreshIntellijRuntimeUsage = taskKey[Unit]("").withRank(sbt.KeyRanks.Invisible)
   private[sbtidea] lazy val initializeIntellijRuntimeMaintenance = taskKey[Unit]("").withRank(sbt.KeyRanks.Invisible)
   private[sbtidea] lazy val initializeIntellijRuntimeMaintenanceOnLoad = taskKey[Unit]("").withRank(sbt.KeyRanks.Invisible)

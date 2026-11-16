@@ -24,7 +24,7 @@ trait Init { this: Keys.type =>
 
   private def isRunningFromIDEA: Boolean = sys.props.contains("idea.managed")
 
-  private lazy val managedTestDirectory = AttributeKey[Boolean]("intellij-managed-test-directory")
+  private lazy val defaultRuntimeDirectory = AttributeKey[Boolean]("intellij-default-runtime-directory")
 
   private def maintenanceLogger(logger: sbt.util.Logger): PluginLogger = new PluginLogger {
     override def debug(message: => String): Unit = logger.debug(message)
@@ -36,10 +36,15 @@ trait Init { this: Keys.type =>
 
   // Keep ownership on the default tasks, so an exact-path override is user-managed even
   // when its path happens to match the managed layout. Reading task metadata does not run it.
-  private def managedTestDirectorySetting(setting: Def.Setting[Task[File]]): Def.Setting[Task[File]] =
+  private def defaultRuntimeDirectorySetting(setting: Def.Setting[Task[File]]): Def.Setting[Task[File]] =
     setting.mapInit { (_, task) =>
-      task.copy(info = task.info.set(managedTestDirectory, true))
+      task.copy(info = task.info.set(defaultRuntimeDirectory, true))
     }
+
+  private def explicitRuntimeDirectory(key: TaskKey[File]): Def.Initialize[Task[Set[java.nio.file.Path]]] = Def.taskDyn {
+    if (key.taskValue.info.get(defaultRuntimeDirectory).contains(true)) Def.task { Set.empty[java.nio.file.Path] }
+    else Def.task { Set(key.value.toPath) }
+  }
 
   lazy val globalSettings : Seq[Setting[?]] = Seq(
     intellijAttachSources     := true,
@@ -65,9 +70,9 @@ trait Init { this: Keys.type =>
         "The installed target SDK must report a product code and full build number in product-info.json")
       CheckoutRuntimeDirectories.validateBuildId(s"${info.productCode}-${info.buildNumber}")
     },
-    managedTestDirectorySetting(
+    defaultRuntimeDirectorySetting(
       intellijTestConfigDir := checkoutRuntimeDirectories.value.tests(intellijRuntimeBuildId.value).config.toFile),
-    managedTestDirectorySetting(
+    defaultRuntimeDirectorySetting(
       intellijTestSystemDir := checkoutRuntimeDirectories.value.tests(intellijRuntimeBuildId.value).system.toFile),
     intellijDevUseSharedDirectories := CheckoutRuntimeDirectories.sharedDevDefault,
     defaultDevRuntimeDirectories := Def.taskDyn {
@@ -80,10 +85,10 @@ trait Init { this: Keys.type =>
       if (intellijDevUseSharedDirectories.value) Def.task { resolver.sharedDevClient }
       else Def.task { resolver.devClient(intellijRuntimeBuildId.value) }
     }.value,
-    intellijDevSystemDir := defaultDevRuntimeDirectories.value.system.toFile,
-    intellijDevConfigDir := defaultDevRuntimeDirectories.value.config.toFile,
-    intellijDevClientSystemDir := defaultDevClientRuntimeDirectories.value.system.toFile,
-    intellijDevClientConfigDir := defaultDevClientRuntimeDirectories.value.config.toFile,
+    defaultRuntimeDirectorySetting(intellijDevSystemDir := defaultDevRuntimeDirectories.value.system.toFile),
+    defaultRuntimeDirectorySetting(intellijDevConfigDir := defaultDevRuntimeDirectories.value.config.toFile),
+    defaultRuntimeDirectorySetting(intellijDevClientSystemDir := defaultDevClientRuntimeDirectories.value.system.toFile),
+    defaultRuntimeDirectorySetting(intellijDevClientConfigDir := defaultDevClientRuntimeDirectories.value.config.toFile),
     intellijBuildIndexDirectories := checkoutRuntimeDirectories.value.buildIndex(intellijRuntimeBuildId.value),
     intellijBaseDirectory     := intellijPluginDirectory.value / "sdk" / intellijBuild.value,
     artifactsDownloadsDir     := intellijPluginDirectory.value / "sdk" / "downloads",
@@ -97,11 +102,21 @@ trait Init { this: Keys.type =>
       checkoutRuntimeDirectories.value,
       RuntimeCleanup.Policy(autoRemoveOldCachedIntelliJRuntimes.value,
         intellijRuntimeCleanupRetention.value, intellijRuntimeCleanupInterval.value),
-      Seq(intellijRuntimeBuildId.taskValue,
-        (LocalRootProject / Test / intellijTestSystemDir).taskValue,
-        (LocalRootProject / Test / intellijTestConfigDir).taskValue),
+      Seq(intellijRuntimeBuildId.taskValue, collectIntellijRuntimeDirectoryOverrides.taskValue),
       maintenanceLogger(sLog.value),
     ),
+    collectIntellijRuntimeDirectoryOverrides :=
+      intellijRuntimeDirectoryOverrides.?.all(ScopeFilter(inAnyProject)).value.flatten.flatten.toSet,
+    prepareIntellijRuntimeMaintenance := Def.taskDyn {
+      val maintenance = runtimeMaintenance.value
+      if (maintenance.overridesReady) Def.task { () }
+      else Def.task {
+        collectIntellijRuntimeDirectoryOverrides.result.value match {
+          case Value(paths) => maintenance.initializeOverrides(paths)
+          case Inc(_) => PluginLogger.debug("IntelliJ runtime cleanup deferred: explicit directory overrides are unavailable")
+        }
+      }
+    }.value,
     showIntellijRuntimeCleanup := runtimeMaintenance.value.showCleanupReport(),
     initializeIntellijRuntimeMaintenanceOnLoad := {
       // The root may not enable the plugin or aggregate the projects that do.
@@ -312,13 +327,21 @@ trait Init { this: Keys.type =>
     buildIntellijOptionsIndex := BuildIndex.createTask.value,
 
     // Test-related settings
+    intellijRuntimeDirectoryOverrides := {
+      // Only explicit tasks run here. In particular, unused Dev defaults remain lazy.
+      explicitRuntimeDirectory(Test / intellijTestSystemDir).value ++
+        explicitRuntimeDirectory(Test / intellijTestConfigDir).value ++
+        explicitRuntimeDirectory(intellijDevSystemDir).value ++
+        explicitRuntimeDirectory(intellijDevConfigDir).value ++
+        explicitRuntimeDirectory(intellijDevClientSystemDir).value ++
+        explicitRuntimeDirectory(intellijDevClientConfigDir).value
+    },
     refreshIntellijRuntimeUsage := Def.taskDyn {
       val maintenance = runtimeMaintenance.value
-      val system = (Test / intellijTestSystemDir).taskValue.info.get(managedTestDirectory).contains(true)
-      val config = (Test / intellijTestConfigDir).taskValue.info.get(managedTestDirectory).contains(true)
-      if (!system && !config) Def.task {
-        maintenance.withdraw(Set((Test / intellijTestSystemDir).value.toPath, (Test / intellijTestConfigDir).value.toPath))
-      } else Def.task {
+      val system = (Test / intellijTestSystemDir).taskValue.info.get(defaultRuntimeDirectory).contains(true)
+      val config = (Test / intellijTestConfigDir).taskValue.info.get(defaultRuntimeDirectory).contains(true)
+      if (!system && !config) Def.task { () }
+      else Def.task {
         val resolver = checkoutRuntimeDirectories.value
         val id = intellijRuntimeBuildId.value
         val testDirs = resolver.tests(id)
@@ -328,28 +351,29 @@ trait Init { this: Keys.type =>
         val owned = Map("index.system" -> indexDirs.system, "index.config" -> indexDirs.config) ++
           Option("test.system" -> selectedSystem).filter(_ => system && selectedSystem == testDirs.system) ++
           Option("test.config" -> selectedConfig).filter(_ => config && selectedConfig == testDirs.config)
-        maintenance.withdraw(Set.empty[java.nio.file.Path] ++
-          Option(selectedSystem).filter(_ => !system) ++ Option(selectedConfig).filter(_ => !config))
         maintenance.register(id, owned, RuntimeCleanup.Roles)
       }
     }.value,
-    initializeIntellijRuntimeMaintenance := {
-      refreshIntellijRuntimeUsage.result.value match {
-        case Inc(_) =>
-          runtimeMaintenance.value.invalidate()
-          PluginLogger.debug("IntelliJ runtime maintenance skipped: target SDK/runtime context is unavailable")
-        case _ => ()
+    initializeIntellijRuntimeMaintenance := Def.taskDyn {
+      val _ = prepareIntellijRuntimeMaintenance.value
+      Def.task {
+        refreshIntellijRuntimeUsage.result.value match {
+          case Inc(_) =>
+            runtimeMaintenance.value.invalidate()
+            PluginLogger.debug("IntelliJ runtime maintenance skipped: target SDK/runtime context is unavailable")
+          case _ => ()
+        }
       }
-    },
+    }.value,
     prepareIntellijTestDirectories := Def.taskDyn {
       val _ = initializeIntellijRuntimeMaintenance.value
       val resolver = checkoutRuntimeDirectories.value
       val system = (Test / intellijTestSystemDir).value
       val config = (Test / intellijTestConfigDir).value
       val managedSystem = Option(system).filter(_ =>
-        (Test / intellijTestSystemDir).taskValue.info.get(managedTestDirectory).contains(true))
+        (Test / intellijTestSystemDir).taskValue.info.get(defaultRuntimeDirectory).contains(true))
       val managedConfig = Option(config).filter(_ =>
-        (Test / intellijTestConfigDir).taskValue.info.get(managedTestDirectory).contains(true))
+        (Test / intellijTestConfigDir).taskValue.info.get(defaultRuntimeDirectory).contains(true))
       if (managedSystem.nonEmpty || managedConfig.nonEmpty) Def.task {
         resolver.prepareTests(intellijRuntimeBuildId.value, managedSystem, managedConfig)
       } else Def.task { () }

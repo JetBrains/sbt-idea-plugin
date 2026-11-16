@@ -14,6 +14,7 @@ private[sbtidea] object RuntimeCleanup {
   val Roles: Set[String] = Set("test.system", "test.config", "index.system", "index.config")
   val TestRoles: Set[String] = Set("test.system", "test.config")
   val IndexRoles: Set[String] = Roles -- TestRoles
+  def overlaps(left: Path, right: Path): Boolean = left.startsWith(right) || right.startsWith(left)
   final case class Policy(enabled: Boolean, retention: FiniteDuration, interval: FiniteDuration) {
     require(retention.length > 0, "intellijRuntimeCleanupRetention must be positive")
     require(interval.length > 0, "intellijRuntimeCleanupInterval must be positive")
@@ -43,7 +44,7 @@ private[sbtidea] final class RuntimeCleanup(
   def refresh(checkout: Path, buildId: String, paths: Map[String, Path], replaceRoles: Set[String] = Roles): Unit =
     registry.refresh(checkout, buildId, paths, policy, replaceRoles)
 
-  def withdraw(paths: Set[Path]): Unit = registry.withdraw(paths)
+  def withdraw(paths: Set[Path]): Boolean = registry.withdraw(paths)
 
   def cleanupIfDue(): Report = synchronized {
     var report = Report()

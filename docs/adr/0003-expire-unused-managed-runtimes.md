@@ -27,6 +27,21 @@ cleanup eligibility; the file modification time is last use. Each record's polic
 so another checkout cannot shorten it. Unknown formats and unsafe paths are skipped. Explicit paths
 are never enrolled; observing an override withdraws matching prior ownership.
 
+Discover explicit test and development backend/frontend overrides across plugin projects before
+registering ownership or permitting cleanup. Default development tasks remain lazy; explicit
+directory tasks are evaluated independently of SDK identity. Withdraw whole managed directories
+overlapping the selected paths, including parent/child overlaps, and exclude them from registration
+for that settings generation. Unavailable overrides or unsuccessful withdrawal defer automatic
+passes without failing unrelated commands.
+
+This handles the rare case of repurposing disposable test/index data as development data for
+completeness. Reuse the existing registry and locks rather than introduce permanent protection pins.
+Protection follows current declarations: directory tasks should be cheap and stable until
+reconfiguration, other sbt sessions must reload changed directory assignments, and configurations
+must not claim conflicting ownership of the same physical path. Cross-checkout adoption requires
+coordinating the original owner or copying/importing settings instead. Returning a path to managed
+test/index use can restore cleanup eligibility. The existing best-effort startup race remains.
+
 Use the existing setup sequence and compose sbt's task-completion hook. Cheap in-memory checks and a
 persisted last-attempt timestamp debounce scans across sessions. A plugin-home lock serializes
 cleanup, and stable per-record locks coordinate refreshing and deletion. Registration does not

@@ -1,6 +1,6 @@
 package org.jetbrains.sbtidea.searchableoptions
 
-import org.jetbrains.sbtidea.Keys.{baseIntellijVMOptionsBuilder, customIntellijVMOptions, intellijBaseDirectory, intellijBuildIndexDirectories, intellijRuntimeBuildId, intellijVMOptions, productInfoExtraDataProvider, runtimeMaintenance, useNewVmOptions}
+import org.jetbrains.sbtidea.Keys.{baseIntellijVMOptionsBuilder, customIntellijVMOptions, initializeIntellijRuntimeMaintenance, intellijBaseDirectory, intellijBuildIndexDirectories, intellijRuntimeBuildId, intellijVMOptions, productInfoExtraDataProvider, runtimeMaintenance, useNewVmOptions}
 import org.jetbrains.sbtidea.download.NioUtils
 import org.jetbrains.sbtidea.download.plugin.LocalPluginRegistry
 import org.jetbrains.sbtidea.packaging.*
@@ -44,6 +44,7 @@ object BuildIndex {
   }
 
   def createTask: Def.Initialize[Task[Unit]] = Def.task {
+    val _ = initializeIntellijRuntimeMaintenance.value
     implicit val log: PluginLogger = new SbtPluginLogger(streams.value)
 
     val intellijBaseDir = intellijBaseDirectory.value

@@ -664,6 +664,18 @@ explicit overrides (even overrides equal to an old default), and unregistered le
 excluded. Later overrides withdraw matching prior ownership. The existing `cleanUpTestEnvironment`
 task still explicitly deletes the selected test paths, including overrides, regardless of age.
 
+Maintenance resolves explicit test, development backend, and frontend directory overrides before
+permitting cleanup; default development tasks remain lazy. It withdraws whole managed directories
+that overlap an override, including parent/child overlaps. This covers the unusual case of reusing
+an old test/index directory for development settings. Unavailable overrides or unsuccessful ownership
+withdrawal defer this build's automatic passes without failing unrelated commands.
+
+Protection follows the current configuration. Keep directory-selection tasks cheap and stable until
+reconfiguration, and reload other sbt sessions for the checkout after changing directory assignments.
+Avoid conflicting ownership of one path across checkouts; copy/import another checkout's settings
+unless its owner is also configured to stop managing that location. Returning a path to ordinary
+managed test/index use can make it eligible for cleanup again.
+
 **Last use means sbt activity for a canonical checkout and target SDK build.** Build load/reload
 refreshes its usage record; later task activity refreshes at most hourly, and test/indexing
 preparation refreshes before launch. Subprojects share the same identity. Switching builds leaves

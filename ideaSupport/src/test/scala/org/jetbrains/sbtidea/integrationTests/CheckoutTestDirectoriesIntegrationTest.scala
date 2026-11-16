@@ -274,8 +274,9 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
   }
 
   // Completeness regressions for unusual custom configurations: valid SDK metadata normally
-  // hides these unused dependencies. Throwing tasks expose evaluation of a disabled output role.
-  test("disabled split output does not resolve frontend directories") {
+  // hides these unused dependencies. Output generation must tolerate unavailable unused roles;
+  // maintenance may inspect explicit overrides, but failure there only defers automatic cleanup.
+  test("disabled split output does not require frontend directories") {
     val home = newTmpDir.toFile / "home"
     val project = prepareConsumer(home)
     IO.append(project / "extra.sbt", """
@@ -326,7 +327,7 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
     }
   }
 
-  test("JUnit-only output uses explicit test paths without resolving development directories or build identity") {
+  test("JUnit-only output works with explicit test paths and unavailable development directories or build identity") {
     val home = newTmpDir.toFile / "home"
     val project = prepareConsumer(home)
     val system = home / "explicit test system"
@@ -471,6 +472,107 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
       ids.foreach(id => registry.marker(project.toPath, id).toFile.isFile shouldBe true)
       (home / "runtime").exists() shouldBe false
     }
+  }
+
+  Seq(SbtProjectFilesUtils.SbtVersionForIntegrationTests, "1.4.5").foreach { sbtVersion =>
+    test(s"startup runtime maintenance protects rare development reuse of old test/index paths on sbt $sbtVersion") {
+      val home = newTmpDir.toFile / "plugin home with spaces"
+      val project = prepareConsumer(home)
+      enableRuntimeMaintenanceStartup(project)
+      SbtProjectFilesUtils.updateSbtVersion(project, sbtVersion)
+      val oldId = "IU-previous-build"
+      val resolver = CheckoutRuntimeDirectories(home.toPath, project)
+      val tests = resolver.tests(oldId)
+      val index = resolver.buildIndex(oldId)
+      val paths = Map("test.system" -> tests.system, "test.config" -> tests.config,
+        "index.system" -> index.system, "index.config" -> index.config)
+      val registry = new runtimeCleanup.RuntimeCleanup(home.toPath,
+        runtimeCleanup.RuntimeCleanup.Policy(true, 7.days, 1.day), new CapturingLogger(),
+        () => Instant.now().minusSeconds(8.days.toSeconds))
+      registry.refresh(project.toPath, oldId, paths)
+      paths.values.foreach(path => IO.write(path.resolve("settings.xml").toFile, "persistent development data"))
+      val disposable = resolver.tests("IU-unrelated-old-build").system
+      registry.refresh(project.toPath, "IU-unrelated-old-build", Map("test.system" -> disposable))
+      IO.write(disposable.resolve("expired.txt").toFile, "expired")
+      // This is an unusual but valid reassignment, covered for completeness. The
+      // child is not aggregated; both backend and frontend overrides must be found.
+      IO.append(project / "extra.sbt", s"""
+        |ThisBuild / intellijDevSystemDir := file(${quote(tests.system.toFile)})
+        |ThisBuild / intellijDevConfigDir := file(${quote(tests.config.toFile)})
+        |LocalProject("child") / intellijDevClientSystemDir := file(${quote(index.system.toFile)})
+        |LocalProject("child") / intellijDevClientConfigDir := file(${quote(index.config.toFile)})
+        |// IDEA setup can initialize test maintenance before the queued startup task.
+        |ThisBuild / TaskKey[Unit]("doProjectSetup") := {
+        |  TaskKey[Unit]("initializeIntellijRuntimeMaintenance").?.all(ScopeFilter(inAnyProject)).value
+        |  ()
+        |}
+        |""".stripMargin)
+      val vmOptions = Seq(s"-Dsbt.global.base=${newTmpDir.resolve("global")}")
+      runSbtProcess(Seq("show name"), project, vmOptions = vmOptions)
+      paths.values.foreach(path => IO.read(path.resolve("settings.xml").toFile) shouldBe "persistent development data")
+      registry.marker(project.toPath, oldId).toFile.exists() shouldBe false
+      Files.exists(disposable) shouldBe false
+      Files.exists(resolver.tests(buildId).system) shouldBe false
+    }
+  }
+
+  test("startup runtime maintenance withdraws development reuse without SDK context and defers unresolved overrides") {
+    Seq(false, true).foreach { unavailableOverride =>
+      val home = newTmpDir.toFile / "plugin home"
+      val project = prepareConsumer(home)
+      enableRuntimeMaintenanceStartup(project)
+      val oldId = "IU-previous-build"
+      val resolver = CheckoutRuntimeDirectories(home.toPath, project)
+      val config = resolver.tests(oldId).config
+      val disposable = resolver.buildIndex(oldId).system
+      val registry = new runtimeCleanup.RuntimeCleanup(home.toPath,
+        runtimeCleanup.RuntimeCleanup.Policy(true, 7.days, 1.day), new CapturingLogger(),
+        () => Instant.now().minusSeconds(8.days.toSeconds))
+      registry.refresh(project.toPath, oldId, Map("test.config" -> config, "index.system" -> disposable))
+      IO.write(config.resolve("settings.xml").toFile, "persistent")
+      IO.write(disposable.resolve("expired.txt").toFile, "expired")
+      val selected = if (unavailableOverride) "sys.error(\"unavailable explicit directory\")" else s"file(${quote(config.toFile)})"
+      IO.append(project / "extra.sbt", s"""
+        |ThisBuild / intellijDevConfigDir := $selected
+        |ThisBuild / TaskKey[IntellijTestRuntimeDirectories.RuntimeDirectories]("defaultDevRuntimeDirectories") := sys.error("unused backend defaults evaluated")
+        |ThisBuild / TaskKey[IntellijTestRuntimeDirectories.RuntimeDirectories]("defaultDevClientRuntimeDirectories") := sys.error("unused frontend defaults evaluated")
+        |""".stripMargin)
+      if (!unavailableOverride)
+        IO.append(project / "extra.sbt", "\nThisBuild / intellijRuntimeBuildId := sys.error(\"unavailable SDK identity\")\n")
+      runSbtProcess(Seq("show name"), project)
+      Files.exists(home.toPath.resolve(".sbt-idea-plugin/runtime-cleanup-v1.properties")) shouldBe false
+      val record = readProperties(registry.marker(project.toPath, oldId).toFile)
+      if (unavailableOverride) record.getProperty("test.config") should not be null
+      else {
+        record.getProperty("test.config") shouldBe null
+        // A later pass from another checkout respects the persisted withdrawal.
+        new runtimeCleanup.RuntimeCleanup(home.toPath, runtimeCleanup.RuntimeCleanup.Policy(true, 7.days, 1.day),
+          new CapturingLogger()).cleanupIfDue().directories shouldBe 1
+      }
+      IO.read(config.resolve("settings.xml").toFile) shouldBe "persistent"
+      Files.exists(disposable) shouldBe unavailableOverride
+    }
+  }
+
+  test("startup runtime maintenance recollects subproject overrides after set and releases them after reload") {
+    val home = newTmpDir.toFile / "plugin home"
+    val project = prepareConsumer(home)
+    enableRuntimeMaintenanceStartup(project)
+    val registry = new runtimeCleanup.RuntimeCleanup(home.toPath,
+      runtimeCleanup.RuntimeCleanup.Policy(true, 7.days, 1.day), new CapturingLogger())
+    val marker = registry.marker(project.toPath, buildId).toFile
+    val config = CheckoutRuntimeDirectories(home.toPath, project).tests(buildId).config
+    IO.append(project / "extra.sbt", s"""
+      |TaskKey[Unit]("assertConfigWithdrawn") := {
+      |  require(!IO.read(file(${quote(marker)})).contains("test.config="), "A sibling must not re-enroll the override")
+      |}
+      |TaskKey[Unit]("assertConfigManaged") := {
+      |  require(IO.read(file(${quote(marker)})).contains("test.config="), "Removing the override restores ordinary ownership")
+      |}
+      |""".stripMargin)
+    runSbtProcess(Seq(s"""set LocalProject("child") / intellijDevConfigDir := file(${quote(config.toFile)})""",
+      "assertConfigWithdrawn", "reload", "assertConfigManaged"), project)
+    readProperties(marker).getProperty("test.config") should not be null
   }
 
   test("startup runtime maintenance honors opt-out, custom identity, overrides and unavailable metadata") {
