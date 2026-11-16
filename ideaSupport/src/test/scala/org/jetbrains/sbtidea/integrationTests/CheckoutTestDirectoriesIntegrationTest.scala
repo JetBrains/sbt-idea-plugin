@@ -430,6 +430,49 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
     paths.values.foreach(path => Files.exists(path.resolve("expired.txt")) shouldBe true)
   }
 
+  Seq(SbtProjectFilesUtils.SbtVersionForIntegrationTests, "1.4.5").foreach { sbtVersion =>
+    test(s"startup runtime maintenance initializes non-aggregated plugin children with a plain root on sbt $sbtVersion") {
+      val home = newTmpDir.toFile / "plugin home with spaces"
+      val project = prepareConsumer(home)
+      enableRuntimeMaintenanceStartup(project)
+      SbtProjectFilesUtils.updateSbtVersion(project, sbtVersion)
+      val build = project / "build.sbt"
+      val plainRoot = "lazy val root = project.in(file(\".\"))"
+      IO.write(build, IO.read(build).replace(
+        plainRoot + ".enablePlugins(SbtIdeaPlugin).settings(commonSettings)", plainRoot + s""".settings(
+        |  TaskKey[Unit]("clearStartupUsage") := {
+        |    val markers = (file(${quote(home)}) / ".sbt-idea-plugin" / "runtime-usage-v1" ** "*.properties").get
+        |    require(markers.size == 2, "Both plugin children must have initialized on load")
+        |    IO.delete(markers)
+        |    require(markers.forall(!_.exists()), "Test-owned usage records should be absent before reload")
+        |  }
+        |)""".stripMargin) + """
+        |lazy val other = project.in(file("other")).enablePlugins(SbtIdeaPlugin).settings(commonSettings).settings(
+        |  intellijRuntimeBuildId := "IU-other-child"
+        |)
+        |""".stripMargin)
+      // Exercise both children; neither is aggregated by the root. Startup must find
+      // enabled projects itself, rather than relying on command resolution/aggregation.
+      val vmOptions = Seq(s"-Dsbt.global.base=${newTmpDir.resolve("global")}")
+      runSbtProcess(Seq("show name"), project, vmOptions = vmOptions)
+      val registry = new runtimeCleanup.RuntimeCleanup(home.toPath,
+        runtimeCleanup.RuntimeCleanup.Policy(true, 7.days, 1.day), new CapturingLogger())
+      val ids = Seq(buildId, "IU-other-child")
+      ids.foreach { id =>
+        val marker = registry.marker(project.toPath, id).toFile
+        marker.isFile shouldBe true
+        readProperties(marker).getProperty("buildId") shouldBe id
+        readProperties(marker).getProperty("checkoutRoot") shouldBe project.getCanonicalPath
+      }
+      (home / "runtime").exists() shouldBe false // Startup only registers metadata.
+
+      // A reload starts a new settings generation and must initialize children again.
+      runSbtProcess(Seq("clearStartupUsage", "reload", "show name"), project, vmOptions = vmOptions)
+      ids.foreach(id => registry.marker(project.toPath, id).toFile.isFile shouldBe true)
+      (home / "runtime").exists() shouldBe false
+    }
+  }
+
   test("startup runtime maintenance honors opt-out, custom identity, overrides and unavailable metadata") {
     val home = newTmpDir.toFile / "home"
     val project = prepareConsumer(home)

@@ -117,6 +117,7 @@ object Keys extends Defns with Init with Utils with Quirks {
   private[sbtidea] lazy val runtimeMaintenance = settingKey[runtimeCleanup.RuntimeMaintenance]("").withRank(sbt.KeyRanks.Invisible)
   private[sbtidea] lazy val refreshIntellijRuntimeUsage = taskKey[Unit]("").withRank(sbt.KeyRanks.Invisible)
   private[sbtidea] lazy val initializeIntellijRuntimeMaintenance = taskKey[Unit]("").withRank(sbt.KeyRanks.Invisible)
+  private[sbtidea] lazy val initializeIntellijRuntimeMaintenanceOnLoad = taskKey[Unit]("").withRank(sbt.KeyRanks.Invisible)
 
   private[sbtidea] lazy val checkoutRuntimeDirectories = settingKey[CheckoutRuntimeDirectories](
     "Pure runtime path resolver identified by the canonical build root").withRank(sbt.KeyRanks.Invisible)

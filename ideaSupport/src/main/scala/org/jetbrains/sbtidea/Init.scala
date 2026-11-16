@@ -103,6 +103,12 @@ trait Init { this: Keys.type =>
       maintenanceLogger(sLog.value),
     ),
     showIntellijRuntimeCleanup := runtimeMaintenance.value.showCleanupReport(),
+    initializeIntellijRuntimeMaintenanceOnLoad := {
+      // The root may not enable the plugin or aggregate the projects that do.
+      // Use a distinct build-scoped key so optional project lookup cannot recurse.
+      initializeIntellijRuntimeMaintenance.?.all(ScopeFilter(inAnyProject)).value
+      ()
+    },
     Global / onComplete := {
       val previous = (Global / onComplete).value
       val maintenance = runtimeMaintenance.value
@@ -155,7 +161,7 @@ trait Init { this: Keys.type =>
 
     searchPluginId := SearchPluginId.createTask.evaluated,
     onLoad in Global := ((s: State) => {
-      "doProjectSetup" :: "initializeIntellijRuntimeMaintenance" :: s
+      "doProjectSetup" :: "initializeIntellijRuntimeMaintenanceOnLoad" :: s
     }) compose (onLoad in Global).value
   )
 
