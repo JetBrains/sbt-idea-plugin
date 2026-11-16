@@ -102,6 +102,7 @@ trait Init { this: Keys.type =>
         (LocalRootProject / Test / intellijTestConfigDir).taskValue),
       maintenanceLogger(sLog.value),
     ),
+    showIntellijRuntimeCleanup := runtimeMaintenance.value.showCleanupReport(),
     Global / onComplete := {
       val previous = (Global / onComplete).value
       val maintenance = runtimeMaintenance.value

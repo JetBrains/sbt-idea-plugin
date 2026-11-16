@@ -111,6 +111,8 @@ object Keys extends Defns with Init with Utils with Quirks {
     "Positive retention since last sbt use for managed test/indexing runtimes; defaults to 7.days")
   lazy val intellijRuntimeCleanupInterval = settingKey[scala.concurrent.duration.FiniteDuration](
     "Positive minimum interval between automatic runtime cleanup scans; defaults to 24.hours")
+  lazy val showIntellijRuntimeCleanup = taskKey[Unit](
+    "Report registered runtime cleanup policies and current eligibility without modifying cleanup state; normal sbt lifecycle hooks still apply")
 
   private[sbtidea] lazy val runtimeMaintenance = settingKey[runtimeCleanup.RuntimeMaintenance]("").withRank(sbt.KeyRanks.Invisible)
   private[sbtidea] lazy val refreshIntellijRuntimeUsage = taskKey[Unit]("").withRank(sbt.KeyRanks.Invisible)

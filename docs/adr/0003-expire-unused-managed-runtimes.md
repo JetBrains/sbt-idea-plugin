@@ -41,6 +41,13 @@ partial failures without failing the sbt command.
 Document SDK, download, and runtime cleanup together, while retaining their separate policies and
 the existing SDK/download defaults and behavior.
 
+Expose `showIntellijRuntimeCleanup` for a registry-based snapshot of recorded policies, paths,
+validation failures, throttling, and current expiry/process protection. Share validation and pure
+eligibility rules with deletion; keep reporting separate from registry mutation and removal. The
+report body does not mutate maintenance state or evaluate SDK identity tasks. Ordinary sbt lifecycle
+hooks still run, so the command invocation as a whole is not a side-effect-free dry run. Do not retain
+historical skip decisions or probe locks just to report status.
+
 ## Alternatives
 
 - **A JVM lifecycle agent:** could track direct IDEA execution and coordinate JVM lifetimes more

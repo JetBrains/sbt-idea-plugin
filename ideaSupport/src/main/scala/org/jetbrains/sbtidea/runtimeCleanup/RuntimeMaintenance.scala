@@ -39,6 +39,11 @@ private[sbtidea] final class RuntimeMaintenance(
 
   def invalidate(): Unit = synchronized { context = None }
 
+  def showCleanupReport(): Unit = synchronized {
+    RuntimeCleanupDiagnostics.render(cleanup.inspect(), resolver.buildRoot.toPath, context.map(_._1))
+      .foreach(line => log.info(line))
+  }
+
   def afterBatch(): Unit = synchronized {
     context.foreach { case (buildId, paths) =>
       if (!now().isBefore(nextTouch)) {

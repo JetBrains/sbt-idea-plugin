@@ -455,7 +455,48 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
     readProperties(marker).getProperty("test.config") should not be null
 
     IO.append(project / "extra.sbt", "\nThisBuild / intellijRuntimeBuildId := sys.error(\"unavailable SDK identity\")\n")
-    runSbtProcess(Seq("show name"), project) // Housekeeping cannot break unrelated commands.
+    val unavailable = runSbtProcess(Seq("show name", "showIntellijRuntimeCleanup"), project,
+      ioMode = SbtProjectFilesUtils.IoMode.PrintAndCollectOutput)
+    // Housekeeping and diagnostics cannot break unrelated commands when SDK metadata is unavailable.
+    unavailable.outputLines.get.mkString("\n") should include("Cached runtime context: unavailable")
+  }
+
+  test("cleanup diagnostics inspect registered runtimes without evaluating runtime tasks or modifying maintenance state") {
+    val home = newTmpDir.toFile / "plugin home with spaces"
+    val project = prepareConsumer(home)
+    // This fixture disables startup maintenance. Unlike the read-only task body, normal sbt
+    // startup/completion hooks are allowed to refresh markers and run due cleanup.
+    IO.append(project / "extra.sbt", """
+      |ThisBuild / intellijRuntimeBuildId := sys.error("diagnostics evaluated runtime identity")
+      |ThisBuild / intellijTestSystemDir := sys.error("diagnostics evaluated test system directory")
+      |ThisBuild / intellijTestConfigDir := sys.error("diagnostics evaluated test config directory")
+      |""".stripMargin)
+    val checkout = newTmpDir
+    val old = CheckoutRuntimeDirectories(home.toPath, checkout.toFile).tests(buildId)
+    IO.write(old.system.resolve("keep.txt").toFile, "keep")
+    val registry = new runtimeCleanup.RuntimeCleanup(home.toPath,
+      runtimeCleanup.RuntimeCleanup.Policy(true, 7.days, 1.day), new CapturingLogger(),
+      () => Instant.now().minusSeconds(8.days.toSeconds))
+    registry.refresh(checkout, buildId, Map("test.system" -> old.system, "test.config" -> old.config))
+    val marker = registry.marker(checkout, buildId)
+    val modified = Files.getLastModifiedTime(marker)
+    val content = Files.readAllBytes(marker)
+    val output = runSbtProcess(Seq("showIntellijRuntimeCleanup"), project,
+      ioMode = SbtProjectFilesUtils.IoMode.PrintAndCollectOutput).outputLines.get.mkString("\n")
+    output should include(s"Plugin home: ${home.getCanonicalPath}")
+    output should include(s"Checkout: ${checkout.toFile.getCanonicalPath}")
+    output should include("Cached runtime context: unavailable")
+    output should include("Recorded retention: 7 days")
+    output should include("Assessment: expired;")
+    output should include("[present]")
+    output should include("[absent]")
+    output should include("index.system: not registered")
+    output should include("Normal sbt startup/completion hooks may refresh usage or run automatic cleanup")
+    Files.readAllBytes(marker) shouldBe content
+    Files.getLastModifiedTime(marker) shouldBe modified
+    IO.read(old.system.resolve("keep.txt").toFile) shouldBe "keep"
+    Files.exists(home.toPath.resolve(".sbt-idea-plugin/runtime-cleanup-v1.properties")) shouldBe false
+    Files.exists(home.toPath.resolve(".sbt-idea-plugin/runtime-cleanup.lock")) shouldBe false
   }
 
   test("minimum supported sbt executes runtime tasks, generation, forks and startup maintenance") {
@@ -476,8 +517,9 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
       () => Instant.now().minusSeconds(8.days.toSeconds))
     registry.refresh(oldCheckout, buildId, Map("test.system" -> old.system))
 
-    runSbtProcess(Seq("dumpPaths", "child / dumpPaths", "createIDEARunConfiguration", "probe"),
-      project, vmOptions = vmOptions)
+    val output = runSbtProcess(Seq("dumpPaths", "child / dumpPaths", "createIDEARunConfiguration", "probe", "showIntellijRuntimeCleanup"),
+      project, vmOptions = vmOptions, ioMode = SbtProjectFilesUtils.IoMode.PrintAndCollectOutput)
+    output.outputLines.get.mkString("\n") should include(s"Cached runtime context: $buildId")
     readProperties(project / "settings.properties").getProperty("sbt.version") shouldBe minimumSbtVersion
     readProperties(project / "child" / "settings.properties").getProperty("idea.system.path") shouldBe
       readProperties(project / "settings.properties").getProperty("idea.system.path")
@@ -488,11 +530,17 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
 
     val customId = "IU-minimum-sbt-custom"
     val explicitSystem = home / "explicit test system"
-    runSbtProcess(Seq(
+    val reconfigured = runSbtProcess(Seq(
       s"""set ThisBuild / intellijRuntimeBuildId := "$customId"""",
       s"set ThisBuild / intellijTestSystemDir := file(${quote(explicitSystem)})",
       "set ThisBuild / intellijDevUseSharedDirectories := true",
-      "dumpPaths", "createIDEARunConfiguration", "probe"), project, vmOptions = vmOptions)
+      "showIntellijRuntimeCleanup", "dumpPaths", "createIDEARunConfiguration", "probe", "showIntellijRuntimeCleanup"),
+      project, vmOptions = vmOptions, ioMode = SbtProjectFilesUtils.IoMode.PrintAndCollectOutput)
+    // Reapplying settings can run startup maintenance again. Both reports must use the
+    // new identity rather than retaining the original session's cached context.
+    val contexts = reconfigured.outputLines.get.filter(_.contains("Cached runtime context:"))
+    contexts should have size 2
+    contexts.foreach(_ should include(s"Cached runtime context: $customId"))
     val paths = readProperties(project / "settings.properties")
     paths.getProperty("idea.system.path") shouldBe explicitSystem.getAbsolutePath
     paths.getProperty("dev.system") shouldBe (home / "runtime" / "system-shared").getAbsolutePath

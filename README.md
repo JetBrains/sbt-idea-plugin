@@ -728,6 +728,25 @@ process can start after inspection. Long periods of IDEA-only testing can leave 
 stale. No Java agent is installed. Regenerate IDEA configurations after runtime directory changes as
 described above. See [ADR 0003](docs/adr/0003-expire-unused-managed-runtimes.md) for the tradeoff.
 
+To inspect cleanup state for the selected `intellijPluginDirectory`, run:
+
+```text
+sbt showIntellijRuntimeCleanup
+```
+
+The report lists registered checkout/build pairs, last sbt use, each owner's retention and opt-out
+policy, recorded paths (present or absent), and current expiry/process-protection assessments. It also
+shows this build's policy, cached runtime context, last cleanup attempt, and next eligible pass.
+Rejected records include a validation reason; omitted paths say "not registered." Development data,
+explicit overrides, and untracked legacy locations are not inventoried. Discovery reads only the
+registry, with no recursive size scan; expired candidates share one Java-process snapshot.
+
+The report body is read-only: it does not refresh usage, acquire locks, advance cleanup timestamps,
+delete data, or evaluate SDK/build-identity tasks. **Normal sbt startup and completion hooks still
+apply:** startup setup may install an SDK, and maintenance may refresh usage or remove expired data
+before or after the report. This is a current snapshot, not a history of skipped passes or lock
+contention, and it cannot guarantee that an eligible runtime will be removed on the next pass.
+
 #### Concurrency
 
 Separate checkouts/worktrees can run tests independently. The sbt and IDEA test runners use the same

@@ -11,6 +11,7 @@ import java.nio.file.attribute.FileTime
 import java.nio.file.{Files, Path}
 import java.time.Instant
 import java.util.Properties
+import scala.collection.JavaConverters.*
 import scala.concurrent.duration.*
 
 class RuntimeCleanupTest extends AnyFunSuite with Matchers with TmpDirUtils {
@@ -306,5 +307,172 @@ class RuntimeCleanupTest extends AnyFunSuite with Matchers with TmpDirUtils {
     RuntimeProcesses.pathsIn(Seq("@" + args.resolveSibling("missing"))) shouldBe None
     f.file(args, "\"unterminated")
     RuntimeProcesses.pathsIn(Seq("@" + args)) shouldBe None
+  }
+
+  private def inspectOne(cleanup: RuntimeCleanup): RuntimeCleanupDiagnostics.Inspection =
+    cleanup.inspect().entries.head.result.toOption.get
+
+  test("diagnostics use each owner's policy and the same strict expiry boundary as deletion") {
+    import RuntimeCleanupAssessment.*
+    val f = new Fixture
+    val owner = f.service(Policy(true, 30.days, 1.day))
+    owner.refresh(f.checkout, id, f.paths)
+    f.advance(8.days)
+    inspectOne(f.cleanup).age shouldBe Fresh(f.time.plusSeconds(22.days.toSeconds))
+    f.advance(22.days)
+    inspectOne(f.cleanup).age.eligible shouldBe false
+    f.advance(1.second)
+    inspectOne(f.cleanup).age.eligible shouldBe true
+    owner.refresh(f.checkout, id, f.paths)
+    Files.setLastModifiedTime(f.marker, FileTime.from(f.time.plusSeconds(1)))
+    inspectOne(f.cleanup).age shouldBe FutureDated
+    f.service(Policy(false, 7.days, 1.day)).refresh(f.checkout, id, f.paths)
+    f.advance(90.days)
+    inspectOne(f.cleanup).age shouldBe OptedOut
+  }
+
+  test("diagnostics take one process snapshot only for expired candidates and explain process protection") {
+    import RuntimeCleanupAssessment.*
+    val f = new Fixture
+    var scans = 0
+    var active: Option[Set[Path]] = Some(Set.empty)
+    val cleanup = f.service(active = () => { scans += 1; active })
+    f.register()
+    cleanup.inspect(); scans shouldBe 0
+    val secondId = "IU-263.7307.201"
+    cleanup.refresh(f.checkout, secondId, Map("test.system" -> f.resolver.tests(secondId).system))
+    f.advance(8.days)
+    cleanup.inspect().entries.foreach(_.result.toOption.get.protection shouldBe Some(NoMatchingProcess))
+    scans shouldBe 1
+    // The same parent/child matching protects both inspection and actual deletion.
+    active = Some(Set(f.tests.system.resolve("log")))
+    inspectOne(cleanup).protection shouldBe Some(MatchingProcess)
+    active = None
+    cleanup.inspect().entries.foreach(_.result.toOption.get.protection shouldBe Some(ProcessInformationUnavailable))
+    scans shouldBe 3
+    inspectOne(f.service(active = () => throw new java.io.IOException("process information denied")))
+      .protection shouldBe Some(ProcessInformationUnavailable)
+  }
+
+  test("inspection is read-only and does not postpone an otherwise due cleanup") {
+    val f = new Fixture
+    f.file(f.tests.system.resolve("cache")); f.register(); f.advance(8.days)
+    def contents(): Map[Path, (FileTime, Vector[Byte])] = {
+      val stream = Files.walk(f.home)
+      try stream.iterator().asScala.map { path =>
+        path -> (Files.getLastModifiedTime(path),
+          (if (Files.isRegularFile(path)) Files.readAllBytes(path).toVector else Vector.empty[Byte]))
+      }.toMap finally stream.close()
+    }
+    val before = contents()
+    f.cleanup.inspect()
+    contents() shouldBe before // Includes markers, checkpoint, lock files and directory mtimes.
+    f.cleanup.cleanupIfDue().directories shouldBe 1
+  }
+
+  test("inspection of an absent home or registry creates no files and performs no process scan") {
+    val f = new Fixture
+    val cleanup = f.service(active = () => fail("no expired candidates"))
+    cleanup.inspect().entries shouldBe empty
+    Files.exists(f.home) shouldBe false
+    f.file(f.home.resolve("runtime/unregistered/system/keep"))
+    cleanup.inspect().entries shouldBe empty
+    Files.exists(f.home.resolve(".sbt-idea-plugin")) shouldBe false
+  }
+
+  test("diagnostics distinguish registered absent paths, present paths and unregistered roles") {
+    val f = new Fixture
+    f.file(f.tests.system.resolve("cache"))
+    f.cleanup.refresh(f.checkout, id, Map("test.system" -> f.tests.system, "test.config" -> f.tests.config))
+    val snapshot = f.cleanup.inspect()
+    val paths = snapshot.entries.head.result.toOption.get.paths.map(path => path.role -> path.existence).toMap
+    paths shouldBe Map("test.system" -> "present", "test.config" -> "absent")
+    f.cleanup.withdraw(Set(f.tests.system))
+    val rendered = RuntimeCleanupDiagnostics.render(f.cleanup.inspect(), f.checkout, None).mkString("\n")
+    rendered should include("test.system: not registered")
+    rendered should include("index.system: not registered")
+    rendered should include("test.config:")
+    rendered should include("[absent]")
+    rendered should not include "overridden"
+  }
+
+  test("diagnostics explain unsupported, malformed and unsafe records without changing them") {
+    Seq(
+      ("formatVersion", "99", "unsupported formatVersion"),
+      ("owner", "someone-else", "unrecognized owner"),
+      ("retentionSeconds", "wrong", "invalid retentionSeconds"),
+      ("automaticCleanup", "perhaps", "Invalid automaticCleanup"),
+      ("test.system", "../outside/system", "relative path"),
+      ("test.system", "runtime/build/checkout/dev/system", "unsafe test.system"),
+      ("extra", "unknown", "unknown fields: extra"),
+    ).foreach { case (key, value, reason) =>
+      val f = new Fixture
+      f.register(); f.edit(key, value)
+      val before = Files.readAllBytes(f.marker)
+      f.cleanup.inspect().entries.head.result.left.toOption.get should include(reason)
+      Files.readAllBytes(f.marker) shouldBe before
+    }
+    val f = new Fixture
+    f.register()
+    Files.createDirectories(f.tests.system.getParent)
+    val outside = newTmpDir
+    Files.createSymbolicLink(f.tests.system, outside)
+    f.cleanup.inspect().entries.head.result.left.toOption.get should include("symbolic link")
+    val malformed = f.file(f.cleanup.entries.resolve("malformed.properties"), "bad=\\uNOPE")
+    f.cleanup.inspect().entries.find(_.file == malformed).get.result.isLeft shouldBe true
+  }
+
+  test("diagnostics explain unavailable registries and invalid checkpoints without creating locks") {
+    val f = new Fixture
+    Files.createDirectories(f.cleanup.entries.getParent)
+    Files.createSymbolicLink(f.cleanup.entries, newTmpDir)
+    f.cleanup.inspect().registryProblem.get should include("symbolic link")
+    Files.exists(f.home.resolve(".sbt-idea-plugin/runtime-cleanup.lock")) shouldBe false
+
+    val other = new Fixture
+    val checkpoint = other.home.resolve(".sbt-idea-plugin/runtime-cleanup-v1.properties")
+    other.file(checkpoint, "lastAttempt=invalid\n")
+    val snapshot = other.cleanup.inspect()
+    snapshot.lastAttempt.isLeft shouldBe true
+    snapshot.eligibleAt shouldBe other.time
+    Files.exists(checkpoint.resolveSibling("runtime-cleanup.lock")) shouldBe false
+    other.file(checkpoint, s"lastAttempt=${other.time.plusSeconds(1.day.toSeconds)}\n")
+    other.cleanup.inspect().eligibleAt shouldBe other.time // Future checkpoints do not suppress passes.
+  }
+
+  test("diagnostics include persisted and in-memory throttles without probing locks") {
+    val f = new Fixture
+    f.cleanup.cleanupIfDue()
+    f.advance(1.hour)
+    val snapshot = f.service().inspect()
+    snapshot.lastAttempt shouldBe Right(Some(f.time.minusSeconds(1.hour.toSeconds)))
+    snapshot.eligibleAt shouldBe f.time.plusSeconds(23.hours.toSeconds)
+
+    val other = new Fixture
+    val lockFile = other.file(other.home.resolve(".sbt-idea-plugin/runtime-cleanup.lock"), "")
+    val channel = FileChannel.open(lockFile, WRITE)
+    val lock = channel.lock()
+    try {
+      other.cleanup.cleanupIfDue() // A failed lock acquisition sets only the cheap local deadline.
+      val observed = other.cleanup.inspect()
+      observed.lastAttempt shouldBe Right(None)
+      observed.eligibleAt shouldBe other.time.plusSeconds(1.day.toSeconds)
+    } finally { lock.release(); channel.close() }
+  }
+
+  test("report output is stable and states the limits of the snapshot and normal sbt lifecycle") {
+    val f = new Fixture
+    f.register()
+    f.cleanup.refresh(f.checkout, "IU-111", Map("test.system" -> f.resolver.tests("IU-111").system))
+    val snapshot = f.cleanup.inspect()
+    snapshot.entries.map(_.file.getFileName.toString) shouldBe snapshot.entries.map(_.file.getFileName.toString).sorted
+    val rendered = RuntimeCleanupDiagnostics.render(snapshot, f.checkout, Some(id)).mkString("\n")
+    rendered should include(s"Cached runtime context: $id")
+    rendered should include("Recorded retention: 7 days")
+    rendered should include("lock contention and previous skip decisions are not recorded")
+    rendered should include("Normal sbt startup/completion hooks may refresh usage or run automatic cleanup")
+    rendered should include("No size scan is performed")
+    val disabled = snapshot.copy(policy = Policy(false, 7.days, 1.day))
+    RuntimeCleanupDiagnostics.render(disabled, f.checkout, Some(id)).mkString("\n") should include("Next pass eligible: disabled")
   }
 }
