@@ -1,6 +1,7 @@
 package org.jetbrains.sbtidea.integrationTests
 
 import org.jetbrains.sbtidea.CheckoutRuntimeDirectories
+import org.jetbrains.sbtidea.{CapturingLogger, runtimeCleanup}
 import org.jetbrains.sbtidea.download.jbr.JbrInstaller
 import org.jetbrains.sbtidea.testUtils.SbtProjectFilesUtils
 import org.jetbrains.sbtidea.testUtils.SbtProjectFilesUtils.{runProcess, runSbtProcess}
@@ -8,6 +9,7 @@ import org.scalatest.matchers.should.Matchers
 import sbt.{File, IO, fileToRichFile}
 
 import java.nio.file.Files
+import java.time.Instant
 import java.util.Properties
 import java.util.concurrent.Executors
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -370,6 +372,96 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
     runSbtProcess(Seq("createIDEARunConfiguration"), project)
     (project / ".idea" / "runConfigurations").exists() shouldBe false
     (home / "runtime").exists() shouldBe false
+  }
+
+  test("automatic runtime maintenance runs on startup, cleans expired owned data, and shares its daily throttle") {
+    val home = newTmpDir.toFile / "shared plugin home"
+    val project = prepareConsumer(home)
+    enableRuntimeMaintenanceStartup(project)
+    val peer = prepareConsumer(home)
+    enableRuntimeMaintenanceStartup(peer)
+    IO.append(project / "extra.sbt", s"""
+      |Global / onComplete := {
+      |  val previous = (Global / onComplete).value
+      |  () => { IO.write(file(${quote(project / "completion-hook.txt")}), "called"); previous() }
+      |}
+      |""".stripMargin)
+    val oldCheckout = newTmpDir
+    val oldResolver = CheckoutRuntimeDirectories(home.toPath, oldCheckout.toFile)
+    val dirs = oldResolver.tests(buildId)
+    val index = oldResolver.buildIndex(buildId)
+    val paths = Map("test.system" -> dirs.system, "test.config" -> dirs.config,
+      "index.system" -> index.system, "index.config" -> index.config)
+    val oldTime = Instant.now().minusSeconds(9.days.toSeconds)
+    val registry = new runtimeCleanup.RuntimeCleanup(home.toPath,
+      runtimeCleanup.RuntimeCleanup.Policy(true, 7.days, 1.day), new CapturingLogger(), () => oldTime)
+    // Warm sbt's shared global-plugin compilation cache before racing two consumer processes.
+    // The test-owned checkpoint is then aged to make the competing cleanup passes due.
+    runSbtProcess(Seq("show name"), project)
+    IO.write(home / ".sbt-idea-plugin" / "runtime-cleanup-v1.properties",
+      s"formatVersion=1\nlastAttempt=$oldTime\n")
+    paths.values.foreach(path => IO.write(path.resolve("expired.txt").toFile, "expired"))
+    registry.refresh(oldCheckout, buildId, paths)
+    val keep = Seq(home / "test-system" / "keep", oldResolver.dev(buildId).system.resolve("keep").toFile,
+      home / "sdk" / "downloads" / "keep", home / "runtime" / "unregistered" / "tests" / "system" / "keep")
+    keep.foreach(IO.write(_, "keep"))
+
+    val executor = Executors.newFixedThreadPool(2)
+    implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(executor)
+    try {
+      val processes = Seq(project -> Seq("dumpPaths", "child / dumpPaths"), peer -> Seq("show name"))
+        .map { case (consumer, commands) => Future(Try(runSbtProcess(commands, consumer))) }
+      Await.result(Future.sequence(processes), 3.minutes).foreach(_.get)
+    } finally executor.shutdown()
+    paths.values.foreach(path => Files.exists(path) shouldBe false)
+    keep.foreach(path => IO.read(path) shouldBe "keep")
+    val ownMarker = registry.marker(project.toPath, buildId).toFile
+    ownMarker.isFile shouldBe true
+    IO.read(project / "completion-hook.txt") shouldBe "called"
+    val record = readProperties(ownMarker)
+    record.getProperty("retentionSeconds") shouldBe "604800"
+    record.getProperty("automaticCleanup") shouldBe "true"
+    val current = CheckoutRuntimeDirectories(home.toPath, project).tests(buildId)
+    Files.exists(current.system) shouldBe false // Startup registers metadata, not initialized caches.
+
+    paths.values.foreach(path => IO.write(path.resolve("expired.txt").toFile, "expired"))
+    registry.refresh(oldCheckout, buildId, paths)
+    runSbtProcess(Seq("show name"), project)
+    paths.values.foreach(path => Files.exists(path.resolve("expired.txt")) shouldBe true)
+  }
+
+  test("startup runtime maintenance honors opt-out, custom identity, overrides and unavailable metadata") {
+    val home = newTmpDir.toFile / "home"
+    val project = prepareConsumer(home)
+    enableRuntimeMaintenanceStartup(project)
+    val selectedId = "IU-custom-sdk"
+    IO.append(project / "extra.sbt", s"""
+      |ThisBuild / intellijRuntimeBuildId := "$selectedId"
+      |ThisBuild / autoRemoveOldCachedIntelliJRuntimes := false
+      |ThisBuild / intellijRuntimeCleanupRetention := scala.concurrent.duration.DurationInt(30).days
+      |""".stripMargin)
+    runSbtProcess(Seq("show name"), project)
+    val registry = new runtimeCleanup.RuntimeCleanup(home.toPath,
+      runtimeCleanup.RuntimeCleanup.Policy(true, 7.days, 1.day), new CapturingLogger())
+    val marker = registry.marker(project.toPath, selectedId).toFile
+    val properties = readProperties(marker)
+    properties.getProperty("automaticCleanup") shouldBe "false"
+    properties.getProperty("retentionSeconds") shouldBe "2592000"
+
+    val previousSystem = CheckoutRuntimeDirectories(home.toPath, project).tests(selectedId).system.toFile
+    IO.append(project / "extra.sbt", s"\nThisBuild / intellijTestSystemDir := file(${quote(previousSystem)})\n")
+    runSbtProcess(Seq("show name"), project)
+    readProperties(marker).getProperty("test.system") shouldBe null
+    readProperties(marker).getProperty("test.config") should not be null
+
+    IO.append(project / "extra.sbt", "\nThisBuild / intellijRuntimeBuildId := sys.error(\"unavailable SDK identity\")\n")
+    runSbtProcess(Seq("show name"), project) // Housekeeping cannot break unrelated commands.
+  }
+
+  private def enableRuntimeMaintenanceStartup(project: File): Unit = {
+    val build = project / "build.sbt"
+    IO.write(build, IO.read(build).replace("Global / onLoad := identity",
+      "ThisBuild / TaskKey[Unit](\"doProjectSetup\") := { () }"))
   }
 
   private def prepareConsumer(home: File): File = {

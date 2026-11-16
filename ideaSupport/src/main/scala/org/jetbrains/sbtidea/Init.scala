@@ -5,6 +5,7 @@ import org.jetbrains.sbtidea.instrumentation.ManipulateBytecode
 import org.jetbrains.sbtidea.packaging.PackagingKeys.*
 import org.jetbrains.sbtidea.productInfo.{ProductInfoExtraDataProviderImpl, ProductInfoParser}
 import org.jetbrains.sbtidea.runIdea.IntellijVMOptionsBuilder.VmOptions
+import org.jetbrains.sbtidea.runtimeCleanup.{RuntimeCleanup, RuntimeMaintenance}
 import org.jetbrains.sbtidea.searchableoptions.BuildIndex
 import org.jetbrains.sbtidea.tasks.*
 import org.jetbrains.sbtidea.tasks.classpath.{AttributedClasspathTasks, ExternalDependencyClasspathTasks, PluginClasspathUtils, TestClasspathTasks}
@@ -12,6 +13,7 @@ import sbt.Keys.*
 import sbt.{Keys as _, *}
 
 import scala.annotation.nowarn
+import scala.concurrent.duration.*
 
 @nowarn("msg=a pure expression does nothing in statement position")
 trait Init { this: Keys.type =>
@@ -23,6 +25,14 @@ trait Init { this: Keys.type =>
   private def isRunningFromIDEA: Boolean = sys.props.contains("idea.managed")
 
   private lazy val managedTestDirectory = AttributeKey[Boolean]("intellij-managed-test-directory")
+
+  private def maintenanceLogger(logger: sbt.util.Logger): PluginLogger = new PluginLogger {
+    override def debug(message: => String): Unit = logger.debug(message)
+    override def info(message: => String): Unit = logger.info(message)
+    override def warn(message: => String): Unit = logger.warn(message)
+    override def error(message: => String): Unit = logger.error(message)
+    override def fatal(message: => String): Unit = logger.error(message)
+  }
 
   // Keep ownership on the default tasks, so an exact-path override is user-managed even
   // when its path happens to match the managed layout. Reading task metadata does not run it.
@@ -79,6 +89,24 @@ trait Init { this: Keys.type =>
     artifactsDownloadsDir     := intellijPluginDirectory.value / "sdk" / "downloads",
     autoRemoveOldCachedIntelliJSDK := false,
     autoRemoveOldCachedDownloads := false,
+    autoRemoveOldCachedIntelliJRuntimes := true,
+    intellijRuntimeCleanupRetention := 7.days,
+    intellijRuntimeCleanupInterval := 24.hours,
+    runtimeMaintenance := new RuntimeMaintenance(
+      intellijPluginDirectory.value.toPath,
+      checkoutRuntimeDirectories.value,
+      RuntimeCleanup.Policy(autoRemoveOldCachedIntelliJRuntimes.value,
+        intellijRuntimeCleanupRetention.value, intellijRuntimeCleanupInterval.value),
+      Seq(intellijRuntimeBuildId.taskValue,
+        (LocalRootProject / Test / intellijTestSystemDir).taskValue,
+        (LocalRootProject / Test / intellijTestConfigDir).taskValue),
+      maintenanceLogger(sLog.value),
+    ),
+    Global / onComplete := {
+      val previous = (Global / onComplete).value
+      val maintenance = runtimeMaintenance.value
+      () => try previous() finally maintenance.afterBatch()
+    },
     concurrentRestrictions in Global += Tags.limit(Tags.Test, 1), // IDEA tests can't be run in parallel
     bundleScalaLibrary        := !hasPluginsWithScala(intellijPlugins.?.all(ScopeFilter(inAnyProject)).value.flatten.flatten),
     doProjectSetup := Def.taskDyn {
@@ -126,7 +154,7 @@ trait Init { this: Keys.type =>
 
     searchPluginId := SearchPluginId.createTask.evaluated,
     onLoad in Global := ((s: State) => {
-      "doProjectSetup" :: s
+      "doProjectSetup" :: "initializeIntellijRuntimeMaintenance" :: s
     }) compose (onLoad in Global).value
   )
 
@@ -277,7 +305,37 @@ trait Init { this: Keys.type =>
     buildIntellijOptionsIndex := BuildIndex.createTask.value,
 
     // Test-related settings
+    refreshIntellijRuntimeUsage := Def.taskDyn {
+      val maintenance = runtimeMaintenance.value
+      val system = (Test / intellijTestSystemDir).taskValue.info.get(managedTestDirectory).contains(true)
+      val config = (Test / intellijTestConfigDir).taskValue.info.get(managedTestDirectory).contains(true)
+      if (!system && !config) Def.task {
+        maintenance.withdraw(Set((Test / intellijTestSystemDir).value.toPath, (Test / intellijTestConfigDir).value.toPath))
+      } else Def.task {
+        val resolver = checkoutRuntimeDirectories.value
+        val id = intellijRuntimeBuildId.value
+        val testDirs = resolver.tests(id)
+        val indexDirs = resolver.buildIndex(id)
+        val selectedSystem = (Test / intellijTestSystemDir).value.toPath
+        val selectedConfig = (Test / intellijTestConfigDir).value.toPath
+        val owned = Map("index.system" -> indexDirs.system, "index.config" -> indexDirs.config) ++
+          Option("test.system" -> selectedSystem).filter(_ => system && selectedSystem == testDirs.system) ++
+          Option("test.config" -> selectedConfig).filter(_ => config && selectedConfig == testDirs.config)
+        maintenance.withdraw(Set.empty[java.nio.file.Path] ++
+          Option(selectedSystem).filter(_ => !system) ++ Option(selectedConfig).filter(_ => !config))
+        maintenance.register(id, owned, RuntimeCleanup.Roles)
+      }
+    }.value,
+    initializeIntellijRuntimeMaintenance := {
+      refreshIntellijRuntimeUsage.result.value match {
+        case Inc(_) =>
+          runtimeMaintenance.value.invalidate()
+          PluginLogger.debug("IntelliJ runtime maintenance skipped: target SDK/runtime context is unavailable")
+        case _ => ()
+      }
+    },
     prepareIntellijTestDirectories := Def.taskDyn {
+      val _ = initializeIntellijRuntimeMaintenance.value
       val resolver = checkoutRuntimeDirectories.value
       val system = (Test / intellijTestSystemDir).value
       val config = (Test / intellijTestConfigDir).value

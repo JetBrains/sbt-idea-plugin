@@ -60,7 +60,8 @@ worktree's data spans builds, and the fully nested format adds a level compared 
 
 The initial local implementation used checkout-first grouping with combined build/purpose names.
 This record and the implementation were revised together before release. The earlier preference and
-the other alternatives remain below; runtime retention and automatic cleanup need separate decisions.
+the other alternatives remain below. The separate runtime-retention decision is recorded in
+[ADR 0003](0003-expire-unused-managed-runtimes.md).
 
 ### Subjective preference and revisiting the choice
 
@@ -125,17 +126,20 @@ path. Tests and indexing remain isolated. Shared development directories assume 
 
 Start new development configs fresh; settings import is manual. Preserve all old directories,
 including those from the earlier local checkout-first layout, without automatic copying, migration,
-or deletion. Developers can explicitly select legacy paths when they want to reuse them. Installed
-plugins remain SDK-scoped; sharing config does not share plugin files.
+or deletion during layout adoption. Subsequent expiry of registered managed data follows
+[ADR 0003](0003-expire-unused-managed-runtimes.md); untracked legacy data remains excluded. Developers
+can explicitly select legacy paths when they want to reuse them. Installed plugins remain SDK-scoped;
+sharing config does not share plugin files.
 
 Keep non-overwriting README markers in managed test directories, identifying checkout and build.
 Create them during test preparation or JUnit configuration generation, never on path inspection or
-in explicitly overridden directories. Test cleanup deletes only the selected test system/config
+in explicitly overridden directories. `cleanUpTestEnvironment` deletes only the selected test system/config
 directories, never an entire checkout root, other builds, or shared development data.
 
 Regenerate IDEA configurations after changing build identity or directory settings. Automatic
-retention, active-JVM tracking, and the release version bump remain separate work; schedule the
-version change for pre-push/pre-release preparation.
+retention is specified separately in [ADR 0003](0003-expire-unused-managed-runtimes.md), using
+best-effort process checks rather than JVM-lifetime tracking. The release version bump remains
+deferred to pre-push/pre-release preparation.
 
 ## Alternatives
 
@@ -206,8 +210,9 @@ reduce total path length. Ownership and activity metadata can support cleanup ac
   directory structure alone is neither proof of ownership nor evidence that a runtime is idle.
 - This layout does not isolate simultaneous JVMs sharing the same checkout, build, and purpose.
 - Explicit directory overrides remain supported.
-- Automatic cleanup eligibility and retention, and active-JVM protection need separate design.
-  The hierarchy and manual cleanup command do not establish that a runtime is safe to remove.
+- Automatic cleanup eligibility, retention, and best-effort active-process checks are specified
+  separately in [ADR 0003](0003-expire-unused-managed-runtimes.md). The hierarchy and manual cleanup
+  command alone do not establish that a runtime is safe to remove.
 
 Usage and migration: [Runtime directory isolation](../../README.md#runtime-directory-isolation).
 

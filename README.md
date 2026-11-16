@@ -606,8 +606,9 @@ need to be recreated from the regenerated template.
 
 #### Existing data, markers, and cleanup
 
-Development configs start fresh by default. Existing runtime data, including the earlier local
-checkout-first layout, is left intact: nothing is copied or deleted automatically. Regenerate IDEA
+Development configs start fresh by default. Existing untracked runtime data, including the earlier
+local checkout-first layout, is left intact during migration; nothing is copied. Managed test/indexing
+data registered by sbt subsequently follows the retention policy below. Regenerate IDEA
 configurations to adopt the new paths. To import settings, export them from the old development IDE
 with **File | Manage IDE Settings | Export Settings**, then use **Import Settings** in the new instance.
 Keep the old config directory until the imported settings have been verified.
@@ -627,7 +628,8 @@ Managed test system/config directories get non-overwriting `README.txt` markers 
 purpose, canonical checkout, and target build. They are created during test preparation or JUnit
 configuration generation, never merely by inspecting paths. `cleanUpTestEnvironment` deletes only
 the selected test system/config directories, **including explicit overrides**; it does not remove
-checkout roots, other builds, or shared development data. Automatic cleanup remains separate work.
+checkout roots, other builds, or shared development data. Automatic expiry is separate from this
+explicit cleanup task and follows the policy below.
 
 SDKs, plugin dependencies, and downloads retain their shared locations under `intellijPluginDirectory`:
 
@@ -637,6 +639,94 @@ sdk/<intellijBuild>/plugins/         bundled plugins
 sdk/<intellijBuild>/custom-plugins/  installed plugin dependencies
 sdk/downloads/                      download cache
 ```
+
+#### Automatic cached-data cleanup
+
+| Data | Enable setting | Default | Removal policy |
+|---|---|---|---|
+| Test/indexing runtimes | `autoRemoveOldCachedIntelliJRuntimes` | `true` | Seven days since last sbt use; check at most daily |
+| Installed SDKs | `autoRemoveOldCachedIntelliJSDK` | `false` | Existing version/creation-age heuristics during `updateIntellij` |
+| Download cache | `autoRemoveOldCachedDownloads` | `false` | Downloads older than 30 days, checked during `updateIntellij` |
+
+Configure runtime expiry with positive finite durations:
+
+```scala
+import scala.concurrent.duration._
+
+ThisBuild / autoRemoveOldCachedIntelliJRuntimes := true
+ThisBuild / intellijRuntimeCleanupRetention := 7.days
+ThisBuild / intellijRuntimeCleanupInterval := 24.hours
+```
+
+Runtime cleanup covers automatically managed `tests/{system,config}` and
+`build-index/{system,config}` only. Development backend/client data, shared development directories,
+explicit overrides (even overrides equal to an old default), and unregistered legacy locations are
+excluded. Later overrides withdraw matching prior ownership. The existing `cleanUpTestEnvironment`
+task still explicitly deletes the selected test paths, including overrides, regardless of age.
+
+**Last use means sbt activity for a canonical checkout and target SDK build.** Build load/reload
+refreshes its usage record; later task activity refreshes at most hourly, and test/indexing
+preparation refreshes before launch. Subprojects share the same identity. Switching builds leaves
+the previous build's timestamp unchanged. IDEA-only test runs do not refresh it.
+
+Usage records are small files outside the caches. For example:
+
+```text
+<intellijPluginDirectory>/
+  .sbt-idea-plugin/
+    runtime-usage-v1/
+      IU-263.7307.200--a0f9d9b86d.properties
+      IU-263.7307.200--a0f9d9b86d.lock
+    runtime-cleanup-v1.properties
+    runtime-cleanup.lock
+  runtime/
+    IU-263.7307.200/
+      a0f9d9b86d/
+        tests/system/
+        tests/config/
+        build-index/system/
+        build-index/config/
+        dev/                    (excluded from automatic expiry)
+```
+
+The record's modification time is last use. Its content records ownership and relative managed paths:
+
+```properties
+formatVersion=1
+owner=sbt-idea-plugin
+checkoutRoot=/checkout/with-spaces
+buildId=IU-263.7307.200
+automaticCleanup=true
+retentionSeconds=604800
+test.system=runtime/IU-263.7307.200/a0f9d9b86d/tests/system
+test.config=runtime/IU-263.7307.200/a0f9d9b86d/tests/config
+index.system=runtime/IU-263.7307.200/a0f9d9b86d/build-index/system
+index.config=runtime/IU-263.7307.200/a0f9d9b86d/build-index/config
+```
+
+Each record keeps its owner's retention and opt-out policy until refreshed by that owner. A cleanup
+started in another checkout cannot shorten that retention or override its opt-out. Disabling runtime
+cleanup stops scans initiated by that build and opts its refreshed records out; historical records
+keep their last recorded policy. Unknown/malformed formats and unsafe paths are skipped. Recorded
+relative paths allow future cleanup versions to retain support for older runtime layouts.
+
+After task completion, sbt cheaply checks whether cleanup is due. A persisted last-attempt timestamp
+and plugin-home lock debounce across processes; per-record locks coordinate refresh and deletion.
+Only expired owned directories are traversed. Removal runs synchronously during a due pass and
+reports successfully removed directory counts and file-data volume; this is not an exact measurement
+of reclaimed physical blocks on filesystems with compression, hardlinks, or clones. Partial failures
+warn and are retried on a later pass without failing the sbt command.
+
+For example, a record last refreshed on day 0 becomes eligible after day 7. A refresh on day 3 moves
+eligibility to after day 10. Deletion waits for a due sbt task completion; no background scheduler runs
+when sbt is idle or stopped. Registry registration does not initialize runtime caches. Missing SDK
+context skips maintenance without downloading an SDK or failing unrelated commands.
+
+Identifiable Java processes, including generated Java argument files, are checked before deletion; active
+or uninspectable candidates are deferred. **This is best effort, not a JVM-lifetime guarantee:** a
+process can start after inspection. Long periods of IDEA-only testing can leave sbt usage markers
+stale. No Java agent is installed. Regenerate IDEA configurations after runtime directory changes as
+described above. See [ADR 0003](docs/adr/0003-expire-unused-managed-runtimes.md) for the tradeoff.
 
 #### Concurrency
 

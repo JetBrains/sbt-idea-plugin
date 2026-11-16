@@ -105,6 +105,17 @@ object Keys extends Defns with Init with Utils with Quirks {
   lazy val intellijDevUseSharedDirectories = settingKey[Boolean](
     "Share development backend/frontend directories across checkouts and builds; defaults to sbtidea.dev.sharedDirectories or false")
 
+  lazy val autoRemoveOldCachedIntelliJRuntimes = settingKey[Boolean](
+    "Automatically expire managed test/indexing runtimes; defaults to true. Refreshed usage records retain their owner's policy.")
+  lazy val intellijRuntimeCleanupRetention = settingKey[scala.concurrent.duration.FiniteDuration](
+    "Positive retention since last sbt use for managed test/indexing runtimes; defaults to 7.days")
+  lazy val intellijRuntimeCleanupInterval = settingKey[scala.concurrent.duration.FiniteDuration](
+    "Positive minimum interval between automatic runtime cleanup scans; defaults to 24.hours")
+
+  private[sbtidea] lazy val runtimeMaintenance = settingKey[runtimeCleanup.RuntimeMaintenance]("").withRank(sbt.KeyRanks.Invisible)
+  private[sbtidea] lazy val refreshIntellijRuntimeUsage = taskKey[Unit]("").withRank(sbt.KeyRanks.Invisible)
+  private[sbtidea] lazy val initializeIntellijRuntimeMaintenance = taskKey[Unit]("").withRank(sbt.KeyRanks.Invisible)
+
   private[sbtidea] lazy val checkoutRuntimeDirectories = settingKey[CheckoutRuntimeDirectories](
     "Pure runtime path resolver identified by the canonical build root").withRank(sbt.KeyRanks.Invisible)
   private[sbtidea] lazy val defaultDevRuntimeDirectories = taskKey[IntellijTestRuntimeDirectories.RuntimeDirectories](

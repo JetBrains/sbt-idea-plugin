@@ -1,6 +1,6 @@
 package org.jetbrains.sbtidea.searchableoptions
 
-import org.jetbrains.sbtidea.Keys.{baseIntellijVMOptionsBuilder, customIntellijVMOptions, intellijBaseDirectory, intellijBuildIndexDirectories, intellijVMOptions, productInfoExtraDataProvider, useNewVmOptions}
+import org.jetbrains.sbtidea.Keys.{baseIntellijVMOptionsBuilder, customIntellijVMOptions, intellijBaseDirectory, intellijBuildIndexDirectories, intellijRuntimeBuildId, intellijVMOptions, productInfoExtraDataProvider, runtimeMaintenance, useNewVmOptions}
 import org.jetbrains.sbtidea.download.NioUtils
 import org.jetbrains.sbtidea.download.plugin.LocalPluginRegistry
 import org.jetbrains.sbtidea.packaging.*
@@ -75,6 +75,10 @@ object BuildIndex {
       discardOutput = discardOutput,
       programArguments = indexerCMD,
     )
+    val indexDirectories = intellijBuildIndexDirectories.value
+    runtimeMaintenance.value.register(intellijRuntimeBuildId.value,
+      Map("index.system" -> indexDirectories.system, "index.config" -> indexDirectories.config),
+      org.jetbrains.sbtidea.runtimeCleanup.RuntimeCleanup.IndexRoles)
     runner.run()
 
     val tmp = Files.createTempDirectory("sbt-idea-searchable-options-building-")
