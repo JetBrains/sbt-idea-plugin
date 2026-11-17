@@ -75,6 +75,9 @@ object SbtProjectFilesUtils {
     val effectiveVmOptions = vmOptions :+ DebugAgentOption
     val javaOptions = if (effectiveVmOptions.nonEmpty) Map("JAVA_OPTS" -> effectiveVmOptions.mkString(" ")) else Map.empty
     val envVarsUpdated = envVars ++ javaOptions
+    // The standard Linux sbt script uses java from PATH unless -java-home is given;
+    // JAVA_HOME alone does not align it with TeamCity's test JDK (17 versus 21).
+    val javaHome = envVars.getOrElse("JAVA_HOME", System.getProperty("java.home"))
 
     val sbtExecutablePath = sys.env.get("SBT_PATH")
       .orElse(Option(System.getProperty("sbt.executable.path")))
@@ -82,7 +85,7 @@ object SbtProjectFilesUtils {
     runProcess(
       // Disable colors to avoid escape sequences in the output
       // This is needed to parse the output of the test reliably
-      Seq(sbtExecutablePath, "-no-colors") ++ sbtArguments,
+      Seq(sbtExecutablePath, "-java-home", javaHome, "-no-colors") ++ sbtArguments,
       workingDir,
       ioMode = ioMode,
       envVars = envVarsUpdated,

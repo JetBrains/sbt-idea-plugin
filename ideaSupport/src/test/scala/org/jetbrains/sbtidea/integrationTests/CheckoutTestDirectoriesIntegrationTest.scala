@@ -666,6 +666,8 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
       project, vmOptions = vmOptions, ioMode = SbtProjectFilesUtils.IoMode.PrintAndCollectOutput)
     output.outputLines.get.mkString("\n") should include(s"Cached runtime context: $buildId")
     readProperties(project / "settings.properties").getProperty("sbt.version") shouldBe minimumSbtVersion
+    new File(readProperties(project / "settings.properties").getProperty("java.home")).getCanonicalFile shouldBe
+      new File(System.getProperty("java.home")).getCanonicalFile
     readProperties(project / "child" / "settings.properties").getProperty("idea.system.path") shouldBe
       readProperties(project / "settings.properties").getProperty("idea.system.path")
     assertProbeAndTemplateAgree(project, home, legacy = false)

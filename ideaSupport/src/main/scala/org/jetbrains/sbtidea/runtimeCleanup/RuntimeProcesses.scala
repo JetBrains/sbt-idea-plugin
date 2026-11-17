@@ -1,5 +1,7 @@
 package org.jetbrains.sbtidea.runtimeCleanup
 
+import java.nio.ByteBuffer
+import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.{Files, Path, Paths}
 import scala.collection.JavaConverters.*
@@ -21,13 +23,37 @@ private[sbtidea] object RuntimeProcesses {
         else {
           val executable = Paths.get(info.command().get()).getFileName.toString.toLowerCase(java.util.Locale.ROOT)
           if (executable != "java" && executable != "java.exe") None
-          else Some(if (info.arguments().isPresent) pathsIn(info.arguments().get().toSeq)
-                    else if (process.isAlive) None else Some(Set.empty[Path]))
+          else Some(argumentsOf(info, process.pid()).flatMap(pathsIn)
+            .orElse(if (process.isAlive) None else Some(Set.empty[Path])))
         }
       }.toVector
       if (results.exists(_.isEmpty)) None else Some(results.flatten.flatten.toSet)
     } finally processes.close()
   }.toOption.flatten
+
+  def argumentsOf(info: ProcessHandle.Info, pid: Long): Option[Seq[String]] = {
+    // On Linux, JDK 17's ProcessHandle drops arguments for command lines longer
+    // than a page (typically 4 KB), or returns a partial list if the page ends
+    // between arguments. Always read the complete native argv there; unavailable,
+    // incomplete or oversized data still defers cleanup safely.
+    if (System.getProperty("os.name") == "Linux") readProcArguments(Paths.get("/proc", pid.toString, "cmdline"))
+    else {
+      val arguments = info.arguments()
+      if (arguments.isPresent) Some(arguments.get().toSeq) else None
+    }
+  }
+
+  def readProcArguments(file: Path): Option[Seq[String]] = Try {
+    val limit = 1024 * 1024
+    val input = Files.newInputStream(file)
+    // procfs reports size zero, so bound the actual read rather than Files.size.
+    val bytes = try input.readNBytes(limit + 1) finally input.close()
+    require(bytes.nonEmpty && bytes.length <= limit && bytes.last == 0, "Incomplete or oversized process arguments")
+    val text = Charset.defaultCharset().newDecoder().decode(ByteBuffer.wrap(bytes)).toString
+    val argv = text.split("\u0000", -1).toSeq.dropRight(1)
+    require(argv.head.nonEmpty, "Missing process executable")
+    argv.tail
+  }.toOption
 
   def pathsIn(arguments: Seq[String]): Option[Set[Path]] = Try[Set[Path]] {
     def expand(args: Seq[String], depth: Int): Seq[String] = {

@@ -51,6 +51,7 @@ lazy val commonSettings = Seq(
   dumpPaths := {
     val properties = new java.util.Properties
     properties.setProperty("sbt.version", sbtVersion.value)
+    properties.setProperty("java.home", System.getProperty("java.home"))
     properties.setProperty("idea.system.path", (Test / intellijTestSystemDir).value.getAbsolutePath)
     properties.setProperty("idea.config.path", (Test / intellijTestConfigDir).value.getAbsolutePath)
     properties.setProperty("idea.log.path", ((Test / intellijTestSystemDir).value / "log").getAbsolutePath)
