@@ -39,15 +39,18 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
     previousSentinels.foreach(IO.write(_, "keep"))
     val otherBuild = CheckoutRuntimeDirectories(home.toPath, first).tests("IU-243.22562.146")
     IO.write(otherBuild.system.resolve("keep.txt").toFile, "keep")
-    firstDirs.system should not be secondDirs.system
+    withClue(s"Independent checkouts $first and $second must use distinct test system directories: ") {
+      firstDirs.system should not be secondDirs.system
+    }
 
     runSbtProcess(Seq("dumpPaths", "child / dumpPaths"), first)
     val expected = readProperties(first / "settings.properties")
     directoryKeys.foreach { key =>
-      readProperties(first / "child" / "settings.properties").getProperty(key) shouldBe expected.getProperty(key)
+      assertProperty(readProperties(first / "child" / "settings.properties"), key, expected.getProperty(key),
+        s"Subproject of $first must inherit the root test directories")
     }
-    Files.exists(firstDirs.system) shouldBe false
-    Files.exists(firstDirs.config) shouldBe false
+    assertFileDoesNotExist(firstDirs.system.toFile)
+    assertFileDoesNotExist(firstDirs.config.toFile)
 
     IO.write(first / "peer.txt", (second / "observed.properties").getAbsolutePath)
     IO.write(second / "peer.txt", (first / "observed.properties").getAbsolutePath)
@@ -67,22 +70,29 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
       assertProbeAndTemplateAgree(project, home, legacy = false)
       val dirs = CheckoutRuntimeDirectories(home.toPath, project).tests(buildId)
       Seq(dirs.system, dirs.config).foreach { dir =>
-        IO.read(dir.resolve("README.txt").toFile) should include(project.getCanonicalPath)
+        val readme = dir.resolve("README.txt").toFile
+        withClue(s"Runtime marker $readme must identify its owning checkout: ") {
+          IO.read(readme) should include(project.getCanonicalPath)
+        }
       }
       val readme = dirs.system.resolve("README.txt")
       val timestamp = Files.getLastModifiedTime(readme)
       runSbtProcess(Seq("createIDEARunConfiguration"), project)
-      Files.getLastModifiedTime(readme) shouldBe timestamp
+      withClue(s"Regenerating configurations must not overwrite runtime marker $readme: ") {
+        Files.getLastModifiedTime(readme) shouldBe timestamp
+      }
     }
 
     runSbtProcess(Seq("cleanUpTestEnvironment"), first)
-    Files.exists(firstDirs.system) shouldBe false
-    Files.exists(firstDirs.config) shouldBe false
-    Files.exists(secondDirs.system.resolve("README.txt")) shouldBe true
-    Files.exists(secondDirs.config.resolve("README.txt")) shouldBe true
-    sentinels.foreach(file => IO.read(file) shouldBe "keep")
-    previousSentinels.foreach(file => IO.read(file) shouldBe "keep")
-    IO.read(otherBuild.system.resolve("keep.txt").toFile) shouldBe "keep"
+    withClue(s"cleanUpTestEnvironment in $first must delete only its selected test directories: ") {
+      assertFileDoesNotExist(firstDirs.system.toFile)
+      assertFileDoesNotExist(firstDirs.config.toFile)
+      assertFileExists(secondDirs.system.resolve("README.txt").toFile)
+      assertFileExists(secondDirs.config.resolve("README.txt").toFile)
+    }
+    sentinels.foreach(assertFileContent(_, "keep"))
+    previousSentinels.foreach(assertFileContent(_, "keep"))
+    assertFileContent(otherBuild.system.resolve("keep.txt").toFile, "keep")
   }
 
   test("legacy VM options, scoped directory overrides, JUnit generation and cleanup use the same selected paths") {
@@ -103,19 +113,19 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
 
     runSbtProcess(Seq("probe", "dumpPaths", "createIDEARunConfiguration"), project)
     val properties = readProperties(project / "settings.properties")
-    properties.getProperty("idea.system.path") shouldBe system.getAbsolutePath
-    properties.getProperty("idea.config.path") shouldBe config.getAbsolutePath
+    assertProperty(properties, "idea.system.path", system.getAbsolutePath, s"Explicit test system override in $project")
+    assertProperty(properties, "idea.config.path", config.getAbsolutePath, s"Explicit test config override in $project")
     assertProbeAndTemplateAgree(project, home, legacy = true)
-    (system / "README.txt").exists() shouldBe false
-    (config / "README.txt").exists() shouldBe false
-    Files.exists(defaults.system.resolve("README.txt")) shouldBe false
-    Files.exists(defaults.config.resolve("README.txt")) shouldBe false
+    assertFileDoesNotExist(system / "README.txt")
+    assertFileDoesNotExist(config / "README.txt")
+    assertFileDoesNotExist(defaults.system.resolve("README.txt").toFile)
+    assertFileDoesNotExist(defaults.config.resolve("README.txt").toFile)
 
     runSbtProcess(Seq("cleanUpTestEnvironment"), project)
-    system.exists() shouldBe false
-    config.exists() shouldBe false
-    IO.read(defaults.system.resolve("keep.txt").toFile) shouldBe "keep"
-    IO.read(defaults.config.resolve("keep.txt").toFile) shouldBe "keep"
+    assertFileDoesNotExist(system)
+    assertFileDoesNotExist(config)
+    assertFileContent(defaults.system.resolve("keep.txt").toFile, "keep")
+    assertFileContent(defaults.config.resolve("keep.txt").toFile, "keep")
   }
 
   test("sharing property spans builds and checkouts, while explicit flag assignments win") {
@@ -137,23 +147,26 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
     val shared = Map("dev.system" -> "system-shared", "dev.config" -> "config-shared",
       "client.system" -> "system-client-shared", "client.config" -> "config-client-shared")
     shared.foreach { case (key, name) =>
-      firstPaths.getProperty(key) shouldBe (home / "runtime" / name).getAbsolutePath
-      secondPaths.getProperty(key) shouldBe firstPaths.getProperty(key)
+      assertProperty(firstPaths, key, (home / "runtime" / name).getAbsolutePath, s"Shared development paths in $first")
+      assertProperty(secondPaths, key, firstPaths.getProperty(key), s"Shared development paths in $second")
     }
     Seq("idea.system.path", "idea.config.path", "index.system", "index.config").foreach { key =>
-      firstPaths.getProperty(key) should not be secondPaths.getProperty(key)
+      withClue(s"Sharing development directories must leave '$key' isolated between $first and $second: ") {
+        firstPaths.getProperty(key) should not be secondPaths.getProperty(key)
+      }
     }
-    secondPaths.getProperty("idea.system.path") shouldBe
+    assertProperty(secondPaths, "idea.system.path",
       (home / "runtime" / s"IU-$secondBuild" / CheckoutRuntimeDirectories(home.toPath, second).checkoutHash /
-        "tests" / "system").getAbsolutePath
+        "tests" / "system").getAbsolutePath, s"Installed SDK build must select the test path in $second")
     Seq(first, second).foreach(assertProbeAndTemplateAgree(_, home, legacy = false))
 
     runSbtProcess(Seq("set ThisBuild / intellijDevUseSharedDirectories := false") ++ commands,
       first, vmOptions = Seq("-Dsbtidea.dev.sharedDirectories=true"))
     val isolated = readProperties(first / "settings.properties")
-    isolated.getProperty("sharing") shouldBe "false"
-    isolated.getProperty("dev.system") shouldBe CheckoutRuntimeDirectories(home.toPath, first).dev(buildId).system.toString
-    isolated.getProperty("client.config") shouldBe CheckoutRuntimeDirectories(home.toPath, first).devClient(buildId).config.toString
+    val isolatedContext = s"Explicit sharing=false must override the JVM property in $first"
+    assertProperty(isolated, "sharing", "false", isolatedContext)
+    assertProperty(isolated, "dev.system", CheckoutRuntimeDirectories(home.toPath, first).dev(buildId).system.toString, isolatedContext)
+    assertProperty(isolated, "client.config", CheckoutRuntimeDirectories(home.toPath, first).devClient(buildId).config.toString, isolatedContext)
     assertProbeAndTemplateAgree(first, home, legacy = false)
 
     val customDevSystem = home / "selected dev system"
@@ -161,10 +174,12 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
       s"set ThisBuild / intellijDevSystemDir := file(${quote(customDevSystem)})", "dumpPaths"),
       second, vmOptions = Seq("-Dsbtidea.dev.sharedDirectories=false", s"-DdirectoryProbe.build=$secondBuild"))
     val mixed = readProperties(second / "settings.properties")
-    mixed.getProperty("dev.config") shouldBe firstPaths.getProperty("dev.config")
-    mixed.getProperty("dev.system") shouldBe customDevSystem.getAbsolutePath
-    mixed.getProperty("client.system") shouldBe firstPaths.getProperty("client.system")
-    (home / "runtime" / "config-shared").exists() shouldBe false // generation does not initialize dev config
+    val mixedContext = s"Explicit directory overrides must coexist with sharing=true in $second"
+    assertProperty(mixed, "dev.config", firstPaths.getProperty("dev.config"), mixedContext)
+    assertProperty(mixed, "dev.system", customDevSystem.getAbsolutePath, mixedContext)
+    assertProperty(mixed, "client.system", firstPaths.getProperty("client.system"), mixedContext)
+    // Configuration generation must not initialize development config directories.
+    assertFileDoesNotExist(home / "runtime" / "config-shared")
   }
 
   test("an explicit build ID selects every isolated purpose and bypasses missing SDK metadata for path inspection") {
@@ -178,11 +193,15 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
     assertProbeAndTemplateAgree(project, home, legacy = false)
     val paths = readProperties(project / "settings.properties")
     val resolver = CheckoutRuntimeDirectories(home.toPath, project)
-    paths.getProperty("idea.system.path") shouldBe resolver.tests(customId).system.toString
-    paths.getProperty("dev.system") shouldBe resolver.dev(customId).system.toString
-    paths.getProperty("client.config") shouldBe resolver.devClient(customId).config.toString
-    paths.getProperty("index.config") shouldBe resolver.buildIndex(customId).config.toString
-    IO.read(resolver.tests(customId).system.resolve("README.txt").toFile) should include(customId)
+    val context = s"Custom runtime build ID $customId in $project"
+    assertProperty(paths, "idea.system.path", resolver.tests(customId).system.toString, context)
+    assertProperty(paths, "dev.system", resolver.dev(customId).system.toString, context)
+    assertProperty(paths, "client.config", resolver.devClient(customId).config.toString, context)
+    assertProperty(paths, "index.config", resolver.buildIndex(customId).config.toString, context)
+    val readme = resolver.tests(customId).system.resolve("README.txt").toFile
+    withClue(s"Runtime marker $readme must identify custom build $customId: ") {
+      IO.read(readme) should include(customId)
+    }
 
     runSbtProcess(Seq("set ThisBuild / productInfo := sys.error(\"unused SDK metadata evaluated\")",
       "show Test / intellijTestConfigDir", "show intellijDevSystemDir", "show intellijDevClientConfigDir",
@@ -190,8 +209,8 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
       "set ThisBuild / intellijDevUseSharedDirectories := true",
       "show intellijDevSystemDir", "show intellijDevConfigDir",
       "show intellijDevClientSystemDir", "show intellijDevClientConfigDir"), project)
-    Files.exists(resolver.dev(customId).system) shouldBe false
-    Files.exists(resolver.buildIndex(customId).system) shouldBe false
+    assertFileDoesNotExist(resolver.dev(customId).system.toFile)
+    assertFileDoesNotExist(resolver.buildIndex(customId).system.toFile)
   }
 
   test("exact paths override sharing and need no runtime identity for lookup, generation, preparation or cleanup") {
@@ -208,18 +227,20 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
     runSbtProcess(Seq("show Test / intellijTestSystemDir", "createIDEARunConfiguration", "probe", "cleanUpTestEnvironment"),
       project, vmOptions = Seq("-Dsbtidea.dev.sharedDirectories=true"))
     val actual = readProperties(project / "observed.properties")
-    actual.getProperty("idea.system.path") shouldBe paths(0).getAbsolutePath
-    actual.getProperty("idea.config.path") shouldBe paths(1).getAbsolutePath
-    paths.take(2).foreach(_.exists() shouldBe false)
-    paths.drop(2).foreach(path => IO.read(path / "keep.txt") shouldBe "keep")
-    paths.foreach(path => (path / "README.txt").exists() shouldBe false)
+    assertProperty(actual, "idea.system.path", paths(0).getAbsolutePath, s"Explicit test system override in $project")
+    assertProperty(actual, "idea.config.path", paths(1).getAbsolutePath, s"Explicit test config override in $project")
+    paths.take(2).foreach(assertFileDoesNotExist)
+    paths.drop(2).foreach(path => assertFileContent(path / "keep.txt", "keep"))
+    paths.foreach(path => assertFileDoesNotExist(path / "README.txt"))
     val configs = project / ".idea" / "runConfigurations"
     val xml = IO.read(configs / "root.xml")
-    xml should include(paths(2).getAbsolutePath)
-    xml should include(paths(3).getAbsolutePath)
+    withClue(s"Development configuration ${configs / "root.xml"} must use explicit backend paths: ") {
+      xml should include(paths(2).getAbsolutePath)
+      xml should include(paths(3).getAbsolutePath)
+    }
     val client = readProperties(configs / "idea_client.properties")
-    client.getProperty("idea.system.path") shouldBe paths(4).getAbsolutePath
-    client.getProperty("idea.config.path") shouldBe paths(5).getAbsolutePath
+    assertProperty(client, "idea.system.path", paths(4).getAbsolutePath, s"Explicit frontend paths in $configs")
+    assertProperty(client, "idea.config.path", paths(5).getAbsolutePath, s"Explicit frontend paths in $configs")
 
     // Even missing SDK metadata is irrelevant to cleanup when both test paths are explicit.
     runSbtProcess(Seq("set ThisBuild / productInfo := sys.error(\"unused SDK metadata evaluated\")",
@@ -242,10 +263,10 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
 
     runSbtProcess(Seq("show Test / intellijTestSystemDir", "createIDEARunConfiguration", "probe"), project)
     val observed = readProperties(project / "observed.properties")
-    observed.getProperty("idea.system.path") shouldBe pinned.system.toString
-    observed.getProperty("idea.config.path") shouldBe pinned.config.toString
+    assertProperty(observed, "idea.system.path", pinned.system.toString, s"Pinned test paths in $project")
+    assertProperty(observed, "idea.config.path", pinned.config.toString, s"Pinned test paths in $project")
     Seq(pinned.system, pinned.config).foreach { dir =>
-      Files.exists(dir.resolve("README.txt")) shouldBe false
+      assertFileDoesNotExist(dir.resolve("README.txt").toFile)
     }
 
     // A user override equal to a current default is still user-owned; path equality is not provenance.
@@ -256,7 +277,7 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
       s"set Test / intellijTestConfigDir := file(${quote(current.config.toFile)})",
       "createIDEARunConfiguration", "probe"), project)
     Seq(current.system, current.config).foreach { dir =>
-      Files.exists(dir.resolve("README.txt")) shouldBe false
+      assertFileDoesNotExist(dir.resolve("README.txt").toFile)
     }
   }
 
@@ -269,8 +290,8 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
       |""".stripMargin)
 
     runSbtProcess(Seq("createIDEARunConfiguration", "probe"), project)
-    Files.exists(directories.system.resolve("README.txt")) shouldBe false
-    Files.exists(directories.config.resolve("README.txt")) shouldBe true
+    assertFileDoesNotExist(directories.system.resolve("README.txt").toFile)
+    assertFileExists(directories.config.resolve("README.txt").toFile)
   }
 
   // Completeness regressions for unusual custom configurations: valid SDK metadata normally
@@ -288,11 +309,13 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
     runSbtProcess(Seq("createIDEARunConfiguration", "assertMarkers"), project)
     val configs = project / ".idea" / "runConfigurations"
     val expected = CheckoutRuntimeDirectories(home.toPath, project).dev(buildId)
-    IO.read(configs / "root.xml") should include(expected.system.toString)
-    (configs / "_template__of_JUnit.xml").isFile shouldBe true
-    (configs / "junit_template_argfile.txt").isFile shouldBe true
-    (configs / "root (split mode).xml").exists() shouldBe false
-    (configs / "idea_client.properties").exists() shouldBe false
+    withClue(s"Development configuration ${configs / "root.xml"} must use the backend system directory: ") {
+      IO.read(configs / "root.xml") should include(expected.system.toString)
+    }
+    assert((configs / "_template__of_JUnit.xml").isFile, s"Missing generated JUnit template in $configs")
+    assert((configs / "junit_template_argfile.txt").isFile, s"Missing generated JUnit argument file in $configs")
+    assertFileDoesNotExist(configs / "root (split mode).xml")
+    assertFileDoesNotExist(configs / "idea_client.properties")
   }
 
   test("disabled JUnit output does not resolve test directories for default, additional or split development configs") {
@@ -315,14 +338,16 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
 
       runSbtProcess(Seq("createIDEARunConfiguration"), project)
       val configs = project / ".idea" / "runConfigurations"
-      IO.read(configs / output) should include((home / "runtime" / "system-shared").getAbsolutePath)
-      (configs / "_template__of_JUnit.xml").exists() shouldBe false
-      (configs / "junit_template_argfile.txt").exists() shouldBe false
-      Files.exists(CheckoutRuntimeDirectories(home.toPath, project).tests(buildId).system) shouldBe false
-      Files.exists(CheckoutRuntimeDirectories(home.toPath, project).tests(buildId).config) shouldBe false
+      withClue(s"Development configuration ${configs / output} with options $options must use shared directories: ") {
+        IO.read(configs / output) should include((home / "runtime" / "system-shared").getAbsolutePath)
+      }
+      assertFileDoesNotExist(configs / "_template__of_JUnit.xml")
+      assertFileDoesNotExist(configs / "junit_template_argfile.txt")
+      assertFileDoesNotExist(CheckoutRuntimeDirectories(home.toPath, project).tests(buildId).system.toFile)
+      assertFileDoesNotExist(CheckoutRuntimeDirectories(home.toPath, project).tests(buildId).config.toFile)
       if (output == "root (split mode).xml") {
-        readProperties(configs / "idea_client.properties").getProperty("idea.system.path") shouldBe
-          (home / "runtime" / "system-client-shared").getAbsolutePath
+        assertProperty(readProperties(configs / "idea_client.properties"), "idea.system.path",
+          (home / "runtime" / "system-client-shared").getAbsolutePath, s"Shared frontend configuration in $configs")
       }
     }
   }
@@ -345,16 +370,16 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
 
     runSbtProcess(Seq("createIDEARunConfiguration"), project)
     val configs = project / ".idea" / "runConfigurations"
-    configs.list().toSet shouldBe Set("_template__of_JUnit.xml", "junit_template_argfile.txt")
+    assertDirectoryContents(configs, Seq("_template__of_JUnit.xml", "junit_template_argfile.txt"))
     val java = new File(System.getProperty("java.home")) / "bin" / "java"
     val observed = project / "junit-only.properties"
     runProcess(Seq(java.getAbsolutePath, "@" + (configs / "junit_template_argfile.txt").getAbsolutePath,
       "DirectoryProbe", observed.getAbsolutePath), project)
     val properties = readProperties(observed)
-    properties.getProperty("idea.system.path") shouldBe system.getAbsolutePath
-    properties.getProperty("idea.config.path") shouldBe config.getAbsolutePath
-    properties.getProperty("idea.log.path") shouldBe (system / "log").getAbsolutePath
-    Seq(system, config).foreach(path => (path / "README.txt").exists() shouldBe false)
+    assertProperty(properties, "idea.system.path", system.getAbsolutePath, s"JUnit-only JVM output $observed")
+    assertProperty(properties, "idea.config.path", config.getAbsolutePath, s"JUnit-only JVM output $observed")
+    assertProperty(properties, "idea.log.path", (system / "log").getAbsolutePath, s"JUnit-only JVM output $observed")
+    Seq(system, config).foreach(path => assertFileDoesNotExist(path / "README.txt"))
   }
 
   test("disabling every configuration output is a no-op without SDK or runtime task evaluation") {
@@ -371,8 +396,8 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
       |""".stripMargin)
 
     runSbtProcess(Seq("createIDEARunConfiguration"), project)
-    (project / ".idea" / "runConfigurations").exists() shouldBe false
-    (home / "runtime").exists() shouldBe false
+    assertFileDoesNotExist(project / ".idea" / "runConfigurations")
+    assertFileDoesNotExist(home / "runtime")
   }
 
   test("automatic runtime maintenance runs on startup, cleans expired owned data, and shares its daily throttle") {
@@ -414,21 +439,31 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
         .map { case (consumer, commands) => Future(Try(runSbtProcess(commands, consumer))) }
       Await.result(Future.sequence(processes), 3.minutes).foreach(_.get)
     } finally executor.shutdown()
-    paths.values.foreach(path => Files.exists(path) shouldBe false)
-    keep.foreach(path => IO.read(path) shouldBe "keep")
+    paths.foreach { case (role, path) =>
+      withClue(s"Due startup cleanup must remove expired '$role' for checkout $oldCheckout, build $buildId: ") {
+        assertFileDoesNotExist(path.toFile)
+      }
+    }
+    keep.foreach(assertFileContent(_, "keep"))
     val ownMarker = registry.marker(project.toPath, buildId).toFile
-    ownMarker.isFile shouldBe true
-    IO.read(project / "completion-hook.txt") shouldBe "called"
+    assert(ownMarker.isFile, s"Startup must register the current checkout/build in usage marker $ownMarker")
+    assertFileContent(project / "completion-hook.txt", "called")
     val record = readProperties(ownMarker)
-    record.getProperty("retentionSeconds") shouldBe "604800"
-    record.getProperty("automaticCleanup") shouldBe "true"
+    assertProperty(record, "retentionSeconds", "604800", s"Default cleanup policy in $ownMarker")
+    assertProperty(record, "automaticCleanup", "true", s"Default cleanup policy in $ownMarker")
     val current = CheckoutRuntimeDirectories(home.toPath, project).tests(buildId)
-    Files.exists(current.system) shouldBe false // Startup registers metadata, not initialized caches.
+    withClue("Startup must register usage without initializing runtime caches: ") {
+      assertFileDoesNotExist(current.system.toFile)
+    }
 
     paths.values.foreach(path => IO.write(path.resolve("expired.txt").toFile, "expired"))
     registry.refresh(oldCheckout, buildId, paths)
     runSbtProcess(Seq("show name"), project)
-    paths.values.foreach(path => Files.exists(path.resolve("expired.txt")) shouldBe true)
+    paths.foreach { case (role, path) =>
+      withClue(s"The shared daily throttle must preserve '$role' recreated after the preceding cleanup pass: ") {
+        assertFileExists(path.resolve("expired.txt").toFile)
+      }
+    }
   }
 
   Seq(SbtProjectFilesUtils.SbtVersionForIntegrationTests, "1.4.5").foreach { sbtVersion =>
@@ -443,9 +478,9 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
         plainRoot + ".enablePlugins(SbtIdeaPlugin).settings(commonSettings)", plainRoot + s""".settings(
         |  TaskKey[Unit]("clearStartupUsage") := {
         |    val markers = (file(${quote(home)}) / ".sbt-idea-plugin" / "runtime-usage-v1" ** "*.properties").get
-        |    require(markers.size == 2, "Both plugin children must have initialized on load")
+        |    require(markers.size == 2, "Both plugin children must have initialized on load; expected 2 usage records, found " + markers)
         |    IO.delete(markers)
-        |    require(markers.forall(!_.exists()), "Test-owned usage records should be absent before reload")
+        |    require(markers.forall(!_.exists()), "Test-owned usage records should be absent before reload; remaining: " + markers.filter(_.exists()))
         |  }
         |)""".stripMargin) + """
         |lazy val other = project.in(file("other")).enablePlugins(SbtIdeaPlugin).settings(commonSettings).settings(
@@ -461,16 +496,19 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
       val ids = Seq(buildId, "IU-other-child")
       ids.foreach { id =>
         val marker = registry.marker(project.toPath, id).toFile
-        marker.isFile shouldBe true
-        readProperties(marker).getProperty("buildId") shouldBe id
-        readProperties(marker).getProperty("checkoutRoot") shouldBe project.getCanonicalPath
+        assert(marker.isFile, s"Startup on sbt $sbtVersion must register child build $id in $marker")
+        assertProperty(readProperties(marker), "buildId", id, s"Child usage marker $marker on sbt $sbtVersion")
+        assertProperty(readProperties(marker), "checkoutRoot", project.getCanonicalPath, s"Child usage marker $marker on sbt $sbtVersion")
       }
-      (home / "runtime").exists() shouldBe false // Startup only registers metadata.
+      assertFileDoesNotExist(home / "runtime") // Startup only registers metadata.
 
       // A reload starts a new settings generation and must initialize children again.
       runSbtProcess(Seq("clearStartupUsage", "reload", "show name"), project, vmOptions = vmOptions)
-      ids.foreach(id => registry.marker(project.toPath, id).toFile.isFile shouldBe true)
-      (home / "runtime").exists() shouldBe false
+      ids.foreach { id =>
+        val marker = registry.marker(project.toPath, id).toFile
+        assert(marker.isFile, s"Reload on sbt $sbtVersion must register child build $id again in $marker")
+      }
+      assertFileDoesNotExist(home / "runtime")
     }
   }
 
@@ -509,10 +547,14 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
         |""".stripMargin)
       val vmOptions = Seq(s"-Dsbt.global.base=${newTmpDir.resolve("global")}")
       runSbtProcess(Seq("show name"), project, vmOptions = vmOptions)
-      paths.values.foreach(path => IO.read(path.resolve("settings.xml").toFile) shouldBe "persistent development data")
-      registry.marker(project.toPath, oldId).toFile.exists() shouldBe false
-      Files.exists(disposable) shouldBe false
-      Files.exists(resolver.tests(buildId).system) shouldBe false
+      paths.values.foreach(path => assertFileContent(path.resolve("settings.xml").toFile, "persistent development data"))
+      withClue(s"Reusing old test/index paths for development must withdraw their cleanup ownership on sbt $sbtVersion: ") {
+        assertFileDoesNotExist(registry.marker(project.toPath, oldId).toFile)
+      }
+      withClue(s"Protecting reused development directories must still allow unrelated expired data to be cleaned on sbt $sbtVersion: ") {
+        assertFileDoesNotExist(disposable.toFile)
+      }
+      assertFileDoesNotExist(resolver.tests(buildId).system.toFile)
     }
   }
 
@@ -540,17 +582,33 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
       if (!unavailableOverride)
         IO.append(project / "extra.sbt", "\nThisBuild / intellijRuntimeBuildId := sys.error(\"unavailable SDK identity\")\n")
       runSbtProcess(Seq("show name"), project)
-      Files.exists(home.toPath.resolve(".sbt-idea-plugin/runtime-cleanup-v1.properties")) shouldBe false
-      val record = readProperties(registry.marker(project.toPath, oldId).toFile)
-      if (unavailableOverride) record.getProperty("test.config") should not be null
-      else {
-        record.getProperty("test.config") shouldBe null
-        // A later pass from another checkout respects the persisted withdrawal.
-        new runtimeCleanup.RuntimeCleanup(home.toPath, runtimeCleanup.RuntimeCleanup.Policy(true, 7.days, 1.day),
-          new CapturingLogger()).cleanupIfDue().directories shouldBe 1
+      withClue(s"Unavailable runtime context must defer cleanup (unavailableOverride=$unavailableOverride): ") {
+        assertFileDoesNotExist(home / ".sbt-idea-plugin" / "runtime-cleanup-v1.properties")
       }
-      IO.read(config.resolve("settings.xml").toFile) shouldBe "persistent"
-      Files.exists(disposable) shouldBe unavailableOverride
+      val record = readProperties(registry.marker(project.toPath, oldId).toFile)
+      if (unavailableOverride) {
+        withClue(s"An unresolved development override must retain existing 'test.config' ownership for $config: ") {
+          record.getProperty("test.config") should not be null
+        }
+      }
+      else {
+        assertProperty(record, "test.config", null, s"Development reuse must withdraw cleanup ownership of $config")
+        // A later pass from another checkout respects the persisted withdrawal.
+        withClue(s"A peer cleanup pass must delete only the unrelated indexing directory $disposable: ") {
+          new runtimeCleanup.RuntimeCleanup(home.toPath, runtimeCleanup.RuntimeCleanup.Policy(true, 7.days, 1.day),
+            new CapturingLogger()).cleanupIfDue().directories shouldBe 1
+        }
+      }
+      assertFileContent(config.resolve("settings.xml").toFile, "persistent")
+      if (unavailableOverride) {
+        withClue("An unresolved development override must defer deletion: ") {
+          assertFileExists(disposable.toFile)
+        }
+      } else {
+        withClue("A resolved development override must allow unrelated indexing data to expire: ") {
+          assertFileDoesNotExist(disposable.toFile)
+        }
+      }
     }
   }
 
@@ -564,15 +622,17 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
     val config = CheckoutRuntimeDirectories(home.toPath, project).tests(buildId).config
     IO.append(project / "extra.sbt", s"""
       |TaskKey[Unit]("assertConfigWithdrawn") := {
-      |  require(!IO.read(file(${quote(marker)})).contains("test.config="), "A sibling must not re-enroll the override")
+      |  require(!IO.read(file(${quote(marker)})).contains("test.config="), "A sibling must not re-enroll test.config in " + file(${quote(marker)}))
       |}
       |TaskKey[Unit]("assertConfigManaged") := {
-      |  require(IO.read(file(${quote(marker)})).contains("test.config="), "Removing the override restores ordinary ownership")
+      |  require(IO.read(file(${quote(marker)})).contains("test.config="), "Reload after removing the override must restore test.config ownership in " + file(${quote(marker)}))
       |}
       |""".stripMargin)
     runSbtProcess(Seq(s"""set LocalProject("child") / intellijDevConfigDir := file(${quote(config.toFile)})""",
       "assertConfigWithdrawn", "reload", "assertConfigManaged"), project)
-    readProperties(marker).getProperty("test.config") should not be null
+    withClue(s"Reload must restore 'test.config' ownership in usage marker $marker: ") {
+      readProperties(marker).getProperty("test.config") should not be null
+    }
   }
 
   test("startup runtime maintenance honors opt-out, custom identity, overrides and unavailable metadata") {
@@ -590,20 +650,25 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
       runtimeCleanup.RuntimeCleanup.Policy(true, 7.days, 1.day), new CapturingLogger())
     val marker = registry.marker(project.toPath, selectedId).toFile
     val properties = readProperties(marker)
-    properties.getProperty("automaticCleanup") shouldBe "false"
-    properties.getProperty("retentionSeconds") shouldBe "2592000"
+    assertProperty(properties, "automaticCleanup", "false", s"Cleanup opt-out in $marker")
+    assertProperty(properties, "retentionSeconds", "2592000", s"Custom 30-day retention in $marker")
 
     val previousSystem = CheckoutRuntimeDirectories(home.toPath, project).tests(selectedId).system.toFile
     IO.append(project / "extra.sbt", s"\nThisBuild / intellijTestSystemDir := file(${quote(previousSystem)})\n")
     runSbtProcess(Seq("show name"), project)
-    readProperties(marker).getProperty("test.system") shouldBe null
-    readProperties(marker).getProperty("test.config") should not be null
+    assertProperty(readProperties(marker), "test.system", null, s"Explicit system override must withdraw ownership in $marker")
+    withClue(s"An independent system override must retain 'test.config' ownership in $marker: ") {
+      readProperties(marker).getProperty("test.config") should not be null
+    }
 
     IO.append(project / "extra.sbt", "\nThisBuild / intellijRuntimeBuildId := sys.error(\"unavailable SDK identity\")\n")
     val unavailable = runSbtProcess(Seq("show name", "showIntellijRuntimeCleanup"), project,
       ioMode = SbtProjectFilesUtils.IoMode.PrintAndCollectOutput)
     // Housekeeping and diagnostics cannot break unrelated commands when SDK metadata is unavailable.
-    unavailable.outputLines.get.mkString("\n") should include("Cached runtime context: unavailable")
+    withClue(s"Cleanup diagnostics in $project must report unavailable SDK identity: ") {
+      unavailable.outputLines.getOrElse(fail(s"No captured sbt output for $project")).mkString("\n") should
+        include("Cached runtime context: unavailable")
+    }
   }
 
   test("cleanup diagnostics inspect registered runtimes without evaluating runtime tasks or modifying maintenance state") {
@@ -627,21 +692,26 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
     val modified = Files.getLastModifiedTime(marker)
     val content = Files.readAllBytes(marker)
     val output = runSbtProcess(Seq("showIntellijRuntimeCleanup"), project,
-      ioMode = SbtProjectFilesUtils.IoMode.PrintAndCollectOutput).outputLines.get.mkString("\n")
-    output should include(s"Plugin home: ${home.getCanonicalPath}")
-    output should include(s"Checkout: ${checkout.toFile.getCanonicalPath}")
-    output should include("Cached runtime context: unavailable")
-    output should include("Recorded retention: 7 days")
-    output should include("Assessment: expired;")
-    output should include("[present]")
-    output should include("[absent]")
-    output should include("index.system: not registered")
-    output should include("Normal sbt startup/completion hooks may refresh usage or run automatic cleanup")
-    Files.readAllBytes(marker) shouldBe content
-    Files.getLastModifiedTime(marker) shouldBe modified
-    IO.read(old.system.resolve("keep.txt").toFile) shouldBe "keep"
-    Files.exists(home.toPath.resolve(".sbt-idea-plugin/runtime-cleanup-v1.properties")) shouldBe false
-    Files.exists(home.toPath.resolve(".sbt-idea-plugin/runtime-cleanup.lock")) shouldBe false
+      ioMode = SbtProjectFilesUtils.IoMode.PrintAndCollectOutput).outputLines
+      .getOrElse(fail(s"No captured cleanup diagnostics for $project")).mkString("\n")
+    withClue(s"Cleanup diagnostics for $project must describe the registered runtime without resolving SDK identity: ") {
+      output should include(s"Plugin home: ${home.getCanonicalPath}")
+      output should include(s"Checkout: ${checkout.toFile.getCanonicalPath}")
+      output should include("Cached runtime context: unavailable")
+      output should include("Recorded retention: 7 days")
+      output should include("Assessment: expired;")
+      output should include("[present]")
+      output should include("[absent]")
+      output should include("index.system: not registered")
+      output should include("Normal sbt startup/completion hooks may refresh usage or run automatic cleanup")
+    }
+    withClue(s"Read-only cleanup diagnostics must not rewrite or touch usage marker $marker: ") {
+      Files.readAllBytes(marker) shouldBe content
+      Files.getLastModifiedTime(marker) shouldBe modified
+    }
+    assertFileContent(old.system.resolve("keep.txt").toFile, "keep")
+    assertFileDoesNotExist(home / ".sbt-idea-plugin" / "runtime-cleanup-v1.properties")
+    assertFileDoesNotExist(home / ".sbt-idea-plugin" / "runtime-cleanup.lock")
   }
 
   test("minimum supported sbt executes runtime tasks, generation, forks and startup maintenance") {
@@ -664,16 +734,26 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
 
     val output = runSbtProcess(Seq("dumpPaths", "child / dumpPaths", "createIDEARunConfiguration", "probe", "showIntellijRuntimeCleanup"),
       project, vmOptions = vmOptions, ioMode = SbtProjectFilesUtils.IoMode.PrintAndCollectOutput)
-    output.outputLines.get.mkString("\n") should include(s"Cached runtime context: $buildId")
-    readProperties(project / "settings.properties").getProperty("sbt.version") shouldBe minimumSbtVersion
-    new File(readProperties(project / "settings.properties").getProperty("java.home")).getCanonicalFile shouldBe
-      new File(System.getProperty("java.home")).getCanonicalFile
-    readProperties(project / "child" / "settings.properties").getProperty("idea.system.path") shouldBe
-      readProperties(project / "settings.properties").getProperty("idea.system.path")
+    withClue(s"Minimum sbt $minimumSbtVersion must initialize runtime context in $project: ") {
+      output.outputLines.getOrElse(fail(s"No captured sbt output for $project")).mkString("\n") should
+        include(s"Cached runtime context: $buildId")
+    }
+    val settings = readProperties(project / "settings.properties")
+    assertProperty(settings, "sbt.version", minimumSbtVersion, s"Consumer sbt version in $project")
+    withClue(s"Nested sbt in $project must use the parent test JVM's java.home, independently of PATH and JAVA_HOME: ") {
+      new File(settings.getProperty("java.home")).getCanonicalFile shouldBe
+        new File(System.getProperty("java.home")).getCanonicalFile
+    }
+    assertProperty(readProperties(project / "child" / "settings.properties"), "idea.system.path",
+      settings.getProperty("idea.system.path"), s"Subproject must inherit root test paths on sbt $minimumSbtVersion")
     assertProbeAndTemplateAgree(project, home, legacy = false)
-    Files.exists(old.system) shouldBe false
+    withClue(s"Startup maintenance on sbt $minimumSbtVersion must delete the expired test system directory: ") {
+      assertFileDoesNotExist(old.system.toFile)
+    }
     val marker = registry.marker(project.toPath, buildId).toFile
-    readProperties(marker).getProperty("test.system") should not be null
+    withClue(s"Startup maintenance on sbt $minimumSbtVersion must register 'test.system' in $marker: ") {
+      readProperties(marker).getProperty("test.system") should not be null
+    }
 
     val customId = "IU-minimum-sbt-custom"
     val explicitSystem = home / "explicit test system"
@@ -685,19 +765,24 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
       project, vmOptions = vmOptions, ioMode = SbtProjectFilesUtils.IoMode.PrintAndCollectOutput)
     // Reapplying settings can run startup maintenance again. Both reports must use the
     // new identity rather than retaining the original session's cached context.
-    val contexts = reconfigured.outputLines.get.filter(_.contains("Cached runtime context:"))
-    contexts should have size 2
-    contexts.foreach(_ should include(s"Cached runtime context: $customId"))
+    val contexts = reconfigured.outputLines.getOrElse(fail(s"No captured sbt output after reconfiguring $project"))
+      .filter(_.contains("Cached runtime context:"))
+    withClue(s"Both cleanup reports after 'set' in $project must use the new build identity $customId: ") {
+      contexts should have size 2
+      contexts.foreach(_ should include(s"Cached runtime context: $customId"))
+    }
     val paths = readProperties(project / "settings.properties")
-    paths.getProperty("idea.system.path") shouldBe explicitSystem.getAbsolutePath
-    paths.getProperty("dev.system") shouldBe (home / "runtime" / "system-shared").getAbsolutePath
-    paths.getProperty("idea.config.path") shouldBe
-      CheckoutRuntimeDirectories(home.toPath, project).tests(customId).config.toString
+    val context = s"Reconfigured consumer $project on sbt $minimumSbtVersion"
+    assertProperty(paths, "idea.system.path", explicitSystem.getAbsolutePath, context)
+    assertProperty(paths, "dev.system", (home / "runtime" / "system-shared").getAbsolutePath, context)
+    assertProperty(paths, "idea.config.path", CheckoutRuntimeDirectories(home.toPath, project).tests(customId).config.toString, context)
     assertProbeAndTemplateAgree(project, home, legacy = false)
-    (explicitSystem / "README.txt").exists() shouldBe false
+    assertFileDoesNotExist(explicitSystem / "README.txt")
     val changed = readProperties(registry.marker(project.toPath, customId).toFile)
-    changed.getProperty("test.system") shouldBe null
-    changed.getProperty("test.config") should not be null
+    assertProperty(changed, "test.system", null, s"Explicit system override must not be registered for $customId in $project")
+    withClue(s"The independently managed 'test.config' must remain registered for $customId in $project: ") {
+      changed.getProperty("test.config") should not be null
+    }
   }
 
   private def enableRuntimeMaintenanceStartup(project: File): Unit = {
@@ -723,52 +808,85 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
     project
   }
 
-  private def assertProbeAndTemplateAgree(project: File, home: File, legacy: Boolean): Unit = {
+  private def assertProbeAndTemplateAgree(project: File, home: File, legacy: Boolean): Unit = withClue(
+    s"Runtime outputs for checkout $project (legacy VM options: $legacy):\n") {
     val settings = readProperties(project / "settings.properties")
     val observed = readProperties(project / "observed.properties")
-    directoryKeys.foreach(key => observed.getProperty(key) shouldBe settings.getProperty(key))
-    observed.getProperty("scope.marker") shouldBe (if (legacy) "legacy-test" else "test")
-    if (!legacy) observed.getProperty("product.marker") shouldBe "retained"
-    settings.getProperty("sdk") shouldBe (home / "sdk" / "243.22562.145").getAbsolutePath
-    settings.getProperty("downloads") shouldBe (home / "sdk" / "downloads").getAbsolutePath
-    observed.getProperty("idea.plugins.path") shouldBe (home / "sdk" / "243.22562.145" / "custom-plugins").getAbsolutePath
+    directoryKeys.foreach { key =>
+      assertProperty(observed, key, settings.getProperty(key), "Forked JVM must use the resolved directory")
+    }
+    assertProperty(observed, "scope.marker", if (legacy) "legacy-test" else "test", "Forked JVM must retain test VM options")
+    if (!legacy) assertProperty(observed, "product.marker", "retained", "Forked JVM must retain SDK VM options")
+    assertProperty(settings, "sdk", (home / "sdk" / "243.22562.145").getAbsolutePath, "Runtime isolation must preserve the SDK location")
+    assertProperty(settings, "downloads", (home / "sdk" / "downloads").getAbsolutePath, "Runtime isolation must preserve the download cache location")
+    assertProperty(observed, "idea.plugins.path", (home / "sdk" / "243.22562.145" / "custom-plugins").getAbsolutePath,
+      "Forked JVM must use SDK-scoped installed plugins")
 
     val configs = project / ".idea" / "runConfigurations"
     val argfile = configs / "junit_template_argfile.txt"
     val lines = IO.readLines(argfile)
     directoryKeys.foreach { key =>
-      lines.filter(_.startsWith(s"-D$key=")) shouldBe Seq("-D" + key + "=\"" + settings.getProperty(key).replace("\\", "\\\\") + "\"")
+      withClue(s"JUnit argument file $argfile must contain exactly one authoritative '$key' option: ") {
+        lines.filter(_.startsWith(s"-D$key=")) shouldBe Seq("-D" + key + "=\"" + settings.getProperty(key).replace("\\", "\\\\") + "\"")
+      }
     }
-    lines should contain(s"-Dscope.marker=${if (legacy) "legacy-test" else "test"}")
-    val xml = XML.loadFile(configs / "_template__of_JUnit.xml")
-    val parameters = (xml \\ "option").find(node => (node \ "@name").text == "VM_PARAMETERS").get
-    (parameters \ "@value").text should include("\"@" + argfile.getCanonicalPath + "\"")
+    withClue(s"JUnit argument file $argfile must retain test VM options: ") {
+      lines should contain(s"-Dscope.marker=${if (legacy) "legacy-test" else "test"}")
+    }
+    val junitTemplate = configs / "_template__of_JUnit.xml"
+    val xml = XML.loadFile(junitTemplate)
+    val parameters = (xml \\ "option").find(node => (node \ "@name").text == "VM_PARAMETERS")
+      .getOrElse(fail(s"Missing VM_PARAMETERS option in JUnit template $junitTemplate"))
+    withClue(s"JUnit template $junitTemplate must reference its quoted argument file: ") {
+      (parameters \ "@value").text should include("\"@" + argfile.getCanonicalPath + "\"")
+    }
     // Let the Java launcher parse the generated argfile, including paths and classpaths with spaces.
     val java = new File(System.getProperty("java.home")) / "bin" / "java"
     val templateOutput = project / "template.properties"
     runProcess(Seq(java.getAbsolutePath, "@" + argfile.getAbsolutePath, "DirectoryProbe", templateOutput.getAbsolutePath), project)
     val templateObserved = readProperties(templateOutput)
-    directoryKeys.foreach(key => templateObserved.getProperty(key) shouldBe observed.getProperty(key))
-    templateObserved.getProperty("scope.marker") shouldBe observed.getProperty("scope.marker")
+    directoryKeys.foreach { key =>
+      assertProperty(templateObserved, key, observed.getProperty(key), s"JVM launched from $argfile must match the sbt fork")
+    }
+    assertProperty(templateObserved, "scope.marker", observed.getProperty("scope.marker"), "JUnit and sbt must retain the same test VM options")
     val devXml = IO.read(configs / "root.xml")
-    devXml should include(settings.getProperty("dev.system"))
-    devXml should include(settings.getProperty("dev.config"))
+    withClue(s"Development configuration ${configs / "root.xml"} must use the selected backend paths: ") {
+      devXml should include(settings.getProperty("dev.system"))
+      devXml should include(settings.getProperty("dev.config"))
+    }
     val devConfig = XML.loadFile(configs / "root.xml")
-    (devConfig \\ "log_file").map(node => (node \ "@path").text) should contain allOf (
-      settings.getProperty("dev.system") + "/log/idea.log",
-      settings.getProperty("dev.system") + "/log/build-log/build.log")
+    withClue(s"Log references in ${configs / "root.xml"} must follow the selected backend system directory: ") {
+      (devConfig \\ "log_file").map(node => (node \ "@path").text) should contain allOf (
+        settings.getProperty("dev.system") + "/log/idea.log",
+        settings.getProperty("dev.system") + "/log/build-log/build.log")
+    }
     val client = readProperties(configs / "idea_client.properties")
-    client.getProperty("idea.system.path") shouldBe settings.getProperty("client.system")
-    client.getProperty("idea.config.path") shouldBe settings.getProperty("client.config")
-    client.getProperty("idea.log.path") shouldBe settings.getProperty("client.system") + "/log"
+    val clientContext = s"Split frontend properties in ${configs / "idea_client.properties"}"
+    assertProperty(client, "idea.system.path", settings.getProperty("client.system"), clientContext)
+    assertProperty(client, "idea.config.path", settings.getProperty("client.config"), clientContext)
+    assertProperty(client, "idea.log.path", settings.getProperty("client.system") + "/log", clientContext)
     Seq("dev", "index").foreach { prefix =>
-      settings.getProperty(prefix + ".idea.system.path") shouldBe settings.getProperty(prefix + ".system")
-      settings.getProperty(prefix + ".idea.config.path") shouldBe settings.getProperty(prefix + ".config")
-      settings.getProperty(prefix + ".idea.log.path") shouldBe settings.getProperty(prefix + ".system") + "/log"
+      val context = s"$prefix VM options must follow the selected directory keys"
+      assertProperty(settings, prefix + ".idea.system.path", settings.getProperty(prefix + ".system"), context)
+      assertProperty(settings, prefix + ".idea.config.path", settings.getProperty(prefix + ".config"), context)
+      assertProperty(settings, prefix + ".idea.log.path", settings.getProperty(prefix + ".system") + "/log", context)
+    }
+  }
+
+  private def assertProperty(properties: Properties, key: String, expected: String, context: String): Unit = {
+    withClue(s"$context; property '$key': ") {
+      properties.getProperty(key) shouldBe expected
+    }
+  }
+
+  private def assertFileContent(file: File, expected: String): Unit = {
+    withClue(s"Contents of $file: ") {
+      IO.read(file) shouldBe expected
     }
   }
 
   private def readProperties(file: File): Properties = {
+    assertFileExists(file)
     val properties = new Properties
     val in = Files.newInputStream(file.toPath)
     try properties.load(in) finally in.close()
