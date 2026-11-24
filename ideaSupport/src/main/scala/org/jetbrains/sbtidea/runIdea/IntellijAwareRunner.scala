@@ -1,6 +1,7 @@
 package org.jetbrains.sbtidea.runIdea
 
 import org.jetbrains.sbtidea.PluginLogger as log
+import org.jetbrains.sbtidea.{PluginLogger, RuntimeDirectoryLog}
 import org.jetbrains.sbtidea.download.jbr.JbrInstaller
 import org.jetbrains.sbtidea.runIdea.IntellijAwareRunner.getBundledJRE
 import sbt.*
@@ -57,7 +58,16 @@ abstract class IntellijAwareRunner(intellijBaseDirectory: Path, blocking: Boolea
   
   protected def buildJavaArgs: Seq[String]
 
-  def run(): Int = {
+  def run(): Int = run(beforeStart = _ => ())
+
+  private[sbtidea] def runWithRuntimeLogging(purpose: String, project: String, logger: PluginLogger): Int =
+    run { command =>
+      // Arguments after the IDE main class belong to the application and cannot set JVM properties.
+      val jvmOptions = command.asScala.takeWhile(_ != "com.intellij.idea.Main").toVector
+      RuntimeDirectoryLog.report(purpose, project, jvmOptions, logger)
+    }
+
+  private def run(beforeStart: java.util.List[String] => Unit): Int = {
     val processBuilder = {
       val builder = new JProcessBuilder()
       builder.command(buildFullCommand)
@@ -72,6 +82,7 @@ abstract class IntellijAwareRunner(intellijBaseDirectory: Path, blocking: Boolea
       }
       builder
     }
+    beforeStart(processBuilder.command())
     val process = processBuilder.start()
     if (blocking)
       process.waitFor()

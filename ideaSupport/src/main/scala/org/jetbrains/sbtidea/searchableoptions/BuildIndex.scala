@@ -72,7 +72,7 @@ object BuildIndex {
     runtimeMaintenance.value.register(intellijRuntimeBuildId.value,
       Map("index.system" -> indexDirectories.system, "index.config" -> indexDirectories.config),
       org.jetbrains.sbtidea.runtimeCleanup.RuntimeCleanup.IndexRoles)
-    runner.run()
+    runner.runWithRuntimeLogging("build-index", sbt.Keys.name.value, log)
 
     val tmp = Files.createTempDirectory("sbt-idea-searchable-options-building-")
     try {

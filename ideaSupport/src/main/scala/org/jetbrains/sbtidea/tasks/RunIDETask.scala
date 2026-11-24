@@ -6,7 +6,7 @@ import org.jetbrains.sbtidea.runIdea.CustomIntellijVMOptions.DebugInfo
 import org.jetbrains.sbtidea.runIdea.IdeaRunner
 import org.jetbrains.sbtidea.{PluginLogger, SbtPluginLogger}
 import sbt.*
-import sbt.Keys.streams
+import sbt.Keys.{name, streams}
 
 import scala.annotation.nowarn
 
@@ -36,6 +36,6 @@ object RunIDETask extends SbtIdeaInputTask[Unit] {
       blocking = opts.contains("blocking"),
       discardOutput = false
     )
-    runner.run()
+    runner.runWithRuntimeLogging("development", name.value, new SbtPluginLogger(streams.value))
   }
 }

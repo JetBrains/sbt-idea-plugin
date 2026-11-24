@@ -386,7 +386,11 @@ trait Init { this: Keys.type =>
 
     // We need to fork tests to pass custom VM options
     Test / fork := true,
-    Test / forkOptions := (Test / forkOptions).dependsOn(prepareIntellijTestDirectories).value,
+    Test / forkOptions := {
+      val options = (Test / forkOptions).dependsOn(prepareIntellijTestDirectories).value
+      RuntimeDirectoryLog.report("tests", name.value, options.runJVMOptions, new SbtPluginLogger(streams.value))
+      options
+    },
 
     Test / customIntellijVMOptions := customIntellijVMOptions.value.copy(debugInfo = None),
 

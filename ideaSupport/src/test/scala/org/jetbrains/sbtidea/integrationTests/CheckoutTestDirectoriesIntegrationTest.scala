@@ -21,6 +21,44 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
   private val buildId = "IU-243.22562.145"
   private val directoryKeys = Seq("idea.system.path", "idea.config.path", "idea.log.path")
 
+  test("test preparation logs final JVM paths once while directory inspection stays quiet") {
+    val home = newTmpDir.toFile / "plugin home with spaces"
+    val project = prepareConsumer(home)
+    val inspected = runSbtProcess(Seq("dumpPaths"), project,
+      ioMode = SbtProjectFilesUtils.IoMode.PrintAndCollectOutput).outputLines
+      .getOrElse(fail(s"No captured directory-inspection output for $project")).mkString("\n")
+    inspected should not include "IntelliJ runtime ("
+    assertFileDoesNotExist(CheckoutRuntimeDirectories(home.toPath, project).tests(buildId).system.toFile)
+
+    val configuredSystem = home / "configured system"
+    val config = home / "explicit config"
+    val finalSystem = home / "final JVM system"
+    val finalLog = home / "final JVM logs"
+    IO.append(project / "extra.sbt", s"""
+      |ThisBuild / intellijDevUseSharedDirectories := true
+      |ThisBuild / intellijRuntimeBuildId := sys.error("logging must not resolve SDK identity")
+      |ThisBuild / intellijTestSystemDir := file(${quote(configuredSystem)})
+      |ThisBuild / intellijTestConfigDir := file(${quote(config)})
+      |Test / javaOptions ++= Seq("-Didea.system.path=" + ${quote(finalSystem)}, "-Didea.log.path=" + ${quote(finalLog)})
+      |""".stripMargin)
+    val lines = runSbtProcess(Seq("probe"), project,
+      ioMode = SbtProjectFilesUtils.IoMode.PrintAndCollectOutput).outputLines
+      .getOrElse(fail(s"No captured test-fork output for $project"))
+    val output = lines.mkString("\n")
+    withClue("One test-fork preparation must print one summary: ") {
+      lines.count(_.contains("IntelliJ runtime (tests, root)")) shouldBe 1
+    }
+    val actual = readProperties(project / "observed.properties")
+    Seq("System" -> "idea.system.path", "Config" -> "idea.config.path", "Logs" -> "idea.log.path").foreach {
+      case (label, key) => output should include(s"$label: ${actual.getProperty(key)}")
+    }
+    assertProperty(actual, "idea.system.path", finalSystem.getAbsolutePath, "Summary must reflect final javaOptions")
+    assertProperty(actual, "idea.config.path", config.getAbsolutePath, "Independent config override must be retained")
+    assertProperty(actual, "idea.log.path", finalLog.getAbsolutePath, "Independent final log override must be retained")
+    assertFileDoesNotExist(configuredSystem)
+    Seq(config, finalSystem, finalLog).foreach(assertFileExists)
+  }
+
   test("independent checkouts share caches but use distinct test directories in concurrent forked JVMs and JUnit") {
     val home = newTmpDir.toFile / "shared plugin home"
     val sentinels = Seq("test-system", "test-config", "system", "config", "sdk/downloads", "sdk/243.22562.145/custom-plugins",

@@ -607,6 +607,22 @@ Regenerate IDEA configurations with `createIDEARunConfiguration` or an sbt refre
 the target build, runtime identity, directories, or sharing mode. Existing JUnit configurations may
 need to be recreated from the regenerated template.
 
+#### Runtime path logging
+
+During `runIDE`, standard sbt test-fork preparation, and searchable-options indexing, an INFO summary
+shows the selected launch paths, for example:
+
+```text
+[info] IntelliJ runtime (tests, my-plugin)
+[info]   System: /home/me/.ScalaPluginIU/runtime/IU-263.12345.67/a0f9d9b86d/tests/system
+[info]   Config: /home/me/.ScalaPluginIU/runtime/IU-263.12345.67/a0f9d9b86d/tests/config
+[info]   Logs: /home/me/.ScalaPluginIU/runtime/IU-263.12345.67/a0f9d9b86d/tests/system/log
+```
+
+The test summary reflects the final fork options, including `Test / javaOptions` overrides.
+Direct IDEA launches use the generated configurations and do not execute sbt's logging hooks.
+Inspecting directory keys does not print a launch summary.
+
 #### Existing data, markers, and cleanup
 
 Development configs start fresh by default. Existing untracked runtime data, including the earlier
