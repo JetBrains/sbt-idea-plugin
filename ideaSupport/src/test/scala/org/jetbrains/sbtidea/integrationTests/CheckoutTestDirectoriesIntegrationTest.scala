@@ -67,7 +67,7 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
     } finally executor.shutdown()
 
     Seq(first, second).foreach { project =>
-      assertProbeAndTemplateAgree(project, home, legacy = false)
+      assertProbeAndTemplateAgree(project, home)
       val dirs = CheckoutRuntimeDirectories(home.toPath, project).tests(buildId)
       Seq(dirs.system, dirs.config).foreach { dir =>
         val readme = dir.resolve("README.txt").toFile
@@ -95,7 +95,7 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
     assertFileContent(otherBuild.system.resolve("keep.txt").toFile, "keep")
   }
 
-  test("legacy VM options, scoped directory overrides, JUnit generation and cleanup use the same selected paths") {
+  test("scoped directory overrides, JUnit generation and cleanup use the same selected paths") {
     val home = newTmpDir.toFile / "plugin home"
     val project = prepareConsumer(home)
     val system = home / "explicit system"
@@ -105,8 +105,6 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
     IO.write(defaults.config.resolve("keep.txt").toFile, "keep")
     IO.append(project / "extra.sbt",
       s"""
-         |LocalRootProject / Test / useNewVmOptions := false
-         |LocalRootProject / useNewVmOptions := false
          |LocalRootProject / Test / intellijTestSystemDir := file(${quote(system)})
          |ThisBuild / intellijTestConfigDir := file(${quote(config)})
          |""".stripMargin)
@@ -115,7 +113,7 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
     val properties = readProperties(project / "settings.properties")
     assertProperty(properties, "idea.system.path", system.getAbsolutePath, s"Explicit test system override in $project")
     assertProperty(properties, "idea.config.path", config.getAbsolutePath, s"Explicit test config override in $project")
-    assertProbeAndTemplateAgree(project, home, legacy = true)
+    assertProbeAndTemplateAgree(project, home)
     assertFileDoesNotExist(system / "README.txt")
     assertFileDoesNotExist(config / "README.txt")
     assertFileDoesNotExist(defaults.system.resolve("README.txt").toFile)
@@ -158,7 +156,7 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
     assertProperty(secondPaths, "idea.system.path",
       (home / "runtime" / s"IU-$secondBuild" / CheckoutRuntimeDirectories(home.toPath, second).checkoutHash /
         "tests" / "system").getAbsolutePath, s"Installed SDK build must select the test path in $second")
-    Seq(first, second).foreach(assertProbeAndTemplateAgree(_, home, legacy = false))
+    Seq(first, second).foreach(assertProbeAndTemplateAgree(_, home))
 
     runSbtProcess(Seq("set ThisBuild / intellijDevUseSharedDirectories := false") ++ commands,
       first, vmOptions = Seq("-Dsbtidea.dev.sharedDirectories=true"))
@@ -167,7 +165,7 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
     assertProperty(isolated, "sharing", "false", isolatedContext)
     assertProperty(isolated, "dev.system", CheckoutRuntimeDirectories(home.toPath, first).dev(buildId).system.toString, isolatedContext)
     assertProperty(isolated, "client.config", CheckoutRuntimeDirectories(home.toPath, first).devClient(buildId).config.toString, isolatedContext)
-    assertProbeAndTemplateAgree(first, home, legacy = false)
+    assertProbeAndTemplateAgree(first, home)
 
     val customDevSystem = home / "selected dev system"
     runSbtProcess(Seq("set ThisBuild / intellijDevUseSharedDirectories := true",
@@ -190,7 +188,7 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
       |ThisBuild / intellijRuntimeBuildId := "$customId"
       |""".stripMargin)
     runSbtProcess(Seq("dumpPaths", "createIDEARunConfiguration", "probe"), project)
-    assertProbeAndTemplateAgree(project, home, legacy = false)
+    assertProbeAndTemplateAgree(project, home)
     val paths = readProperties(project / "settings.properties")
     val resolver = CheckoutRuntimeDirectories(home.toPath, project)
     val context = s"Custom runtime build ID $customId in $project"
@@ -746,7 +744,7 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
     }
     assertProperty(readProperties(project / "child" / "settings.properties"), "idea.system.path",
       settings.getProperty("idea.system.path"), s"Subproject must inherit root test paths on sbt $minimumSbtVersion")
-    assertProbeAndTemplateAgree(project, home, legacy = false)
+    assertProbeAndTemplateAgree(project, home)
     withClue(s"Startup maintenance on sbt $minimumSbtVersion must delete the expired test system directory: ") {
       assertFileDoesNotExist(old.system.toFile)
     }
@@ -776,7 +774,7 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
     assertProperty(paths, "idea.system.path", explicitSystem.getAbsolutePath, context)
     assertProperty(paths, "dev.system", (home / "runtime" / "system-shared").getAbsolutePath, context)
     assertProperty(paths, "idea.config.path", CheckoutRuntimeDirectories(home.toPath, project).tests(customId).config.toString, context)
-    assertProbeAndTemplateAgree(project, home, legacy = false)
+    assertProbeAndTemplateAgree(project, home)
     assertFileDoesNotExist(explicitSystem / "README.txt")
     val changed = readProperties(registry.marker(project.toPath, customId).toFile)
     assertProperty(changed, "test.system", null, s"Explicit system override must not be registered for $customId in $project")
@@ -808,21 +806,25 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
     project
   }
 
-  private def assertProbeAndTemplateAgree(project: File, home: File, legacy: Boolean): Unit = withClue(
-    s"Runtime outputs for checkout $project (legacy VM options: $legacy):\n") {
+  private def assertProbeAndTemplateAgree(project: File, home: File): Unit = withClue(
+    s"Runtime outputs for checkout $project:\n") {
     val settings = readProperties(project / "settings.properties")
     val observed = readProperties(project / "observed.properties")
     directoryKeys.foreach { key =>
       assertProperty(observed, key, settings.getProperty(key), "Forked JVM must use the resolved directory")
     }
-    assertProperty(observed, "scope.marker", if (legacy) "legacy-test" else "test", "Forked JVM must retain test VM options")
-    if (!legacy) assertProperty(observed, "product.marker", "retained", "Forked JVM must retain SDK VM options")
+    assertProperty(observed, "scope.marker", "test", "Forked JVM must retain test VM options")
+    assertProperty(observed, "product.marker", "retained", "Forked JVM must retain SDK VM options")
     assertProperty(settings, "sdk", (home / "sdk" / "243.22562.145").getAbsolutePath, "Runtime isolation must preserve the SDK location")
     assertProperty(settings, "downloads", (home / "sdk" / "downloads").getAbsolutePath, "Runtime isolation must preserve the download cache location")
     assertProperty(observed, "idea.plugins.path", (home / "sdk" / "243.22562.145" / "custom-plugins").getAbsolutePath,
       "Forked JVM must use SDK-scoped installed plugins")
 
     val configs = project / ".idea" / "runConfigurations"
+    withClue(s"Generated configurations in $configs must match the requested development and test launches: ") {
+      configs.listFiles().iterator.map(_.getName).filter(_.endsWith(".xml")).toSet shouldBe
+        Set("root.xml", "root (split mode).xml", "_template__of_JUnit.xml")
+    }
     val argfile = configs / "junit_template_argfile.txt"
     val lines = IO.readLines(argfile)
     directoryKeys.foreach { key =>
@@ -831,7 +833,7 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
       }
     }
     withClue(s"JUnit argument file $argfile must retain test VM options: ") {
-      lines should contain(s"-Dscope.marker=${if (legacy) "legacy-test" else "test"}")
+      lines should contain("-Dscope.marker=test")
     }
     val junitTemplate = configs / "_template__of_JUnit.xml"
     val xml = XML.loadFile(junitTemplate)

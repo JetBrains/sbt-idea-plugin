@@ -25,7 +25,7 @@ class IdeaRunner(
 
     //vm options
     builder ++= List("-cp", productInfoExtraDataProvider.bootClasspathJars.mkString(File.pathSeparator))
-    builder += IntellijVMOptions.USE_PATH_CLASS_LOADER
+    builder += IntellijVMOptionsBuilder.PathClassLoaderOption
     builder ++= vmOptionsBuilder.build(
       vmOptions = vmOptions,
       forTests = false,

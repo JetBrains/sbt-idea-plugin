@@ -4,26 +4,18 @@ import org.jetbrains.sbtidea.IntelliJPlatform.Idea
 import org.jetbrains.sbtidea.productInfo.{Launch, OS, ProductInfoExtraDataProvider}
 import org.jetbrains.sbtidea.runIdea.CustomIntellijVMOptions.DebugInfo
 import org.jetbrains.sbtidea.runIdea.IntellijVMOptionsBuilder.VmOptions
-import org.jetbrains.sbtidea.runIdea.{CustomIntellijVMOptions, IntellijVMOptions, IntellijVMOptionsBuilder}
+import org.jetbrains.sbtidea.runIdea.{CustomIntellijVMOptions, IntellijVMOptionsBuilder}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 import java.io.File
 import java.nio.file.{Path, Paths}
-import scala.annotation.nowarn
 
 class IdeaVmOptionsTest extends AnyFunSuite with Matchers {
 
   private val extraVmOptions = Seq("-Dkey1=value", "-Dkey2=\"value\"")
 
   private val mockIntellijBaseDir: Path = Paths.get("test non-existent intellijDirectory")
-
-  private val oldVmOptions = VmOptions.Old(IntellijVMOptions(
-    platform = Idea,
-    pluginPath = Paths.get("foo bar"),
-    ideaHome = Paths.get("bar baz"),
-    intellijDirectory = mockIntellijBaseDir
-  ).withOptions(extraVmOptions): @nowarn("cat=deprecation"))
 
   private val newVmOptions = VmOptions.New(CustomIntellijVMOptions(
     xmx = Some(1024),
@@ -71,7 +63,6 @@ class IdeaVmOptionsTest extends AnyFunSuite with Matchers {
   }
 
   private val vmOptionsBuilderNew = vmOptionsBuilder(true)
-  private val vmOptionsBuilderLegacy = vmOptionsBuilder(false)
 
   private val Q = "&quot;"
 
@@ -100,57 +91,44 @@ class IdeaVmOptionsTest extends AnyFunSuite with Matchers {
     }
   }
 
-  test("paths are quoted in xml version (legacy)") {
-    val asSeq = vmOptionsBuilderLegacy.build(oldVmOptions, forTests = false, quoteValues = true)
-    val quotedKeys = asSeq.filter(s => mustBeQuoted.exists(s.contains(_)))
-    quotedKeys.size shouldBe mustBeQuoted.size
-    quotedKeys.foreach { option =>
-      option should endWith regex s"=$Q.+$Q$$"
-    }
+  test("development options normalize selected system/config/log paths") {
+    assertRuntimeDirectories(purpose = "dev")
   }
 
-  test("paths are NOT quoted in SBT version (legacy)") {
-    val asSeq = vmOptionsBuilderLegacy.build(oldVmOptions, forTests = false, quoteValues = false)
-    val quotedKeys = asSeq.filter(s => mustBeQuoted.exists(s.contains(_)))
-    quotedKeys.size shouldBe mustBeQuoted.size
-    quotedKeys.foreach { option =>
-      option shouldNot endWith regex s"=$Q.+$Q$$"
-    }
+  test("indexing options normalize selected system/config/log paths") {
+    assertRuntimeDirectories(purpose = "build-index")
   }
 
-  for ((label, vmOptions) <- Seq("current" -> newVmOptions, "legacy" -> oldVmOptions)) {
-    for (purpose <- Seq("dev", "build-index")) {
-      test(s"$label $purpose options normalize selected system/config/log paths") {
-        val dirs = CheckoutRuntimeDirectories(java.nio.file.Paths.get("plugin home"), new File("/checkout"))
-        val selected = if (purpose == "dev") dirs.dev("IU-263.12345.67") else dirs.buildIndex("IU-263.12345.67")
-        val builder = vmOptionsBuilderNew.withRuntimeDirectories(selected)
-        val conflicting = vmOptions.withExtraOptions(Seq(
-          "-Didea.system.path=stale", "-Didea.config.path=stale", "-Didea.log.path=stale", "-Dretained=yes"))
-        val actual = builder.build(conflicting, forTests = false, quoteValues = false)
-        actual.filter(IntellijTestRuntimeDirectories.isIntellijDirectoryOption) shouldBe selected.jvmOptions
-        actual should contain("-Dretained=yes")
-        actual should contain("-Dplugin.path=foo bar")
-        builder.buildQuotedNoEscapeXml(conflicting, forTests = false) should contain(
-          s"""-Didea.config.path="${selected.config}"""")
-      }
-    }
-    test(s"$label test options use resolved directories and retain unrelated options") {
-      val dirs = IntellijTestRuntimeDirectories.RuntimeDirectories(
-        Paths.get("custom system"), Paths.get("custom config"), Paths.get("custom system/log"))
-      val builder = vmOptionsBuilderNew.copy(testRuntimeDirectories = Some(dirs))
-      val withStalePaths = vmOptions.withExtraOptions(Seq(
-        "-Didea.system.path=stale", "-Didea.config.path=stale", "-Didea.log.path=stale", "-Dother.option=kept"))
-      val actual = builder.build(withStalePaths, forTests = true, quoteValues = false)
-      actual.filter(IntellijTestRuntimeDirectories.isIntellijDirectoryOption) shouldBe dirs.jvmOptions
-      actual should contain("-Dother.option=kept")
-      actual should contain("-Dkey1=value")
-      actual.filterNot(IntellijTestRuntimeDirectories.isIntellijDirectoryOption) shouldBe
-        vmOptionsBuilderNew.build(withStalePaths, forTests = true, quoteValues = false)
-          .filterNot(IntellijTestRuntimeDirectories.isIntellijDirectoryOption)
-      builder.buildQuotedNoEscapeXml(withStalePaths, forTests = true) should contain("-Didea.system.path=\"custom system\"")
-      builder.build(withStalePaths, forTests = true, quoteValues = true) should contain("-Didea.config.path=&quot;custom config&quot;")
-      builder.build(vmOptions, forTests = false, quoteValues = false) shouldBe
-        vmOptionsBuilderNew.build(vmOptions, forTests = false, quoteValues = false)
-    }
+  test("test options use resolved directories and retain unrelated options") {
+    val dirs = IntellijTestRuntimeDirectories.RuntimeDirectories(
+      Paths.get("custom system"), Paths.get("custom config"), Paths.get("custom system/log"))
+    val builder = vmOptionsBuilderNew.copy(testRuntimeDirectories = Some(dirs))
+    val withStalePaths = newVmOptions.withExtraOptions(Seq(
+      "-Didea.system.path=stale", "-Didea.config.path=stale", "-Didea.log.path=stale", "-Dother.option=kept"))
+    val actual = builder.build(withStalePaths, forTests = true, quoteValues = false)
+    actual.filter(IntellijTestRuntimeDirectories.isIntellijDirectoryOption) shouldBe dirs.jvmOptions
+    actual should contain("-Dother.option=kept")
+    actual should contain("-Dkey1=value")
+    actual.filterNot(IntellijTestRuntimeDirectories.isIntellijDirectoryOption) shouldBe
+      vmOptionsBuilderNew.build(withStalePaths, forTests = true, quoteValues = false)
+        .filterNot(IntellijTestRuntimeDirectories.isIntellijDirectoryOption)
+    builder.buildQuotedNoEscapeXml(withStalePaths, forTests = true) should contain("-Didea.system.path=\"custom system\"")
+    builder.build(withStalePaths, forTests = true, quoteValues = true) should contain("-Didea.config.path=&quot;custom config&quot;")
+    builder.build(newVmOptions, forTests = false, quoteValues = false) shouldBe
+      vmOptionsBuilderNew.build(newVmOptions, forTests = false, quoteValues = false)
+  }
+
+  private def assertRuntimeDirectories(purpose: String): Unit = {
+    val dirs = CheckoutRuntimeDirectories(Paths.get("plugin home"), new File("/checkout"))
+    val selected = if (purpose == "dev") dirs.dev("IU-263.12345.67") else dirs.buildIndex("IU-263.12345.67")
+    val builder = vmOptionsBuilderNew.withRuntimeDirectories(selected)
+    val conflicting = newVmOptions.withExtraOptions(Seq(
+      "-Didea.system.path=stale", "-Didea.config.path=stale", "-Didea.log.path=stale", "-Dretained=yes"))
+    val actual = builder.build(conflicting, forTests = false, quoteValues = false)
+    actual.filter(IntellijTestRuntimeDirectories.isIntellijDirectoryOption) shouldBe selected.jvmOptions
+    actual should contain("-Dretained=yes")
+    actual should contain("-Dplugin.path=foo bar")
+    builder.buildQuotedNoEscapeXml(conflicting, forTests = false) should contain(
+      s"""-Didea.config.path="${selected.config}"""")
   }
 }

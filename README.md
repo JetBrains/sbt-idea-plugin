@@ -220,10 +220,10 @@ customIntellijVMOptions := customIntellijVMOptions.value
   .withExtraOption("-Didea.properties.file=/absolute/path/to/idea.properties")
 ```
 
-#### `intellijVMOptions :: SettingKey[IntellijVMOptions]`
-
-Deprecated. This key is ignored by default and only applies when `useNewVmOptions := false`.
-Use [`customIntellijVMOptions`](#customintellijvmoptions--settingkeycustomintellijvmoptions) for new code.
+The deprecated `intellijVMOptions` and `useNewVmOptions` keys and `IntellijVMOptions` type have
+been removed. Migrate build definitions to `customIntellijVMOptions`: use `Some(...)` for heap-size
+overrides and `withExtraOption` / `withExtraOptions` for additional JVM arguments. Regenerate IDEA
+run configurations after updating the build definition.
 
 #### `ideaConfigOptions :: SettingKey[IdeaConfigBuildingOptions]`
 
@@ -566,10 +566,9 @@ These `TaskKey[File]` keys select exact paths independently:
 | Development backend | `intellijDevSystemDir` | `intellijDevConfigDir` |
 | Split-mode frontend | `intellijDevClientSystemDir` | `intellijDevClientConfigDir` |
 
-The current and legacy VM-option builders use the directory keys, with logs under the selected
-system directory's `log/`, overriding conflicting properties in `customIntellijVMOptions` or
-`intellijVMOptions`. Fully explicit directory overrides avoid the build-identity dependency for
-those paths.
+The VM-option builder uses the directory keys, with logs under the selected system directory's
+`log/`, overriding conflicting properties in `customIntellijVMOptions`. Fully explicit directory
+overrides avoid the build-identity dependency for those paths.
 
 Lower-level sbt overrides remain available, for example:
 

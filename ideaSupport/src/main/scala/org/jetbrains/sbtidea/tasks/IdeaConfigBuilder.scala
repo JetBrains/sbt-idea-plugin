@@ -7,11 +7,10 @@ import org.jetbrains.sbtidea.PluginLogger as log
 import org.jetbrains.sbtidea.packaging.hasProdTestSeparationEnabled
 import org.jetbrains.sbtidea.productInfo.ProductInfoExtraDataProvider
 import org.jetbrains.sbtidea.runIdea.IntellijVMOptionsBuilder.VmOptions
-import org.jetbrains.sbtidea.runIdea.{CustomIntellijVMOptions, IntellijAwareRunner, IntellijVMOptions, IntellijVMOptionsBuilder}
+import org.jetbrains.sbtidea.runIdea.{CustomIntellijVMOptions, IntellijAwareRunner, IntellijVMOptionsBuilder}
 import sbt.*
 
 import java.io.File
-import scala.annotation.nowarn
 
 /**
  * The class is responsible to create all Run Configurations required for the plugin development.
@@ -36,21 +35,11 @@ class IdeaConfigBuilder(
   testClasspath: Seq[String],
 
   runIntellijVMOptions: CustomIntellijVMOptions,
-  //noinspection ScalaDeprecation
-  @nowarn("cat=deprecation")
-  runLegacyIntellijVMOptions: IntellijVMOptions,
-
   testIntellijVMOptions: CustomIntellijVMOptions,
-  //noinspection ScalaDeprecation
-  @nowarn("cat=deprecation")
-  testLegacyIntellijVMOptions: IntellijVMOptions,
-
   intellijVMOptionsBuilder: IntellijVMOptionsBuilder,
-  useNewVmOptions: Boolean,
 
   productInfoExtraDataProvider: ProductInfoExtraDataProvider,
   options: IdeaConfigBuildingOptions,
-  testUseNewVmOptions: Option[Boolean] = None,
   testIntellijVMOptionsBuilder: Option[IntellijVMOptionsBuilder] = None,
   clientRuntimeDirectories: Option[RuntimeDirectories] = None,
 ) {
@@ -58,15 +47,8 @@ class IdeaConfigBuilder(
 
   private val artifactName = projectName
 
-  private val runVmOptions: VmOptions = if (useNewVmOptions)
-    VmOptions.New(runIntellijVMOptions)
-  else
-    VmOptions.Old(runLegacyIntellijVMOptions)
-
-  private val testVmOptions: VmOptions = if (testUseNewVmOptions.getOrElse(useNewVmOptions))
-    VmOptions.New(testIntellijVMOptions)
-  else
-    VmOptions.Old(testLegacyIntellijVMOptions)
+  private val runVmOptions: VmOptions = VmOptions.New(runIntellijVMOptions)
+  private val testVmOptions: VmOptions = VmOptions.New(testIntellijVMOptions)
 
   def build(): Unit = {
     if (options.generateDefaultRunConfig) {
@@ -79,20 +61,6 @@ class IdeaConfigBuilder(
       )
       writeToFile(runConfigDir / s"$configurationName.xml", content)
 
-      if (useNewVmOptions) {
-        // Generate run configuration with the old versions for convenience
-        // If there are any issues with the new version, we could quickly try the old configuration during
-        // local development without changing value of `org.jetbrains.sbtidea.Keys.useNewVmOptions` and reloading
-        // TODO: drop this after some time (in ~1 month?) if there are no issues identified in the default run configuration
-        val configurationName = artifactName + " (old VM options)"
-        val content = buildRunConfigurationXML(
-          configurationName = configurationName,
-          vmOptions = VmOptions.Old(runLegacyIntellijVMOptions),
-          programParams = options.programParams,
-          envVars = options.ideaRunEnv,
-        )
-        writeToFile(runConfigDir / s"$configurationName.xml", content)
-      }
     }
 
     options.additionalRunConfigs.foreach { data: AdditionalRunConfigData =>
@@ -257,7 +225,7 @@ class IdeaConfigBuilder(
       quoteValues = true,
       forTests = false,
     )
-    s"""${IntellijVMOptions.USE_PATH_CLASS_LOADER} -cp &quot;$bootClasspathString&quot; ${vmOptionsSeq.mkString(" ")}"""
+    s"""${IntellijVMOptionsBuilder.PathClassLoaderOption} -cp &quot;$bootClasspathString&quot; ${vmOptionsSeq.mkString(" ")}"""
   }
 
   private def generateModuleName(sourceSetModuleSuffix: String): String =

@@ -28,12 +28,8 @@ lazy val commonSettings = Seq(
   Test / classDirectory := (ThisBuild / baseDirectory).value / "probe classes",
   customIntellijVMOptions := customIntellijVMOptions.value.withExtraOptions(Seq(
     "-Didea.system.path=stale", "-Didea.config.path=stale", "-Didea.log.path=stale")),
-  intellijVMOptions := intellijVMOptions.value.withOptions(Seq(
-    "-Didea.system.path=stale", "-Didea.config.path=stale", "-Didea.log.path=stale")),
   Test / customIntellijVMOptions := (Test / customIntellijVMOptions).value
     .withExtraOptions(Seq("-Dscope.marker=test", "-Didea.system.path=stale", "-Didea.config.path=stale", "-Didea.log.path=stale")),
-  Test / intellijVMOptions := (Test / intellijVMOptions).value
-    .withOptions(Seq("-Dscope.marker=legacy-test", "-Didea.system.path=stale", "-Didea.config.path=stale", "-Didea.log.path=stale")),
   probe := {
     val opts = (Test / forkOptions).value
     val output = baseDirectory.value / "observed.properties"
@@ -66,8 +62,7 @@ lazy val commonSettings = Seq(
     properties.setProperty("sharing", intellijDevUseSharedDirectories.value.toString)
     Seq("dev" -> devBuilder.value, "index" -> baseBuilder.value.withRuntimeDirectories(indexDirectories.value))
       .foreach { case (prefix, builder) =>
-        val options = RuntimeOptionsProbe.build(builder, useNewVmOptions.value,
-          customIntellijVMOptions.value, intellijVMOptions.value)
+        val options = RuntimeOptionsProbe.build(builder, customIntellijVMOptions.value)
         Seq("idea.system.path", "idea.config.path", "idea.log.path").foreach { key =>
           val matches = options.filter(_.startsWith("-D" + key + "="))
           require(matches.size == 1, s"Duplicate or missing $key: $matches")

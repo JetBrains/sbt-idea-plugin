@@ -9,8 +9,6 @@ import org.jetbrains.sbtidea.{PluginLogger, SbtPluginLogger}
 import sbt.Keys.*
 import sbt.{Def, *}
 
-import scala.annotation.nowarn
-
 private[sbtidea]
 object GenerateIdeaRunConfigurations extends SbtIdeaTask[Unit] {
   override def createTask: Def.Initialize[Task[Unit]] = Def.taskDyn {
@@ -50,11 +48,6 @@ object GenerateIdeaRunConfigurations extends SbtIdeaTask[Unit] {
         val customVmOptions = customIntellijVMOptions.value.copy(debugInfo = None)
         val testCustomVmOptions = (Test / customIntellijVMOptions).value.copy(debugInfo = None)
 
-        //noinspection ScalaDeprecation (workaround for SCL-25104)
-        val legacyVmOptions = intellijVMOptions.value.copy(debug = false): @nowarn("cat=deprecation")
-        //noinspection ScalaDeprecation (workaround for SCL-25104)
-        val legacyTestVmOptions = (Test / intellijVMOptions).value.copy(debug = false): @nowarn("cat=deprecation")
-
         val dotIdeaFolder = baseDirectory.in(ThisBuild).value / ".idea"
         val sbtRunEnv = envVars.value
         val sbtTestEnv = envVars.in(Test).value
@@ -72,12 +65,8 @@ object GenerateIdeaRunConfigurations extends SbtIdeaTask[Unit] {
           testClasspath = testInputs.toSeq.flatMap(_.classpath),
 
           runIntellijVMOptions = customVmOptions,
-          runLegacyIntellijVMOptions = legacyVmOptions,
           testIntellijVMOptions = testCustomVmOptions,
-          testLegacyIntellijVMOptions = legacyTestVmOptions,
           intellijVMOptionsBuilder = runBuilder.value,
-          useNewVmOptions = useNewVmOptions.value,
-          testUseNewVmOptions = Some((Test / useNewVmOptions).value),
           testIntellijVMOptionsBuilder = testInputs.map(_.vmOptionsBuilder),
           clientRuntimeDirectories = clientDirectories.value,
 

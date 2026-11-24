@@ -277,14 +277,7 @@ trait Init { this: Keys.type =>
     createIDEARunConfiguration := GenerateIdeaRunConfigurations.createTask.value,
     ideaConfigOptions := IdeaConfigBuildingOptions(),
 
-    useNewVmOptions := true,
     customIntellijVMOptions := CustomIntellijVMOptions(),
-    intellijVMOptions := IntellijVMOptions(
-      intellijPlatform.in(ThisBuild).value,
-      packageOutputDir.value.toPath,
-      intellijPluginDirectory.in(ThisBuild).value.toPath,
-      intellijBaseDirectory.in(ThisBuild).value.toPath
-    ): @nowarn("cat=deprecation"),
     baseIntellijVMOptionsBuilder := new IntellijVMOptionsBuilder(
       platform = (ThisBuild / intellijPlatform).value,
       productInfoExtraDataProvider = (ThisBuild / productInfoExtraDataProvider).value,
@@ -396,16 +389,12 @@ trait Init { this: Keys.type =>
     Test / fork := true,
     Test / forkOptions := (Test / forkOptions).dependsOn(prepareIntellijTestDirectories).value,
 
-    Test / intellijVMOptions := intellijVMOptions.value.copy(debug = false): @nowarn("cat=deprecation"),
     Test / customIntellijVMOptions := customIntellijVMOptions.value.copy(debugInfo = None),
 
     Test / javaOptions ++= {
       val intellijVMOptionsBuilder = Keys.intellijTestVMOptionsBuilder.value
 
-      val vmOptions: VmOptions = if ((Test / useNewVmOptions).value)
-        VmOptions.New((Test / customIntellijVMOptions).value)
-      else
-        VmOptions.Old((Test / intellijVMOptions).value): @nowarn("cat=deprecation")
+      val vmOptions: VmOptions = VmOptions.New((Test / customIntellijVMOptions).value)
 
       val testVmOptions = intellijVMOptionsBuilder.build(
         vmOptions = vmOptions,

@@ -143,16 +143,8 @@ object Keys extends Defns with Init with Utils with Quirks {
   lazy val patchPluginXml = settingKey[pluginXmlOptions](
     "Settings for patching plugin.xml")
 
-  @deprecated("Use customIntellijVMOptions. This key is not used by default and will be dropped in future releases. To temporary enable it please set `useNewVmOptions := false`")
-  lazy val intellijVMOptions = settingKey[IntellijVMOptions](
-    "Custom IntelliJ Platform JVM options used for running. The final list of all VM options is defined by IntellijVMOptionsBuilder")
-
   lazy val customIntellijVMOptions = settingKey[CustomIntellijVMOptions](
     "Custom IntelliJ Platform JVM options used for running. The final list of all VM options is defined by IntellijVMOptionsBuilder")
-
-  lazy val useNewVmOptions = settingKey[Boolean](
-    "When set to true, the IntellijVMOptionsBuilder will use CustomIntellijVMOptions instead of IntellijVMOptions and generate vm options in a new way"
-  )
 
   private[sbtidea] lazy val intellijVMOptionsBuilder = taskKey[IntellijVMOptionsBuilder](
     "See org.jetbrains.sbtidea.runIdea.IntellijVMOptionsBuilder",

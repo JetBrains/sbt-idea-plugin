@@ -21,7 +21,6 @@ object RunIDETask extends SbtIdeaInputTask[Unit] {
     val opts = spaceDelimited("[noDebug] [suspend] [blocking]").parsed
 
     val customVmOptions = customIntellijVMOptions.value
-    val legacyVmOptions = intellijVMOptions.value: @nowarn("cat=deprecation")
 
     val debugAgentInfoPatched = if (opts.contains("noDebug"))
       None
@@ -29,13 +28,7 @@ object RunIDETask extends SbtIdeaInputTask[Unit] {
       Some(customVmOptions.debugInfo.getOrElse(DebugInfo.Default).copy(suspend = opts.contains("suspend")))
 
 
-    val vmOptions: VmOptions = if (useNewVmOptions.value)
-      VmOptions.New(customIntellijVMOptions.value.copy(debugInfo = debugAgentInfoPatched))
-    else
-      VmOptions.Old(intellijVMOptions.value.copy(
-        debug = !opts.contains("noDebug"),
-        suspend = opts.contains("suspend")
-      )): @nowarn("cat=deprecation")
+    val vmOptions: VmOptions = VmOptions.New(customVmOptions.copy(debugInfo = debugAgentInfoPatched))
 
     val runner = new IdeaRunner(
       intellijBaseDirectory = intellijBaseDirectory.value.toPath,

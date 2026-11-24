@@ -99,8 +99,8 @@ and the key-type change is both source and binary incompatible for affected cons
 SDK-selection and custom VM-option settings as settings. Preserve the published explicit-ID
 `IntellijTestRuntimeDirectories.forRuntimeId` and `applyTo` APIs and their existing path semantics.
 
-Add independent task keys for development system/config and frontend system/config paths. Both
-current and legacy VM-option builders prefer directory keys over conflicting raw directory
+Add independent task keys for development system/config and frontend system/config paths. The
+VM-option builder prefers directory keys over conflicting raw directory
 properties. Lower-level sbt `Test / javaOptions` overrides remain available and can deliberately
 diverge from the directory keys, generated JUnit configurations, markers, and cleanup targets.
 Fully explicit directory overrides must avoid unnecessary identity dependencies.

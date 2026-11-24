@@ -1,6 +1,6 @@
 package org.jetbrains.sbtidea.searchableoptions
 
-import org.jetbrains.sbtidea.Keys.{baseIntellijVMOptionsBuilder, customIntellijVMOptions, initializeIntellijRuntimeMaintenance, intellijBaseDirectory, intellijBuildIndexDirectories, intellijRuntimeBuildId, intellijVMOptions, productInfoExtraDataProvider, runtimeMaintenance, useNewVmOptions}
+import org.jetbrains.sbtidea.Keys.{baseIntellijVMOptionsBuilder, customIntellijVMOptions, initializeIntellijRuntimeMaintenance, intellijBaseDirectory, intellijBuildIndexDirectories, intellijRuntimeBuildId, productInfoExtraDataProvider, runtimeMaintenance}
 import org.jetbrains.sbtidea.download.NioUtils
 import org.jetbrains.sbtidea.download.plugin.LocalPluginRegistry
 import org.jetbrains.sbtidea.packaging.*
@@ -14,7 +14,6 @@ import sbt.Keys.{streams, target}
 
 import java.nio.file.{Files, Path}
 import java.util.function.Predicate
-import scala.annotation.nowarn
 import scala.collection.JavaConverters.*
 import scala.util.Try
 
@@ -59,10 +58,7 @@ object BuildIndex {
         .flatMap(v => Try(v.toBoolean).toOption)
         .getOrElse(true)
 
-    val vmOptions: VmOptions = if (useNewVmOptions.value)
-      VmOptions.New(customIntellijVMOptions.value)
-    else
-      VmOptions.Old(intellijVMOptions.value): @nowarn("cat=deprecation")
+    val vmOptions: VmOptions = VmOptions.New(customIntellijVMOptions.value)
 
     val vmOptionsUpdated =
       vmOptions.withExtraOption("-Didea.l10n.keys=only")

@@ -2,16 +2,12 @@ package org.jetbrains.sbtidea.runIdea
 
 import org.jetbrains.sbtidea.*
 import org.jetbrains.sbtidea.download.api.IdeInstallationContext
-import org.jetbrains.sbtidea.download.{IntelliJVersionDetector, Version}
 import org.jetbrains.sbtidea.productInfo.ProductInfoExtraDataProvider
 import org.jetbrains.sbtidea.runIdea.CustomIntellijVMOptions.DebugInfo
-import org.jetbrains.sbtidea.runIdea.IntellijVMOptionsBuilder.{VmOptions, buildOld}
-import sbt.pathToPathOps
+import org.jetbrains.sbtidea.runIdea.IntellijVMOptionsBuilder.VmOptions
 
 import java.nio.file.Path
-import scala.annotation.nowarn
 import scala.collection.mutable
-import scala.math.Ordered.orderingToOrdered
 
 /**
  * The class is responsible for constructing the list of VM options passed to the dev IDE process or to tests.
@@ -79,8 +75,6 @@ final case class IntellijVMOptionsBuilder(
     val options = vmOptions match {
       case VmOptions.New(options) =>
         buildNew(options, quoteValues, escapeXml, forTests)
-      case VmOptions.Old(options) =>
-        buildOld(options, quoteValues, escapeXml, forTests)
     }
     val selectedDirectories = if (forTests) testRuntimeDirectories else devRuntimeDirectories
     if (selectedDirectories.nonEmpty) {
@@ -206,88 +200,17 @@ final case class IntellijVMOptionsBuilder(
 private[sbtidea]
 object IntellijVMOptionsBuilder {
 
-  private def buildOld(
-    @nowarn("cat=deprecation")
-    options: IntellijVMOptions,
-    quoteValues: Boolean,
-    escapeXml: Boolean,
-    forTests: Boolean
-  ): Seq[String] = {
-    import options.*
+  val PathClassLoaderOption = "-Djava.system.class.loader=com.intellij.util.lang.PathClassLoader"
 
-    val intellijVersion = IntelliJVersionDetector.detectIntellijVersion(intellijDirectory.toFile)
-
-    def OQ(str: String): String =
-      if (quoteValues) {
-        if (escapeXml) str.xmlQuote else "\"" + str + "\""
-      } else str
-
-    val buffer = new mutable.ArrayBuffer[String]()
-    buffer ++= defaultOptions
-
-    val jnaFolderName = System.getProperty("os.arch") match {
-      case "aarch64" => "aarch64"
-      case _ => "amd64" //currently there are only two possible folders in `lib/jna`
-    }
-
-    //if the version is not detected, assume as if it's the latest
-    if (intellijVersion.forall(_ > Version("223.6160"))) {
-      val pty4jFolderPath = (intellijDirectory / "lib/pty4j").toString.replace("\\", "/")
-      val jnaFolderPath = (intellijDirectory / "lib/jna" / jnaFolderName).toString.replace("\\", "/")
-      buffer += s"-Dpty4j.preferred.native.folder=${OQ(pty4jFolderPath)}"
-      buffer += s"-Djna.boot.library.path=${OQ(jnaFolderPath)}"
-      buffer += s"-Djna.nounpack=true"
-      buffer += s"-Djna.nosys=true"
-    }
-
-    buffer += s"-Xms${xms}m"
-    buffer += s"-Xmx${xmx}m"
-    buffer += s"-XX:ReservedCodeCacheSize=${reservedCodeCacheSize}m"
-    buffer += s"-XX:SoftRefLRUPolicyMSPerMB=$softRefLRUPolicyMSPerMB"
-    buffer += gc
-    buffer += gcOpt
-    val (system, config) =
-      if (forTests) (ideaHome.resolve("test-system"), ideaHome.resolve("test-config"))
-      else (ideaHome.resolve("system"), ideaHome.resolve("config"))
-    buffer += s"-Didea.system.path=${OQ(system.toString)}"
-    buffer += s"-Didea.config.path=${OQ(config.toString)}"
-    val customPlugins = intellijDirectory.resolve(IdeInstallationContext.customPluginsDirName)
-    buffer += s"-Didea.plugins.path=${OQ(customPlugins.toString)}"
-    buffer += s"-Dplugin.path=${OQ(pluginPath.toString)}"
-    if (forTests) {
-      buffer += "-Didea.use.core.classloader.for.plugin.path=true"
-      buffer += "-Didea.force.use.core.classloader=true"
-    }
-    if (!forTests)
-      buffer += "-Didea.is.internal=true"
-    if (debug) {
-      val suspendValue = if (suspend) "y" else "n"
-      buffer += s"-agentlib:jdwp=transport=dt_socket,server=y,suspend=$suspendValue,address=$debugPort"
-    }
-    val platformPrefix = platform.platformPrefix
-    if (platformPrefix.nonEmpty)
-      buffer += s"-Didea.platform.prefix=$platformPrefix"
-    // Set log level to warning explicitly, as 262+ IDEs disable it by default
-    buffer += "-Dintellij.console.log.level=warning"
-    buffer
-  }
-
-  /**
-   * TODO: remove this temporary wrapper when the deprecated [[IntellijVMOptions]] is not dropped completely
-   */
   sealed trait VmOptions {
     def withExtraOption(option: String): VmOptions = this match {
       case VmOptions.New(extraOption) => VmOptions.New(extraOption.withExtraOption(option))
-      case VmOptions.Old(extraOption) => VmOptions.Old(extraOption.withOption(option))
     }
     def withExtraOptions(extraOptions: Seq[String]): VmOptions = this match {
       case VmOptions.New(options) => VmOptions.New(options.withExtraOptions(extraOptions))
-      case VmOptions.Old(options) => VmOptions.Old(options.withOptions(extraOptions))
     }
   }
   object VmOptions {
     case class New(options: CustomIntellijVMOptions) extends VmOptions
-    @nowarn("cat=deprecation")
-    case class Old(options: IntellijVMOptions) extends VmOptions
   }
 }
