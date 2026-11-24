@@ -21,7 +21,7 @@ private[sbtidea] object RuntimeDirectoryLog {
    * }}}
    */
   def report(
-    purpose: String,
+    purpose: RuntimePurpose,
     project: String,
     jvmOptions: Seq[String],
     logger: PluginLogger,
@@ -30,7 +30,7 @@ private[sbtidea] object RuntimeDirectoryLog {
     val selected = jvmOptions.iterator.flatMap(parseDirectoryProperty).toMap
 
     if (selected.nonEmpty) {
-      logger.info(s"IntelliJ runtime ($purpose, $project)")
+      logger.info(s"IntelliJ runtime (${purpose.displayName}, $project)")
       propertyPrefixes.foreach { case (_, label) =>
         logger.info(s"  $label: ${selected.getOrElse(label, "not set (IDE default)")}")
       }

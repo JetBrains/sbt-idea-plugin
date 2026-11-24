@@ -1,7 +1,7 @@
 package org.jetbrains.sbtidea.runIdea
 
 import org.jetbrains.sbtidea.productInfo.ProductInfoExtraDataProvider
-import org.jetbrains.sbtidea.{PluginLogger, RuntimeDirectoryLog}
+import org.jetbrains.sbtidea.{PluginLogger, RuntimeDirectoryLog, RuntimePurpose}
 
 import java.io.File
 import java.nio.file.Path
@@ -36,7 +36,11 @@ class IdeaRunner(
     IdeaRunner.PreparedLaunch(classpathOptions ++ configuredVmOptions, IdeaRunner.IdeaMainClass, programArguments)
   }
 
-  private[sbtidea] def runWithRuntimeLogging(purpose: String, project: String, logger: PluginLogger): Int = {
+  private[sbtidea] def runWithRuntimeLogging(
+    purpose: RuntimePurpose,
+    project: String,
+    logger: PluginLogger,
+  ): Int = {
     val launch = prepareLaunch()
     runCommand(
       command = buildCommand(launch.arguments),

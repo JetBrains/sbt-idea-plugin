@@ -4,7 +4,7 @@ import org.jetbrains.sbtidea.Keys.*
 import org.jetbrains.sbtidea.packaging.PackagingKeys.packageArtifact
 import org.jetbrains.sbtidea.runIdea.CustomIntellijVMOptions.DebugInfo
 import org.jetbrains.sbtidea.runIdea.IdeaRunner
-import org.jetbrains.sbtidea.{PluginLogger, SbtPluginLogger}
+import org.jetbrains.sbtidea.{PluginLogger, RuntimePurpose, SbtPluginLogger}
 import sbt.*
 import sbt.Keys.{name, streams}
 
@@ -36,6 +36,6 @@ object RunIDETask extends SbtIdeaInputTask[Unit] {
       blocking = opts.contains("blocking"),
       discardOutput = false
     )
-    runner.runWithRuntimeLogging("development", name.value, new SbtPluginLogger(streams.value))
+    runner.runWithRuntimeLogging(RuntimePurpose.RunIDE, name.value, new SbtPluginLogger(streams.value))
   }
 }

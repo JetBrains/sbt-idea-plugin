@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers
 class RuntimeDirectoryLogTest extends AnyFunSuite with Matchers {
   test("report only directory properties, using the final assignment and preserving spaces and literal quotes") {
     val output = CapturingLogger.captureLog {
-      RuntimeDirectoryLog.report("tests", "my-plugin", Seq(
+      RuntimeDirectoryLog.report(RuntimePurpose.Tests, "my-plugin", Seq(
         "-Didea.system.path=old", "-Dprivate.token=do-not-log",
         "-Didea.config.path=\"/path with spaces/config\"",
         "-Didea.system.path=/path with spaces/system=custom",
@@ -23,10 +23,10 @@ class RuntimeDirectoryLogTest extends AnyFunSuite with Matchers {
 
   test("missing properties are explicit and a non-IntelliJ fork remains quiet") {
     CapturingLogger.captureLog {
-      RuntimeDirectoryLog.report("tests", "root", Seq("-Xmx512m"), PluginLogger)
+      RuntimeDirectoryLog.report(RuntimePurpose.Tests, "root", Seq("-Xmx512m"), PluginLogger)
     } shouldBe empty
     val output = CapturingLogger.captureLog {
-      RuntimeDirectoryLog.report("tests", "root", Seq("-Didea.system.path=/system"), PluginLogger)
+      RuntimeDirectoryLog.report(RuntimePurpose.Tests, "root", Seq("-Didea.system.path=/system"), PluginLogger)
     }
     output should contain("[info]   Config: not set (IDE default)")
     output should contain("[info]   Logs: not set (IDE default)")

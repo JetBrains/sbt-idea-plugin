@@ -3,7 +3,7 @@ package org.jetbrains.sbtidea.runIdea
 import org.jetbrains.sbtidea.IntellijTestRuntimeDirectories.RuntimeDirectories
 import org.jetbrains.sbtidea.download.jbr.JbrInstaller
 import org.jetbrains.sbtidea.productInfo.ProductInfoExtraDataProvider
-import org.jetbrains.sbtidea.{CapturingLogger, IntelliJPlatform, IntellijTestRuntimeDirectories, PluginLogger, TmpDirUtils}
+import org.jetbrains.sbtidea.{CapturingLogger, IntelliJPlatform, IntellijTestRuntimeDirectories, PluginLogger, RuntimePurpose, TmpDirUtils}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
@@ -47,12 +47,16 @@ class IdeaRunnerTest extends AnyFunSuite with Matchers with TmpDirUtils {
       .foreach(path => assert(!Files.exists(path), s"Launch preparation must not create $path"))
   }
 
-  test("development logging and execution share one prepared launch and ignore option-like application arguments") {
-    assertRuntimeLogging(purpose = "development")
+  test("runIDE logging and execution share one prepared launch and ignore option-like application arguments") {
+    assertRuntimeLogging(purpose = RuntimePurpose.RunIDE, expectedDisplayName = "runIDE")
   }
 
   test("indexing logging and execution share one prepared launch and ignore option-like application arguments") {
-    assertRuntimeLogging(purpose = "build-index")
+    assertRuntimeLogging(purpose = RuntimePurpose.BuildIndex, expectedDisplayName = "build-index")
+  }
+
+  test("custom runtime purposes use their supplied label without changing the launch") {
+    assertRuntimeLogging(purpose = RuntimePurpose.Custom("custom tool"), expectedDisplayName = "custom tool")
   }
 
   test("the generic runner retains jar launches and existing command construction overrides") {
@@ -82,7 +86,7 @@ class IdeaRunnerTest extends AnyFunSuite with Matchers with TmpDirUtils {
     assert(!Files.exists(root.resolve("unavailable sdk")), "The command override must not require SDK resolution")
   }
 
-  private def assertRuntimeLogging(purpose: String): Unit = {
+  private def assertRuntimeLogging(purpose: RuntimePurpose, expectedDisplayName: String): Unit = {
     val root = Files.createDirectories(newTmpDir.resolve("paths with spaces"))
     val source = writeProbe(root)
     val sdk = sdkWithRuntime(root)
@@ -115,7 +119,7 @@ class IdeaRunnerTest extends AnyFunSuite with Matchers with TmpDirUtils {
     actual.take(3) shouldBe values
     actual.drop(3) shouldBe applicationArguments
     output shouldBe Seq(
-      s"[info] IntelliJ runtime ($purpose, root)",
+      s"[info] IntelliJ runtime ($expectedDisplayName, root)",
       s"[info]   System: ${values.head}",
       s"[info]   Config: ${values(1)}",
       s"[info]   Logs: ${values(2)}",

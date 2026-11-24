@@ -7,7 +7,7 @@ import org.jetbrains.sbtidea.packaging.*
 import org.jetbrains.sbtidea.packaging.PackagingKeys.packageArtifact
 import org.jetbrains.sbtidea.packaging.artifact.{DistBuilder, DumbIncrementalCache, IncrementalCache}
 import org.jetbrains.sbtidea.runIdea.IdeaRunner
-import org.jetbrains.sbtidea.{PathExt, PluginLogger, SbtPluginLogger}
+import org.jetbrains.sbtidea.{PathExt, PluginLogger, RuntimePurpose, SbtPluginLogger}
 import sbt.*
 import sbt.Keys.{streams, target}
 
@@ -72,7 +72,7 @@ object BuildIndex {
     runtimeMaintenance.value.register(intellijRuntimeBuildId.value,
       Map("index.system" -> indexDirectories.system, "index.config" -> indexDirectories.config),
       org.jetbrains.sbtidea.runtimeCleanup.RuntimeCleanup.IndexRoles)
-    runner.runWithRuntimeLogging("build-index", sbt.Keys.name.value, log)
+    runner.runWithRuntimeLogging(RuntimePurpose.BuildIndex, sbt.Keys.name.value, log)
 
     val tmp = Files.createTempDirectory("sbt-idea-searchable-options-building-")
     try {

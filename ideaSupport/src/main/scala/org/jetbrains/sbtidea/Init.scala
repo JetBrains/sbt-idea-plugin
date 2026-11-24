@@ -388,7 +388,7 @@ trait Init { this: Keys.type =>
     Test / fork := true,
     Test / forkOptions := {
       val options = (Test / forkOptions).dependsOn(prepareIntellijTestDirectories).value
-      RuntimeDirectoryLog.report("tests", name.value, options.runJVMOptions, new SbtPluginLogger(streams.value))
+      RuntimeDirectoryLog.report(RuntimePurpose.Tests, name.value, options.runJVMOptions, new SbtPluginLogger(streams.value))
       options
     },
 
