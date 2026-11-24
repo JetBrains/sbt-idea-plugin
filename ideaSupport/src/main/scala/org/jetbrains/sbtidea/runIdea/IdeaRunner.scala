@@ -1,10 +1,10 @@
 package org.jetbrains.sbtidea.runIdea
 
 import org.jetbrains.sbtidea.productInfo.ProductInfoExtraDataProvider
+import org.jetbrains.sbtidea.{PluginLogger, RuntimeDirectoryLog}
 
 import java.io.File
 import java.nio.file.Path
-import scala.collection.mutable
 
 class IdeaRunner(
   intellijBaseDirectory: Path,
@@ -20,26 +20,44 @@ class IdeaRunner(
    * For the version for IntelliJ Run Configurations see `buildTestVmOptionsString` in [[org.jetbrains.sbtidea.tasks.IdeaConfigBuilder]]
    * @return
    */
-  override protected def buildJavaArgs: Seq[String] = {
-    val builder = mutable.ArrayBuffer[String]()
+  override protected def buildJavaArgs: Seq[String] = prepareLaunch().arguments
 
-    //vm options
-    builder ++= List("-cp", productInfoExtraDataProvider.bootClasspathJars.mkString(File.pathSeparator))
-    builder += IntellijVMOptionsBuilder.PathClassLoaderOption
-    builder ++= vmOptionsBuilder.build(
+  private[runIdea] def prepareLaunch(): IdeaRunner.PreparedLaunch = {
+    val classpathOptions = Seq(
+      "-cp", productInfoExtraDataProvider.bootClasspathJars.mkString(File.pathSeparator),
+      IntellijVMOptionsBuilder.PathClassLoaderOption,
+    )
+    val configuredVmOptions = vmOptionsBuilder.build(
       vmOptions = vmOptions,
       forTests = false,
       quoteValues = false,
     ).filter(_.nonEmpty)
-    //main
-    builder += IdeaRunner.IdeaMainClass
-    //arguments
-    builder ++= programArguments
 
-    builder.toList
+    IdeaRunner.PreparedLaunch(classpathOptions ++ configuredVmOptions, IdeaRunner.IdeaMainClass, programArguments)
+  }
+
+  private[sbtidea] def runWithRuntimeLogging(purpose: String, project: String, logger: PluginLogger): Int = {
+    val launch = prepareLaunch()
+    runCommand(
+      command = buildCommand(launch.arguments),
+      beforeStart = () => {
+        RuntimeDirectoryLog.report(purpose, project, launch.jvmOptions, logger)
+      },
+    )
   }
 }
 
 object IdeaRunner {
   private val IdeaMainClass = "com.intellij.idea.Main"
+
+  /**
+   * Keeps JVM options separate from application arguments until the command is assembled.
+   */
+  private[runIdea] final case class PreparedLaunch(
+    jvmOptions: Seq[String],
+    mainClass: String,
+    programArguments: Seq[String],
+  ) {
+    def arguments: Seq[String] = jvmOptions ++ Seq(mainClass) ++ programArguments
+  }
 }

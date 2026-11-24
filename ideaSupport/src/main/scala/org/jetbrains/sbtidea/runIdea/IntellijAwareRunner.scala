@@ -1,7 +1,6 @@
 package org.jetbrains.sbtidea.runIdea
 
 import org.jetbrains.sbtidea.PluginLogger as log
-import org.jetbrains.sbtidea.{PluginLogger, RuntimeDirectoryLog}
 import org.jetbrains.sbtidea.download.jbr.JbrInstaller
 import org.jetbrains.sbtidea.runIdea.IntellijAwareRunner.getBundledJRE
 import sbt.*
@@ -48,29 +47,24 @@ abstract class IntellijAwareRunner(intellijBaseDirectory: Path, blocking: Boolea
       throw new RuntimeException(s"Failed to locate java executable from $jre")
   }
 
-  protected def buildFullCommand: java.util.List[String] = {
+  protected def buildFullCommand: java.util.List[String] = buildCommand(buildJavaArgs)
+
+  private[runIdea] def buildCommand(javaArgs: => Seq[String]): java.util.List[String] = {
     val bundledJre = getBundledJRE(intellijBaseDirectory)
     implicit val jre: JRE = bundledJre.getOrElse(detectLocalJRE)
     val javaExe = getJavaExecutable(jre)
-    val args = buildJavaArgs
+    val args = javaArgs
     (javaExe.toAbsolutePath.toString +: args).asJava
   }
   
   protected def buildJavaArgs: Seq[String]
 
-  def run(): Int = run(beforeStart = _ => ())
+  def run(): Int = runCommand(buildFullCommand, beforeStart = () => ())
 
-  private[sbtidea] def runWithRuntimeLogging(purpose: String, project: String, logger: PluginLogger): Int =
-    run { command =>
-      // Arguments after the IDE main class belong to the application and cannot set JVM properties.
-      val jvmOptions = command.asScala.takeWhile(_ != "com.intellij.idea.Main").toVector
-      RuntimeDirectoryLog.report(purpose, project, jvmOptions, logger)
-    }
-
-  private def run(beforeStart: java.util.List[String] => Unit): Int = {
+  private[runIdea] def runCommand(command: java.util.List[String], beforeStart: () => Unit): Int = {
     val processBuilder = {
       val builder = new JProcessBuilder()
-      builder.command(buildFullCommand)
+      builder.command(command)
       if (discardOutput) {
         // Would have been nice to use `.redirectOutput(ProcessBuilder.Redirect.DISCARD)`,
         // but it is only available on JDK 9+.
@@ -82,7 +76,7 @@ abstract class IntellijAwareRunner(intellijBaseDirectory: Path, blocking: Boolea
       }
       builder
     }
-    beforeStart(processBuilder.command())
+    beforeStart()
     val process = processBuilder.start()
     if (blocking)
       process.waitFor()
