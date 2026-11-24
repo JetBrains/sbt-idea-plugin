@@ -914,6 +914,31 @@ It is recommended to explicitly invoke `Build | Build Artifacts | Rebuild` from 
 for the first time(i.e. when xmls are first generated).
 
 ### Development notes
+
+#### Testing
+
+Use JDK 17 to build and test this repository; published artifacts target Java 11 bytecode.
+Run these commands from the repository root:
+
+| Command | Tests |
+| --- | --- |
+| `sbt testFast` | All tests except the sbt consumer integration suites |
+| `sbt testIntegration` | Consumer integration suites in `org.jetbrains.sbtidea.integrationTests` |
+| `sbt test` | The complete test suite, as used by CI |
+
+The two aliases select tests for that invocation only. Running both covers the complete suite;
+neither changes subsequent `test` invocations or enables parallel execution.
+Keep consumer integration suites in the package above so both commands classify them correctly.
+Integration tests launch nested sbt processes and may download IntelliJ SDKs, JBRs and plugins.
+
+While editing, run the relevant suite directly, for example:
+
+```text
+sbt 'ideaSupport/testOnly org.jetbrains.sbtidea.runIdea.IdeaRunnerTest'
+```
+
+#### Publishing
+
 To publish a new version of `sbt-idea-plugin`, just add a new tag in format `vA.B.C` (e.g.`v3.13.4`) and push it to the main branch.
 TeamCity will automatically  Build/Test/Deploy it in `sbt-idea-plugin` configuration. \
 (works in internal network only)

@@ -5,6 +5,10 @@ Global / concurrentRestrictions := Seq(Tags.limit(Tags.Test, 1))
 // Some tests test global properties and fail when tests are run in parallel
 ThisBuild / Test / parallelExecution := false
 
+// Select consumer integration suites by package without changing the default test task.
+addCommandAlias("testFast", "testOnly * -org.jetbrains.sbtidea.integrationTests.*")
+addCommandAlias("testIntegration", "testOnly org.jetbrains.sbtidea.integrationTests.*")
+
 lazy val PublishingSettings: Seq[Def.Setting[?]] = Seq(
   organization := "org.jetbrains.scala",
 
