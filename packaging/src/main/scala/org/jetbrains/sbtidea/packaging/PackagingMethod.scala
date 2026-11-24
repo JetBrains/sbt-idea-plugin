@@ -50,5 +50,13 @@ object PackagingMethod {
    */
   final case class Standalone(targetPath: String = "", static: Boolean = false) extends PackagingMethod
 
-  final case class PluginModule(moduleName: String, static: Boolean = false) extends PackagingMethod
+  /**
+   * Package this project as a content module declared in plugin.xml.
+   * Projects using the same module name and embedded setting share a jar.
+   *
+   * @param static   controls whether dynamic packaging keeps the jar, as in [[Standalone]]
+   * @param embedded use `lib/<moduleName>.jar` for modules declared with `loading="embedded"`;
+   *                 other modules use `lib/modules/<moduleName>.jar`
+   */
+  final case class PluginModule(moduleName: String, static: Boolean = false, embedded: Boolean = false) extends PackagingMethod
 }

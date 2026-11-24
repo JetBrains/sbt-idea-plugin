@@ -124,7 +124,7 @@ class SbtPackagingStructureExtractor(override val rootProject: ProjectRef,
       structure.PackagingMethod.Standalone(targetPath, static)
     case packaging.PackagingMethod.MergeIntoOther(project) =>
       structure.PackagingMethod.MergeIntoOther(findProjectRef(project).map(projectCache).getOrElse(???))
-    case packaging.PackagingMethod.PluginModule(moduleName, static) =>
-      structure.PackagingMethod.PluginModule(moduleName, static)
+    case packaging.PackagingMethod.PluginModule(moduleName, static, embedded) =>
+      structure.PackagingMethod.PluginModule(moduleName, static, embedded)
   }
 }

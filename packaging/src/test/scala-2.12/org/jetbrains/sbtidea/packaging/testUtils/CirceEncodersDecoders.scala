@@ -142,11 +142,12 @@ object CirceEncodersDecoders {
         "targetPath" -> Json.fromString(targetPath),
         "static" -> Json.fromBoolean(static)
       )
-    case SPackagingMethod.PluginModule(moduleName, static) =>
+    case SPackagingMethod.PluginModule(moduleName, static, embedded) =>
       Json.obj(
         "type" -> Json.fromString("PluginModule"),
         "moduleName" -> Json.fromString(moduleName),
-        "static" -> Json.fromBoolean(static)
+        "static" -> Json.fromBoolean(static),
+        "embedded" -> Json.fromBoolean(embedded)
       )
   }
 
@@ -174,7 +175,8 @@ object CirceEncodersDecoders {
         for {
           moduleName <- cursor.downField("moduleName").as[String]
           static <- cursor.downField("static").as[Boolean]
-        } yield SPackagingMethod.PluginModule(moduleName, static)
+          embedded <- cursor.downField("embedded").as[Option[Boolean]]
+        } yield SPackagingMethod.PluginModule(moduleName, static, embedded.getOrElse(false))
       case unknown =>
         Left(DecodingFailure(s"Unknown PackagingMethod type: $unknown", cursor.history))
     }

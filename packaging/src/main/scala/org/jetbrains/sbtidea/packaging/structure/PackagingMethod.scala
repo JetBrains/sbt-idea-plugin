@@ -21,5 +21,6 @@ object PackagingMethod {
   /** See docs of [[org.jetbrains.sbtidea.packaging.PackagingMethod.Standalone]] */
   final case class Standalone(targetPath: String, static: Boolean) extends PackagingMethod
 
-  final case class PluginModule(moduleName: String, static: Boolean) extends PackagingMethod
+  /** See docs of [[org.jetbrains.sbtidea.packaging.PackagingMethod.PluginModule]] */
+  final case class PluginModule(moduleName: String, static: Boolean, embedded: Boolean = false) extends PackagingMethod
 }

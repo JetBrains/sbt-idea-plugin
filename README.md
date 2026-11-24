@@ -320,6 +320,10 @@ packageMethod := PackagingMethod.MergeIntoParent()
 // between plugins and builtin modules.
 packageMethod := PackagingMethod.PluginModule("moduleName")
 
+// For a content module declared with loading="embedded" in plugin.xml,
+// put its jar directly under lib/<moduleName>.jar:
+packageMethod := PackagingMethod.PluginModule("moduleName", embedded = true)
+
 // merge all dependencies of this project in a standalone jar
 // being used together with assembleLibraries setting allows sbt-assembly like packaging
 // the project may contain classes but they will be ignored during packaging

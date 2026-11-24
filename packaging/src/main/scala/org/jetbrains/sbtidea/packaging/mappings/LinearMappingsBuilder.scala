@@ -63,8 +63,8 @@ class LinearMappingsBuilder(
       case PackagingMethod.Standalone(targetPath, isStatic) =>
         val target = outputDir / targetPath
         addProductDirs(node, target, isStatic)
-      case PackagingMethod.PluginModule(moduleName, isStatic) =>
-        val target = outputDir / mkPluginModulePath(moduleName)
+      case PackagingMethod.PluginModule(moduleName, isStatic, embedded) =>
+        val target = outputDir / mkPluginModulePath(moduleName, embedded)
         addProductDirs(node, target, isStatic)
       case PackagingMethod.Skip() => throw new MappingBuildException("Unreachable")
     }
@@ -276,12 +276,13 @@ class LinearMappingsBuilder(
       mkProjectJarDefaultPath(node)
     case PackagingMethod.Standalone(nonEmptyPath, _) =>
       nonEmptyPath
-    case PackagingMethod.PluginModule(moduleName, _) =>
-      mkPluginModulePath(moduleName)
+    case PackagingMethod.PluginModule(moduleName, _, embedded) =>
+      mkPluginModulePath(moduleName, embedded)
   }
 
   private def mkProjectJarDefaultPath(node: ProjectNode): String = s"lib/${node.name}.jar"
-  private def mkPluginModulePath(moduleName: String): String = s"lib/modules/$moduleName.jar"
+  private def mkPluginModulePath(moduleName: String, embedded: Boolean): String =
+    if (embedded) s"lib/$moduleName.jar" else s"lib/modules/$moduleName.jar"
 
   private def fixPaths(str: String): String = System.getProperty("os.name") match {
     case os if os.startsWith("Windows") => str.replace('/', '\\')
