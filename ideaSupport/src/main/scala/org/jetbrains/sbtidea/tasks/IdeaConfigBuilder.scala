@@ -6,7 +6,6 @@ import org.jetbrains.sbtidea.Keys.IdeaConfigBuildingOptions
 import org.jetbrains.sbtidea.PluginLogger as log
 import org.jetbrains.sbtidea.packaging.hasProdTestSeparationEnabled
 import org.jetbrains.sbtidea.productInfo.ProductInfoExtraDataProvider
-import org.jetbrains.sbtidea.runIdea.IntellijVMOptionsBuilder.VmOptions
 import org.jetbrains.sbtidea.runIdea.{CustomIntellijVMOptions, IntellijAwareRunner, IntellijVMOptionsBuilder}
 import sbt.*
 
@@ -47,27 +46,23 @@ class IdeaConfigBuilder(
 
   private val artifactName = projectName
 
-  private val runVmOptions: VmOptions = VmOptions.New(runIntellijVMOptions)
-  private val testVmOptions: VmOptions = VmOptions.New(testIntellijVMOptions)
-
   def build(): Unit = {
     if (options.generateDefaultRunConfig) {
       val configurationName = artifactName
       val content = buildRunConfigurationXML(
         configurationName = configurationName,
-        vmOptions = runVmOptions,
+        vmOptions = runIntellijVMOptions,
         programParams = options.programParams,
         envVars = options.ideaRunEnv,
       )
       writeToFile(runConfigDir / s"$configurationName.xml", content)
-
     }
 
     options.additionalRunConfigs.foreach { data: AdditionalRunConfigData =>
       val configurationName = artifactName + data.configurationNameSuffix
       val content = buildRunConfigurationXML(
         configurationName = configurationName,
-        vmOptions = runVmOptions.withExtraOptions(data.extraVmOptions),
+        vmOptions = runIntellijVMOptions.withExtraOptions(data.extraVmOptions),
         programParams = options.programParams,
         envVars = options.ideaRunEnv
       )
@@ -123,7 +118,7 @@ class IdeaConfigBuilder(
     // The IDE starts the client with a debug agent when the registry value is set,
     // and a registry value can be set by a system property of the IDE (see `RegistryValue`)
     val clientDebugPort = 7777
-    val vmOptions = runVmOptions.withExtraOption(s"-Drdct.embedded.client.debug.port=$clientDebugPort")
+    val vmOptions = runIntellijVMOptions.withExtraOption(s"-Drdct.embedded.client.debug.port=$clientDebugPort")
 
     Right(buildRunConfigurationXML(
       configurationName = configurationName,
@@ -174,7 +169,7 @@ class IdeaConfigBuilder(
 
   private def buildRunConfigurationXML(
     configurationName: String,
-    vmOptions: VmOptions,
+    vmOptions: CustomIntellijVMOptions,
     programParams: String,
     envVars: Map[String, String],
   ): String = {
@@ -217,7 +212,7 @@ class IdeaConfigBuilder(
        |</component>""".stripMargin
   }
 
-  private def buildRunVmOptionsString(vmOptions: VmOptions): String = {
+  private def buildRunVmOptionsString(vmOptions: CustomIntellijVMOptions): String = {
     val bootClasspathJarPaths = productInfoExtraDataProvider.bootClasspathJars.map(_.toString)
     val bootClasspathString = bootClasspathJarPaths.mkString(File.pathSeparator)
     val vmOptionsSeq = intellijVMOptionsBuilder.build(
@@ -286,7 +281,7 @@ class IdeaConfigBuilder(
     val classpathStr = escapeBackslash(testClasspath.mkString(File.pathSeparator))
     val quotedClasspathStr = "\"" + classpathStr + "\""
     val vmOptionsEscaped = testIntellijVMOptionsBuilder.getOrElse(intellijVMOptionsBuilder).buildQuotedNoEscapeXml(
-      vmOptions = testVmOptions,
+      vmOptions = testIntellijVMOptions,
       forTests = true,
     ).map(escapeBackslash)
     (Seq("-cp", quotedClasspathStr) ++ vmOptionsEscaped).mkString(System.lineSeparator())

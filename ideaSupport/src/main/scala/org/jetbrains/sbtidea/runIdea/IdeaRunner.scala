@@ -9,7 +9,7 @@ import scala.collection.mutable
 class IdeaRunner(
   intellijBaseDirectory: Path,
   productInfoExtraDataProvider: ProductInfoExtraDataProvider,
-  vmOptions: IntellijVMOptionsBuilder.VmOptions,
+  vmOptions: CustomIntellijVMOptions,
   vmOptionsBuilder: IntellijVMOptionsBuilder,
   blocking: Boolean,
   discardOutput: Boolean,

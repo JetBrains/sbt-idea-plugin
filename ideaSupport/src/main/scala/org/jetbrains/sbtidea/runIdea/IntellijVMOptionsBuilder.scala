@@ -4,7 +4,6 @@ import org.jetbrains.sbtidea.*
 import org.jetbrains.sbtidea.download.api.IdeInstallationContext
 import org.jetbrains.sbtidea.productInfo.ProductInfoExtraDataProvider
 import org.jetbrains.sbtidea.runIdea.CustomIntellijVMOptions.DebugInfo
-import org.jetbrains.sbtidea.runIdea.IntellijVMOptionsBuilder.VmOptions
 
 import java.nio.file.Path
 import scala.collection.mutable
@@ -46,7 +45,7 @@ final case class IntellijVMOptionsBuilder(
     copy(customSystemAndConfigDirPrefix = Some(dirsPrefix))
 
   def build(
-    vmOptions: VmOptions,
+    vmOptions: CustomIntellijVMOptions,
     forTests: Boolean,
     quoteValues: Boolean,
   ): Seq[String] = buildImpl(
@@ -57,7 +56,7 @@ final case class IntellijVMOptionsBuilder(
   ).filter(_.nonEmpty)
 
   def buildQuotedNoEscapeXml(
-    vmOptions: VmOptions,
+    vmOptions: CustomIntellijVMOptions,
     forTests: Boolean,
   ): Seq[String] = buildImpl(
     vmOptions = vmOptions,
@@ -67,15 +66,12 @@ final case class IntellijVMOptionsBuilder(
   ).filter(_.nonEmpty)
 
   private def buildImpl(
-    vmOptions: VmOptions,
+    vmOptions: CustomIntellijVMOptions,
     forTests: Boolean,
     quoteValues: Boolean,
     escapeXml: Boolean,
   ): Seq[String] = {
-    val options = vmOptions match {
-      case VmOptions.New(options) =>
-        buildNew(options, quoteValues, escapeXml, forTests)
-    }
+    val options = buildOptions(vmOptions, quoteValues, escapeXml, forTests)
     val selectedDirectories = if (forTests) testRuntimeDirectories else devRuntimeDirectories
     if (selectedDirectories.nonEmpty) {
       val directoryOptions = selectedDirectories.get.jvmOptions.map { option =>
@@ -90,7 +86,7 @@ final case class IntellijVMOptionsBuilder(
     } else options
   }
 
-  private def buildNew(
+  private def buildOptions(
     options: CustomIntellijVMOptions,
     quoteValues: Boolean,
     escapeXml: Boolean,
@@ -155,10 +151,6 @@ final case class IntellijVMOptionsBuilder(
     extraOptions += s"-Didea.plugins.path=${qq(customPluginsPath.toString)}"
     extraOptions += s"-Didea.log.path=${qq(logPath.toString)}"
 
-    //TODO: extra plugins options org.jetbrains.intellij.platform.gradle.tasks.Registrable?
-    // Note: these VM options are not present in the product-info.json but they were present in old default options.
-    // It seems they are not required, but also it seems they don't hurt.
-    // Let's review them 1 by 1 and decide if they are needed
     extraOptions ++= Seq(
       // Disable platform updates in Dev IDEA.
       // In Dev IDEA we use the version specified in sbt build definition via the `intellijBuild` setting.
@@ -199,18 +191,5 @@ final case class IntellijVMOptionsBuilder(
 
 private[sbtidea]
 object IntellijVMOptionsBuilder {
-
   val PathClassLoaderOption = "-Djava.system.class.loader=com.intellij.util.lang.PathClassLoader"
-
-  sealed trait VmOptions {
-    def withExtraOption(option: String): VmOptions = this match {
-      case VmOptions.New(extraOption) => VmOptions.New(extraOption.withExtraOption(option))
-    }
-    def withExtraOptions(extraOptions: Seq[String]): VmOptions = this match {
-      case VmOptions.New(options) => VmOptions.New(options.withExtraOptions(extraOptions))
-    }
-  }
-  object VmOptions {
-    case class New(options: CustomIntellijVMOptions) extends VmOptions
-  }
 }

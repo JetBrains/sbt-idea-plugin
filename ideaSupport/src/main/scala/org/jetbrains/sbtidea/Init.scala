@@ -4,7 +4,6 @@ import org.jetbrains.sbtidea.download.*
 import org.jetbrains.sbtidea.instrumentation.ManipulateBytecode
 import org.jetbrains.sbtidea.packaging.PackagingKeys.*
 import org.jetbrains.sbtidea.productInfo.{ProductInfoExtraDataProviderImpl, ProductInfoParser}
-import org.jetbrains.sbtidea.runIdea.IntellijVMOptionsBuilder.VmOptions
 import org.jetbrains.sbtidea.runtimeCleanup.{RuntimeCleanup, RuntimeMaintenance}
 import org.jetbrains.sbtidea.searchableoptions.BuildIndex
 import org.jetbrains.sbtidea.tasks.*
@@ -394,10 +393,8 @@ trait Init { this: Keys.type =>
     Test / javaOptions ++= {
       val intellijVMOptionsBuilder = Keys.intellijTestVMOptionsBuilder.value
 
-      val vmOptions: VmOptions = VmOptions.New((Test / customIntellijVMOptions).value)
-
       val testVmOptions = intellijVMOptionsBuilder.build(
-        vmOptions = vmOptions,
+        vmOptions = (Test / customIntellijVMOptions).value,
         forTests = true,
         quoteValues = false
       )

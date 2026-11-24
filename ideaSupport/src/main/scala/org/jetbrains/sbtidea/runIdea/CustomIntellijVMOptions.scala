@@ -2,8 +2,6 @@ package org.jetbrains.sbtidea.runIdea
 
 import org.jetbrains.sbtidea.runIdea.CustomIntellijVMOptions.DebugInfo
 
-import scala.annotation.nowarn
-
 /**
  * The class represents VM options that will be merged (appended or override) with default IDE options.
  * The default IDE options from the `idea.vmoptions` file from the IntelliJ SDK installation root
@@ -19,7 +17,6 @@ import scala.annotation.nowarn
  *                     (from the idea.vmoptions file or those added inside [[IntellijVMOptionsBuilder]])<br>
  *                     Note `extraOptions` don't replace any existing options, they are simply appended
  */
-@nowarn("cat=deprecation")
 case class CustomIntellijVMOptions(
   xmx: Option[Int] = None,
   xms: Option[Int] = None,

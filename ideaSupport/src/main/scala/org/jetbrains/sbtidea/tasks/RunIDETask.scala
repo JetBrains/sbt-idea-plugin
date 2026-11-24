@@ -4,7 +4,6 @@ import org.jetbrains.sbtidea.Keys.*
 import org.jetbrains.sbtidea.packaging.PackagingKeys.packageArtifact
 import org.jetbrains.sbtidea.runIdea.CustomIntellijVMOptions.DebugInfo
 import org.jetbrains.sbtidea.runIdea.IdeaRunner
-import org.jetbrains.sbtidea.runIdea.IntellijVMOptionsBuilder.VmOptions
 import org.jetbrains.sbtidea.{PluginLogger, SbtPluginLogger}
 import sbt.*
 import sbt.Keys.streams
@@ -27,8 +26,7 @@ object RunIDETask extends SbtIdeaInputTask[Unit] {
     else
       Some(customVmOptions.debugInfo.getOrElse(DebugInfo.Default).copy(suspend = opts.contains("suspend")))
 
-
-    val vmOptions: VmOptions = VmOptions.New(customVmOptions.copy(debugInfo = debugAgentInfoPatched))
+    val vmOptions = customVmOptions.copy(debugInfo = debugAgentInfoPatched)
 
     val runner = new IdeaRunner(
       intellijBaseDirectory = intellijBaseDirectory.value.toPath,

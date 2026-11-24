@@ -7,7 +7,6 @@ import org.jetbrains.sbtidea.packaging.*
 import org.jetbrains.sbtidea.packaging.PackagingKeys.packageArtifact
 import org.jetbrains.sbtidea.packaging.artifact.{DistBuilder, DumbIncrementalCache, IncrementalCache}
 import org.jetbrains.sbtidea.runIdea.IdeaRunner
-import org.jetbrains.sbtidea.runIdea.IntellijVMOptionsBuilder.VmOptions
 import org.jetbrains.sbtidea.{PathExt, PluginLogger, SbtPluginLogger}
 import sbt.*
 import sbt.Keys.{streams, target}
@@ -58,15 +57,12 @@ object BuildIndex {
         .flatMap(v => Try(v.toBoolean).toOption)
         .getOrElse(true)
 
-    val vmOptions: VmOptions = VmOptions.New(customIntellijVMOptions.value)
-
-    val vmOptionsUpdated =
-      vmOptions.withExtraOption("-Didea.l10n.keys=only")
+    val vmOptions = customIntellijVMOptions.value.withExtraOption("-Didea.l10n.keys=only")
 
     val runner = new IdeaRunner(
       intellijBaseDirectory = intellijBaseDir.toPath,
       productInfoExtraDataProvider = productInfoExtraDataProvider.value,
-      vmOptions = vmOptionsUpdated,
+      vmOptions = vmOptions,
       vmOptionsBuilder = baseIntellijVMOptionsBuilder.value.withRuntimeDirectories(intellijBuildIndexDirectories.value),
       blocking = true,
       discardOutput = discardOutput,
