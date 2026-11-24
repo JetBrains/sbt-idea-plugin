@@ -51,6 +51,7 @@ lazy val commonSettings = Seq(
     properties.setProperty("idea.system.path", (Test / intellijTestSystemDir).value.getAbsolutePath)
     properties.setProperty("idea.config.path", (Test / intellijTestConfigDir).value.getAbsolutePath)
     properties.setProperty("idea.log.path", ((Test / intellijTestSystemDir).value / "log").getAbsolutePath)
+    properties.setProperty("idea.plugins.path", ((Test / intellijTestConfigDir).value / "plugins").getAbsolutePath)
     properties.setProperty("sdk", intellijBaseDirectory.value.getAbsolutePath)
     properties.setProperty("downloads", artifactsDownloadsDir.value.getAbsolutePath)
     properties.setProperty("dev.system", intellijDevSystemDir.value.getAbsolutePath)

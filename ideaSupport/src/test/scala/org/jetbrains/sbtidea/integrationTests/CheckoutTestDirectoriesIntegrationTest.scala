@@ -19,7 +19,7 @@ import scala.util.Try
 
 class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTestBase with Matchers {
   private val buildId = "IU-243.22562.145"
-  private val directoryKeys = Seq("idea.system.path", "idea.config.path", "idea.log.path")
+  private val directoryKeys = Seq("idea.system.path", "idea.config.path", "idea.log.path", "idea.plugins.path")
 
   test("test preparation logs final JVM paths once while directory inspection stays quiet") {
     val home = newTmpDir.toFile / "plugin home with spaces"
@@ -855,8 +855,9 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
     assertProperty(observed, "product.marker", "retained", "Forked JVM must retain SDK VM options")
     assertProperty(settings, "sdk", (home / "sdk" / "243.22562.145").getAbsolutePath, "Runtime isolation must preserve the SDK location")
     assertProperty(settings, "downloads", (home / "sdk" / "downloads").getAbsolutePath, "Runtime isolation must preserve the download cache location")
-    assertProperty(observed, "idea.plugins.path", (home / "sdk" / "243.22562.145" / "custom-plugins").getAbsolutePath,
-      "Forked JVM must use SDK-scoped installed plugins")
+    assertProperty(observed, "idea.plugins.path", new File(settings.getProperty("idea.config.path"), "plugins").getAbsolutePath,
+      "Test plugin discovery must be isolated from SDK-scoped development plugins")
+    assertDirectoryContents(new File(observed.getProperty("idea.plugins.path")), Seq.empty)
 
     val configs = project / ".idea" / "runConfigurations"
     withClue(s"Generated configurations in $configs must match the requested development and test launches: ") {

@@ -141,7 +141,11 @@ final case class IntellijVMOptionsBuilder(
     }
     val (systemPath, configPath) = (ideaHome.resolve(systemDirName), ideaHome.resolve(configDirName))
 
-    val customPluginsPath = intellijDirectory.resolve(IdeInstallationContext.customPluginsDirName)
+    // Test dependencies are already on the classpath. Do not discover plugins imported into Dev IDEA.
+    val customPluginsPath = if (forTests)
+      IntellijTestRuntimeDirectories.pluginsDirectory(testRuntimeDirectories.map(_.config).getOrElse(configPath))
+    else
+      intellijDirectory.resolve(IdeInstallationContext.customPluginsDirName)
     val logPath = systemPath.resolve("log")
 
     // IntelliJ requires all these paths to be set when "idea.paths.selector" VM options is used (that comes from product-info.json)

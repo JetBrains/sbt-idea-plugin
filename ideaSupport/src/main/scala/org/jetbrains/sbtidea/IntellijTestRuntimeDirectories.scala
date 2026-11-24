@@ -29,17 +29,21 @@ final class IntellijTestRuntimeDirectories private (ideaHome: Path) {
   }
 
   /**
-   * Replaces IntelliJ Platform directory VM options in `forkOptions` with directories that are
-   * unique to `runtimeId`. All unrelated JVM options and all fork settings are preserved.
+   * Replaces IntelliJ Platform system, config, log, and plugin-discovery VM options in `forkOptions`
+   * with directories unique to `runtimeId`. All unrelated JVM options and fork settings are preserved.
    */
   def applyTo(forkOptions: ForkOptions, runtimeId: String): ForkOptions = {
-    val directoryOptions = forRuntimeId(runtimeId).jvmOptions
-    val retainedOptions = forkOptions.runJVMOptions.filterNot(isIntellijDirectoryOption)
+    val directories = forRuntimeId(runtimeId)
+    val directoryOptions = directories.jvmOptions :+ s"-Didea.plugins.path=${pluginsDirectory(directories.config)}"
+    val retainedOptions = forkOptions.runJVMOptions.filterNot(option =>
+      isIntellijDirectoryOption(option) || option.startsWith("-Didea.plugins.path="))
     forkOptions.withRunJVMOptions(retainedOptions ++ directoryOptions)
   }
 }
 
 object IntellijTestRuntimeDirectories {
+  private[sbtidea] def pluginsDirectory(config: Path): Path = config.resolve("plugins")
+
   /**
    * Creates a directory transformer rooted at the IntelliJ Platform home used for tests.
    */

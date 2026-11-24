@@ -33,11 +33,11 @@ class IntellijTestRuntimeDirectoriesTest extends AnyFunSuite with Matchers {
 
     isolated.runJVMOptions shouldBe Vector(
       "-Xmx2g",
-      "-Didea.plugins.path=shared-plugins",
       "-Dtest.option=value",
       "-Didea.system.path=idea home/test-system-run-42",
       "-Didea.config.path=idea home/test-config-run-42",
       "-Didea.log.path=idea home/test-system-run-42/log",
+      s"-Didea.plugins.path=${ideaHome.resolve("test-config-run-42").resolve("plugins")}",
     )
   }
 

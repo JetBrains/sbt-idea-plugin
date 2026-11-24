@@ -570,6 +570,14 @@ The VM-option builder uses the directory keys, with logs under the selected syst
 `log/`, overriding conflicting properties in `customIntellijVMOptions`. Fully explicit directory
 overrides avoid the build-identity dependency for those paths.
 
+Tests use a separate plugin-discovery directory at `<intellijTestConfigDir>/plugins`, initially
+empty, rather than the SDK's shared `custom-plugins` directory. Declared plugin dependencies remain
+on the test classpath. Plugins installed or imported into Dev IDEA are therefore not discovered
+through the test plugins directory. The directory is created during test preparation or JUnit
+configuration generation and follows the selected test config's cleanup and retention policy.
+The explicit-runtime-ID `IntellijTestRuntimeDirectories.applyTo` helper also selects a private
+plugins directory under that runtime's config. Development and indexing plugin paths stay SDK-scoped.
+
 Lower-level sbt overrides remain available, for example:
 
 ```scala
@@ -786,10 +794,12 @@ commands run sequentially; this plugin also disables parallel tests. Independent
 including non-server runs, still share the selected directories. Concurrent JVMs sharing the same
 checkout, build, and purpose are unsupported: indexes and caches can conflict or become corrupted.
 
-For explicit per-JVM test isolation, use `forRuntimeId` or `applyTo` in
+For explicit per-JVM test isolation, use `applyTo` in
 [`IntellijTestRuntimeDirectories`](ideaSupport/src/main/scala/org/jetbrains/sbtidea/IntellijTestRuntimeDirectories.scala).
-Their signatures and explicit-ID paths (`test-system-<id>`, `test-config-<id>`) are unchanged and
-independent of checkout/build defaults. Hash rationale and marker details are in
+It selects system/config/log paths and a plugin-discovery directory under `test-config-<id>/plugins`.
+`forRuntimeId` continues to expose the system/config/log paths without modifying fork options.
+Both helpers' signatures and explicit-ID paths (`test-system-<id>`, `test-config-<id>`) are unchanged
+and independent of checkout/build defaults. Hash rationale and marker details are in
 [`CheckoutRuntimeDirectories`](ideaSupport/src/main/scala/org/jetbrains/sbtidea/CheckoutRuntimeDirectories.scala);
 design alternatives are recorded in [ADR 0002](docs/adr/0002-organize-intellij-runtime-directories.md).
 

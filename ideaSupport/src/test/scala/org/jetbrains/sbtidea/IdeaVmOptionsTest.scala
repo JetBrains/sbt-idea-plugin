@@ -86,20 +86,35 @@ class IdeaVmOptionsTest extends AnyFunSuite with Matchers {
   test("test options use resolved directories and retain unrelated options") {
     val dirs = IntellijTestRuntimeDirectories.RuntimeDirectories(
       Paths.get("custom system"), Paths.get("custom config"), Paths.get("custom system/log"))
+    val pluginsPath = dirs.config.resolve("plugins")
     val builder = vmOptionsBuilder.copy(testRuntimeDirectories = Some(dirs))
     val withStalePaths = vmOptions.withExtraOptions(Seq(
       "-Didea.system.path=stale", "-Didea.config.path=stale", "-Didea.log.path=stale", "-Dother.option=kept"))
     val actual = builder.build(withStalePaths, forTests = true, quoteValues = false)
+    actual should contain(s"-Didea.plugins.path=$pluginsPath")
     actual.filter(IntellijTestRuntimeDirectories.isIntellijDirectoryOption) shouldBe dirs.jvmOptions
     actual should contain("-Dother.option=kept")
     actual should contain("-Dkey1=value")
-    actual.filterNot(IntellijTestRuntimeDirectories.isIntellijDirectoryOption) shouldBe
+    actual.filterNot(option => IntellijTestRuntimeDirectories.isIntellijDirectoryOption(option) ||
+      option.startsWith("-Didea.plugins.path=")) shouldBe
       vmOptionsBuilder.build(withStalePaths, forTests = true, quoteValues = false)
-        .filterNot(IntellijTestRuntimeDirectories.isIntellijDirectoryOption)
+        .filterNot(option => IntellijTestRuntimeDirectories.isIntellijDirectoryOption(option) ||
+          option.startsWith("-Didea.plugins.path="))
     builder.buildQuotedNoEscapeXml(withStalePaths, forTests = true) should contain("-Didea.system.path=\"custom system\"")
+    builder.buildQuotedNoEscapeXml(withStalePaths, forTests = true) should contain(s"""-Didea.plugins.path="$pluginsPath"""")
     builder.build(withStalePaths, forTests = true, quoteValues = true) should contain("-Didea.config.path=&quot;custom config&quot;")
+    builder.build(withStalePaths, forTests = true, quoteValues = true) should contain(s"-Didea.plugins.path=&quot;$pluginsPath&quot;")
     builder.build(vmOptions, forTests = false, quoteValues = false) shouldBe
       vmOptionsBuilder.build(vmOptions, forTests = false, quoteValues = false)
+  }
+
+  test("test plugin discovery follows the test config while development keeps SDK plugins") {
+    vmOptionsBuilder.build(vmOptions, forTests = true, quoteValues = false) should contain(
+      s"-Didea.plugins.path=${Paths.get("bar baz", "test-config", "plugins")}")
+    vmOptionsBuilder.withCustomSystemAndConfigDir("custom").build(vmOptions, forTests = true, quoteValues = false) should contain(
+      s"-Didea.plugins.path=${Paths.get("bar baz", "custom-config", "plugins")}")
+    vmOptionsBuilder.build(vmOptions, forTests = false, quoteValues = false) should contain(
+      s"-Didea.plugins.path=${mockIntellijBaseDir.resolve("custom-plugins")}")
   }
 
   private def assertRuntimeDirectories(purpose: String): Unit = {
@@ -112,6 +127,7 @@ class IdeaVmOptionsTest extends AnyFunSuite with Matchers {
     actual.filter(IntellijTestRuntimeDirectories.isIntellijDirectoryOption) shouldBe selected.jvmOptions
     actual should contain("-Dretained=yes")
     actual should contain("-Dplugin.path=foo bar")
+    actual should contain(s"-Didea.plugins.path=${mockIntellijBaseDir.resolve("custom-plugins")}")
     builder.buildQuotedNoEscapeXml(conflicting, forTests = false) should contain(
       s"""-Didea.config.path="${selected.config}"""")
   }

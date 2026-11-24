@@ -362,6 +362,9 @@ trait Init { this: Keys.type =>
       val resolver = checkoutRuntimeDirectories.value
       val system = (Test / intellijTestSystemDir).value
       val config = (Test / intellijTestConfigDir).value
+      // IntelliJ treats a missing plugins directory as empty, so creating it is not required.
+      // We create it here to keep the test runtime directory structure consistent.
+      IO.createDirectory(IntellijTestRuntimeDirectories.pluginsDirectory(config.toPath).toFile)
       val managedSystem = Option(system).filter(_ =>
         (Test / intellijTestSystemDir).taskValue.info.get(defaultRuntimeDirectory).contains(true))
       val managedConfig = Option(config).filter(_ =>
