@@ -180,6 +180,10 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
     runSbtProcess(commands, second, vmOptions = Seq("-Dsbtidea.dev.sharedDirectories=true", s"-DdirectoryProbe.build=$secondBuild"))
     val firstPaths = readProperties(first / "settings.properties")
     val secondPaths = readProperties(second / "settings.properties")
+    Seq("idea.paths.selector", "idea.properties.file").foreach { key =>
+      assertProperty(secondPaths, "dev." + key, firstPaths.getProperty("dev." + key),
+        "Shared development configs must reuse properties defaults across builds and checkouts")
+    }
     val shared = Map("dev.system" -> "system-shared", "dev.config" -> "config-shared",
       "client.system" -> "system-client-shared", "client.config" -> "config-client-shared")
     shared.foreach { case (key, name) =>
@@ -828,7 +832,8 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
   }
 
   private def prepareConsumer(home: File): File = {
-    IO.write(home / "sdk" / "243.22562.145" / "bin" / "probe.vmoptions", "-Dproduct.marker=retained\n")
+    IO.write(home / "sdk" / "243.22562.145" / "bin" / "probe.vmoptions",
+      "-Dproduct.marker=retained\n-Didea.paths.selector=IntelliJIdea2024.3\n")
     IO.write(JbrInstaller.getJbrHome((home / "sdk" / "243.22562.145").toPath).resolve("release").toFile,
       "JAVA_VERSION=\"17.0.1\"\n")
     val copied = copyTestProjectToTemporaryDirectory(testProjectsDir / "checkout-test-directories")
@@ -848,6 +853,9 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
     s"Runtime outputs for checkout $project:\n") {
     val settings = readProperties(project / "settings.properties")
     val observed = readProperties(project / "observed.properties")
+    observed.getProperty("idea.paths.selector") should fullyMatch regex "SbtIdeaPlugin-[0-9a-f]{16}"
+    assertProperty(observed, "idea.properties.file",
+      new File(settings.getProperty("idea.config.path"), "idea.properties").getPath, "Test properties follow the selected config")
     directoryKeys.foreach { key =>
       assertProperty(observed, key, settings.getProperty(key), "Forked JVM must use the resolved directory")
     }
@@ -886,6 +894,9 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
     val templateOutput = project / "template.properties"
     runProcess(Seq(java.getAbsolutePath, "@" + argfile.getAbsolutePath, "DirectoryProbe", templateOutput.getAbsolutePath), project)
     val templateObserved = readProperties(templateOutput)
+    Seq("idea.paths.selector", "idea.properties.file").foreach { key =>
+      assertProperty(templateObserved, key, observed.getProperty(key), "JUnit and sbt must share properties defaults")
+    }
     directoryKeys.foreach { key =>
       assertProperty(templateObserved, key, observed.getProperty(key), s"JVM launched from $argfile must match the sbt fork")
     }
@@ -896,6 +907,11 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
       devXml should include(settings.getProperty("dev.config"))
     }
     val devConfig = XML.loadFile(configs / "root.xml")
+    val devOptions = (devConfig \\ "option").find(node => (node \ "@name").text == "VM_PARAMETERS").get
+    val devParameters = (devOptions \ "@value").text
+    Seq("idea.paths.selector", "idea.properties.file").foreach { key =>
+      devParameters should include(s"""-D$key="${settings.getProperty("dev." + key)}"""")
+    }
     withClue(s"Log references in ${configs / "root.xml"} must follow the selected backend system directory: ") {
       (devConfig \\ "log_file").map(node => (node \ "@path").text) should contain allOf (
         settings.getProperty("dev.system") + "/log/idea.log",
@@ -911,6 +927,9 @@ class CheckoutTestDirectoriesIntegrationTest extends SbtIdeaPluginIntegrationTes
       assertProperty(settings, prefix + ".idea.system.path", settings.getProperty(prefix + ".system"), context)
       assertProperty(settings, prefix + ".idea.config.path", settings.getProperty(prefix + ".config"), context)
       assertProperty(settings, prefix + ".idea.log.path", settings.getProperty(prefix + ".system") + "/log", context)
+      settings.getProperty(prefix + ".idea.paths.selector") should fullyMatch regex "SbtIdeaPlugin-[0-9a-f]{16}"
+      assertProperty(settings, prefix + ".idea.properties.file",
+        new File(settings.getProperty(prefix + ".config"), "idea.properties").getPath, context)
     }
   }
 

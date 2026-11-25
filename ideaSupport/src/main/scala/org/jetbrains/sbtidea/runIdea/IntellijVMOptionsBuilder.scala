@@ -5,7 +5,7 @@ import org.jetbrains.sbtidea.download.api.IdeInstallationContext
 import org.jetbrains.sbtidea.productInfo.ProductInfoExtraDataProvider
 import org.jetbrains.sbtidea.runIdea.CustomIntellijVMOptions.DebugInfo
 
-import java.nio.file.Path
+import java.nio.file.{Path, Paths}
 import scala.collection.mutable
 
 /**
@@ -98,7 +98,10 @@ final case class IntellijVMOptionsBuilder(
 
     // Escaping quotes. Example: `-Djdk.http.auth.tunneling.disabledSchemes=""`
     val defaultOptionsFromProductInfoOriginal =
-      productInfoExtraDataProvider.vmOptionsAll.map(escapeQuotes)
+      productInfoExtraDataProvider.vmOptionsAll.filterNot { option =>
+        IntellijRuntimeProperties.isOption(option, IntellijRuntimeProperties.Selector) ||
+          IntellijRuntimeProperties.isOption(option, IntellijRuntimeProperties.PropertiesFile)
+      }.map(escapeQuotes)
 
     val defaultOptionsFromProductInfoFiltered = if (forTests)
       defaultOptionsFromProductInfoOriginal.filterNot { optionLine =>
@@ -141,6 +144,15 @@ final case class IntellijVMOptionsBuilder(
     }
     val (systemPath, configPath) = (ideaHome.resolve(systemDirName), ideaHome.resolve(configDirName))
 
+    // Managed directory keys win over VM options. Legacy builders can still select config through extraOptions.
+    val selectedDirectories = if (forTests) testRuntimeDirectories else devRuntimeDirectories
+    val effectiveConfig = selectedDirectories.map(_.config).getOrElse {
+      IntellijRuntimeProperties.value(options.extraOptions, "idea.config.path").map(value => Paths.get(value)).getOrElse(configPath)
+    }
+    IntellijRuntimeProperties.defaults(effectiveConfig).foreach { case (key, value) =>
+      extraOptions += s"-D$key=${qq(value)}"
+    }
+
     // Test dependencies are already on the classpath. Do not discover plugins imported into Dev IDEA.
     val customPluginsPath = if (forTests)
       IntellijTestRuntimeDirectories.pluginsDirectory(testRuntimeDirectories.map(_.config).getOrElse(configPath))
@@ -148,7 +160,7 @@ final case class IntellijVMOptionsBuilder(
       intellijDirectory.resolve(IdeInstallationContext.customPluginsDirName)
     val logPath = systemPath.resolve("log")
 
-    // IntelliJ requires all these paths to be set when "idea.paths.selector" VM options is used (that comes from product-info.json)
+    // IntelliJ requires all these paths to be set when the "idea.paths.selector" VM option is used.
     // See com.intellij.idea.SystemHealthMonitor#checkIdeDirectories
     extraOptions += s"-Didea.system.path=${qq(systemPath.toString)}"
     extraOptions += s"-Didea.config.path=${qq(configPath.toString)}"

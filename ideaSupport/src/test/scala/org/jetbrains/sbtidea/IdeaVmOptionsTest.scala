@@ -31,6 +31,7 @@ class IdeaVmOptionsTest extends AnyFunSuite with Matchers {
       """-Dkey1=value""",
       """-Dkey2="value"""",
       """-Dkey3=""""",
+      "-Didea.paths.selector=IntelliJIdea2024.3",
     )
 
     override def bootClasspathJars: Seq[File] = ??? // shouldn't be used in the test
@@ -55,6 +56,7 @@ class IdeaVmOptionsTest extends AnyFunSuite with Matchers {
     "idea.config.path",
     "idea.plugins.path",
     "idea.system.path",
+    "idea.properties.file",
   )
 
   test("paths are quoted in xml version") {
@@ -95,15 +97,18 @@ class IdeaVmOptionsTest extends AnyFunSuite with Matchers {
     actual.filter(IntellijTestRuntimeDirectories.isIntellijDirectoryOption) shouldBe dirs.jvmOptions
     actual should contain("-Dother.option=kept")
     actual should contain("-Dkey1=value")
-    actual.filterNot(option => IntellijTestRuntimeDirectories.isIntellijDirectoryOption(option) ||
-      option.startsWith("-Didea.plugins.path=")) shouldBe
+    actual.filterNot(isRuntimeOption) shouldBe
       vmOptionsBuilder.build(withStalePaths, forTests = true, quoteValues = false)
-        .filterNot(option => IntellijTestRuntimeDirectories.isIntellijDirectoryOption(option) ||
-          option.startsWith("-Didea.plugins.path="))
+        .filterNot(isRuntimeOption)
+    assertPropertiesDefaults(actual, dirs.config)
     builder.buildQuotedNoEscapeXml(withStalePaths, forTests = true) should contain("-Didea.system.path=\"custom system\"")
     builder.buildQuotedNoEscapeXml(withStalePaths, forTests = true) should contain(s"""-Didea.plugins.path="$pluginsPath"""")
     builder.build(withStalePaths, forTests = true, quoteValues = true) should contain("-Didea.config.path=&quot;custom config&quot;")
     builder.build(withStalePaths, forTests = true, quoteValues = true) should contain(s"-Didea.plugins.path=&quot;$pluginsPath&quot;")
+    builder.buildQuotedNoEscapeXml(withStalePaths, forTests = true) should contain(
+      s"""-Didea.properties.file="${dirs.config.resolve("idea.properties")}"""")
+    builder.build(withStalePaths, forTests = true, quoteValues = true) should contain(
+      s"-Didea.properties.file=&quot;${dirs.config.resolve("idea.properties")}&quot;")
     builder.build(vmOptions, forTests = false, quoteValues = false) shouldBe
       vmOptionsBuilder.build(vmOptions, forTests = false, quoteValues = false)
   }
@@ -117,6 +122,63 @@ class IdeaVmOptionsTest extends AnyFunSuite with Matchers {
       s"-Didea.plugins.path=${mockIntellijBaseDir.resolve("custom-plugins")}")
   }
 
+  test("legacy directory defaults and custom prefixes select their own properties files") {
+    assertPropertiesDefaults(vmOptionsBuilder.build(vmOptions, forTests = false, quoteValues = false),
+      Paths.get("bar baz", "config"))
+    assertPropertiesDefaults(vmOptionsBuilder.build(vmOptions, forTests = true, quoteValues = false),
+      Paths.get("bar baz", "test-config"))
+    assertPropertiesDefaults(vmOptionsBuilder.withCustomSystemAndConfigDir("custom")
+      .build(vmOptions, forTests = false, quoteValues = false), Paths.get("bar baz", "custom-config"))
+  }
+
+  test("the selector follows the normalized config path rather than the SDK or runtime purpose") {
+    val config = Paths.get("shared config").toAbsolutePath.normalize()
+    val directories = IntellijTestRuntimeDirectories.RuntimeDirectories(Paths.get("system"), config, Paths.get("log"))
+    val builder = vmOptionsBuilder.withRuntimeDirectories(directories)
+    val initial = builder.build(vmOptions, forTests = false, quoteValues = false)
+    assertPropertiesDefaults(initial, config)
+    val sameConfig = builder.copy(intellijDirectory = Paths.get("other SDK"), testRuntimeDirectories = Some(directories))
+      .build(vmOptions, forTests = true, quoteValues = false)
+    property(sameConfig, "idea.paths.selector") shouldBe property(initial, "idea.paths.selector")
+    val alias = directories.copy(config = config.resolve("unused").resolve(".."))
+    property(builder.withRuntimeDirectories(alias).build(vmOptions, forTests = false, quoteValues = false),
+      "idea.paths.selector") shouldBe property(initial, "idea.paths.selector")
+    val otherConfig = builder.withRuntimeDirectories(directories.copy(config = config.resolveSibling("other config")))
+      .build(vmOptions, forTests = false, quoteValues = false)
+    property(otherConfig, "idea.paths.selector") should not be property(initial, "idea.paths.selector")
+  }
+
+  test("explicit properties files and selectors override generated defaults") {
+    val options = vmOptions.withExtraOptions(Seq(
+      "-Didea.properties.file=/custom properties/idea.properties", "-Didea.paths.selector=MyExplicitProfile"))
+    val actual = vmOptionsBuilder.build(options, forTests = false, quoteValues = false)
+    property(actual, "idea.properties.file") shouldBe "/custom properties/idea.properties"
+    property(actual, "idea.paths.selector") shouldBe "MyExplicitProfile"
+    actual should not contain "-Didea.paths.selector=IntelliJIdea2024.3"
+  }
+
+  test("legacy custom config VM options also determine properties defaults") {
+    val config = Paths.get("custom VM config")
+    val actual = vmOptionsBuilder.build(vmOptions.withExtraOption(s"-Didea.config.path=$config"),
+      forTests = false, quoteValues = false)
+    assertPropertiesDefaults(actual, config)
+  }
+
+  private def property(options: Seq[String], key: String): String = {
+    val prefix = s"-D$key="
+    options.reverseIterator.find(_.startsWith(prefix)).getOrElse(fail(s"Missing $key in $options")).stripPrefix(prefix)
+  }
+
+  private def assertPropertiesDefaults(options: Seq[String], config: Path): Unit = {
+    property(options, "idea.paths.selector") should fullyMatch regex "SbtIdeaPlugin-[0-9a-f]{16}"
+    property(options, "idea.properties.file") shouldBe config.resolve("idea.properties").toString
+    options should not contain "-Didea.paths.selector=IntelliJIdea2024.3"
+  }
+
+  private def isRuntimeOption(option: String): Boolean =
+    IntellijTestRuntimeDirectories.isIntellijDirectoryOption(option) ||
+      Seq("idea.plugins.path", "idea.paths.selector", "idea.properties.file").exists(key => option.startsWith(s"-D$key="))
+
   private def assertRuntimeDirectories(purpose: String): Unit = {
     val dirs = CheckoutRuntimeDirectories(Paths.get("plugin home"), new File("/checkout"))
     val selected = if (purpose == "dev") dirs.dev("IU-263.12345.67") else dirs.buildIndex("IU-263.12345.67")
@@ -128,7 +190,10 @@ class IdeaVmOptionsTest extends AnyFunSuite with Matchers {
     actual should contain("-Dretained=yes")
     actual should contain("-Dplugin.path=foo bar")
     actual should contain(s"-Didea.plugins.path=${mockIntellijBaseDir.resolve("custom-plugins")}")
+    assertPropertiesDefaults(actual, selected.config)
     builder.buildQuotedNoEscapeXml(conflicting, forTests = false) should contain(
       s"""-Didea.config.path="${selected.config}"""")
+    builder.buildQuotedNoEscapeXml(conflicting, forTests = false) should contain(
+      s"""-Didea.properties.file="${selected.config.resolve("idea.properties")}"""")
   }
 }

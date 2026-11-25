@@ -64,7 +64,7 @@ lazy val commonSettings = Seq(
     Seq("dev" -> devBuilder.value, "index" -> baseBuilder.value.withRuntimeDirectories(indexDirectories.value))
       .foreach { case (prefix, builder) =>
         val options = RuntimeOptionsProbe.build(builder, customIntellijVMOptions.value)
-        Seq("idea.system.path", "idea.config.path", "idea.log.path").foreach { key =>
+        Seq("idea.system.path", "idea.config.path", "idea.log.path", "idea.paths.selector", "idea.properties.file").foreach { key =>
           val matches = options.filter(_.startsWith("-D" + key + "="))
           require(matches.size == 1, s"Duplicate or missing $key: $matches")
           properties.setProperty(prefix + "." + key, matches.head.split("=", 2)(1))

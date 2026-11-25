@@ -33,6 +33,9 @@ class IdeaRunnerTest extends AnyFunSuite with Matchers with TmpDirUtils {
         "-cp", provider.bootJars.mkString(File.pathSeparator), IntellijVMOptionsBuilder.PathClassLoaderOption)
       launch.jvmOptions.filter(IntellijTestRuntimeDirectories.isIntellijDirectoryOption) shouldBe directories.jvmOptions
       launch.jvmOptions should contain("-Dretained=value with spaces")
+      launch.jvmOptions should contain(s"-Didea.properties.file=${directories.config.resolve("idea.properties")}")
+      launch.jvmOptions.exists(_.matches("-Didea.paths.selector=SbtIdeaPlugin-[0-9a-f]{16}")) shouldBe true
+      launch.jvmOptions should not contain "-Didea.paths.selector=IntelliJIdea2024.3"
       launch.jvmOptions should not contain ""
       launch.mainClass shouldBe "com.intellij.idea.Main"
       launch.programArguments shouldBe applicationArguments
@@ -158,7 +161,8 @@ class IdeaRunnerTest extends AnyFunSuite with Matchers with TmpDirUtils {
   private final class StubProductInfo(root: Path) extends ProductInfoExtraDataProvider {
     val bootJars: Seq[File] = Seq(root.resolve("first jar.jar").toFile, root.resolve("second.jar").toFile)
     var classpathReads: Int = 0
-    override def vmOptionsAll: Seq[String] = Seq("-Didea.config.path=SDK default", "")
+    override def vmOptionsAll: Seq[String] = Seq(
+      "-Didea.paths.selector=IntelliJIdea2024.3", "-Didea.config.path=SDK default", "")
     override def bootClasspathJars: Seq[File] = {
       classpathReads += 1
       bootJars

@@ -2,7 +2,7 @@ package org.jetbrains.sbtidea
 
 import sbt.ForkOptions
 
-import java.nio.file.Path
+import java.nio.file.{Path, Paths}
 
 /**
  * Builds isolated IntelliJ Platform runtime directories for an individual forked test JVM.
@@ -30,14 +30,27 @@ final class IntellijTestRuntimeDirectories private (ideaHome: Path) {
 
   /**
    * Replaces IntelliJ Platform system, config, log, and plugin-discovery VM options in `forkOptions`
-   * with directories unique to `runtimeId`. All unrelated JVM options and fork settings are preserved.
+   * with directories unique to `runtimeId`. Generated selector/properties-file defaults follow the new config;
+   * separately configured values, unrelated JVM options, and other fork settings are preserved.
    */
   def applyTo(forkOptions: ForkOptions, runtimeId: String): ForkOptions = {
     val directories = forRuntimeId(runtimeId)
     val directoryOptions = directories.jvmOptions :+ s"-Didea.plugins.path=${pluginsDirectory(directories.config)}"
+    val previousOptions = forkOptions.runJVMOptions
+    val previousDefaults = IntellijRuntimeProperties.value(previousOptions, "idea.config.path")
+      .map(config => IntellijRuntimeProperties.defaults(Paths.get(config)).toMap).getOrElse(Map.empty[String, String])
+    val propertiesOptions = IntellijRuntimeProperties.defaults(directories.config).map { case (key, defaultValue) =>
+      // ForkOptions carries strings, not provenance. Values matching the old defaults are managed;
+      // a different effective value is an explicit override and must survive relocation.
+      val value = IntellijRuntimeProperties.value(previousOptions, key)
+        .filterNot(value => previousDefaults.get(key).contains(value)).getOrElse(defaultValue)
+      s"-D$key=$value"
+    }
     val retainedOptions = forkOptions.runJVMOptions.filterNot(option =>
-      isIntellijDirectoryOption(option) || option.startsWith("-Didea.plugins.path="))
-    forkOptions.withRunJVMOptions(retainedOptions ++ directoryOptions)
+      isIntellijDirectoryOption(option) || option.startsWith("-Didea.plugins.path=") ||
+        IntellijRuntimeProperties.isOption(option, IntellijRuntimeProperties.Selector) ||
+        IntellijRuntimeProperties.isOption(option, IntellijRuntimeProperties.PropertiesFile))
+    forkOptions.withRunJVMOptions(retainedOptions ++ directoryOptions ++ propertiesOptions)
   }
 }
 

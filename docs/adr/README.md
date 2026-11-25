@@ -8,6 +8,7 @@ alongside the code. Use them for consequential decisions, not every code change.
 - [ADR 0001: Record architecture decisions in Markdown](0001-record-architecture-decisions.md) — Accepted
 - [ADR 0002: Organize IntelliJ runtimes by build, checkout, and purpose](0002-organize-intellij-runtime-directories.md) — Accepted; implemented
 - [ADR 0003: Automatically expire unused managed runtimes](0003-expire-unused-managed-runtimes.md) — Accepted; implemented
+- [ADR 0004: Derive custom properties defaults from the selected runtime config](0004-isolate-runtime-custom-properties.md) — Accepted; implemented
 
 ## Conventions
 

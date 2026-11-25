@@ -213,7 +213,10 @@ customIntellijVMOptions := customIntellijVMOptions.value
   .withExtraOption("-Dnosplash=true")
 ```
 
-If you need a custom `idea.properties` file for the development IDE, point the platform to it explicitly:
+By default, the development IDE loads the optional `idea.properties` file in its selected config
+directory. Tests and indexing use their own config directories with the same policy. See
+[Custom properties isolation](#custom-properties-isolation) for locations and shared development mode.
+To use a different file, including one shared across target builds, point the platform to it explicitly:
 
 ```SBT
 customIntellijVMOptions := customIntellijVMOptions.value
@@ -605,6 +608,34 @@ development defaults. An explicit sbt assignment to the flag overrides its JVM-p
 Without either, isolation is enabled. Tests and indexing remain isolated. Shared development mode
 assumes sequential use; it does not make concurrent access safe or share SDK-scoped installed plugins.
 
+#### Custom properties isolation
+
+Dev IDEA, tests (sbt and generated JUnit configurations), and indexing use
+`-Didea.properties.file=<selected config directory>/idea.properties` by default. The file is optional:
+neither an empty file nor its directory is created merely by generating VM options. Create the file
+when you need it. Its lifetime follows that config directory, including runtime cleanup.
+
+The product's `idea.paths.selector` from the SDK is replaced with `SbtIdeaPlugin-<hash>`, where `hash`
+is the first 16 hexadecimal characters of SHA-256 of the normalized absolute config path. This
+prevents the platform's selector-based fallback from loading the production IDE profile's custom
+properties. Different configs have different selectors; the same config reuses the same selector
+across SDKs and checkouts. In shared development mode the file is therefore
+`<intellijPluginDirectory>/runtime/config-shared/idea.properties`. Exact config-directory overrides
+also determine the selector and default properties-file location.
+
+Explicit `idea.properties.file` and `idea.paths.selector` options in `customIntellijVMOptions` remain
+authoritative; for tests use `Test / customIntellijVMOptions`. An explicit properties file replaces
+the default file rather than merging with it. Deliberately overriding the selector can re-enable
+another profile's fallback properties. The platform's other properties sources remain unchanged;
+the plugin does not discover a project-root `idea.properties` file.
+
+**Platform limitation:** *Help | Edit Custom Properties* still targets the selector's default
+profile directory, not the selected config directory or explicit properties file. No selector
+directory is created by the plugin, so that action can still fail if its directory is absent.
+Edit the selected file directly; the action's behavior is tracked by
+[IJPL-37142](https://youtrack.jetbrains.com/issue/IJPL-37142). The split-client properties handoff is
+unchanged. Regenerate IDEA configurations after updating the plugin or changing config paths.
+
 **Compatibility:** `intellijTestSystemDir` and `intellijTestConfigDir` changed from `SettingKey[File]`
 to `TaskKey[File]`, a source and binary incompatible change. Normal `:=` overrides and reads inside
 tasks still work; reads inside settings must move to tasks, and compiled consumers may need adaptation
@@ -797,6 +828,8 @@ checkout, build, and purpose are unsupported: indexes and caches can conflict or
 For explicit per-JVM test isolation, use `applyTo` in
 [`IntellijTestRuntimeDirectories`](ideaSupport/src/main/scala/org/jetbrains/sbtidea/IntellijTestRuntimeDirectories.scala).
 It selects system/config/log paths and a plugin-discovery directory under `test-config-<id>/plugins`.
+Generated selector and properties-file defaults follow the new config; separately configured values
+are preserved. A value equal to the previous config's generated default is treated as managed.
 `forRuntimeId` continues to expose the system/config/log paths without modifying fork options.
 Both helpers' signatures and explicit-ID paths (`test-system-<id>`, `test-config-<id>`) are unchanged
 and independent of checkout/build defaults. Hash rationale and marker details are in

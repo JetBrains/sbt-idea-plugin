@@ -11,7 +11,7 @@ public class DirectoryProbe {
     public static void main(String[] args) throws Exception {
         Properties properties = new Properties();
         for (String key : new String[]{"idea.system.path", "idea.config.path", "idea.log.path",
-                "idea.plugins.path", "scope.marker", "product.marker"}) {
+                "idea.plugins.path", "idea.paths.selector", "idea.properties.file", "scope.marker", "product.marker"}) {
             properties.setProperty(key, System.getProperty(key, "<absent>"));
         }
         Path system = Paths.get(properties.getProperty("idea.system.path"));
