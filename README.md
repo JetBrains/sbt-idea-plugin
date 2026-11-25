@@ -939,6 +939,10 @@ sbt 'ideaSupport/testOnly org.jetbrains.sbtidea.runIdea.IdeaRunnerTest'
 
 #### Publishing
 
-To publish a new version of `sbt-idea-plugin`, just add a new tag in format `vA.B.C` (e.g.`v3.13.4`) and push it to the main branch.
-TeamCity will automatically  Build/Test/Deploy it in `sbt-idea-plugin` configuration. \
-(works in internal network only)
+Version tags automatically run **Build & Test**. Publishing is a separate manual
+promotion of a successful tagged build.
+
+The canonical release and recovery guide is `.teamcity/SbtIdeaPlugin/README.md`
+in the [TeamCity configuration repository](https://git.jetbrains.team/scl/tc-config-tools)
+(internal access required). Read it before preparing or publishing a release;
+use a local `tc-config-tools` checkout when available.

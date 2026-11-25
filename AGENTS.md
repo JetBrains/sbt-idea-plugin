@@ -30,3 +30,10 @@
 
 - Prefer explicitly named tests with shared private assertion helpers over loops declaring tests.
 - Keep consequential design decisions and tradeoffs in [Markdown ADRs](docs/adr/README.md).
+
+## Releases
+
+For releases of sbt-idea-plugin itself, read
+[Development notes](README.md#development-notes) and follow the canonical release
+guide linked there. Maintain the procedure in that guide; link to it from
+instructions or skills instead of duplicating it.
