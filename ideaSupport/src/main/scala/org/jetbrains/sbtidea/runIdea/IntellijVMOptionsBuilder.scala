@@ -197,7 +197,10 @@ final case class IntellijVMOptionsBuilder(
 
     options.xmx.foreach(v => extraOptions += s"-Xmx${v}m")
     options.xms.foreach(v => extraOptions += s"-Xms${v}m")
-    extraOptions ++= options.extraOptions
+    extraOptions ++= (
+      if (quoteValues && escapeXml) options.extraOptions.map(scala.xml.Utility.escape)
+      else options.extraOptions
+    )
 
     // NOTE: first go the default options, then extra options
     // Some extra options can potentially override the default (it depends on the concrete option, e.g. it can work for -Xmx)

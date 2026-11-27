@@ -77,6 +77,31 @@ class IdeaVmOptionsTest extends AnyFunSuite with Matchers {
     }
   }
 
+  private val quotedCustomOptions = Seq(
+    """-Didea.project.path="C:\Users\Jane Doe\.ScalaPluginIU"""",
+    """-Dcustom.unix.path="/home/Jane Doe/.ScalaPluginIU"""",
+    """-Dcustom.xml="a&b<c>d &quot;"""",
+  )
+
+  test("custom options round-trip through run configuration XML") {
+    val configured = vmOptions.copy(extraOptions = quotedCustomOptions)
+    for (forTests <- Seq(false, true)) {
+      val parameters = vmOptionsBuilder.build(configured, forTests, quoteValues = true).mkString(" ")
+      val xml = scala.xml.XML.loadString(s"""<option name="VM_PARAMETERS" value="$parameters"/>""")
+      (xml \ "@value").text should endWith(quotedCustomOptions.mkString(" "))
+    }
+  }
+
+  test("custom options remain literal for sbt and argument files") {
+    val configured = vmOptions.copy(extraOptions = quotedCustomOptions)
+    for (forTests <- Seq(false, true)) {
+      vmOptionsBuilder.build(configured, forTests, quoteValues = false)
+        .takeRight(quotedCustomOptions.size) shouldBe quotedCustomOptions
+      vmOptionsBuilder.buildQuotedNoEscapeXml(configured, forTests)
+        .takeRight(quotedCustomOptions.size) shouldBe quotedCustomOptions
+    }
+  }
+
   test("development options normalize selected system/config/log paths") {
     assertRuntimeDirectories(purpose = "dev")
   }
